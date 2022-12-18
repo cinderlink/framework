@@ -1,0 +1,4 @@
+**/node_modules/
+**/dist/
+packages/*/example/**/cryptids/
+docker/data/**

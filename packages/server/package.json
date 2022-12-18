@@ -1,0 +1,27 @@
+{
+  "name": "@cryptids/server",
+  "description": "Federated pinning server for Cryptids network",
+  "authors": "Drew Ewing <drew@cryptids.xyz>",
+  "version": "1.0.0-rc.1",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsup --format cjs,esm src/index.ts",
+    "watch": "tsup --watch --format cjs,esm src/index.ts"
+  },
+  "dependencies": {
+    "@cryptids/client": "workspace:../client"
+  },
+  "devDependencies": {
+    "ipfs-core": "^0.17.0",
+    "ipfs-core-types": "^0.13.0",
+    "ipfs-http-gateway": "^0.12.0",
+    "ipfs-http-server": "^0.14.0",
+    "tsup": "^6.5.0",
+    "typescript": "^4.9.4",
+    "vitest": "^0.25.8"
+  },
+  "peerDependencies": {
+    "ipfs-core": "^0.17.0"
+  }
+}

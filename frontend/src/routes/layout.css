@@ -1,0 +1,10 @@
+html,
+body {
+	@apply w-full h-full overflow-hidden font-sans;
+	font-family: 'DM Sans', sans-serif;
+	font-size: 16px;
+}
+
+#svelte {
+	@apply w-full h-full flex flex-col bg-blue-900 items-center justify-center;
+}

@@ -1,0 +1,16 @@
+{
+  "name": "scrypto",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "workspaces": [
+    "packages/*",
+    "frontend/"
+  ],
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Drew Ewing",
+  "license": "ISC"
+}
