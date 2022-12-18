@@ -1,4 +1,4 @@
-import { PluginEventDef } from "@cryptids/interface-plugin";
+import { PluginEventDef } from "plugin/types";
 import { Options } from "ipfs-core";
 import * as json from "multiformats/codecs/json";
 import { sha256 } from "multiformats/hashes/sha2";
@@ -8,7 +8,7 @@ import { createIPFS } from "./ipfs/create";
 import { createPeerID } from "./ipfs/peer-id";
 
 export async function createCryptidsClient<
-  PluginEvents extends PluginEventDef[] = []
+  PluginEvents extends PluginEventDef = PluginEventDef
 >(seed: Uint8Array, nodes: string[] = [], options: Partial<Options> = {}) {
   const peerId = await createPeerID(seed);
   const ipfs = await createIPFS(peerId, nodes, options);

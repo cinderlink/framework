@@ -1,15 +1,14 @@
 import type {
-  PluginEventDef,
-  PluginEventHandler,
   PluginInterface,
-} from "@cryptids/interface-plugin";
-import type { CryptidsClient, PubsubMessage } from "@cryptids/client";
+  CryptidsClient,
+  PubsubMessage,
+} from "@cryptids/client";
 import { SocialClientEvents, SocialConnectionMessage } from "./types";
 
 export class SocialClientPlugin implements PluginInterface<SocialClientEvents> {
   id = "socialClient";
   constructor(
-    public client: CryptidsClient<[SocialClientEvents]>,
+    public client: CryptidsClient<SocialClientEvents>,
     public options: Record<string, unknown> = {}
   ) {}
   async start() {}
@@ -20,9 +19,7 @@ export class SocialClientPlugin implements PluginInterface<SocialClientEvents> {
   p2p = {};
   events = {};
 
-  onSocialConnection(
-    message: PubsubMessage<"/social/connection", SocialConnectionMessage>
-  ) {
+  onSocialConnection(message: PubsubMessage<SocialConnectionMessage>) {
     console.log("social connection", message);
   }
 

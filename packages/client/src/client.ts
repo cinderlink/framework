@@ -7,7 +7,7 @@ import type {
   PluginInterface,
   PluginEventDef,
   PluginEventPayloads,
-} from "@cryptids/interface-plugin";
+} from "plugin/types";
 import { PeerId } from "@libp2p/interface-peer-id";
 
 export type CryptidsConstructorOptions = {
@@ -15,15 +15,12 @@ export type CryptidsConstructorOptions = {
   did: DID;
 };
 
-export type PubsubMessage<
-  Topic extends keyof PluginEventPayloads = keyof PluginEventPayloads,
-  Data = any
-> = {
+export type PubsubMessage<Data = any> = {
   type: "signed" | "unsigned";
   from: PeerId;
   peer: Peer;
   sequenceNumber: number;
-  topic: Topic;
+  topic: string;
   data: Data;
   signature?: Uint8Array;
 };
@@ -31,7 +28,7 @@ export type PubsubMessage<
 export type PubsubMessageEvents<
   Payloads extends PluginEventPayloads = PluginEventPayloads
 > = {
-  [key in keyof Payloads]: PubsubMessage<Extract<key, string>, Payloads[key]>;
+  [key in keyof Payloads]: PubsubMessage<Payloads[key]>;
 };
 
 export type ClientEvents = {
@@ -48,20 +45,19 @@ export type ClientEvents = {
 };
 
 export class CryptidsClient<
-  PluginEvents extends PluginEventDef[] = [],
-  EmitEvents extends PluginEvents[number]["emit"] &
-    ClientEvents = PluginEvents[number]["emit"] & ClientEvents
+  PluginEvents extends PluginEventDef = PluginEventDef,
+  EmitEvents extends PluginEvents["emit"] &
+    ClientEvents = PluginEvents["emit"] & ClientEvents
 > extends Emittery<EmitEvents> {
-  public plugins: Record<PluginInterface["id"], PluginInterface>;
+  public plugins: Record<PluginInterface["id"], PluginInterface<PluginEvents>>;
   public started = false;
   public hasServerConnection = false;
   public peers: Peerstore = new Peerstore();
   public subscriptions: string[] = [];
 
-  public pubsub: Emittery<
-    PubsubMessageEvents<PluginEvents[number]["subscribe"]>
-  > = new Emittery();
-  public p2p: Emittery<PluginEvents[number]["receive"]> = new Emittery();
+  public pubsub: Emittery<PubsubMessageEvents<PluginEvents["subscribe"]>> =
+    new Emittery();
+  public p2p: Emittery<PluginEvents["receive"]> = new Emittery();
 
   public ipfs: IPFSWithLibP2P;
   private did: DID;
@@ -73,7 +69,7 @@ export class CryptidsClient<
     this.plugins = {};
   }
 
-  async addPlugin(plugin: PluginInterface) {
+  async addPlugin(plugin: PluginInterface<any>) {
     this.plugins[plugin.id] = plugin;
   }
 
@@ -84,7 +80,7 @@ export class CryptidsClient<
     console.info("ipfs ready", info);
 
     await Promise.all(
-      Object.values(this.plugins).map(async (plugin: PluginInterface) => {
+      Object.values(this.plugins).map(async (plugin) => {
         await plugin.start?.();
       })
     );
@@ -138,7 +134,7 @@ export class CryptidsClient<
     return this.did.id;
   }
 
-  async subscribe(topic: keyof PluginEvents[number]["subscribe"]) {
+  async subscribe(topic: keyof PluginEvents["subscribe"]) {
     if (this.subscriptions.includes(topic as string)) return;
     await this.ipfs.pubsub.subscribe(
       topic as string,
@@ -147,7 +143,7 @@ export class CryptidsClient<
     this.subscriptions.push(topic as string);
   }
 
-  async unsubscribe(topic: keyof PluginEvents[number]["subscribe"]) {
+  async unsubscribe(topic: keyof PluginEvents["subscribe"]) {
     if (!this.subscriptions.includes(topic as string)) return;
     await this.ipfs.pubsub.unsubscribe(
       topic as string,
@@ -157,8 +153,8 @@ export class CryptidsClient<
   }
 
   async publish<
-    K extends keyof PluginEvents[number]["send"] = keyof PluginEvents[number]["send"]
-  >(topic: K, message: PluginEvents[number]["send"][K]) {
+    K extends keyof PluginEvents["publish"] = keyof PluginEvents["publish"]
+  >(topic: K, message: PluginEvents["publish"][K]) {
     await this.ipfs.pubsub.publish(topic as string, json.encode(message));
   }
 
@@ -167,7 +163,7 @@ export class CryptidsClient<
     if (msg.from === this.ipfs.libp2p.peerId) return;
     const peer = this.peers.getPeerByPeerId(msg.from);
     const decoded = json.decode<
-      PluginEvents[number]["subscribe"][keyof PluginEvents[number]["subscribe"]]
+      PluginEvents["subscribe"][keyof PluginEvents["subscribe"]]
     >(msg.data);
 
     const event = {

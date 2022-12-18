@@ -3,7 +3,7 @@ import type { SocialClientEvents } from '@cryptids/plugin-social-client';
 import { writable, type Writable } from 'svelte/store';
 
 export type CryptidsStore = {
-	client: CryptidsClient<[SocialClientEvents]> | undefined;
+	client: CryptidsClient<SocialClientEvents> | undefined;
 	connected: boolean;
 };
 

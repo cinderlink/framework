@@ -1,8 +1,6 @@
-import type { CryptidsClient, PubsubMessage } from "@cryptids/client";
+import CryptidsClient, { PubsubMessage } from "client";
 
-export type PluginEventPayloads = {
-  [key: string]: unknown;
-};
+export type PluginEventPayloads = Record<string, unknown>;
 
 export type PluginEventHandler<T = unknown> = (payload: T) => void;
 
@@ -21,21 +19,22 @@ export type PluginEventDef = {
 };
 
 export interface PluginInterface<
-  Events extends PluginEventDef = PluginEventDef
+  Events extends PluginEventDef = {
+    send: {};
+    receive: {};
+    publish: {};
+    subscribe: {};
+    emit: {};
+  }
 > {
   id: string;
-  client: CryptidsClient<[Events]>;
+  client: CryptidsClient<Events>;
   start?(): Promise<void>;
   stop?(): Promise<void>;
   pubsub: Record<
     keyof Events["subscribe"],
     PluginEventHandler<
-      PubsubMessage<
-        keyof Events["subscribe"] extends string
-          ? keyof Events["subscribe"]
-          : never,
-        Events["subscribe"][keyof Events["subscribe"]]
-      >
+      PubsubMessage<Events["subscribe"][keyof Events["subscribe"]]>
     >
   >;
   p2p: Record<

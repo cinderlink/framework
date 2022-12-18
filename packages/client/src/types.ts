@@ -1,8 +1,8 @@
-import PluginInterface, { PluginEventDef } from "@cryptids/interface-plugin";
+import PluginInterface, { PluginEventDef } from "plugin/types";
 import CryptidsClient from "client";
 
 export type PluginConstructor<
-  PluginEvents extends PluginEventDef[] = PluginEventDef[],
+  PluginEvents extends PluginEventDef = PluginEventDef,
   Options extends Record<string, unknown> = {}
 > = new (
   client: CryptidsClient<PluginEvents>,
@@ -10,7 +10,7 @@ export type PluginConstructor<
 ) => PluginInterface;
 
 export type CryptidsWithPlugins<Plugins extends PluginInterface[] = []> =
-  CryptidsClient<PluginEventDef[]> & {
+  CryptidsClient<PluginEventDef> & {
     plugins: {
       [K in Plugins[number]["id"]]: Plugins[number];
     };

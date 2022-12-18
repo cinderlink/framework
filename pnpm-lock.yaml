@@ -8,12 +8,12 @@ importers:
   frontend:
     specifiers:
       '@cryptids/client': workspace:../packages/client
-      '@cryptids/interface-plugin': workspace:../packages/interface-plugin
       '@cryptids/plugin-social-client': workspace:../packages/plugin-social-client
       '@esbuild-plugins/node-globals-polyfill': ^0.1.1
       '@esbuild-plugins/node-modules-polyfill': ^0.1.4
       '@iconify-json/logos': ^1.1.19
       '@iconify-json/mdi': ^1.1.38
+      '@iconify-json/tabler': ^1.1.52
       '@libp2p/peer-id': ^1.1.18
       '@playwright/test': ^1.28.1
       '@sveltejs/adapter-auto': ^1.0.0
@@ -39,12 +39,12 @@ importers:
       vitest: ^0.25.8
     devDependencies:
       '@cryptids/client': link:../packages/client
-      '@cryptids/interface-plugin': link:../packages/interface-plugin
       '@cryptids/plugin-social-client': link:../packages/plugin-social-client
       '@esbuild-plugins/node-globals-polyfill': 0.1.1
       '@esbuild-plugins/node-modules-polyfill': 0.1.4
       '@iconify-json/logos': 1.1.19
       '@iconify-json/mdi': 1.1.38
+      '@iconify-json/tabler': 1.1.52
       '@libp2p/peer-id': 1.1.18
       '@playwright/test': 1.28.1
       '@sveltejs/adapter-auto': 1.0.0_@sveltejs+kit@1.0.0
@@ -72,7 +72,6 @@ importers:
   packages/client:
     specifiers:
       '@chainsafe/libp2p-noise': ^10.2.0
-      '@cryptids/interface-plugin': workspace:../interface-plugin
       '@libp2p/crypto': ^1.0.10
       '@libp2p/interface-peer-id': ^1.1.2
       '@libp2p/peer-id': ^1.1.18
@@ -115,7 +114,6 @@ importers:
       microbundle: 0.15.1
       multiformats: 10.0.3
     devDependencies:
-      '@cryptids/interface-plugin': link:../interface-plugin
       '@libp2p/interface-peer-id': 1.1.2
       '@stablelib/ed25519': 1.0.3
       '@types/node': 18.11.15
@@ -128,16 +126,9 @@ importers:
       vite-plugin-dts: 1.7.1_vite@4.0.1
       vitest: 0.25.8
 
-  packages/interface-plugin:
-    specifiers:
-      '@cryptids/client': workspace:../client
-    dependencies:
-      '@cryptids/client': link:../client
-
   packages/plugin-social-client:
     specifiers:
       '@cryptids/client': workspace:../client
-      '@cryptids/interface-plugin': workspace:../interface-plugin
       did-jwt: ^6.11.0
       dids: ^3.4.0
       tsup: ^6.5.0
@@ -145,7 +136,6 @@ importers:
       vitest: ^0.25.8
     devDependencies:
       '@cryptids/client': link:../client
-      '@cryptids/interface-plugin': link:../interface-plugin
       did-jwt: 6.11.0
       dids: 3.4.0
       tsup: 6.5.0_typescript@4.9.4
@@ -2284,6 +2274,12 @@ packages:
 
   /@iconify-json/mdi/1.1.38:
     resolution: {integrity: sha512-h2D2vDMAFnHdIJL9OkamAVsmc0gME4Qn/jBcqo4jsqUVGC5c6Vv/IjdbTCrHc2KsUT4teohud9qTU9ciPDNIhw==}
+    dependencies:
+      '@iconify/types': 2.0.0
+    dev: true
+
+  /@iconify-json/tabler/1.1.52:
+    resolution: {integrity: sha512-whUqAMJE0wco4TJzHozPbI1QvER0hebq8mLKH627KfZqfVzul6oPMveqVONDlWbQNCDf2nz2fY70mL7vPqfq6A==}
     dependencies:
       '@iconify/types': 2.0.0
     dev: true

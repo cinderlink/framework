@@ -19,7 +19,6 @@
   },
   "devDependencies": {
     "@cryptids/client": "workspace:../client",
-    "@cryptids/interface-plugin": "workspace:../interface-plugin",
     "did-jwt": "^6.11.0",
     "dids": "^3.4.0",
     "tsup": "^6.5.0",

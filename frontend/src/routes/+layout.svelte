@@ -2,46 +2,45 @@
 	import 'uno.css';
 	import '@unocss/reset/tailwind.css';
 	import './layout.css';
+	import PillMenu from '$lib/components/navigation/PillMenu.svelte';
+	import PillMenuItem from '$lib/components/navigation/PillMenuItem.svelte';
 </script>
 
 <div id="app">
-	<header id="header">
-		<a id="brand" href="/">deso</a>
-		<nav>
-			<a href="/account/sign-up">Sign Up</a>
-			<a href="/account/login">Log In</a>
-		</nav>
-	</header>
-	<div id="navbar">
-		<nav>
-			<a href="/account/sign-up">Sign Up</a>
-			<a href="/account/login">Log In</a>
-		</nav>
-	</div>
-
-	<div id="app-inner">
-		<aside id="sidebar">
-			<section class="sidebar__panel">
-				<form>
-					<input type="text" placeholder="Search" />
-					<button type="submit">Search</button>
-				</form>
-			</section>
-		</aside>
-		<main id="content">
+	<aside id="sidebar">
+		<a id="brand" href="/">
+			<div class="i-tabler-check text-teal-600" />
+			appname
+		</a>
+		<PillMenu>
+			<PillMenuItem href="/followers" icon="i-tabler-square-rounded-arrow-right">
+				Followers
+			</PillMenuItem>
+			<PillMenuItem href="/following" icon="i-tabler-square-rounded-arrow-left">
+				Following
+			</PillMenuItem>
+			<PillMenuItem href="/trending" icon="i-tabler-trending-up">Trending</PillMenuItem>
+		</PillMenu>
+	</aside>
+	<main>
+		<div id="actionbar">
+			<div id="search">
+				<input type="text" placeholder="Search" />
+				<button>
+					<div class="i-tabler-search" />
+				</button>
+			</div>
+			<button id="profile">
+				<div class="user__avatar">
+					<div class="i-tabler-user" />
+				</div>
+				<div class="user__menu-toggle">
+					<div class="i-tabler-chevron-down" />
+				</div>
+			</button>
+		</div>
+		<div id="page">
 			<slot />
-		</main>
-	</div>
+		</div>
+	</main>
 </div>
-
-<style>
-	#app {
-		@apply w-23/24 h-7/8 mx-auto my-0 bg-blue-800 rounded-xl shadow;
-	}
-	#header {
-		@apply px-4 py-2 bg-blue-700 flex gap-20px justify-between rounded-t-xl;
-	}
-	a#brand {
-		@apply text-xl text-cyan-100 font-sans;
-	}
-</style>
