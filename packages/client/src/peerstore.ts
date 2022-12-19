@@ -3,6 +3,7 @@ import { fromPeerId } from "./did/util";
 
 export type Peer = {
   did: string;
+  role: "server" | "peer";
   subscriptions: string[];
   metadata: Record<string, string>;
   connected: boolean;
@@ -13,10 +14,11 @@ export class Peerstore {
   peers: Record<string, Peer> = {};
   idMap: Record<string, string> = {};
 
-  addPeer(did: string, peerId: string) {
+  addPeer(did: string, peerId: string, role: "server" | "peer" = "peer") {
     this.idMap[peerId] = did;
     this.peers[did] = {
       did,
+      role,
       subscriptions: [],
       metadata: {},
       connected: false,
@@ -27,6 +29,18 @@ export class Peerstore {
 
   hasPeer(did: string) {
     return !!this.peers[did];
+  }
+
+  hasServer() {
+    return Object.values(this.peers).some((peer) => peer.role === "server");
+  }
+
+  getServers() {
+    return Object.values(this.peers).filter((peer) => peer.role === "server");
+  }
+
+  getPeers() {
+    return Object.values(this.peers).filter((peer) => peer.role === "peer");
   }
 
   peerCount() {

@@ -1,0 +1,18 @@
+{
+  "name": "@cryptids/example-server",
+  "private": true,
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "example": "cryptids-server"
+  },
+  "devDependencies": {
+    "@cryptids/plugin-identity-server": "link:../../packages/plugin-identity-server",
+    "@cryptids/plugin-social-server": "workspace:../../packages/plugin-social-server",
+    "@cryptids/server-bin": "workspace:../../packages/server-bin"
+  },
+  "keywords": [],
+  "author": "Drew Ewing",
+  "license": "ISC"
+}

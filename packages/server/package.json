@@ -6,8 +6,8 @@
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
-    "build": "tsup --format cjs,esm src/index.ts",
-    "watch": "tsup --watch --format cjs,esm src/index.ts"
+    "build": "tsup --format cjs,esm src/index.ts --dts",
+    "watch": "pnpm build --watch"
   },
   "dependencies": {
     "@cryptids/client": "workspace:../client"

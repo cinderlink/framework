@@ -31,16 +31,18 @@ export interface PluginInterface<
   client: CryptidsClient<Events>;
   start?(): Promise<void>;
   stop?(): Promise<void>;
-  pubsub: Record<
-    keyof Events["subscribe"],
-    PluginEventHandler<
-      PubsubMessage<Events["subscribe"][keyof Events["subscribe"]]>
-    >
-  >;
-  p2p: Record<
-    keyof Events["receive"],
-    PluginEventHandler<Events["receive"][keyof Events["receive"]]>
-  >;
-  events: Record<keyof Events["emit"], Events["emit"][keyof Events["emit"]]>;
+  pubsub: {
+    [key in keyof Events["publish"]]: PluginEventHandler<
+      PubsubMessage<Events["publish"][key]>
+    >;
+  };
+  p2p: {
+    [key in keyof Events["receive"]]: PluginEventHandler<
+      PubsubMessage<Events["receive"][key]>
+    >;
+  };
+  events: {
+    [key in keyof Events["emit"]]: PluginEventHandler<Events["emit"][key]>;
+  };
 }
 export default PluginInterface;

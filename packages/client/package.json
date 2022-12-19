@@ -25,9 +25,17 @@
     "preview": "vite preview"
   },
   "devDependencies": {
+    "@chainsafe/libp2p-gossipsub": "^5.3.0",
+    "@chainsafe/libp2p-noise": "^10.2.0",
+    "@libp2p/crypto": "^1.0.10",
     "@libp2p/interface-peer-id": "^1.1.2",
+    "@libp2p/peer-id": "^1.1.18",
+    "@libp2p/peer-id-factory": "^1.0.20",
+    "@libp2p/websockets": "^5.0.2",
+    "@multiformats/multiaddr": "^11.1.4",
     "@stablelib/ed25519": "^1.0.3",
     "@types/node": "^18.11.15",
+    "@types/uuid": "^9.0.0",
     "dotenv": "^16.0.3",
     "ipfs-core-types": "^0.13.0",
     "libp2p": "^0.41.0",
@@ -37,21 +45,34 @@
     "vite-plugin-dts": "^1.7.1",
     "vitest": "^0.25.8"
   },
-  "dependencies": {
+  "peerDependencies": {
+    "@chainsafe/libp2p-gossipsub": "^5.3.0",
     "@chainsafe/libp2p-noise": "^10.2.0",
     "@libp2p/crypto": "^1.0.10",
     "@libp2p/peer-id": "^1.1.18",
     "@libp2p/peer-id-factory": "^1.0.20",
     "@libp2p/websockets": "^5.0.2",
     "@multiformats/multiaddr": "^11.1.4",
+    "@stablelib/ed25519": "^1.0.3",
+    "libp2p": "^0.41.0"
+  },
+  "dependencies": {
+    "@cryptids/dag-interface": "link:../dag-interface",
+    "@cryptids/ipld-database": "workspace:../ipld-database",
     "did-jwt": "^6.11.0",
     "did-resolver": "^4.0.1",
     "dids": "^3.4.0",
     "emittery": "^1.0.1",
     "ipfs-core": "^0.17.0",
+    "it-length-prefixed": "^8.0.3",
+    "it-map": "^2.0.0",
+    "it-pipe": "^2.0.5",
     "key-did-provider-ed25519": "^2.0.1",
     "key-did-resolver": "^2.3.0",
+    "localforage": "^1.10.0",
     "microbundle": "^0.15.1",
-    "multiformats": "^10.0.3"
+    "multiformats": "^10.0.3",
+    "uint8arrays": "^4.0.2",
+    "uuid": "^9.0.0"
   }
 }

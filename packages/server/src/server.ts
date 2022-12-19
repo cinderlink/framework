@@ -1,7 +1,11 @@
 import { CryptidsClient } from "@cryptids/client";
 
 export class CryptidsServer {
-  constructor(private client: CryptidsClient) {}
+  constructor(private _client: CryptidsClient) {}
+
+  get client() {
+    return this._client;
+  }
 
   async start() {
     await this.client.start();

@@ -4,6 +4,12 @@
 	import './layout.css';
 	import PillMenu from '$lib/components/navigation/PillMenu.svelte';
 	import PillMenuItem from '$lib/components/navigation/PillMenuItem.svelte';
+	import { onMount } from 'svelte';
+	import { initializeCryptids } from '$lib/cryptids/functions';
+
+	onMount(async () => {
+		await initializeCryptids('foo bar');
+	});
 </script>
 
 <div id="app">

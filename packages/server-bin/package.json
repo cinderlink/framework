@@ -1,0 +1,30 @@
+{
+  "name": "@cryptids/server-bin",
+  "description": "Cryptids server binary",
+  "authors": "Drew <drew@cryptids.xyz>",
+  "version": "1.0.0-rc.1",
+  "main": "dist/bin.js",
+  "type": "module",
+  "bin": {
+    "cryptids-server": "dist/bin.js"
+  },
+  "scripts": {
+    "build": "tsup src/bin.ts --format cjs,esm --dts",
+    "watch": "pnpm build --watch",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@cryptids/client": "workspace:../client",
+    "@cryptids/server": "workspace:../server",
+    "ipfs-http-gateway": "^0.12.0",
+    "ipfs-http-server": "^0.14.0",
+    "minimist": "^1.2.7"
+  },
+  "devDependencies": {
+    "@types/minimist": "^1.2.2",
+    "chalk": "^5.2.0",
+    "tsup": "^6.5.0",
+    "typescript": "^4.9.4",
+    "vitest": "^0.25.8"
+  }
+}

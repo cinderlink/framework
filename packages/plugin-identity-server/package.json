@@ -1,0 +1,30 @@
+{
+  "name": "@cryptids/plugin-identity-server",
+  "description": "Identity server plugin for Cryptids",
+  "authors": "Drew <drew@cryptids.xyz>",
+  "version": "1.0.0-rc.1",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "watch": "pnpm build --watch"
+  },
+  "dependencies": {
+    "@cryptids/client": "link:../client",
+    "@cryptids/ipld-database": "workspace:../ipld-database",
+    "superstruct": "^1.0.3"
+  },
+  "devDependencies": {
+    "tsup": "^6.5.0",
+    "typescript": "^4.9.4",
+    "vitest": "^0.25.8"
+  }
+}
