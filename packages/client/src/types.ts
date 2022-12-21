@@ -1,5 +1,5 @@
-import PluginInterface, { PluginEventDef } from "plugin/types";
-import CryptidsClient from "client";
+import PluginInterface, { PluginEventDef } from "./plugin/types";
+import CryptidsClient from "./client";
 
 export type PluginConstructor<
   PluginEvents extends PluginEventDef = PluginEventDef,

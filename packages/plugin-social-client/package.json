@@ -3,12 +3,13 @@
   "description": "Social client plugin for cryptids enabling following and unfollowing of other cryptids & posting of messages to the social network",
   "authors": "Drew <drew@cryptids.xyz>",
   "version": "1.0.0-rc.1",
+  "type": "module",
   "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.mjs",
+      "import": "./dist/index.js",
       "require": "./dist/index.cjs",
       "types": "./dist/index.d.ts"
     }
@@ -19,14 +20,21 @@
   },
   "devDependencies": {
     "@cryptids/client": "workspace:../client",
+    "@cryptids/ipld-database": "workspace:../ipld-database",
+    "@types/uuid": "^9.0.0",
     "did-jwt": "^6.11.0",
     "dids": "^3.4.0",
+    "multiformats": "^10.0.3",
     "tsup": "^6.5.0",
     "typescript": "^4.9.4",
     "vitest": "^0.25.8"
   },
   "peerDependencies": {
     "did-jwt": "^6.11.0",
-    "dids": "^3.4.0"
+    "dids": "^3.4.0",
+    "multiformats": "^10.0.3"
+  },
+  "dependencies": {
+    "uuid": "^9.0.0"
   }
 }

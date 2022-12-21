@@ -1,0 +1,8 @@
+{
+  "name": "@cryptids/test-adapters",
+  "description": "Test adapters for Cryptids",
+  "authors": "Drew <drew@cryptids.xyz>",
+  "version": "1.0.0-rc.1",
+  "main": "dist/index.js",
+  "dependencies": {}
+}

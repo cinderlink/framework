@@ -1,7 +1,7 @@
 {
-  "name": "@cryptids/server",
-  "description": "Federated pinning server for Cryptids network",
-  "authors": "Drew Ewing <drew@cryptids.xyz>",
+  "name": "@cryptids/plugin-dkg-server",
+  "description": "Distributed key generation server plugin for Cryptids",
+  "authors": "Drew <drew@cryptids.xyz>",
   "version": "1.0.0-rc.1",
   "type": "module",
   "main": "./dist/index.js",
@@ -15,22 +15,16 @@
     }
   },
   "scripts": {
-    "build": "tsup --format cjs,esm src/index.ts --dts --clean",
+    "build": "tsup src/index.ts --format cjs,esm --dts --clean",
     "watch": "pnpm build --watch"
   },
   "dependencies": {
-    "@cryptids/client": "workspace:../client"
+    "@cryptids/client": "link:../client",
+    "@cryptids/ipld-database": "link:../ipld-database"
   },
   "devDependencies": {
-    "ipfs-core": "^0.17.0",
-    "ipfs-core-types": "^0.13.0",
-    "ipfs-http-gateway": "^0.12.0",
-    "ipfs-http-server": "^0.14.0",
     "tsup": "^6.5.0",
     "typescript": "^4.9.4",
     "vitest": "^0.25.8"
-  },
-  "peerDependencies": {
-    "ipfs-core": "^0.17.0"
   }
 }

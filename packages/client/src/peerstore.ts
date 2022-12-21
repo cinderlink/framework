@@ -1,14 +1,6 @@
+import type { Peer } from "@cryptids/core-types";
 import { PeerId } from "@libp2p/interface-peer-id";
 import { fromPeerId } from "./did/util";
-
-export type Peer = {
-  did: string;
-  role: "server" | "peer";
-  subscriptions: string[];
-  metadata: Record<string, string>;
-  connected: boolean;
-  handshake: boolean;
-};
 
 export class Peerstore {
   peers: Record<string, Peer> = {};

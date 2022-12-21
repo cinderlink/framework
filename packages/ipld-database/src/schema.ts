@@ -1,6 +1,7 @@
-import { DIDDagInterface } from "@cryptids/dag-interface/dist";
-import { CID } from "multiformats";
-import { Table, TableDefinition } from "./table";
+import { DIDDagInterface } from "@cryptids/dag-interface";
+import Emittery from "emittery";
+import type { CID } from "multiformats";
+import { Table, TableDefinition, TableRow } from "./table";
 
 export type SavedSchema = {
   name: string;
@@ -8,13 +9,19 @@ export type SavedSchema = {
   tables: Record<string, string | undefined>;
 };
 
-export class Schema {
+export type SchemaEvents = {
+  "/schema/loaded": undefined;
+};
+
+export class Schema extends Emittery<SchemaEvents> {
   public tables: Record<string, Table> = {};
   constructor(
     public name: string,
     public defs: Record<string, TableDefinition>,
-    public dag: DIDDagInterface
+    public dag: DIDDagInterface,
+    public encrypted = true
   ) {
+    super();
     Object.entries(defs).forEach(([name, def]) => {
       this.tables[name] = new Table(def, this.dag);
     });
@@ -28,32 +35,54 @@ export class Schema {
     delete this.tables[name];
   }
 
-  getTable(name: string) {
-    return this.tables[name];
+  getTable<T extends TableRow = TableRow>(name: string) {
+    return this.tables[name] as Table<T>;
   }
 
   async save() {
+    console.info("saving schema", this.name);
     const tables: Record<string, string | undefined> = {};
     await Promise.all(
       Object.entries(this.tables).map(async ([name]) => {
-        tables[name] = (await this.tables[name].save())?.toString();
+        const tableCID = await this.tables[name].save();
+        if (tableCID) {
+          tables[name] = tableCID?.toString();
+        }
       })
     );
-    return this.dag.store({
+    console.info("storing schema", this.name, this.defs, tables);
+    const savedSchema = {
       name: this.name,
       defs: this.defs,
       tables,
-    });
+    };
+    return this.encrypted
+      ? this.dag.storeEncrypted(savedSchema)
+      : this.dag.store(savedSchema);
   }
 
-  static async load(cid: string | CID, dag: DIDDagInterface) {
-    const data = await dag.load<SavedSchema>(cid);
-    const schema = new Schema(data.name, data.defs, dag);
+  static async load(cid: string | CID, dag: DIDDagInterface, encrypted = true) {
+    const data = encrypted
+      ? await dag.loadDecrypted<SavedSchema>(cid)
+      : await dag.load<SavedSchema>(cid);
+    return Schema.fromSavedSchema(data, dag);
+  }
+
+  static async fromSavedSchema(
+    data: SavedSchema,
+    dag: DIDDagInterface,
+    encrypted = true
+  ) {
+    if (!data) throw new Error("Invalid schema data");
+    console.info("loading from saved schema", data);
+    const schema = new Schema(data.name, data.defs, dag, encrypted);
     await Promise.all(
       Object.entries(data.tables).map(async ([name, tableCID]) => {
-        await schema.tables[name].load(tableCID!);
+        console.info("loading table", { name, tableCID });
+        await schema.tables[name]?.load(tableCID!);
       })
     );
+    schema.emit("/schema/loaded");
     return schema;
   }
 }

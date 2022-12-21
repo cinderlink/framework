@@ -1,4 +1,6 @@
 <script lang="ts">
+	import type { SocialUser } from '@cryptids/plugin-social-client';
+	import { cryptids } from '$lib/cryptids/store';
 	import 'uno.css';
 	import '@unocss/reset/tailwind.css';
 	import './layout.css';
@@ -10,6 +12,26 @@
 	onMount(async () => {
 		await initializeCryptids('foo bar');
 	});
+
+	console.info('adding unload handler');
+	window.onbeforeunload = async () => {
+		await $cryptids.client?.stop();
+	};
+
+	let query = '';
+	let searchResults: SocialUser[] = [];
+	let searched = false;
+	let loading = false;
+	async function searchForUsers() {
+		loading = true;
+		const matches = (await $cryptids.client
+			?.getSchema('social')
+			?.getTable<SocialUser>('users')
+			?.search(query, 10)) as SocialUser[];
+		searched = true;
+		loading = false;
+		searchResults = matches;
+	}
 </script>
 
 <div id="app">
@@ -26,15 +48,42 @@
 				Following
 			</PillMenuItem>
 			<PillMenuItem href="/trending" icon="i-tabler-trending-up">Trending</PillMenuItem>
+			<PillMenuItem href="/profile" icon="i-tabler-user">Profile</PillMenuItem>
 		</PillMenu>
 	</aside>
 	<main>
 		<div id="actionbar">
 			<div id="search">
-				<input type="text" placeholder="Search" />
-				<button>
-					<div class="i-tabler-search" />
-				</button>
+				<form on:submit|preventDefault={searchForUsers}>
+					<input
+						type="text"
+						placeholder="Search"
+						bind:value={query}
+						on:input={() => {
+							searched = false;
+						}}
+					/>
+					<button type="submit" disabled={loading || searched}>
+						<div class={loading ? 'i-tabler-loader animate-spin' : 'i-tabler-search'} />
+					</button>
+				</form>
+				{#if loading || searched}
+					<div id="search-results">
+						{#if loading}
+							<p>loading...</p>
+						{:else}
+							{#each searchResults as result}
+								<pre>{JSON.stringify(result)}</pre>
+								<div class="search-result">
+									<div class="search-result__avatar">
+										<img src={result.avatar} alt={result.name} />
+									</div>
+									<div class="search-result__name">{result.name}</div>
+								</div>
+							{/each}
+						{/if}
+					</div>
+				{/if}
 			</div>
 			<button id="profile">
 				<div class="user__avatar">

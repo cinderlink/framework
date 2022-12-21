@@ -1,21 +1,21 @@
 import type { DID } from "dids";
-import type { IPFSWithLibP2P } from "ipfs/types";
 import Emittery from "emittery";
 import * as json from "multiformats/codecs/json";
-import { Schema } from "@cryptids/ipld-database";
+import { SavedSchema, Schema } from "@cryptids/ipld-database";
 import { pipe } from "it-pipe";
 import * as lp from "it-length-prefixed";
 import map from "it-map";
+import { PeerId } from "@libp2p/interface-peer-id";
+import type { IPFSWithLibP2P } from "./ipfs/types";
 import { Peer, Peerstore } from "./peerstore";
 import type {
   PluginInterface,
   PluginEventDef,
   PluginEventPayloads,
-} from "plugin/types";
-import { PeerId } from "@libp2p/interface-peer-id";
-import { ClientDIDDag } from "dag";
-import { Identity } from "identity";
-import { fromPeerId } from "did/util";
+} from "./plugin/types";
+import { ClientDIDDag } from "./dag";
+import { Identity } from "./identity";
+import { fromPeerId } from "./did/util";
 
 export type CryptidsConstructorOptions = {
   ipfs: IPFSWithLibP2P;
@@ -89,9 +89,10 @@ export class CryptidsClient<
 
   async start() {
     await this.ipfs.start();
-
     const info = await this.ipfs.id();
     this.peerId = info.id;
+
+    await this.load();
 
     this.ipfs.libp2p.pubsub.addEventListener(
       "message",
@@ -133,6 +134,7 @@ export class CryptidsClient<
       await this.streamToEmitter(stream);
     });
 
+    console.info("starting plugins pubsub");
     await Promise.all(
       Object.values(this.plugins).map(async (plugin) => {
         await plugin.start?.();
@@ -158,6 +160,9 @@ export class CryptidsClient<
 
   async send(did: string, message: unknown) {
     const encoded = json.encode(message);
+    if (!this.p2pStreams[did]) {
+      throw new Error("no stream to peer: " + did);
+    }
     await pipe([encoded], lp.encode(), this.p2pStreams[did].sink);
   }
 
@@ -189,6 +194,15 @@ export class CryptidsClient<
         });
       })
     );
+    await Promise.all(
+      Object.values(this.p2pStreams).map(async (stream) => {
+        await stream.close();
+      })
+    );
+
+    console.info("saving cryptids database");
+    await this.save();
+
     this.ipfs.stop();
   }
 
@@ -239,9 +253,11 @@ export class CryptidsClient<
 
   async save() {
     const schemaCIDs: Record<string, string> = {};
+    console.info("saving schemas", this.schemas);
     await Promise.all(
       Object.entries(this.schemas).map(async ([name, schema]) => {
         const schemaCID = await schema.save();
+        console.info("saved schema", { name, schemaCID });
         if (schemaCID) {
           schemaCIDs[name] = schemaCID.toString();
         }
@@ -251,9 +267,33 @@ export class CryptidsClient<
       schemas: schemaCIDs,
       updatedAt: Date.now(),
     };
+    console.info("saving root", { rootDoc });
     const rootCID = await this.dag.storeEncrypted(rootDoc);
     if (rootCID) {
+      console.info("saved root", { rootCID });
       await this.identity.save({ cid: rootCID.toString(), document: rootDoc });
+    }
+  }
+
+  async load() {
+    console.info("loading");
+    const { cid, document } = await this.identity.resolve();
+    console.info("resolved", { cid, document });
+    if (!cid || !document) return;
+    if (document.schemas) {
+      await Promise.all(
+        Object.entries(document.schemas).map(async ([name, schemaCID]) => {
+          if (schemaCID) {
+            const schema = await this.dag.loadDecrypted<SavedSchema>(schemaCID);
+            if (schema) {
+              this.schemas[name] = await Schema.fromSavedSchema(
+                schema,
+                this.dag
+              );
+            }
+          }
+        })
+      );
     }
   }
 

@@ -5,11 +5,20 @@
   "version": "1.0.0-rc.1",
   "main": "dist/bin.js",
   "type": "module",
+  "module": "./dist/bin.js",
+  "types": "./dist/bin.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/bin.js",
+      "require": "./dist/bin.cjs",
+      "types": "./dist/bin.d.ts"
+    }
+  },
   "bin": {
     "cryptids-server": "dist/bin.js"
   },
   "scripts": {
-    "build": "tsup src/bin.ts --format cjs,esm --dts",
+    "build": "tsup src/bin.ts --format cjs,esm --dts --clean",
     "watch": "pnpm build --watch",
     "test": "vitest"
   },

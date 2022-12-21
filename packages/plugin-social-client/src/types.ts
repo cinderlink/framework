@@ -1,24 +1,29 @@
 import type { PluginEventDef } from "@cryptids/client";
 
 export type SocialConnectionMessage = {
+  requestID: string;
   to: string;
   follow: boolean;
 };
 
 export type SocialAnnounceMessage = {
+  requestID: string;
   name: string;
   avatar: string;
 };
 
 export type SocialUpdateMessage = {
+  requestID: string;
   cid: string;
 };
 
 export type SocialUpdatesRequestMessage = {
+  requestID: string;
   since: number;
 };
 
 export type SocialUpdatesResponseMessage = {
+  requestID: string;
   updates: SocialUpdateMessage[];
 };
 
@@ -34,10 +39,12 @@ export interface SocialClientEvents extends PluginEventDef {
   publish: {
     "/social/connection": SocialConnectionMessage;
     "/social/announce": SocialAnnounceMessage;
+    "/social/update": SocialUpdateMessage;
   };
   subscribe: {
     "/social/connection": SocialConnectionMessage;
     "/social/announce": SocialAnnounceMessage;
+    "/social/update": SocialUpdateMessage;
   };
   emit: {};
 }

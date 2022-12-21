@@ -1,7 +1,12 @@
-import type { CID } from "multiformats";
-import type { Struct } from "superstruct";
 import type { DIDDagInterface } from "@cryptids/dag-interface";
-import { assert, is } from "superstruct";
+import * as json from "multiformats/codecs/json";
+import { sha256 } from "multiformats/hashes/sha2";
+import { CID } from "multiformats/cid";
+import Emittery from "emittery";
+import Ajv from "ajv";
+import type { SchemaObject } from "ajv";
+const ajv = new Ajv();
+
 import Minisearch, {
   AsPlainObject,
   Options as SearchOptions,
@@ -9,12 +14,13 @@ import Minisearch, {
 } from "minisearch";
 
 export type TableRow = {
-  id?: string;
+  id?: number;
   [key: string]: unknown;
 };
 
 export type TableDefinition = {
-  schema: Struct<any, any>;
+  encrypted: boolean;
+  schema: SchemaObject;
   indexes: string[];
   aggregate: {
     [key: string]:
@@ -32,24 +38,38 @@ export type TableDefinition = {
 
 export type TableBlock<T extends TableRow = TableRow> = {
   prevCID?: string;
-  rows: T[];
-  indexes: Record<string, Record<string, string[]>>;
+  fromIndex: number;
+  toIndex: number;
+  records: Record<number, T>;
+  indexes: Record<string, Record<string, number[]>>;
   aggregates: Record<string, number | string | string[] | [number, number]>;
   search?: Minisearch;
   index?: AsPlainObject;
 };
 
-export class Table<T extends TableRow = TableRow> {
+export type TableEvents = {
+  "/table/loaded": undefined;
+};
+
+export class Table<
+  T extends TableRow = TableRow
+> extends Emittery<TableEvents> {
+  currentIndex: number = 0;
   currentBlock: TableBlock;
+  encrypted: boolean;
 
   constructor(private def: TableDefinition, private dag: DIDDagInterface) {
+    super();
+    this.encrypted = def.encrypted;
     this.currentBlock = this.createBlock();
   }
 
   createBlock(prevCID: string | undefined = this.currentBlock?.prevCID) {
     return {
       prevCID,
-      rows: [],
+      fromIndex: this.currentIndex,
+      toIndex: this.currentIndex + this.def.rollup,
+      records: {},
       indexes: {},
       aggregates: {},
       search: new Minisearch(this.def.searchOptions),
@@ -58,35 +78,39 @@ export class Table<T extends TableRow = TableRow> {
 
   async insert(data: T) {
     this.assertValid(data);
-    const rowCID = await this.dag.store(data);
+    const rowCID = this.encrypted
+      ? await this.dag.storeEncrypted(data)
+      : await this.dag.store(data);
     if (!rowCID) {
       throw new Error("Failed to store row");
     }
-    data.id = rowCID.toString();
-    this.currentBlock.rows.push(data);
+    data.id = this.currentIndex++;
+    this.currentBlock.records[data.id] = data;
     this.def.indexes.forEach((index) => {
       if (!this.currentBlock.indexes[index]) {
         this.currentBlock.indexes[index] = {};
       }
       const value = data[index] as string;
       if (!this.currentBlock.indexes[index][value]) {
-        this.currentBlock.indexes[index][value] = [rowCID.toString()];
+        this.currentBlock.indexes[index][value] = [data.id as number];
       } else {
-        this.currentBlock.indexes[index][value].push(rowCID.toString());
+        this.currentBlock.indexes[index][value].push(data.id as number);
       }
     });
     this.currentBlock.search?.add(data);
-    if (this.currentBlock.rows.length >= this.def.rollup) {
+    if (this.currentIndex - this.currentBlock.fromIndex >= this.def.rollup) {
       await this.rollup();
     }
   }
 
   async search(query: string, limit = 10) {
-    let results: SearchResult[] = this.currentBlock.search?.search(query) || [];
+    let results: T[] = [];
     await this.unwind(async (block) => {
       const searchResults = block.search?.search(query);
-      if (searchResults) {
-        results = results.concat(searchResults);
+      const searchIds = [...new Set(searchResults?.map((r) => r.id) || [])];
+      const records: T[] = searchIds.map((id) => block.records[id] as T);
+      if (records) {
+        results = results.concat(records);
       }
       return results.length < limit;
     });
@@ -94,61 +118,149 @@ export class Table<T extends TableRow = TableRow> {
   }
 
   async rollup() {
-    this.currentBlock.aggregates = {};
+    this.currentBlock = this.updateBlockAggregates(this.currentBlock);
+    this.currentBlock.index = this.currentBlock.search?.toJSON();
+    this.currentBlock.toIndex = this.currentIndex;
+    delete this.currentBlock.search;
+    if (!this.currentBlock.prevCID) {
+      // can't save undefined
+      delete this.currentBlock.prevCID;
+    }
+    const blockCID = this.encrypted
+      ? await this.dag.storeEncrypted(this.currentBlock)
+      : await this.dag.store(this.currentBlock);
+    console.info("Saved block", blockCID);
+    this.currentBlock = this.createBlock(blockCID?.toString());
+  }
+
+  updateBlockAggregates(block: TableBlock) {
+    block.aggregates = {};
+    const records = Object.values(block.records);
     Object.entries(this.def.aggregate).forEach(([key, type]) => {
       if (type === "sum") {
-        this.currentBlock.aggregates[key] = this.currentBlock.rows.reduce(
+        block.aggregates[key] = records.reduce(
           (acc, row) => acc + (row[key] as number),
           0
         );
       } else if (type === "count") {
-        this.currentBlock.aggregates[key] = this.currentBlock.rows.length;
+        block.aggregates[key] = records.reduce(
+          (acc, row) => acc + (row[key] ? 1 : 0),
+          0
+        );
       } else if (type === "avg") {
-        this.currentBlock.aggregates[key] = this.currentBlock.rows.reduce(
+        block.aggregates[key] = records.reduce(
           (acc, row) => acc + (row[key] as number),
           0
         );
       } else if (type === "min") {
-        this.currentBlock.aggregates[key] = Math.min(
-          ...this.currentBlock.rows.map((row) => row[key] as number)
+        block.aggregates[key] = Math.min(
+          ...records.map((row) => row[key] as number)
         );
       } else if (type === "max") {
-        this.currentBlock.aggregates[key] = Math.max(
-          ...this.currentBlock.rows.map((row) => row[key] as number)
+        block.aggregates[key] = Math.max(
+          ...records.map((row) => row[key] as number)
         );
       } else if (type === "distinct") {
-        this.currentBlock.aggregates[key] = [
-          ...new Set(this.currentBlock.rows.map((row) => row[key] as string)),
+        block.aggregates[key] = [
+          ...new Set(records.map((row) => row[key] as string)),
         ];
       } else if (type === "range") {
-        this.currentBlock.aggregates[key] = [
-          Math.min(...this.currentBlock.rows.map((row) => row[key] as number)),
-          Math.max(...this.currentBlock.rows.map((row) => row[key] as number)),
+        block.aggregates[key] = [
+          Math.min(...records.map((row) => row[key] as number)),
+          Math.max(...records.map((row) => row[key] as number)),
         ];
       }
     });
-
-    this.currentBlock.index = this.currentBlock.search?.toJSON();
-    delete this.currentBlock.search;
-    const blockCID = await this.dag.store(this.currentBlock);
-    this.currentBlock = this.createBlock(blockCID?.toString());
+    return block;
   }
 
   async save() {
-    if (this.currentBlock.rows.length > 0) {
+    console.info("saving table", this.currentBlock);
+    if (Object.values(this.currentBlock.records).length > 0) {
+      console.info("rolling up table");
       await this.rollup();
     }
     return this.currentBlock.prevCID;
   }
 
-  async upsert(index: string, value: string, data: Partial<T>) {
-    const existing = await this.findByIndex(index, value);
-    if (existing) {
+  async update(id: number, data: Partial<T>) {
+    // we want to seek backwards from the current block
+    // to find the block containing the row with the given id
+    // we then want to update the row in that block
+    // and then re-write that block and all subsequent blocks
+    // to update the indexes, aggregates, and CID references
+    // we also want to update the search index
+
+    let blocksUnwound: string[] = [];
+    let rewriteBlock: TableBlock | undefined = undefined;
+
+    await this.unwind(async (block) => {
+      // if the block contains the row we want to update
+      const row = block.records[id];
+      let newRow = { ...row, ...data };
+      if (row) {
+        block.records[id] = { ...block.records[id], ...data };
+        // update the indexes
+        this.def.indexes.forEach((index) => {
+          // if the index has changed
+          if (data[index] && data[index] !== row[index]) {
+            // remove the row from the old index
+            block.indexes[index][row[index] as string] = block.indexes[index][
+              row[index] as string
+            ].filter((rowID) => rowID !== id);
+            // add the row to the new index
+            if (!block.indexes[index][data[index] as string]) {
+              block.indexes[index][data[index] as string] = [id];
+            } else {
+              block.indexes[index][data[index] as string].push(id);
+            }
+          }
+        });
+        // update the aggregates
+        block = this.updateBlockAggregates(block);
+        // update the search index
+        block.search?.removeAll();
+        block.search?.addAll(Object.values(block.records));
+        // update the CID reference
+        rewriteBlock = block;
+        return false;
+      } else {
+        const cid = CID.create(
+          1,
+          json.code,
+          await sha256.digest(json.encode(data))
+        );
+        blocksUnwound.push(cid.toString());
+      }
+      return true;
+    });
+
+    // rewrite the blocks
+    if (rewriteBlock) {
+      let prevCID = this.encrypted
+        ? await this.dag.storeEncrypted(rewriteBlock)
+        : await this.dag.store(rewriteBlock);
+      for (const cid of blocksUnwound) {
+        console.info("loading block", cid);
+        const block = this.encrypted
+          ? await this.dag.loadDecrypted<TableBlock>(cid)
+          : await this.dag.load<TableBlock>(cid);
+        if (block) {
+          block.prevCID = prevCID?.toString();
+          prevCID = this.encrypted
+            ? await this.dag.storeEncrypted(block)
+            : await this.dag.store(block);
+        }
+      }
     }
+
+    return rewriteBlock;
   }
 
   async load(cid: CID | string) {
-    const block = await this.dag.load<TableBlock>(cid);
+    const block = this.encrypted
+      ? await this.dag.loadDecrypted<TableBlock>(cid)
+      : await this.dag.load<TableBlock>(cid);
     if (block) {
       this.currentBlock = block;
       this.currentBlock.search = this.currentBlock.index
@@ -157,10 +269,13 @@ export class Table<T extends TableRow = TableRow> {
             this.def.searchOptions
           )
         : new Minisearch(this.def.searchOptions);
-      this.currentBlock = this.createBlock();
+      this.currentIndex = block.toIndex;
+      // this.currentBlock = this.createBlock(cid.toString());
+      console.info("table loaded", this.currentBlock);
     } else {
       this.currentBlock = this.createBlock();
     }
+    this.emit("/table/loaded");
   }
 
   async unwind(test: (block: TableBlock) => Promise<boolean>) {
@@ -169,7 +284,9 @@ export class Table<T extends TableRow = TableRow> {
     while (!prevented && block) {
       prevented = !(await test(block));
       block = block.prevCID
-        ? await this.dag.load<TableBlock>(block.prevCID)
+        ? this.encrypted
+          ? await this.dag.loadDecrypted<TableBlock>(block.prevCID)
+          : await this.dag.load<TableBlock>(block.prevCID)
         : undefined;
     }
   }
@@ -178,8 +295,8 @@ export class Table<T extends TableRow = TableRow> {
     let result: T | undefined;
     await this.unwind(async (block) => {
       if (block.indexes[index]?.[value]) {
-        for (let rowCID of block.indexes[index][value]) {
-          result = await this.dag.load<T>(rowCID);
+        for (let rowID of block.indexes[index][value]) {
+          result = block.records[rowID] as T;
           if (result) {
             return false;
           }
@@ -190,11 +307,56 @@ export class Table<T extends TableRow = TableRow> {
     return result;
   }
 
+  async where(match: (row: T) => boolean) {
+    const results: T[] = [];
+    await this.unwind(async (block) => {
+      for (let row of Object.values(block.records)) {
+        if (match(row as T)) {
+          results.push(row as T);
+        }
+      }
+      return true;
+    });
+    return results;
+  }
+
+  async find(match: (row: T) => boolean) {
+    let result: T | undefined;
+    await this.unwind(async (block) => {
+      for (let row of Object.values(block.records)) {
+        if (match(row as T)) {
+          result = row as T;
+          return false;
+        }
+      }
+      return true;
+    });
+    return result;
+  }
+
+  async upsert(index: string, value: string | number, data: T) {
+    const existing = await this.findByIndex(index, value as string);
+    if (existing?.id) {
+      return this.update(existing.id, data);
+    } else {
+      return this.insert(data);
+    }
+  }
+
   assertValid(data: T) {
-    assert(data, this.def.schema);
+    const validate = ajv.compile(this.def.schema);
+    const valid = validate(data);
+    if (!valid) {
+      throw new Error(
+        `Invalid data: ${validate.errors?.map(
+          (e) => `(${e.instancePath}: ${e.message})`
+        )}`
+      );
+    }
   }
 
   isValid(data: T) {
-    return is(data, this.def.schema);
+    const validate = ajv.compile(this.def.schema);
+    return validate(data);
   }
 }

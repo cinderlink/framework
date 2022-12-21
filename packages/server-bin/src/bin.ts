@@ -96,7 +96,7 @@ if (!config.seed) {
           }
         }
         const Plugin = await import(pathname);
-        return [Plugin.default.default, options];
+        return [Plugin.default, options];
       }
     )
   );

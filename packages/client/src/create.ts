@@ -1,7 +1,7 @@
-import { PluginEventDef } from "plugin/types";
 import { Options } from "ipfs-core";
 import * as json from "multiformats/codecs/json";
 import { sha256 } from "multiformats/hashes/sha2";
+import { PluginEventDef } from "./plugin/types";
 import { CryptidsClient } from "./client";
 import { createDID } from "./did/create";
 import { createIPFS } from "./ipfs/create";

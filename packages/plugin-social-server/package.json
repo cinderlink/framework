@@ -3,12 +3,13 @@
   "description": "Social server plugin for cryptids enabling following and unfollowing of other cryptids & posting of messages to the social network",
   "authors": "Drew <drew@cryptids.xyz>",
   "version": "1.0.0-rc.1",
+  "type": "module",
   "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.mjs",
+      "import": "./dist/index.js",
       "require": "./dist/index.cjs",
       "types": "./dist/index.d.ts"
     }

@@ -37,7 +37,9 @@ export class Identity {
   }
 
   async resolveLocal() {
-    const cid = await localforage.getItem<string>("rootCID");
+    const cid = await localforage
+      .getItem<string>("rootCID")
+      .catch(() => undefined);
     if (!cid) {
       return { cid: undefined, document: undefined };
     }
@@ -55,11 +57,23 @@ export class Identity {
       };
     }
 
-    for await (const cid of this.client.ipfs.name.resolve(this.client.peerId)) {
-      const document = await this.client.dag.loadDecrypted<
-        { updatedAt: number } & Record<string, unknown>
-      >(CID.parse(cid));
-      return { cid, document };
+    try {
+      for await (const link of this.client.ipfs.name.resolve(
+        this.client.peerId
+      )) {
+        const cid = link.split("/").pop();
+        console.info("IPNS resolve", { link, cid });
+        if (cid) {
+          const document = await this.client.dag.loadDecrypted<
+            { updatedAt: number } & Record<string, unknown>
+          >(CID.parse(cid));
+          if (document) {
+            return { cid, document };
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("IPNS resolve failed", err);
     }
 
     return {
@@ -83,8 +97,17 @@ export class Identity {
           }
         }
       );
-      this.client.send("/identity/resolve/request", {
-        requestID,
+      const servers = this.client.peers.getServers();
+      if (!servers.length) {
+        clearTimeout(_timeout);
+        resolve(undefined);
+        return;
+      }
+      servers.forEach((server) => {
+        this.client.send(server.did, {
+          topic: "/identity/resolve/request",
+          requestID,
+        });
       });
     });
     const document = cid
@@ -98,7 +121,7 @@ export class Identity {
   async save({ cid, document }: { cid: string; document: any }) {
     this.cid = cid;
     this.document = document;
-    await localforage.setItem("rootCID", cid);
+    await localforage.setItem("rootCID", cid).catch(() => {});
     await this.client.ipfs.name.publish(cid);
     await Promise.all(
       this.client.peers.getServers().map(async (server) => {

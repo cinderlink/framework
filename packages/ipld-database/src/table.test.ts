@@ -1,19 +1,22 @@
 import { TestDIDDag } from "@cryptids/dag-interface";
 import { createCryptidsSeed, createDID } from "@cryptids/client";
 import type { DID } from "dids";
-import { number, object, string } from "superstruct";
 import { describe, it, expect, beforeEach } from "vitest";
 import { TableDefinition, Table, TableBlock } from "./table";
 
 const validDefinition: TableDefinition = {
+  encrypted: false,
   indexes: ["name", "id"],
   aggregate: {
     count: "max",
   },
-  schema: object({
-    name: string(),
-    count: number(),
-  }),
+  schema: {
+    type: "object",
+    properties: {
+      name: { type: "string" },
+      count: { type: "number" },
+    },
+  },
   searchOptions: {
     fields: ["name", "id"],
   },
@@ -35,9 +38,10 @@ describe("@ipld-database/table", () => {
     expect(table.currentBlock).toMatchInlineSnapshot(`
       {
         "aggregates": {},
+        "fromIndex": 0,
         "indexes": {},
         "prevCID": undefined,
-        "rows": [],
+        "records": {},
         "search": {
           "averageFieldLength": [],
           "dirtCount": 0,
@@ -53,6 +57,7 @@ describe("@ipld-database/table", () => {
           "serializationVersion": 2,
           "storedFields": {},
         },
+        "toIndex": 10,
       }
     `);
   });
@@ -67,7 +72,7 @@ describe("@ipld-database/table", () => {
   it("should insert records", async () => {
     const table = new Table(validDefinition, dag);
     await table.insert({ name: "foo", count: 1 });
-    expect(table.currentBlock.rows.length).toBe(1);
+    expect(Object.values(table.currentBlock.records).length).toBe(1);
   });
 
   it("should index records", async () => {
@@ -76,13 +81,13 @@ describe("@ipld-database/table", () => {
     expect(table.currentBlock.indexes).toMatchInlineSnapshot(`
       {
         "id": {
-          "bagaaiera56hpvdlw4yxtgt5ld3khq42l7tz2ejqjrmnnrxccvpuztg34762a": [
-            "bagaaiera56hpvdlw4yxtgt5ld3khq42l7tz2ejqjrmnnrxccvpuztg34762a",
+          "0": [
+            0,
           ],
         },
         "name": {
           "foo": [
-            "bagaaiera56hpvdlw4yxtgt5ld3khq42l7tz2ejqjrmnnrxccvpuztg34762a",
+            0,
           ],
         },
       }
@@ -96,28 +101,9 @@ describe("@ipld-database/table", () => {
     expect(results).toMatchInlineSnapshot(`
       [
         {
-          "id": "bagaaiera56hpvdlw4yxtgt5ld3khq42l7tz2ejqjrmnnrxccvpuztg34762a",
-          "match": {
-            "foo": [
-              "name",
-            ],
-          },
-          "score": 0.4315231086776713,
-          "terms": [
-            "foo",
-          ],
-        },
-        {
-          "id": "bagaaiera56hpvdlw4yxtgt5ld3khq42l7tz2ejqjrmnnrxccvpuztg34762a",
-          "match": {
-            "foo": [
-              "name",
-            ],
-          },
-          "score": 0.4315231086776713,
-          "terms": [
-            "foo",
-          ],
+          "count": 1,
+          "id": 0,
+          "name": "foo",
         },
       ]
     `);
@@ -128,7 +114,7 @@ describe("@ipld-database/table", () => {
     for (let i = 0; i < 11; i++) {
       await table.insert({ name: `test #${i}`, count: i });
     }
-    expect(table.currentBlock.rows.length).toBe(1);
+    expect(Object.values(table.currentBlock.records).length).toBe(1);
     expect(table.currentBlock.prevCID).not.toBeUndefined();
   });
 
@@ -158,67 +144,67 @@ describe("@ipld-database/table", () => {
     expect(prevBlock.indexes).toMatchInlineSnapshot(`
       {
         "id": {
-          "bagaaiera2nem4drd6zrus2m2ybmiotvwhtzqtp447nofh4zrcst7hx6uyowq": [
-            "bagaaiera2nem4drd6zrus2m2ybmiotvwhtzqtp447nofh4zrcst7hx6uyowq",
+          "0": [
+            0,
           ],
-          "bagaaiera5vbpo3bzt5howcvkrqhept5usdkwxesu2pbqkwonsfplkt54nqjq": [
-            "bagaaiera5vbpo3bzt5howcvkrqhept5usdkwxesu2pbqkwonsfplkt54nqjq",
+          "1": [
+            1,
           ],
-          "bagaaiera7iwbjpsa2othzm2jb57j35uarx7sl3msqvph2x3ljz45mno62dja": [
-            "bagaaiera7iwbjpsa2othzm2jb57j35uarx7sl3msqvph2x3ljz45mno62dja",
+          "2": [
+            2,
           ],
-          "bagaaierabknev2itqla37ldh52uhf62drbh6oqkkj73y4utn7sd56gfwavqa": [
-            "bagaaierabknev2itqla37ldh52uhf62drbh6oqkkj73y4utn7sd56gfwavqa",
+          "3": [
+            3,
           ],
-          "bagaaieracbljfcnnfnhigxwsskz5hulujm54rhqjnjusnb66v2xcxsb3igva": [
-            "bagaaieracbljfcnnfnhigxwsskz5hulujm54rhqjnjusnb66v2xcxsb3igva",
+          "4": [
+            4,
           ],
-          "bagaaierafr3lzqnmxsxgpsvvacsvr2ii7hmzust44dhba25loc2xpqbo2ima": [
-            "bagaaierafr3lzqnmxsxgpsvvacsvr2ii7hmzust44dhba25loc2xpqbo2ima",
+          "5": [
+            5,
           ],
-          "bagaaierafxnlovfwm5oieru7nksmraadslns36mtkjcoxhox3l2rwxqj7tpq": [
-            "bagaaierafxnlovfwm5oieru7nksmraadslns36mtkjcoxhox3l2rwxqj7tpq",
+          "6": [
+            6,
           ],
-          "bagaaierajhb4rpktu2xyajjxwzre3ohgs2lifvsy3jqzyz3m4nvuptozejgq": [
-            "bagaaierajhb4rpktu2xyajjxwzre3ohgs2lifvsy3jqzyz3m4nvuptozejgq",
+          "7": [
+            7,
           ],
-          "bagaaierajr7muh6w6r7fohpfxfortahlgehjpccukajhyov5he3taxsum5dq": [
-            "bagaaierajr7muh6w6r7fohpfxfortahlgehjpccukajhyov5he3taxsum5dq",
+          "8": [
+            8,
           ],
-          "bagaaierawvqlwvvm4lozaegudl57zgjpvesfd5rpot5onpgsy7bh3rorvy5a": [
-            "bagaaierawvqlwvvm4lozaegudl57zgjpvesfd5rpot5onpgsy7bh3rorvy5a",
+          "9": [
+            9,
           ],
         },
         "name": {
           "test #0": [
-            "bagaaieracbljfcnnfnhigxwsskz5hulujm54rhqjnjusnb66v2xcxsb3igva",
+            0,
           ],
           "test #1": [
-            "bagaaierajhb4rpktu2xyajjxwzre3ohgs2lifvsy3jqzyz3m4nvuptozejgq",
+            1,
           ],
           "test #2": [
-            "bagaaierabknev2itqla37ldh52uhf62drbh6oqkkj73y4utn7sd56gfwavqa",
+            2,
           ],
           "test #3": [
-            "bagaaiera7iwbjpsa2othzm2jb57j35uarx7sl3msqvph2x3ljz45mno62dja",
+            3,
           ],
           "test #4": [
-            "bagaaiera5vbpo3bzt5howcvkrqhept5usdkwxesu2pbqkwonsfplkt54nqjq",
+            4,
           ],
           "test #5": [
-            "bagaaiera2nem4drd6zrus2m2ybmiotvwhtzqtp447nofh4zrcst7hx6uyowq",
+            5,
           ],
           "test #6": [
-            "bagaaierawvqlwvvm4lozaegudl57zgjpvesfd5rpot5onpgsy7bh3rorvy5a",
+            6,
           ],
           "test #7": [
-            "bagaaierajr7muh6w6r7fohpfxfortahlgehjpccukajhyov5he3taxsum5dq",
+            7,
           ],
           "test #8": [
-            "bagaaierafxnlovfwm5oieru7nksmraadslns36mtkjcoxhox3l2rwxqj7tpq",
+            8,
           ],
           "test #9": [
-            "bagaaierafr3lzqnmxsxgpsvvacsvr2ii7hmzust44dhba25loc2xpqbo2ima",
+            9,
           ],
         },
       }
@@ -249,28 +235,9 @@ describe("@ipld-database/table", () => {
     expect(results).toMatchInlineSnapshot(`
       [
         {
-          "id": "bagaaiera4gansrre3n3wwqampgxrl2xsjhnpyhkwhtypwn3wq6q4fdrrynja",
-          "match": {
-            "test": [
-              "name",
-            ],
-          },
-          "score": 0.4315231086776713,
-          "terms": [
-            "test",
-          ],
-        },
-        {
-          "id": "bagaaiera4gansrre3n3wwqampgxrl2xsjhnpyhkwhtypwn3wq6q4fdrrynja",
-          "match": {
-            "test": [
-              "name",
-            ],
-          },
-          "score": 0.4315231086776713,
-          "terms": [
-            "test",
-          ],
+          "count": 10,
+          "id": 10,
+          "name": "test #10",
         },
       ]
     `);
@@ -285,8 +252,62 @@ describe("@ipld-database/table", () => {
     expect(result).toMatchInlineSnapshot(`
       {
         "count": 3,
-        "id": "bagaaiera7iwbjpsa2othzm2jb57j35uarx7sl3msqvph2x3ljz45mno62dja",
+        "id": 3,
         "name": "test #3",
+      }
+    `);
+  });
+
+  it("should rewrite previous blocks to execute an update operation", async () => {
+    const table = new Table(validDefinition, dag);
+    for (let i = 0; i < 11; i++) {
+      await table.insert({ name: `test #${i}`, count: i });
+    }
+    const result = await table.findByIndex("name", "test #3");
+    expect(result).toMatchInlineSnapshot(`
+      {
+        "count": 3,
+        "id": 3,
+        "name": "test #3",
+      }
+    `);
+    if (result?.id) {
+      await table.update(result.id, { name: "test three", count: 1337 });
+    }
+
+    const updated = await table.findByIndex("name", "test three");
+    expect(updated).toMatchInlineSnapshot(`
+      {
+        "count": 1337,
+        "id": 3,
+        "name": "test three",
+      }
+    `);
+  });
+
+  it("should upsert records", async () => {
+    const table = new Table(validDefinition, dag);
+    for (let i = 0; i < 11; i++) {
+      await table.insert({ name: `test #${i}`, count: i });
+    }
+    const result = await table.findByIndex("name", "test #3");
+    expect(result).toMatchInlineSnapshot(`
+      {
+        "count": 3,
+        "id": 3,
+        "name": "test #3",
+      }
+    `);
+    if (result?.id) {
+      await table.upsert("id", result.id, { name: "test three", count: 1337 });
+    }
+
+    const updated = await table.findByIndex("name", "test three");
+    expect(updated).toMatchInlineSnapshot(`
+      {
+        "count": 1337,
+        "id": 3,
+        "name": "test three",
       }
     `);
   });

@@ -1,22 +1,31 @@
 import type { DAGInterface } from "@cryptids/dag-interface";
 import { DIDDag } from "@cryptids/dag-interface";
-import CryptidsClient from "client";
+import * as json from "multiformats/codecs/json";
+import CryptidsClient from "./client";
 import { CID } from "multiformats";
 
 export class ClientDag implements DAGInterface {
   constructor(private client: CryptidsClient) {}
 
-  async store<T>(data: T): Promise<CID> {
-    const cid = await this.client.ipfs.dag.put(data, {
-      inputCodec: "dag-cbor",
-      hashAlg: "sha2-256",
+  async store<T>(
+    data: T,
+    inputCodec = "dag-json",
+    hashAlg = "sha2-256"
+  ): Promise<CID> {
+    const encoded = json.encode(data);
+    const cid = await this.client.ipfs.dag.put(encoded, {
+      inputCodec,
+      hashAlg,
+      pin: true,
     });
     return cid;
   }
 
-  async load<T>(cid: CID): Promise<T> {
-    const result = await this.client.ipfs.dag.get(cid);
-    return result as T;
+  async load<T>(cid: CID | string): Promise<T> {
+    const stored = await this.client.ipfs.dag.get(
+      typeof cid === "string" ? CID.parse(cid) : cid
+    );
+    return stored.value as T;
   }
 }
 
