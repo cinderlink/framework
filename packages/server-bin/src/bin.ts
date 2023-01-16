@@ -4,7 +4,7 @@ import path from "path";
 import crypto from "crypto";
 import chalk from "chalk";
 import { createServer } from "@candor/server";
-import { createSeed } from "@candor/client/hash";
+import { createSeed } from "@candor/client/dist/hash";
 import { HttpApi } from "ipfs-http-server";
 import { HttpGateway } from "ipfs-http-gateway";
 

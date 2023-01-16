@@ -12,8 +12,8 @@
     "registry-contracts/"
   ],
   "scripts": {
-    "watch": "pnpm --parallel --stream -r watch",
-    "build": "pnpm --parallel --stream -r build",
+    "watch": "pnpm --parallel --stream --filter=!./frontend --filter=!./registry-frontend -r watch",
+    "build": "pnpm --workspace-concurrency=1 --filter=!./frontend --filter=!./registry-frontend -r build",
     "test": "pnpm --parallel --stream -r test"
   },
   "keywords": [],

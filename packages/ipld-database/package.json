@@ -15,7 +15,7 @@
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts --format cjs,esm --dts --clean --external dids,multiformats",
+    "build": "tsup src/index.ts --format cjs,esm --dts  --external dids,multiformats",
     "watch": "pnpm build --watch",
     "test": "vitest"
   },

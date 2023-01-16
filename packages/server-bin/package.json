@@ -18,7 +18,7 @@
     "candor": "dist/bin.js"
   },
   "scripts": {
-    "build": "tsup src/bin.ts --format cjs,esm --dts --clean",
+    "build": "tsup src/bin.ts --format cjs,esm --dts ",
     "watch": "pnpm build --watch",
     "test": "vitest"
   },
