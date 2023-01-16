@@ -1,7 +1,7 @@
 {
-  "name": "@cryptids/plugin-identity-server",
-  "description": "Identity server plugin for Cryptids",
-  "authors": "Drew <drew@cryptids.xyz>",
+  "name": "@candor/plugin-identity-server",
+  "description": "Identity server plugin for Candor",
+  "authors": "Drew <drew@cinderlink.com>",
   "version": "1.0.0-rc.1",
   "type": "module",
   "main": "./dist/index.js",
@@ -19,8 +19,9 @@
     "watch": "pnpm build --watch"
   },
   "dependencies": {
-    "@cryptids/client": "link:../client",
-    "@cryptids/ipld-database": "link:../ipld-database"
+    "@candor/client": "link:../client",
+    "@candor/core-types": "link:../core-types",
+    "@candor/ipld-database": "link:../ipld-database"
   },
   "devDependencies": {
     "tsup": "^6.5.0",

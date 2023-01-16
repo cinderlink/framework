@@ -1,21 +1,18 @@
 {
-  "name": "@cryptids/example-server",
+  "name": "@candor/example-server",
   "private": true,
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "example": "cryptids-server"
+    "example": "pnpm candor"
   },
   "devDependencies": {
-    "@cryptids/plugin-identity-server": "link:../../packages/plugin-identity-server",
-    "@cryptids/plugin-social-server": "workspace:../../packages/plugin-social-server",
-    "@cryptids/server-bin": "workspace:../../packages/server-bin"
+    "@candor/plugin-identity-server": "workspace:../../packages/plugin-identity-server",
+    "@candor/plugin-social-server": "workspace:../../packages/plugin-social-server",
+    "@candor/server-bin": "workspace:../../packages/server-bin"
   },
   "keywords": [],
   "author": "Drew Ewing",
-  "license": "ISC",
-  "dependencies": {
-    "multiformats": "^10.0.3"
-  }
+  "license": "ISC"
 }

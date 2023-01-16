@@ -1,4 +1,4 @@
-import type { PluginEventDef } from "@cryptids/client";
+import type { PluginEventDef } from "@candor/core-types";
 
 export type SocialConnectionMessage = {
   requestID: string;

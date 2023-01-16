@@ -1,10 +1,10 @@
 import type {
   PluginInterface,
-  CryptidsClient,
+  CandorClientInterface,
   PubsubMessage,
-} from "@cryptids/client";
+} from "@candor/core-types";
+import { Schema, TableRow } from "@candor/ipld-database";
 import { v4 as uuid } from "uuid";
-import { Schema } from "@cryptids/ipld-database";
 import { CID } from "multiformats";
 import {
   SocialAnnounceMessage,
@@ -29,6 +29,12 @@ export type SocialUser = {
   did: string;
 };
 
+export type SocialPost = {
+  cid: string;
+  did: string;
+  createdAt: number;
+};
+
 export class SocialClientPlugin implements PluginInterface<SocialClientEvents> {
   id = "socialClient";
   name = "guest";
@@ -36,7 +42,7 @@ export class SocialClientPlugin implements PluginInterface<SocialClientEvents> {
   interval: NodeJS.Timer | null = null;
 
   constructor(
-    public client: CryptidsClient<SocialClientEvents>,
+    public client: CandorClientInterface<SocialClientEvents>,
     public options: Record<string, unknown> = {}
   ) {}
 
@@ -131,14 +137,14 @@ export class SocialClientPlugin implements PluginInterface<SocialClientEvents> {
         }, 3000);
       }
     });
-    this.interval = setInterval(() => {
-      if (!hasConnected) return;
-      this.client.publish("/social/announce", {
-        requestID: uuid(),
-        name: this.name,
-        avatar: this.avatar,
-      });
-    }, Number(this.options.interval || 1000 * 15));
+    // this.interval = setInterval(() => {
+    //   if (!hasConnected) return;
+    //   this.client.publish("/social/announce", {
+    //     requestID: uuid(),
+    //     name: this.name,
+    //     avatar: this.avatar,
+    //   });
+    // }, Number(this.options.interval || 1000 * 15));
 
     await this.loadLocalUser();
   }
@@ -167,8 +173,8 @@ export class SocialClientPlugin implements PluginInterface<SocialClientEvents> {
     console.info("saving local user", this.name, this.avatar, this.client.id);
     await this.client
       .getSchema("social")
-      .getTable("users")
-      .upsert("did", this.client.id, {
+      ?.getTable("users")
+      ?.upsert("did", this.client.id, {
         name: this.name || "(guest)",
         avatar: this.avatar || "",
         did: this.client.id,
@@ -176,16 +182,16 @@ export class SocialClientPlugin implements PluginInterface<SocialClientEvents> {
 
     const user = await this.client
       .getSchema("social")
-      .getTable("users")
-      .findByIndex("did", this.client.id);
+      ?.getTable("users")
+      ?.findByIndex("did", this.client.id);
     console.info("saved local user", user);
   }
 
   async loadLocalUser() {
     const user = await this.client
       .getSchema("social")
-      .getTable("users")
-      .findByIndex("did", this.client.id);
+      ?.getTable("users")
+      ?.findByIndex("did", this.client.id);
     if (user?.name && user?.avatar) {
       this.name = user.name as string;
       this.avatar = user.avatar as string;
@@ -206,8 +212,8 @@ export class SocialClientPlugin implements PluginInterface<SocialClientEvents> {
   async onSocialConnection(message: PubsubMessage<SocialConnectionMessage>) {
     const connection = await this.client
       .getSchema("social")
-      .getTable<SocialConnectionRecord>("connections")
-      .find((connection: SocialConnectionRecord) => {
+      ?.getTable<SocialConnectionRecord>("connections")
+      ?.find((connection: SocialConnectionRecord) => {
         if (
           connection.to === message.data.to &&
           connection.from === message.peer.did
@@ -219,15 +225,15 @@ export class SocialClientPlugin implements PluginInterface<SocialClientEvents> {
     if (connection?.id) {
       await this.client
         .getSchema("social")
-        .getTable<SocialConnectionRecord>("connections")
-        .update(connection.id, {
+        ?.getTable<SocialConnectionRecord>("connections")
+        ?.update(connection.id, {
           follow: message.data.follow,
         });
     } else {
       await this.client
         .getSchema("social")
-        .getTable<SocialConnectionRecord>("connections")
-        .insert({
+        ?.getTable<SocialConnectionRecord>("connections")
+        ?.insert({
           from: message.peer.did,
           to: message.data.to,
           follow: message.data.follow,
@@ -239,8 +245,8 @@ export class SocialClientPlugin implements PluginInterface<SocialClientEvents> {
     console.info("social announce", message);
     await this.client
       .getSchema("social")
-      .getTable("users")
-      .upsert("did", message.peer.did, {
+      ?.getTable("users")
+      ?.upsert("did", message.peer.did, {
         name: message.data.name,
         avatar: message.data.avatar,
         did: message.peer.did,
@@ -253,8 +259,8 @@ export class SocialClientPlugin implements PluginInterface<SocialClientEvents> {
     if (!post) return;
     await this.client
       .getSchema("social")
-      .getTable("posts")
-      .upsert("cid", cid, {
+      ?.getTable("posts")
+      ?.upsert("cid", cid, {
         ...post,
         cid,
         did: message.peer.did,
@@ -267,8 +273,8 @@ export class SocialClientPlugin implements PluginInterface<SocialClientEvents> {
     // TODO: make sure this user is allowed to see this data
     const myPosts = await this.client
       .getSchema("social")
-      .getTable("posts")
-      .where((post) => {
+      ?.getTable<SocialPost>("posts")
+      ?.where((post) => {
         if (post.did === message.peer.did) {
           return true;
         }
@@ -277,7 +283,9 @@ export class SocialClientPlugin implements PluginInterface<SocialClientEvents> {
     await this.client.send(message.peer.did, {
       topic: "/social/updates/response",
       requestID: message.data.requestID,
-      updates: myPosts.map((post) => ({ cid: post.cid })),
+      updates: myPosts?.map((post) => ({
+        cid: post.cid,
+      })),
     });
   }
 

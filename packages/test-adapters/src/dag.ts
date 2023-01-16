@@ -1,8 +1,8 @@
 import { CID } from "multiformats/cid";
 import { sha256 } from "multiformats/hashes/sha2";
 import * as json from "multiformats/codecs/json";
-import { DAGInterface } from "../../core-types/src/dag/interface";
-import { DIDDag } from "../../core-types/src/dag/did-dag";
+import { DAGInterface } from "@candor/core-types/src/dag/interface";
+import { DIDDag } from "@candor/client/src/did/dag";
 import { DID } from "dids";
 
 export class TestDag implements DAGInterface {

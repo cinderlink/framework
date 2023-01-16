@@ -1,7 +1,7 @@
 {
-  "name": "@cryptids/plugin-social-client",
-  "description": "Social client plugin for cryptids enabling following and unfollowing of other cryptids & posting of messages to the social network",
-  "authors": "Drew <drew@cryptids.xyz>",
+  "name": "@candor/plugin-social-client",
+  "description": "Social client plugin for candor enabling following and unfollowing of other users & posting of messages to the social network",
+  "authors": "Drew <drew@cinderlink.com>",
   "version": "1.0.0-rc.1",
   "type": "module",
   "main": "./dist/index.js",
@@ -19,8 +19,8 @@
     "watch": "pnpm build --watch"
   },
   "devDependencies": {
-    "@cryptids/client": "workspace:../client",
-    "@cryptids/ipld-database": "workspace:../ipld-database",
+    "@candor/core-types": "workspace:../core-types",
+    "@candor/ipld-database": "workspace:../ipld-database",
     "@types/uuid": "^9.0.0",
     "did-jwt": "^6.11.0",
     "dids": "^3.4.0",

@@ -1,6 +1,10 @@
 import { Peer } from "../p2p";
 import { PluginEventPayloads } from "../plugin/types";
 
+export type PubsubCoreEvents = {
+  "/pubsub/subscribe": {};
+};
+
 export type PubsubMessage<Data = any, FromType = any> = {
   type: "signed" | "unsigned";
   from: FromType;

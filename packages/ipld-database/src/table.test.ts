@@ -1,5 +1,5 @@
-import { TestDIDDag } from "@cryptids/dag-interface";
-import { createCryptidsSeed, createDID } from "@cryptids/client";
+import { TestDIDDag } from "@candor/test-adapters";
+import { createSeed, createDID } from "@candor/client";
 import type { DID } from "dids";
 import { describe, it, expect, beforeEach } from "vitest";
 import { TableDefinition, Table, TableBlock } from "./table";
@@ -26,9 +26,9 @@ const validDefinition: TableDefinition = {
 let seed: Uint8Array;
 let dag: TestDIDDag;
 let did: DID;
-describe("@ipld-database/table", () => {
+describe("@candor/ipld-database/table", () => {
   beforeEach(async () => {
-    seed = await createCryptidsSeed("test seed");
+    seed = await createSeed("test seed");
     did = await createDID(seed);
     dag = new TestDIDDag(did);
   });

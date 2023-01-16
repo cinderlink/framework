@@ -1,9 +1,9 @@
-import { createCryptidsClient, createCryptidsSeed } from "../../dist/index.js";
+import { createClient, createSeed } from "../../dist/index.js";
 import { config } from "dotenv";
 config();
 
-const seed = await createCryptidsSeed("client b");
-const client = await createCryptidsClient(seed, []);
+const seed = await createSeed("client b");
+const client = await createClient(seed, []);
 await client.start();
 
 client.on("message", (message) => {

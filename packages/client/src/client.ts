@@ -1,60 +1,30 @@
+import type {
+  Peer,
+  PubsubMessage,
+  PubsubMessageEvents,
+  PluginInterface,
+  PluginEventDef,
+  CandorClientEvents,
+  CandorConstructorOptions,
+} from "@candor/core-types";
 import type { DID } from "dids";
 import Emittery from "emittery";
 import * as json from "multiformats/codecs/json";
-import { SavedSchema, Schema } from "@cryptids/ipld-database";
+import { SavedSchema, Schema } from "@candor/ipld-database";
 import { pipe } from "it-pipe";
 import * as lp from "it-length-prefixed";
 import map from "it-map";
 import { PeerId } from "@libp2p/interface-peer-id";
 import type { IPFSWithLibP2P } from "./ipfs/types";
-import { Peer, Peerstore } from "./peerstore";
-import type {
-  PluginInterface,
-  PluginEventDef,
-  PluginEventPayloads,
-} from "./plugin/types";
+import { Peerstore } from "./peerstore";
 import { ClientDIDDag } from "./dag";
 import { Identity } from "./identity";
 import { fromPeerId } from "./did/util";
 
-export type CryptidsConstructorOptions = {
-  ipfs: IPFSWithLibP2P;
-  did: DID;
-};
-
-export type PubsubMessage<Data = any> = {
-  type: "signed" | "unsigned";
-  from: PeerId;
-  peer: Peer;
-  sequenceNumber: number;
-  topic: string;
-  data: Data;
-  signature?: Uint8Array;
-};
-
-export type PubsubMessageEvents<
-  Payloads extends PluginEventPayloads = PluginEventPayloads
-> = {
-  [key in keyof Payloads]: PubsubMessage<Payloads[key]>;
-};
-
-export type ClientEvents = {
-  "/client/ready": undefined;
-  "/peer/connect": Peer;
-  "/peer/disconnect": Peer;
-  "/peer/handshake": Peer;
-  "/peer/message": {
-    type: string;
-    peer: Peer;
-    message: unknown;
-  };
-  "/pubsub/message": PubsubMessage;
-};
-
-export class CryptidsClient<
+export class CandorClient<
   PluginEvents extends PluginEventDef = PluginEventDef,
   EmitEvents extends PluginEvents["emit"] &
-    ClientEvents = PluginEvents["emit"] & ClientEvents
+    CandorClientEvents = PluginEvents["emit"] & CandorClientEvents
 > extends Emittery<EmitEvents> {
   public plugins: Record<PluginInterface["id"], PluginInterface<PluginEvents>>;
   public started = false;
@@ -72,9 +42,9 @@ export class CryptidsClient<
   public dag: ClientDIDDag;
   public schemas: Record<string, Schema> = {};
   public identity: Identity;
-  private p2pStreams: Record<string, any> = {};
+  public p2pStreams: Record<string, any> = {};
 
-  constructor({ ipfs, did }: CryptidsConstructorOptions) {
+  constructor({ ipfs, did }: CandorConstructorOptions) {
     super();
     this.ipfs = ipfs;
     this.did = did;
@@ -130,7 +100,7 @@ export class CryptidsClient<
     });
 
     // on peer message
-    this.ipfs.libp2p.handle("/cryptids/1.0.0", async ({ stream }) => {
+    this.ipfs.libp2p.handle("/candor/1.0.0", async ({ stream }) => {
       await this.streamToEmitter(stream);
     });
 
@@ -152,7 +122,7 @@ export class CryptidsClient<
   async connect(peerId: PeerId) {
     const did = fromPeerId(peerId);
     this.p2pStreams[did] = await this.ipfs.libp2p.dialProtocol(peerId, [
-      "/cryptids/1.0.0",
+      "/candor/1.0.0",
     ]);
     await this.ipfs.libp2p.dialProtocol(peerId, ["/floodsub/1.0.0"]);
     console.info("connected to peer", did);
@@ -200,7 +170,7 @@ export class CryptidsClient<
       })
     );
 
-    console.info("saving cryptids database");
+    console.info("saving candor database");
     await this.save();
 
     this.ipfs.stop();
@@ -310,4 +280,4 @@ export class CryptidsClient<
     await this.save();
   }
 }
-export default CryptidsClient;
+export default CandorClient;

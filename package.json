@@ -1,12 +1,13 @@
 {
-  "name": "scrypto",
+  "name": "@candor/core",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "workspaces": [
     "packages/*",
     "examples/*",
-    "frontend/"
+    "frontend/",
+    "ui-kit/"
   ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

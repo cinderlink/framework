@@ -1,4 +1,4 @@
-import { DIDDagInterface } from "@cryptids/dag-interface";
+import { DIDDagInterface } from "@candor/core-types";
 import Emittery from "emittery";
 import type { CID } from "multiformats";
 import { Table, TableDefinition, TableRow } from "./table";

@@ -1,11 +1,11 @@
-import type { DAGInterface } from "@cryptids/dag-interface";
-import { DIDDag } from "@cryptids/dag-interface";
+import type { DAGInterface } from "@candor/core-types";
+import { DIDDag } from "./did/dag";
 import * as json from "multiformats/codecs/json";
-import CryptidsClient from "./client";
+import CandorClient from "./client";
 import { CID } from "multiformats";
 
 export class ClientDag implements DAGInterface {
-  constructor(private client: CryptidsClient) {}
+  constructor(private client: CandorClient) {}
 
   async store<T>(
     data: T,
@@ -30,7 +30,7 @@ export class ClientDag implements DAGInterface {
 }
 
 export class ClientDIDDag extends DIDDag {
-  constructor(client: CryptidsClient<any>) {
+  constructor(client: CandorClient<any>) {
     super(client.did, new ClientDag(client));
   }
 }

@@ -1,5 +1,5 @@
 **/node_modules/
 **/dist/
-examples/*/cryptids
-packages/*/example/**/cryptids/
+examples/*/candor
+packages/*/example/**/candor/
 docker/data/**

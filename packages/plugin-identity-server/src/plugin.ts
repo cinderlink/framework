@@ -1,15 +1,12 @@
+import type { CandorClient } from "@candor/client";
 import type {
   PluginInterface,
-  CryptidsClient,
   PubsubMessage,
-  IdentityResolveResponse,
-} from "@cryptids/client";
-import { Schema } from "@cryptids/ipld-database";
-import {
   IdentityResolveRequest,
-  IdentityServerEvents,
-  IdentitySetRequest,
-} from "./types";
+  IdentityResolveResponse,
+} from "@candor/core-types";
+import { Schema } from "@candor/ipld-database";
+import { IdentityServerEvents, IdentitySetRequest } from "./types";
 
 export type IdentityPinsRecord = {
   id?: number;
@@ -24,7 +21,7 @@ export class IdentityServerPlugin
 {
   id = "identityServer";
   constructor(
-    public client: CryptidsClient<IdentityServerEvents>,
+    public client: CandorClient<IdentityServerEvents>,
     public options: Record<string, unknown> = {}
   ) {}
   async start() {

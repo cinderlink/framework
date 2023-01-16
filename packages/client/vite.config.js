@@ -7,8 +7,8 @@ export default defineConfig({
     outDir: path.resolve(__dirname, "dist/browser"),
     lib: {
       entry: path.resolve(__dirname, "src/index.ts"),
-      name: "@cryptids/client",
-      fileName: (format) => `cryptids.${format}.js`,
+      name: "@candor/client",
+      fileName: (format) => `candor.${format}.js`,
     },
   },
   // output .d.ts files

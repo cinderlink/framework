@@ -1,16 +1,8 @@
-import PluginInterface, { PluginEventDef } from "./plugin/types";
-import CryptidsClient from "./client";
+import type { PluginEventDef, PluginInterface } from "@candor/core-types";
+import type { CandorClient } from "./client";
 
-export type PluginConstructor<
-  PluginEvents extends PluginEventDef = PluginEventDef,
-  Options extends Record<string, unknown> = {}
-> = new (
-  client: CryptidsClient<PluginEvents>,
-  options?: Options
-) => PluginInterface;
-
-export type CryptidsWithPlugins<Plugins extends PluginInterface[] = []> =
-  CryptidsClient<PluginEventDef> & {
+export type CandorWithPlugins<Plugins extends PluginInterface[] = []> =
+  CandorClient<PluginEventDef> & {
     plugins: {
       [K in Plugins[number]["id"]]: Plugins[number];
     };

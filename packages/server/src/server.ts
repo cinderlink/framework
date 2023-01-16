@@ -1,7 +1,7 @@
-import { CryptidsClient } from "@cryptids/client";
+import { CandorClient } from "@candor/client";
 
-export class CryptidsServer {
-  constructor(private _client: CryptidsClient) {}
+export class CandorServer {
+  constructor(private _client: CandorClient) {}
 
   get client() {
     return this._client;
@@ -15,4 +15,4 @@ export class CryptidsServer {
     await this.client.stop();
   }
 }
-export default CryptidsServer;
+export default CandorServer;

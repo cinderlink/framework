@@ -1,9 +1,9 @@
-import { TestDIDDag } from "@cryptids/dag-interface";
+import { TestDIDDag } from "@candor/test-adapters";
 import type { DID } from "dids";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { Schema } from "./schema";
 import { TableDefinition } from "./table";
-import { createCryptidsSeed, createDID } from "@cryptids/client";
+import { createSeed, createDID } from "@candor/client";
 
 const tableDefinition: TableDefinition = {
   encrypted: false,
@@ -27,9 +27,9 @@ const tableDefinition: TableDefinition = {
 let did: DID;
 let dag: TestDIDDag;
 
-describe("@cryptids/ipld-database/schema", () => {
+describe("@candor/ipld-database/schema", () => {
   beforeAll(async () => {
-    const seed = await createCryptidsSeed("test seed");
+    const seed = await createSeed("test seed");
     did = await createDID(seed);
   });
 

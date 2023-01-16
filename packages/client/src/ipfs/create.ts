@@ -1,15 +1,12 @@
 import { create } from "ipfs-core";
 import type { Options } from "ipfs-core";
-import type { PeerId } from "@libp2p/interface-peer-id";
 import { webSockets } from "@libp2p/websockets";
 import { all } from "@libp2p/websockets/filters";
 import { noise } from "@chainsafe/libp2p-noise";
-import { base64 } from "multiformats/bases/base64";
 
 import { IPFSWithLibP2P } from "./types";
 
 export async function createIPFS(
-  peerId: PeerId,
   nodes: string[] = [],
   overrides: Partial<Options> = {}
 ): Promise<IPFSWithLibP2P> {
@@ -21,12 +18,11 @@ export async function createIPFS(
     init: {
       allowNew: true,
       emptyRepo: true,
-      // algorithm: "Ed25519",
-      // privateKey: peerId,
+      algorithm: "Ed25519",
     },
 
     start: false,
-    repo: "cryptids",
+    repo: "candor",
     repoAutoMigrate: false,
     EXPERIMENTAL: {
       ipnsPubsub: true,
@@ -34,7 +30,6 @@ export async function createIPFS(
     peerStoreCacheSize: 2048,
 
     libp2p: {
-      // peerId,
       connectionManager: {
         autoDial: false,
       },

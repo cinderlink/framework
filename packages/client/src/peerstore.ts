@@ -1,4 +1,4 @@
-import type { Peer } from "@cryptids/core-types";
+import type { Peer } from "@candor/core-types";
 import { PeerId } from "@libp2p/interface-peer-id";
 import { fromPeerId } from "./did/util";
 

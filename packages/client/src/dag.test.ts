@@ -1,12 +1,12 @@
 import { describe, beforeAll, it, expect, afterAll } from "vitest";
-import CryptidsClient from "./client";
-import { createCryptidsClient, createCryptidsSeed } from "./create";
+import CandorClient from "./client";
+import { createClient, createSeed } from "./create";
 
-let client: CryptidsClient;
-describe("@cryptids/client/dag", () => {
+let client: CandorClient;
+describe("@candor/client/dag", () => {
   beforeAll(async () => {
-    const seed = await createCryptidsSeed("test seed");
-    client = await createCryptidsClient(seed);
+    const seed = await createSeed("test seed");
+    client = await createClient(seed);
   });
 
   it("should store and load a document", async () => {

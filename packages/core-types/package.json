@@ -1,11 +1,45 @@
 {
-  "name": "@cryptids/core-types",
-  "description": "Core types for Cryptids",
-  "authors": "Drew <drew@cryptids.xyz>",
+  "name": "@candor/types",
+  "description": "Core types for @candor/client",
+  "authors": "Drew <drew@cinderlink.com>",
   "version": "1.0.0",
+  "type": "module",
   "main": "src/index.ts",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --dts",
+    "watch": "tsup src/index.ts --dts --watch",
+    "test": "vitest"
+  },
   "devDependencies": {
+    "@candor/ipld-database": "workspace:../ipld-database",
+    "@libp2p/interface-peer-id": "^1.1.2",
+    "did-jwt": "^6.11.0",
+    "dids": "^3.4.0",
     "emittery": "^1.0.1",
+    "ipfs-core-types": "^0.13.0",
+    "libp2p": "^0.41.0",
+    "multiformats": "^10.0.3",
+    "tsup": "^6.5.0",
+    "typescript": "^4.9.4",
+    "vitest": "^0.25.8"
+  },
+  "peerDependencies": {
+    "did-jwt": "^6.11.0",
+    "dids": "^3.4.0",
+    "emittery": "^1.0.1",
+    "ipfs-core-types": "^0.13.0",
+    "libp2p": "^0.41.0",
     "multiformats": "^10.0.3"
   }
 }

@@ -1,7 +1,7 @@
 {
-  "name": "@cryptids/client",
-  "description": "Typescript client for the Cryptids development toolkit",
-  "authors": "Drew Ewing <drew@cryptids.xyz>",
+  "name": "@candor/client",
+  "description": "Typescript client for the Cinderlink development toolkit",
+  "authors": "Drew Ewing <drew@cinderlink.com>",
   "version": "0.0.1-rc.1",
   "files": [
     "dist"
@@ -15,11 +15,16 @@
       "import": "./dist/index.js",
       "require": "./dist/index.cjs",
       "types": "./dist/index.d.ts"
+    },
+    "./*": {
+      "import": "./dist/*.js",
+      "require": "./dist/*.cjs",
+      "types": "./dist/*.d.ts"
     }
   },
   "scripts": {
-    "build": "rm -rf dist/ && tsup src/index.ts --format cjs,esm --dts",
-    "watch": "pnpm build --watch",
+    "build": "rm -rf dist/ && tsup",
+    "watch": "pnpm build --watch --",
     "watch:browser": "vite build --watch",
     "build:browser": "vite build",
     "preview": "vite preview",
@@ -59,8 +64,8 @@
     "libp2p": "^0.41.0"
   },
   "dependencies": {
-    "@cryptids/core-types": "link:../core-types",
-    "@cryptids/ipld-database": "workspace:../ipld-database",
+    "@candor/core-types": "link:../core-types",
+    "@candor/ipld-database": "workspace:../ipld-database",
     "ajv": "^8.11.2",
     "did-jwt": "^6.11.0",
     "did-resolver": "^4.0.1",

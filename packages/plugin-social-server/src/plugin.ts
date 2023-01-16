@@ -1,13 +1,13 @@
 import type {
   PluginInterface,
-  CryptidsClient,
+  CandorClientInterface,
   PubsubMessage,
-} from "@cryptids/client";
-import { SocialConnectionMessage } from "@cryptids/plugin-social-client";
+} from "@candor/core-types";
+import { SocialConnectionMessage } from "@candor/plugin-social-client";
 import {
   SocialAnnounceMessage,
   SocialClientEvents,
-} from "@cryptids/plugin-social-client";
+} from "@candor/plugin-social-client";
 
 export type SocialServerEvents = {
   publish: {};
@@ -20,7 +20,7 @@ export type SocialServerEvents = {
 export class SocialServerPlugin implements PluginInterface<SocialServerEvents> {
   id = "socialServer";
   constructor(
-    public client: CryptidsClient<SocialServerEvents>,
+    public client: CandorClientInterface<SocialServerEvents>,
     public options: Record<string, unknown> = {}
   ) {}
   async start() {

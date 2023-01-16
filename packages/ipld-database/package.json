@@ -1,7 +1,7 @@
 {
-  "name": "@cryptids/ipld-database",
-  "description": "IPLD database for Cryptids",
-  "authors": "Drew <drew@cryptids.xyz>",
+  "name": "@candor/ipld-database",
+  "description": "IPLD database for @candor/client",
+  "authors": "Drew <drew@cinderlink.com>",
   "version": "1.0.0-rc.1",
   "type": "module",
   "main": "./dist/index.js",
@@ -20,8 +20,8 @@
     "test": "vitest"
   },
   "devDependencies": {
-    "@cryptids/client": "workspace:../client",
-    "@cryptids/dag-interface": "workspace:../dag-interface",
+    "@candor/client": "workspace:../client",
+    "@candor/core-types": "workspace:../core-types",
     "@types/ajv": "^1.0.0",
     "dids": "^3.4.0",
     "multiformats": "^10.0.3",

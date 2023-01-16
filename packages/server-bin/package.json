@@ -1,7 +1,7 @@
 {
-  "name": "@cryptids/server-bin",
-  "description": "Cryptids server binary",
-  "authors": "Drew <drew@cryptids.xyz>",
+  "name": "@candor/server-bin",
+  "description": "Candor server binary",
+  "authors": "Drew <drew@cinderlink.com>",
   "version": "1.0.0-rc.1",
   "main": "dist/bin.js",
   "type": "module",
@@ -15,7 +15,7 @@
     }
   },
   "bin": {
-    "cryptids-server": "dist/bin.js"
+    "candor": "dist/bin.js"
   },
   "scripts": {
     "build": "tsup src/bin.ts --format cjs,esm --dts --clean",
@@ -23,8 +23,8 @@
     "test": "vitest"
   },
   "dependencies": {
-    "@cryptids/client": "workspace:../client",
-    "@cryptids/server": "workspace:../server",
+    "@candor/client": "workspace:../client",
+    "@candor/server": "workspace:../server",
     "ipfs-http-gateway": "^0.12.0",
     "ipfs-http-server": "^0.14.0",
     "minimist": "^1.2.7"

@@ -1,18 +1,15 @@
 import { v4 as uuid } from "uuid";
 import localforage from "localforage";
 import { CID } from "multiformats";
-import { CryptidsClient, PubsubMessage } from "./client";
-
-export type IdentityResolveResponse = {
-  requestID: string;
-  cid?: string;
-  doc?: Record<string, unknown>;
-};
-
+import { CandorClient } from "./client";
+import type {
+  PubsubMessage,
+  IdentityResolveResponse,
+} from "@candor/core-types";
 export class Identity {
   cid?: string;
   document?: any;
-  constructor(public client: CryptidsClient<any>) {}
+  constructor(public client: CandorClient<any>) {}
 
   async resolve() {
     let resolved = await this.resolveLocal();

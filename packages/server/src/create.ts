@@ -1,16 +1,17 @@
 import type { Options } from "ipfs-core";
-import { createCryptidsClient, PluginConstructor } from "@cryptids/client";
-import { CryptidsServer } from "./server";
+import type { PluginConstructor } from "@candor/core-types";
+import { createClient } from "@candor/client";
+import { CandorServer } from "./server";
 
-export async function createCryptidsServer(
+export async function createServer(
   seed: Uint8Array,
   plugins: [PluginConstructor, Record<string, unknown>][] = [],
   nodes: string[] = [],
   options: Partial<Options> = {}
 ) {
-  const client = await createCryptidsClient(seed, nodes, options);
+  const client = await createClient(seed, nodes, options);
   plugins.forEach(([Plugin, options]) => {
     client.addPlugin(new Plugin(client, options));
   });
-  return new CryptidsServer(client);
+  return new CandorServer(client);
 }

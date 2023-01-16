@@ -1,4 +1,4 @@
-import type { DIDDagInterface } from "@cryptids/dag-interface";
+import type { DIDDagInterface } from "@candor/core-types";
 import * as json from "multiformats/codecs/json";
 import { sha256 } from "multiformats/hashes/sha2";
 import { CID } from "multiformats/cid";
@@ -13,10 +13,10 @@ import Minisearch, {
   SearchResult,
 } from "minisearch";
 
-export type TableRow = {
+export type TableRow<Data extends Record<string, unknown> = {}> = {
   id?: number;
   [key: string]: unknown;
-};
+} & Data;
 
 export type TableDefinition = {
   encrypted: boolean;

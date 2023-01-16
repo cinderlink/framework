@@ -1,7 +1,7 @@
 {
-  "name": "@cryptids/test-adapters",
-  "description": "Test adapters for Cryptids",
-  "authors": "Drew <drew@cryptids.xyz>",
+  "name": "@candor/test-adapters",
+  "description": "Test adapters for Candor",
+  "authors": "Drew <drew@cinderlink.com>",
   "version": "1.0.0-rc.1",
   "main": "dist/index.js",
   "dependencies": {}

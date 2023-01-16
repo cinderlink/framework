@@ -1,9 +1,7 @@
-import type { IdentityResolveResponse } from "@cryptids/client";
-
-export type IdentityResolveRequest = {
-  requestID: string;
-  since: number;
-};
+import type {
+  IdentityResolveResponse,
+  IdentityResolveRequest,
+} from "@candor/core-types";
 
 export type IdentitySetRequest = {
   requestID: string;

@@ -1,7 +1,7 @@
 {
-  "name": "@cryptids/server",
-  "description": "Federated pinning server for Cryptids network",
-  "authors": "Drew Ewing <drew@cryptids.xyz>",
+  "name": "@candor/server",
+  "description": "Federated pinning & messaging server for Candor networks",
+  "authors": "Drew Ewing <drew@cinderlink.com>",
   "version": "1.0.0-rc.1",
   "type": "module",
   "main": "./dist/index.js",
@@ -19,9 +19,11 @@
     "watch": "pnpm build --watch"
   },
   "dependencies": {
-    "@cryptids/client": "workspace:../client"
+    "@candor/client": "workspace:../client"
   },
   "devDependencies": {
+    "@candor/client": "workspace:../client",
+    "@candor/core-types": "workspace:../core-types",
     "ipfs-core": "^0.17.0",
     "ipfs-core-types": "^0.13.0",
     "ipfs-http-gateway": "^0.12.0",

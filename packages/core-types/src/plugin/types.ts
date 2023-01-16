@@ -1,4 +1,4 @@
-import { CryptidsClientInterface } from "../client/interface";
+import { CandorClientInterface } from "../client/interface";
 import { PubsubMessage } from "../pubsub";
 
 export type PluginEventPayloads = Record<string, unknown>;
@@ -29,7 +29,7 @@ export interface PluginInterface<
   }
 > {
   id: string;
-  client: CryptidsClientInterface<Events>;
+  client: CandorClientInterface<Events>;
   start?(): Promise<void>;
   stop?(): Promise<void>;
   pubsub: {
@@ -47,3 +47,11 @@ export interface PluginInterface<
   };
 }
 export default PluginInterface;
+
+export type PluginConstructor<
+  PluginEvents extends PluginEventDef = PluginEventDef,
+  Options extends Record<string, unknown> = {}
+> = new (
+  client: CandorClientInterface<PluginEvents>,
+  options?: Options
+) => PluginInterface;

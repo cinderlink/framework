@@ -1,8 +1,8 @@
 {
   "seed": "6149b702ec3cb34951460e27c9e35a795941e466a6af90b288468016780f37bf",
   "plugins": [
-    ["@cryptids/plugin-social-server"],
-    ["@cryptids/plugin-identity-server"]
+    ["@candor/plugin-social-server"],
+    ["@candor/plugin-identity-server"]
   ],
   "ipfs": {
     "config": {

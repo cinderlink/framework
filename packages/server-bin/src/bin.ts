@@ -3,26 +3,26 @@ import fs from "fs";
 import path from "path";
 import crypto from "crypto";
 import chalk from "chalk";
-import { createCryptidsServer } from "@cryptids/server";
+import { createServer } from "@candor/server";
+import { createSeed } from "@candor/client";
 import { HttpApi } from "ipfs-http-server";
 import { HttpGateway } from "ipfs-http-gateway";
-import { createCryptidsSeed } from "@cryptids/client";
 
 const argv = minimist(process.argv.slice(2));
 const [command, ...args] = argv._;
-const configPath = argv.config || "./cryptids.config.json";
+const configPath = argv.config || "./candor.config.json";
 
 if (command === "help" || argv.help) {
-  console.log(`${chalk.yellow("usage")}: cryptids [command] [options]
+  console.log(`${chalk.yellow("usage")}: candor [command] [options]
 
 ${chalk.yellow("commands")}:
-  ${chalk.cyan("init")}    ${chalk.gray("initialize a new cryptids config")}
+  ${chalk.cyan("init")}    ${chalk.gray("initialize a new candor config")}
   ${chalk.cyan("help")}    ${chalk.gray("show this help message")}
-  ${chalk.cyan("start")}   ${chalk.gray("start a cryptids server")}
+  ${chalk.cyan("start")}   ${chalk.gray("start a candor server")}
 
 ${chalk.yellow("options")}:
   ${chalk.cyan("--config")} ${chalk.gray(
-    "path to config file (default: ./cryptids.config.json)"
+    "path to config file (default: ./candor.config.json)"
   )}
 `);
   process.exit(0);
@@ -30,7 +30,7 @@ ${chalk.yellow("options")}:
 
 if (command === "init") {
   console.log(
-    `initializing ${chalk.cyan("cryptids")} at ${chalk.yellow(configPath)}`
+    `initializing ${chalk.cyan("candor")} at ${chalk.yellow(configPath)}`
   );
   fs.writeFileSync(
     configPath,
@@ -38,8 +38,8 @@ if (command === "init") {
       {
         seed: crypto.randomBytes(32).toString("hex"),
         plugins: [
-          ["@cryptids/plugin-social-server"],
-          ["@cryptids/plugin-identity-server"],
+          ["@candor/plugin-social-server"],
+          ["@candor/plugin-identity-server"],
         ],
         ipfs: {
           config: {
@@ -101,14 +101,9 @@ if (!config.seed) {
     )
   );
 
-  console.log(`starting ${chalk.cyan("cryptids")}...`);
-  const seed = await createCryptidsSeed(config.seed);
-  const server = await createCryptidsServer(
-    seed,
-    plugins,
-    config.nodes,
-    config.ipfs
-  );
+  console.log(`starting ${chalk.cyan("candor")}...`);
+  const seed = await createSeed(config.seed);
+  const server = await createServer(seed, plugins, config.nodes, config.ipfs);
   await server.start();
 
   console.log(`starting ${chalk.cyan("http api")}...`);
@@ -127,7 +122,7 @@ if (!config.seed) {
     await gateway.stop();
     console.log(`stopping ${chalk.cyan("http api")}...`);
     await api.stop();
-    console.log(`stopping ${chalk.cyan("cryptids")}...`);
+    console.log(`stopping ${chalk.cyan("candor")}...`);
     await server.stop();
     process.exit(0);
   });
