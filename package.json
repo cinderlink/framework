@@ -12,7 +12,9 @@
     "registry-contracts/"
   ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "watch": "pnpm --parallel --stream -r watch",
+    "build": "pnpm --parallel --stream -r build",
+    "test": "pnpm --parallel --stream -r test"
   },
   "keywords": [],
   "author": "Drew Ewing",
