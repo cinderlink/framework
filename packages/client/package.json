@@ -64,7 +64,7 @@
     "libp2p": "^0.41.0"
   },
   "dependencies": {
-    "@candor/core-types": "link:../core-types",
+    "@candor/core-types": "workspace:../core-types",
     "@candor/ipld-database": "workspace:../ipld-database",
     "ajv": "^8.11.2",
     "did-jwt": "^6.11.0",
