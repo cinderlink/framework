@@ -156,7 +156,6 @@ importers:
 
   packages/core-types:
     specifiers:
-      '@candor/ipld-database': workspace:../ipld-database
       '@libp2p/interface-peer-id': ^1.1.2
       did-jwt: ^6.11.0
       dids: ^3.4.0
@@ -168,7 +167,6 @@ importers:
       typescript: ^4.9.4
       vitest: ^0.25.8
     devDependencies:
-      '@candor/ipld-database': link:../ipld-database
       '@libp2p/interface-peer-id': 1.1.2
       did-jwt: 6.11.0
       dids: 3.4.0

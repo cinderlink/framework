@@ -1,5 +1,5 @@
-import { DIDDagInterface } from "@candor/core-types";
 import Emittery from "emittery";
+import type { DIDDagInterface } from "@candor/core-types";
 import type { CID } from "multiformats";
 import { Table, TableDefinition, TableRow } from "./table";
 
