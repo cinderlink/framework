@@ -7,7 +7,9 @@
     "packages/*",
     "examples/*",
     "frontend/",
-    "ui-kit/"
+    "ui-kit/",
+    "registry-frontend/",
+    "registry-contracts/"
   ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
