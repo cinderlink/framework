@@ -157,22 +157,26 @@ importers:
   packages/core-types:
     specifiers:
       '@libp2p/interface-peer-id': ^1.1.2
+      ajv: ^8.11.2
       did-jwt: ^6.11.0
       dids: ^3.4.0
       emittery: ^1.0.1
       ipfs-core-types: ^0.13.0
       libp2p: ^0.41.0
+      minisearch: ^6.0.0
       multiformats: ^10.0.3
       tsup: ^6.5.0
       typescript: ^4.9.4
       vitest: ^0.25.8
     devDependencies:
       '@libp2p/interface-peer-id': 1.1.2
+      ajv: 8.11.2
       did-jwt: 6.11.0
       dids: 3.4.0
       emittery: 1.0.1
       ipfs-core-types: 0.13.0
       libp2p: 0.41.0
+      minisearch: 6.0.0
       multiformats: 10.0.3
       tsup: 6.5.0_typescript@4.9.4
       typescript: 4.9.4
@@ -10487,7 +10491,6 @@ packages:
 
   /minisearch/6.0.0:
     resolution: {integrity: sha512-N7yUgtH5T9iQfdmzI8Dnke8TK+grccrWUsdiwvalGv04hJggOUI/EpWIEQj3v8t7XSi/kSfQ7GdLAS540+GxpQ==}
-    dev: false
 
   /mkdirp/0.5.6:
     resolution: {integrity: sha512-FP+p8RB8OWpF3YZBCrP5gtADmtXApB5AMLn+vdyA+PyxCjrCs00mjyUozssO33cwDeT3wNGdLxJ5M//YqtHAJw==}
@@ -11686,11 +11689,6 @@ packages:
     dependencies:
       end-of-stream: 1.4.4
       once: 1.4.0
-
-  /punycode/2.1.1:
-    resolution: {integrity: sha512-XRsRjdf+j5ml+y/6GKHPZbrF/8p2Yga0JPtdqTIY2Xe5ohJPD9saDJJLPvp9+NSBprVvevdXZybnj2cv8OEd0A==}
-    engines: {node: '>=6'}
-    dev: true
 
   /punycode/2.2.0:
     resolution: {integrity: sha512-LN6QV1IJ9ZhxWTNdktaPClrNfp8xdSAYS0Zk2ddX7XsXZAxckMHPCBcHRo0cTcEIgYPRiGEkmji3Idkh2yFtYw==}
@@ -12958,7 +12956,7 @@ packages:
   /tr46/1.0.1:
     resolution: {integrity: sha512-dTpowEjclQ7Kgx5SdBkqRzVhERQXov8/l9Ft9dVM9fmg0W0KQSVaXX9T4i6twCPNtYiZM53lpSSUAwJbFPOHxA==}
     dependencies:
-      punycode: 2.1.1
+      punycode: 2.2.0
     dev: true
 
   /tree-kill/1.2.2:

@@ -8,11 +8,11 @@ import type { DID } from "dids";
 import type { PeerId } from "@libp2p/interface-peer-id";
 import type { DIDDagInterface } from "../dag";
 import type { IdentityInterface } from "../identity";
+import { SchemaInterface } from "../database/schema";
 export interface CandorClientInterface<
   PluginEvents extends PluginEventDef = PluginEventDef,
   EmitEvents extends PluginEvents["emit"] &
-    CandorClientEvents = PluginEvents["emit"] & CandorClientEvents,
-  SchemaType = any
+    CandorClientEvents = PluginEvents["emit"] & CandorClientEvents
 > extends Emittery<EmitEvents> {
   plugins: Record<PluginInterface["id"], PluginInterface<PluginEvents>>;
   started: boolean;
@@ -27,7 +27,7 @@ export interface CandorClientInterface<
   did: DID;
   peerId?: PeerId;
   dag: DIDDagInterface;
-  schemas: Record<string, SchemaType>;
+  schemas: Record<string, SchemaInterface>;
   identity: IdentityInterface;
   p2pStreams: Record<string, any>;
 
@@ -55,6 +55,6 @@ export interface CandorClientInterface<
   onMessage(message: any): Promise<void>;
 
   hasSchema(name: string): boolean;
-  getSchema(name: string): SchemaType | undefined;
-  addSchema(name: string, schema: SchemaType): Promise<void>;
+  getSchema(name: string): SchemaInterface | undefined;
+  addSchema(name: string, schema: SchemaInterface): Promise<void>;
 }

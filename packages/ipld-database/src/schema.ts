@@ -1,20 +1,20 @@
 import Emittery from "emittery";
 import type { DIDDagInterface } from "@candor/core-types";
 import type { CID } from "multiformats";
-import { Table, TableDefinition, TableRow } from "./table";
+import type {
+  SavedSchema,
+  SchemaEvents,
+  SchemaInterface,
+} from "@candor/core-types/src/database/schema";
+import type {
+  TableDefinition,
+  TableInterface,
+  TableRow,
+} from "@candor/core-types/src/database/table";
+import { Table } from "./table";
 
-export type SavedSchema = {
-  name: string;
-  defs: Record<string, TableDefinition>;
-  tables: Record<string, string | undefined>;
-};
-
-export type SchemaEvents = {
-  "/schema/loaded": undefined;
-};
-
-export class Schema extends Emittery<SchemaEvents> {
-  public tables: Record<string, Table> = {};
+export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
+  public tables: Record<string, TableInterface> = {};
   constructor(
     public name: string,
     public defs: Record<string, TableDefinition>,

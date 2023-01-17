@@ -3,7 +3,7 @@ import type {
   CandorClientInterface,
   PubsubMessage,
 } from "@candor/core-types";
-import { Schema, TableRow } from "@candor/ipld-database";
+import { Schema } from "@candor/ipld-database";
 import { v4 as uuid } from "uuid";
 import { CID } from "multiformats";
 import {

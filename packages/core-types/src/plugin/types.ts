@@ -1,3 +1,4 @@
+import { CandorClientEvents } from "../../dist";
 import { CandorClientInterface } from "../client/interface";
 import { PubsubMessage } from "../pubsub";
 
@@ -26,10 +27,12 @@ export interface PluginInterface<
     publish: {};
     subscribe: {};
     emit: {};
-  }
+  },
+  ClientEvents extends PluginEventDef["emit"] &
+    CandorClientEvents = PluginEventDef["emit"] & CandorClientEvents
 > {
   id: string;
-  client: CandorClientInterface<Events>;
+  client: CandorClientInterface<Events, ClientEvents>;
   start?(): Promise<void>;
   stop?(): Promise<void>;
   pubsub: {

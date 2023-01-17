@@ -1,64 +1,27 @@
 import type { DIDDagInterface } from "@candor/core-types";
-import * as json from "multiformats/codecs/json";
-import { sha256 } from "multiformats/hashes/sha2";
 import { CID } from "multiformats/cid";
 import Emittery from "emittery";
 import Ajv from "ajv";
-import type { SchemaObject } from "ajv";
+import Minisearch from "minisearch";
+import {
+  TableBlock,
+  TableDefinition,
+  TableEvents,
+  TableInterface,
+  TableRow,
+} from "@candor/core-types/src/database/table";
+
 const ajv = new Ajv();
 
-import Minisearch, {
-  AsPlainObject,
-  Options as SearchOptions,
-  SearchResult,
-} from "minisearch";
-
-export type TableRow<Data extends Record<string, unknown> = {}> = {
-  id?: number;
-  [key: string]: unknown;
-} & Data;
-
-export type TableDefinition = {
-  encrypted: boolean;
-  schema: SchemaObject;
-  indexes: string[];
-  aggregate: {
-    [key: string]:
-      | "sum"
-      | "count"
-      | "avg"
-      | "min"
-      | "max"
-      | "distinct"
-      | "range";
-  };
-  searchOptions: SearchOptions;
-  rollup: number;
-};
-
-export type TableBlock<T extends TableRow = TableRow> = {
-  prevCID?: string;
-  fromIndex: number;
-  toIndex: number;
-  records: Record<number, T>;
-  indexes: Record<string, Record<string, number[]>>;
-  aggregates: Record<string, number | string | string[] | [number, number]>;
-  search?: Minisearch;
-  index?: AsPlainObject;
-};
-
-export type TableEvents = {
-  "/table/loaded": undefined;
-};
-
-export class Table<
-  T extends TableRow = TableRow
-> extends Emittery<TableEvents> {
+export class Table<T extends TableRow = TableRow>
+  extends Emittery<TableEvents>
+  implements TableInterface<T>
+{
   currentIndex: number = 0;
   currentBlock: TableBlock;
   encrypted: boolean;
 
-  constructor(private def: TableDefinition, private dag: DIDDagInterface) {
+  constructor(public def: TableDefinition, public dag: DIDDagInterface) {
     super();
     this.encrypted = def.encrypted;
     this.currentBlock = this.createBlock();
@@ -101,6 +64,8 @@ export class Table<
     if (this.currentIndex - this.currentBlock.fromIndex >= this.def.rollup) {
       await this.rollup();
     }
+
+    return data.id;
   }
 
   async search(query: string, limit = 10) {
@@ -194,12 +159,11 @@ export class Table<
     let blocksUnwound: string[] = [];
     let rewriteBlock: TableBlock | undefined = undefined;
 
-    await this.unwind(async (block) => {
+    await this.unwind(async (block: TableBlock, cid: string | undefined) => {
       // if the block contains the row we want to update
       const row = block.records[id];
-      let newRow = { ...row, ...data };
       if (row) {
-        block.records[id] = { ...block.records[id], ...data };
+        block.records[id] = { ...row, ...data };
         // update the indexes
         this.def.indexes.forEach((index) => {
           // if the index has changed
@@ -216,23 +180,18 @@ export class Table<
             }
           }
         });
-        // update the aggregates
-        block = this.updateBlockAggregates(block);
-        // update the search index
-        block.search?.removeAll();
-        block.search?.addAll(Object.values(block.records));
-        // update the CID reference
-        rewriteBlock = block;
-        return false;
-      } else {
-        const cid = CID.create(
-          1,
-          json.code,
-          await sha256.digest(json.encode(data))
-        );
-        blocksUnwound.push(cid.toString());
+        if (cid) {
+          // update the aggregates
+          block = this.updateBlockAggregates(block);
+          // update the search index
+          block.search?.removeAll();
+          block.search?.addAll(Object.values(block.records));
+          // update the CID reference
+          rewriteBlock = block;
+        }
+        return true;
       }
-      return true;
+      return false;
     });
 
     // rewrite the blocks
@@ -254,7 +213,7 @@ export class Table<
       }
     }
 
-    return rewriteBlock;
+    return id;
   }
 
   async load(cid: CID | string) {
@@ -278,11 +237,15 @@ export class Table<
     this.emit("/table/loaded");
   }
 
-  async unwind(test: (block: TableBlock) => Promise<boolean>) {
+  async unwind(
+    test: (block: TableBlock, cid: string | undefined) => Promise<boolean>
+  ) {
+    let cid: string | undefined = undefined;
     let block: TableBlock | undefined = this.currentBlock;
     let prevented = false;
-    while (!prevented && block) {
-      prevented = !(await test(block));
+    while (!prevented && block && cid) {
+      prevented = !(await test(block, cid));
+      cid = block.prevCID;
       block = block.prevCID
         ? this.encrypted
           ? await this.dag.loadDecrypted<TableBlock>(block.prevCID)
@@ -338,9 +301,8 @@ export class Table<
     const existing = await this.findByIndex(index, value as string);
     if (existing?.id) {
       return this.update(existing.id, data);
-    } else {
-      return this.insert(data);
     }
+    return this.insert(data);
   }
 
   assertValid(data: T) {

@@ -6,11 +6,12 @@ import type {
   PluginEventDef,
   CandorClientEvents,
   CandorConstructorOptions,
+  SchemaInterface,
+  SavedSchema,
 } from "@candor/core-types";
 import type { DID } from "dids";
 import Emittery from "emittery";
 import * as json from "multiformats/codecs/json";
-import { SavedSchema, Schema } from "@candor/ipld-database";
 import { pipe } from "it-pipe";
 import * as lp from "it-length-prefixed";
 import map from "it-map";
@@ -20,6 +21,7 @@ import { Peerstore } from "./peerstore";
 import { ClientDIDDag } from "./dag";
 import { Identity } from "./identity";
 import { fromPeerId } from "./did/util";
+import { Schema } from "@candor/ipld-database";
 
 export class CandorClient<
   PluginEvents extends PluginEventDef = PluginEventDef,
@@ -40,7 +42,7 @@ export class CandorClient<
   public did: DID;
   public peerId?: PeerId;
   public dag: ClientDIDDag;
-  public schemas: Record<string, Schema> = {};
+  public schemas: Record<string, SchemaInterface> = {};
   public identity: Identity;
   public p2pStreams: Record<string, any> = {};
 
