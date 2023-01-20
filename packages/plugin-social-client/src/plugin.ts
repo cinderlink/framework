@@ -25,6 +25,7 @@ export type SocialConnectionRecord = {
 export type SocialUser = {
   id?: number;
   name: string;
+  bio: string;
   avatar: string;
   did: string;
 };
@@ -38,6 +39,7 @@ export type SocialPost = {
 export class SocialClientPlugin implements PluginInterface<SocialClientEvents> {
   id = "socialClient";
   name = "guest";
+  bio = "";
   avatar = "";
   interval: NodeJS.Timer | null = null;
 
@@ -67,6 +69,7 @@ export class SocialClientPlugin implements PluginInterface<SocialClientEvents> {
               type: "object",
               properties: {
                 name: { type: "string" },
+                bio: { type: "string" },
                 avatar: { type: "string" },
                 did: { type: "string" },
               },
@@ -163,28 +166,43 @@ export class SocialClientPlugin implements PluginInterface<SocialClientEvents> {
     await this.saveLocalUser();
   }
 
-  async setState({ name, avatar }: { name: string; avatar: string }) {
-    this.name = name;
-    this.avatar = avatar;
+  async setBio(bio: string) {
+    this.bio = bio;
+    await this.saveLocalUser();
+  }
+
+  async setState({
+    name,
+    avatar,
+    bio,
+  }: {
+    name?: string;
+    avatar?: string;
+    bio?: string;
+  }) {
+    this.name = name || this.name;
+    this.avatar = avatar || this.avatar;
+    this.bio = bio || this.bio;
     await this.saveLocalUser();
   }
 
   async saveLocalUser() {
-    console.info("saving local user", this.name, this.avatar, this.client.id);
+    const localUser = {
+      name: this.name || "(guest)",
+      avatar: this.avatar || "",
+      did: this.client.id,
+    };
+    console.info("saving local user", localUser);
     await this.client
       .getSchema("social")
       ?.getTable("users")
-      ?.upsert("did", this.client.id, {
-        name: this.name || "(guest)",
-        avatar: this.avatar || "",
-        did: this.client.id,
-      });
+      ?.upsert("did", this.client.id, localUser);
 
     const user = await this.client
       .getSchema("social")
       ?.getTable("users")
       ?.findByIndex("did", this.client.id);
-    console.info("saved local user", user);
+    console.info("saved local user", user, localUser);
   }
 
   async loadLocalUser() {
@@ -195,6 +213,7 @@ export class SocialClientPlugin implements PluginInterface<SocialClientEvents> {
     if (user?.name && user?.avatar) {
       this.name = user.name as string;
       this.avatar = user.avatar as string;
+      this.bio = user.bio as string;
     }
   }
 

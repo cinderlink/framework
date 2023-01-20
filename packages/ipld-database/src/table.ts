@@ -1,5 +1,5 @@
 import type { DIDDagInterface } from "@candor/core-types";
-import { CID } from "multiformats/cid";
+import { CID } from "multiformats";
 import Emittery from "emittery";
 import Ajv from "ajv";
 import Minisearch from "minisearch";
@@ -94,7 +94,6 @@ export class Table<T extends TableRow = TableRow>
     const blockCID = this.encrypted
       ? await this.dag.storeEncrypted(this.currentBlock)
       : await this.dag.store(this.currentBlock);
-    console.info("Saved block", blockCID);
     this.currentBlock = this.createBlock(blockCID?.toString());
   }
 
@@ -140,9 +139,7 @@ export class Table<T extends TableRow = TableRow>
   }
 
   async save() {
-    console.info("saving table", this.currentBlock);
     if (Object.values(this.currentBlock.records).length > 0) {
-      console.info("rolling up table");
       await this.rollup();
     }
     return this.currentBlock.prevCID;
@@ -159,24 +156,25 @@ export class Table<T extends TableRow = TableRow>
     let blocksUnwound: string[] = [];
     let rewriteBlock: TableBlock | undefined = undefined;
 
-    await this.unwind(async (block: TableBlock, cid: string | undefined) => {
+    const unwindFn = async (block: TableBlock, cid: string | undefined) => {
       // if the block contains the row we want to update
       const row = block.records[id];
+      const updated = { ...row, ...data };
       if (row) {
-        block.records[id] = { ...row, ...data };
+        block.records[id] = updated;
         // update the indexes
         this.def.indexes.forEach((index) => {
           // if the index has changed
-          if (data[index] && data[index] !== row[index]) {
+          if (updated[index] && updated[index] !== row[index]) {
             // remove the row from the old index
             block.indexes[index][row[index] as string] = block.indexes[index][
               row[index] as string
             ].filter((rowID) => rowID !== id);
             // add the row to the new index
-            if (!block.indexes[index][data[index] as string]) {
-              block.indexes[index][data[index] as string] = [id];
+            if (!block.indexes[index][updated[index] as string]) {
+              block.indexes[index][updated[index] as string] = [id];
             } else {
-              block.indexes[index][data[index] as string].push(id);
+              block.indexes[index][updated[index] as string].push(id);
             }
           }
         });
@@ -189,10 +187,12 @@ export class Table<T extends TableRow = TableRow>
           // update the CID reference
           rewriteBlock = block;
         }
-        return true;
+        return false;
       }
-      return false;
-    });
+      return true;
+    };
+
+    await this.unwind(unwindFn);
 
     // rewrite the blocks
     if (rewriteBlock) {
@@ -200,7 +200,6 @@ export class Table<T extends TableRow = TableRow>
         ? await this.dag.storeEncrypted(rewriteBlock)
         : await this.dag.store(rewriteBlock);
       for (const cid of blocksUnwound) {
-        console.info("loading block", cid);
         const block = this.encrypted
           ? await this.dag.loadDecrypted<TableBlock>(cid)
           : await this.dag.load<TableBlock>(cid);
@@ -230,7 +229,6 @@ export class Table<T extends TableRow = TableRow>
         : new Minisearch(this.def.searchOptions);
       this.currentIndex = block.toIndex;
       // this.currentBlock = this.createBlock(cid.toString());
-      console.info("table loaded", this.currentBlock);
     } else {
       this.currentBlock = this.createBlock();
     }
@@ -243,8 +241,16 @@ export class Table<T extends TableRow = TableRow>
     let cid: string | undefined = undefined;
     let block: TableBlock | undefined = this.currentBlock;
     let prevented = false;
-    while (!prevented && block && cid) {
-      prevented = !(await test(block, cid));
+    while (prevented === false && block) {
+      prevented = !(await test(block, cid).catch((err) => {
+        console.error("unwind error", err);
+        return false;
+      }));
+      if (prevented) {
+        cid = undefined;
+        block = undefined;
+        return;
+      }
       cid = block.prevCID;
       block = block.prevCID
         ? this.encrypted
@@ -302,7 +308,8 @@ export class Table<T extends TableRow = TableRow>
     if (existing?.id) {
       return this.update(existing.id, data);
     }
-    return this.insert(data);
+    const record = { [index]: value, ...data };
+    return this.insert(record);
   }
 
   assertValid(data: T) {

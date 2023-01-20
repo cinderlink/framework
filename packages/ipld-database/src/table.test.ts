@@ -1,8 +1,9 @@
-import { TestDIDDag } from "@candor/test-adapters";
+import { TestDIDDag } from "@candor/test-adapters/src/dag";
 import { createSeed, createDID } from "@candor/client";
 import type { DID } from "dids";
 import { describe, it, expect, beforeEach } from "vitest";
-import { TableDefinition, Table, TableBlock } from "./table";
+import { Table } from "./table";
+import { TableBlock, TableDefinition } from "@candor/core-types";
 
 const validDefinition: TableDefinition = {
   encrypted: false,
@@ -35,31 +36,7 @@ describe("@candor/ipld-database/table", () => {
 
   it("should create a current block", () => {
     const table = new Table(validDefinition, dag);
-    expect(table.currentBlock).toMatchInlineSnapshot(`
-      {
-        "aggregates": {},
-        "fromIndex": 0,
-        "indexes": {},
-        "prevCID": undefined,
-        "records": {},
-        "search": {
-          "averageFieldLength": [],
-          "dirtCount": 0,
-          "documentCount": 0,
-          "documentIds": {},
-          "fieldIds": {
-            "id": 1,
-            "name": 0,
-          },
-          "fieldLength": {},
-          "index": [],
-          "nextId": 0,
-          "serializationVersion": 2,
-          "storedFields": {},
-        },
-        "toIndex": 10,
-      }
-    `);
+    expect(table.currentBlock).toMatchSnapshot();
   });
 
   it("should validate records", () => {
@@ -78,20 +55,7 @@ describe("@candor/ipld-database/table", () => {
   it("should index records", async () => {
     const table = new Table(validDefinition, dag);
     await table.insert({ name: "foo", count: 1 });
-    expect(table.currentBlock.indexes).toMatchInlineSnapshot(`
-      {
-        "id": {
-          "0": [
-            0,
-          ],
-        },
-        "name": {
-          "foo": [
-            0,
-          ],
-        },
-      }
-    `);
+    expect(table.currentBlock.indexes).toMatchSnapshot();
   });
 
   it("should search records", async () => {
@@ -141,74 +105,7 @@ describe("@candor/ipld-database/table", () => {
     const prevBlock = await dag.load<TableBlock>(
       table.currentBlock.prevCID! as any
     );
-    expect(prevBlock.indexes).toMatchInlineSnapshot(`
-      {
-        "id": {
-          "0": [
-            0,
-          ],
-          "1": [
-            1,
-          ],
-          "2": [
-            2,
-          ],
-          "3": [
-            3,
-          ],
-          "4": [
-            4,
-          ],
-          "5": [
-            5,
-          ],
-          "6": [
-            6,
-          ],
-          "7": [
-            7,
-          ],
-          "8": [
-            8,
-          ],
-          "9": [
-            9,
-          ],
-        },
-        "name": {
-          "test #0": [
-            0,
-          ],
-          "test #1": [
-            1,
-          ],
-          "test #2": [
-            2,
-          ],
-          "test #3": [
-            3,
-          ],
-          "test #4": [
-            4,
-          ],
-          "test #5": [
-            5,
-          ],
-          "test #6": [
-            6,
-          ],
-          "test #7": [
-            7,
-          ],
-          "test #8": [
-            8,
-          ],
-          "test #9": [
-            9,
-          ],
-        },
-      }
-    `);
+    expect(prevBlock.indexes).toMatchSnapshot();
   });
 
   it("should rollup records with aggregates", async () => {
@@ -285,30 +182,43 @@ describe("@candor/ipld-database/table", () => {
     `);
   });
 
-  it("should upsert records", async () => {
-    const table = new Table(validDefinition, dag);
-    for (let i = 0; i < 11; i++) {
-      await table.insert({ name: `test #${i}`, count: i });
-    }
-    const result = await table.findByIndex("name", "test #3");
-    expect(result).toMatchInlineSnapshot(`
-      {
-        "count": 3,
-        "id": 3,
-        "name": "test #3",
+  describe("upsert", () => {
+    it("should update inserted records", async () => {
+      const table = new Table(validDefinition, dag);
+      for (let i = 0; i < 11; i++) {
+        await table.insert({ name: `test #${i}`, count: i });
       }
-    `);
-    if (result?.id) {
-      await table.upsert("id", result.id, { name: "test three", count: 1337 });
-    }
+      expect(Object.values(table.currentBlock.records).length).toBe(1);
+      const result = await table.findByIndex("name", "test #3");
+      expect(result).toMatchObject({
+        name: "test #3",
+        count: 3,
+      });
+      if (result?.id) {
+        await table.upsert("id", result.id, {
+          name: "test three",
+          count: 1337,
+        });
+      }
 
-    const updated = await table.findByIndex("name", "test three");
-    expect(updated).toMatchInlineSnapshot(`
-      {
-        "count": 1337,
-        "id": 3,
-        "name": "test three",
+      const updated = await table.findByIndex("name", "test three");
+      expect(updated).toMatchObject({
+        name: "test three",
+        count: 1337,
+      });
+    });
+
+    it("should insert new records", async () => {
+      const table = new Table(validDefinition, dag);
+      for (let i = 0; i < 11; i++) {
+        await table.upsert("name", `test #${i}`, { count: i });
       }
-    `);
+      expect(Object.values(table.currentBlock.records).length).toBe(1);
+      const result = await table.findByIndex("name", "test #3");
+      expect(result).toMatchObject({
+        name: "test #3",
+        count: 3,
+      });
+    });
   });
 });

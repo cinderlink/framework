@@ -59,6 +59,10 @@ export class CandorClient<
     this.plugins[plugin.id] = plugin;
   }
 
+  getPlugin(id: string) {
+    return this.plugins[id];
+  }
+
   async start() {
     await this.ipfs.start();
     const info = await this.ipfs.id();
@@ -274,6 +278,8 @@ export class CandorClient<
   }
 
   getSchema(name: string) {
+    if (!this.hasSchema(name))
+      throw new Error("schema does not exist: " + name);
     return this.schemas[name];
   }
 

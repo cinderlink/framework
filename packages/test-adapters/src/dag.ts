@@ -1,9 +1,9 @@
-import { CID } from "multiformats/cid";
+import { CID } from "multiformats";
 import { sha256 } from "multiformats/hashes/sha2";
 import * as json from "multiformats/codecs/json";
-import { DAGInterface } from "@candor/core-types/src/dag/interface";
-import { DIDDag } from "@candor/client/src/did/dag";
-import { DID } from "dids";
+import type { DAGInterface } from "@candor/core-types/src/dag/interface";
+import type { DID } from "dids";
+import type { JWE } from "did-jwt";
 
 export class TestDag implements DAGInterface {
   cache: Record<string, unknown> = {};
@@ -23,8 +23,39 @@ export class TestDag implements DAGInterface {
   }
 }
 
-export class TestDIDDag extends DIDDag {
-  constructor(did: DID) {
-    super(did, new TestDag());
+export class TestDIDDag {
+  private dag: DAGInterface;
+  constructor(public did: DID) {
+    this.dag = new TestDag();
+  }
+
+  async store<Data = unknown>(data: Data): Promise<CID | undefined> {
+    return this.dag.store(data);
+  }
+
+  async load<Data = unknown>(cid: CID): Promise<Data> {
+    return this.dag.load<Data>(cid);
+  }
+
+  async storeEncrypted<
+    Data extends Record<string, unknown> = Record<string, unknown>
+  >(
+    data: Data,
+    recipients: string[] = [this.did.id]
+  ): Promise<CID | undefined> {
+    const jwe = await this.did.createDagJWE(data, recipients);
+    return this.dag.store(jwe);
+  }
+
+  async loadEncrypted(cid: CID): Promise<JWE> {
+    return this.dag.load<JWE>(cid);
+  }
+
+  async loadDecrypted<
+    Data extends Record<string, unknown> = Record<string, unknown>
+  >(cid: CID): Promise<Data> {
+    const jwe = await this.loadEncrypted(cid);
+    const decrypted = await this.did.decryptDagJWE(jwe);
+    return decrypted as Data;
   }
 }
