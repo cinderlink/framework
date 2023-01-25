@@ -9,7 +9,6 @@ import type {
   SchemaInterface,
   SavedSchema,
 } from "@candor/core-types";
-import type { DID } from "dids";
 import Emittery from "emittery";
 import * as json from "multiformats/codecs/json";
 import { pipe } from "it-pipe";
@@ -22,6 +21,7 @@ import { ClientDIDDag } from "./dag";
 import { Identity } from "./identity";
 import { fromPeerId } from "./did/util";
 import { Schema } from "@candor/ipld-database";
+import type { DID } from "dids";
 
 export class CandorClient<
   PluginEvents extends PluginEventDef = PluginEventDef,
@@ -55,7 +55,7 @@ export class CandorClient<
     this.plugins = {};
   }
 
-  async addPlugin(plugin: PluginInterface<any>) {
+  async addPlugin(plugin: PluginInterface<any, any>) {
     this.plugins[plugin.id] = plugin;
   }
 

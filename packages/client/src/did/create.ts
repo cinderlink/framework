@@ -4,7 +4,7 @@ import resolver from "./resolver";
 
 export async function createDID(seed: Uint8Array) {
   const provider = new Ed25519Provider(seed);
-  const did = new DID({ provider, resolver: resolver as any });
+  const did = new DID({ provider, resolver: resolver as any }) as DID;
   await did.authenticate();
   return did;
 }

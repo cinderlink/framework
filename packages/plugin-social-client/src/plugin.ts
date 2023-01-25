@@ -3,6 +3,7 @@ import type {
   CandorClientInterface,
   PubsubMessage,
 } from "@candor/core-types";
+import Emittery from "emittery";
 import { Schema } from "@candor/ipld-database";
 import { v4 as uuid } from "uuid";
 import { CID } from "multiformats";
@@ -14,39 +15,40 @@ import {
   SocialConnectionMessage,
   SocialUpdateMessage,
 } from "./types";
+import {
+  SocialClientPluginEvents,
+  SocialConnectionRecord,
+  SocialPost,
+} from "../dist";
 
-export type SocialConnectionRecord = {
-  id?: number;
-  from: string;
-  to: string;
-  follow: boolean;
-};
-
-export type SocialUser = {
-  id?: number;
-  name: string;
-  bio: string;
-  avatar: string;
-  did: string;
-};
-
-export type SocialPost = {
-  cid: string;
-  did: string;
-  createdAt: number;
-};
-
-export class SocialClientPlugin implements PluginInterface<SocialClientEvents> {
+export class SocialClientPlugin
+  extends Emittery<SocialClientPluginEvents>
+  implements PluginInterface<SocialClientEvents>
+{
   id = "socialClient";
   name = "guest";
   bio = "";
   avatar = "";
   interval: NodeJS.Timer | null = null;
+  ready = false;
+
+  pubsub = {
+    "/social/announce": this.onSocialAnnounce,
+    "/social/connection": this.onSocialConnection,
+    "/social/update": this.onSocialUpdate,
+  };
+  p2p = {
+    "/social/updates/request": this.onSocialUpdatesRequest,
+    "/social/updates/response": this.onSocialUpdatesResponse,
+  };
 
   constructor(
     public client: CandorClientInterface<SocialClientEvents>,
     public options: Record<string, unknown> = {}
-  ) {}
+  ) {
+    super();
+    // this.client.publish();
+  }
 
   async start() {
     let hasConnected = false;
@@ -103,23 +105,31 @@ export class SocialClientPlugin implements PluginInterface<SocialClientEvents> {
             schema: {
               type: "object",
               properties: {
-                did: { type: "string" },
                 cid: { type: "string" },
+                author: { type: "string" },
                 title: { type: "string" },
-                content: { type: "string" },
+                body: { type: "string" },
+                coverMedia: {
+                  type: "object",
+                  properties: {
+                    type: { type: "string" },
+                    url: { type: "string" },
+                  },
+                },
                 tags: { type: "array", items: { type: "string" } },
+                reactions: {
+                  type: "array",
+                  items: {
+                    type: "string",
+                  },
+                },
                 comments: {
                   type: "array",
                   items: {
-                    type: "object",
-                    properties: {
-                      did: { type: "string" },
-                      cid: { type: "string" },
-                      content: { type: "string" },
-                      at: { type: "number" },
-                    },
+                    type: "string",
                   },
                 },
+                createdAt: { type: "number" },
               },
             },
           },
@@ -150,6 +160,9 @@ export class SocialClientPlugin implements PluginInterface<SocialClientEvents> {
     // }, Number(this.options.interval || 1000 * 15));
 
     await this.loadLocalUser();
+    console.info("social client plugin ready");
+    this.ready = true;
+    this.emit("ready", undefined);
   }
 
   async stop() {
@@ -192,6 +205,7 @@ export class SocialClientPlugin implements PluginInterface<SocialClientEvents> {
       avatar: this.avatar || "",
       did: this.client.id,
     };
+    const schema = this.client.getSchema("social");
     console.info("saving local user", localUser);
     await this.client
       .getSchema("social")
@@ -203,6 +217,8 @@ export class SocialClientPlugin implements PluginInterface<SocialClientEvents> {
       ?.getTable("users")
       ?.findByIndex("did", this.client.id);
     console.info("saved local user", user, localUser);
+
+    await this.client.save();
   }
 
   async loadLocalUser() {
@@ -216,17 +232,6 @@ export class SocialClientPlugin implements PluginInterface<SocialClientEvents> {
       this.bio = user.bio as string;
     }
   }
-
-  pubsub = {
-    "/social/announce": this.onSocialAnnounce,
-    "/social/connection": this.onSocialConnection,
-    "/social/update": this.onSocialUpdate,
-  };
-  p2p = {
-    "/social/updates/request": this.onSocialUpdatesRequest,
-    "/social/updates/response": this.onSocialUpdatesResponse,
-  };
-  events = {};
 
   async onSocialConnection(message: PubsubMessage<SocialConnectionMessage>) {
     const connection = await this.client
@@ -294,7 +299,7 @@ export class SocialClientPlugin implements PluginInterface<SocialClientEvents> {
       .getSchema("social")
       ?.getTable<SocialPost>("posts")
       ?.where((post) => {
-        if (post.did === message.peer.did) {
+        if (post.author === message.peer.did) {
           return true;
         }
         return false;

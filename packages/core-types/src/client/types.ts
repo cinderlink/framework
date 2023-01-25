@@ -1,7 +1,7 @@
-import { DID } from "dids";
-import { IPFSWithLibP2P } from "../ipfs";
-import { Peer } from "../p2p";
-import { PubsubMessage } from "../pubsub";
+import type { IPFSWithLibP2P } from "../ipfs";
+import type { Peer } from "../p2p";
+import type { PubsubMessage } from "../pubsub";
+import type { DID } from "dids";
 
 export type IdentityResolveRequest = {
   requestID: string;

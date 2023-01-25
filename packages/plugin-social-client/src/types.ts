@@ -1,5 +1,49 @@
 import type { PluginEventDef } from "@candor/core-types";
 
+export type SocialConnectionRecord = {
+  id?: number;
+  from: string;
+  to: string;
+  follow: boolean;
+};
+
+export type SocialUser = {
+  id?: number;
+  name: string;
+  bio: string;
+  avatar: string;
+  did: string;
+};
+
+export type SocialPost = {
+  cid: string;
+  author: string;
+  content: string;
+  attachments: string[];
+  comments: string[];
+  reactions: string[];
+  tags: string[];
+  createdAt: number;
+};
+
+export type SocialReaction = {
+  postCid: string;
+  reaction: "like" | "love" | "haha" | "wow" | "sad" | "angry";
+  from: string;
+  createdAt: number;
+};
+
+export type SocialComment = {
+  postId: string;
+  body: string;
+  from: string;
+  createdAt: number;
+};
+
+export type SocialClientPluginEvents = {
+  ready: void;
+};
+
 export type SocialConnectionMessage = {
   requestID: string;
   to: string;

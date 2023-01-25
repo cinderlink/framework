@@ -2,6 +2,7 @@
   "name": "@candor/core",
   "version": "1.0.0",
   "description": "",
+  "type": "module",
   "main": "index.js",
   "workspaces": [
     "packages/*",
@@ -12,11 +13,15 @@
     "registry-contracts/"
   ],
   "scripts": {
-    "watch": "pnpm --parallel --stream --filter=!./frontend --filter=!./registry-frontend -r watch",
-    "build": "pnpm --workspace-concurrency=1 --filter=!./frontend --filter=!./registry-frontend -r build",
-    "test": "pnpm --parallel --stream -r test"
+    "watch": "node scripts/build.js --watch --build",
+    "build": "node scripts/build.js --build",
+    "test": "pnpm --parallel --stream --filter=./packages/* -r test"
   },
   "keywords": [],
   "author": "Drew Ewing",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "chokidar": "^3.5.3",
+    "minimist": "^1.2.7"
+  }
 }
