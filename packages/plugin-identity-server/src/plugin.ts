@@ -1,9 +1,9 @@
-import type { CandorClient } from "@candor/client";
 import type {
   PluginInterface,
   PubsubMessage,
   IdentityResolveRequest,
   IdentityResolveResponse,
+  CandorClientInterface,
 } from "@candor/core-types";
 import { Schema } from "@candor/ipld-database";
 import { IdentityServerEvents, IdentitySetRequest } from "./types";
@@ -21,7 +21,7 @@ export class IdentityServerPlugin
 {
   id = "identityServer";
   constructor(
-    public client: CandorClient<IdentityServerEvents>,
+    public client: CandorClientInterface<IdentityServerEvents>,
     public options: Record<string, unknown> = {}
   ) {}
   async start() {
@@ -65,7 +65,7 @@ export class IdentityServerPlugin
   async onSetRequest(message: PubsubMessage<IdentitySetRequest>) {
     await this.client
       .getSchema("identity")
-      .getTable("pins")
+      ?.getTable("pins")
       .upsert("did", message.peer.did, message.data);
 
     return this.client.send(message.peer.did, {
@@ -78,7 +78,7 @@ export class IdentityServerPlugin
   async onResolveRequest(message: PubsubMessage<IdentityResolveRequest>) {
     const identity = await this.client
       .getSchema("identity")
-      .getTable<IdentityPinsRecord>("pins")
+      ?.getTable<IdentityPinsRecord>("pins")
       .findByIndex("did", message.peer.did);
 
     return this.client.send(message.peer.did, {
