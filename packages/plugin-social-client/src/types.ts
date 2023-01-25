@@ -2,8 +2,8 @@ import type { PluginEventDef } from "@candor/core-types";
 
 export type SocialConnectionRecord = {
   id?: number;
-  from: string;
-  to: string;
+  fromId: number;
+  toId: number;
   follow: boolean;
 };
 
@@ -15,9 +15,19 @@ export type SocialUser = {
   did: string;
 };
 
+export type SocialProfile = {
+  id: number;
+  userId: number;
+  banner: string;
+  albums: string[];
+  favoritePosts: string[];
+  favoriteConnections: string[];
+  updatedAt: number;
+};
+
 export type SocialPost = {
-  cid: string;
-  author: string;
+  id: number;
+  authorId: number;
   content: string;
   attachments: string[];
   comments: string[];
@@ -27,16 +37,17 @@ export type SocialPost = {
 };
 
 export type SocialReaction = {
-  postCid: string;
+  id: number;
+  postId: number;
   reaction: "like" | "love" | "haha" | "wow" | "sad" | "angry";
   from: string;
   createdAt: number;
 };
 
 export type SocialComment = {
-  postId: string;
+  postId: number;
   body: string;
-  from: string;
+  authorId: number;
   createdAt: number;
 };
 
@@ -45,29 +56,30 @@ export type SocialClientPluginEvents = {
 };
 
 export type SocialConnectionMessage = {
-  requestID: string;
+  from: string;
   to: string;
+  requestId: string;
   follow: boolean;
 };
 
 export type SocialAnnounceMessage = {
-  requestID: string;
+  requestId: string;
   name: string;
   avatar: string;
 };
 
 export type SocialUpdateMessage = {
-  requestID: string;
+  requestId: string;
   cid: string;
 };
 
 export type SocialUpdatesRequestMessage = {
-  requestID: string;
+  requestId: string;
   since: number;
 };
 
 export type SocialUpdatesResponseMessage = {
-  requestID: string;
+  requestId: string;
   updates: SocialUpdateMessage[];
 };
 

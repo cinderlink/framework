@@ -8,6 +8,7 @@ import type {
   CandorConstructorOptions,
   SchemaInterface,
   SavedSchema,
+  PluginEventHandler,
 } from "@candor/core-types";
 import Emittery from "emittery";
 import * as json from "multiformats/codecs/json";
@@ -28,7 +29,10 @@ export class CandorClient<
   EmitEvents extends PluginEvents["emit"] &
     CandorClientEvents = PluginEvents["emit"] & CandorClientEvents
 > extends Emittery<EmitEvents> {
-  public plugins: Record<PluginInterface["id"], PluginInterface<PluginEvents>>;
+  public plugins: Record<
+    PluginInterface["id"],
+    PluginInterface<PluginEventDef>
+  >;
   public started = false;
   public hasServerConnection = false;
   public peers: Peerstore = new Peerstore();
@@ -55,12 +59,14 @@ export class CandorClient<
     this.plugins = {};
   }
 
-  async addPlugin(plugin: PluginInterface<any, any>) {
+  async addPlugin<
+    T extends PluginInterface<PluginEventDef> = PluginInterface<PluginEventDef>
+  >(plugin: T) {
     this.plugins[plugin.id] = plugin;
   }
 
-  getPlugin(id: string) {
-    return this.plugins[id];
+  getPlugin<T = PluginInterface<PluginEventDef>>(id: string) {
+    return this.plugins[id] as T;
   }
 
   async start() {
@@ -112,10 +118,10 @@ export class CandorClient<
 
     console.info("starting plugins pubsub");
     await Promise.all(
-      Object.values(this.plugins).map(async (plugin) => {
+      Object.values(this.plugins).map(async (plugin: PluginInterface) => {
         await plugin.start?.();
         Object.entries(plugin.pubsub).forEach(([topic, handler]) => {
-          this.pubsub.on(topic, handler.bind(plugin));
+          this.pubsub.on(topic, (handler as PluginEventHandler).bind(plugin));
           setTimeout(() => {
             this.subscribe(topic);
           }, 3000);
@@ -166,7 +172,7 @@ export class CandorClient<
         await plugin.stop?.();
         Object.entries(plugin.pubsub).forEach(([topic, handler]) => {
           this.unsubscribe(topic);
-          this.pubsub.off(topic, handler.bind(plugin));
+          this.pubsub.off(topic, (handler as PluginEventHandler).bind(plugin));
         });
       })
     );

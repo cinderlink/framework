@@ -260,7 +260,7 @@ export class Table<T extends TableRow = TableRow>
     }
   }
 
-  async findByIndex(index: string, value: string) {
+  async findByIndex(index: string, value: string | number) {
     let result: T | undefined;
     await this.unwind(async (block) => {
       if (block.indexes[index]?.[value]) {

@@ -21,18 +21,10 @@ export type PluginEventDef = {
 };
 
 export interface PluginInterface<
-  Events extends PluginEventDef = {
-    send: {};
-    receive: {};
-    publish: {};
-    subscribe: {};
-    emit: {};
-  },
-  ClientEvents extends PluginEventDef["emit"] &
-    CandorClientEvents = PluginEventDef["emit"] & CandorClientEvents
+  Events extends PluginEventDef = PluginEventDef
 > {
   id: string;
-  client: CandorClientInterface<Events, ClientEvents>;
+  client: CandorClientInterface<Events>;
   start?(): Promise<void>;
   stop?(): Promise<void>;
   pubsub: {

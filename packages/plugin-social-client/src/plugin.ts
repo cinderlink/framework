@@ -14,12 +14,13 @@ import {
   SocialClientEvents,
   SocialConnectionMessage,
   SocialUpdateMessage,
-} from "./types";
-import {
   SocialClientPluginEvents,
   SocialConnectionRecord,
   SocialPost,
-} from "../dist";
+  SocialUser,
+  SocialProfile,
+} from "./types";
+import { SocialSchemaDef } from "./schema";
 
 export class SocialClientPlugin
   extends Emittery<SocialClientPluginEvents>
@@ -56,94 +57,17 @@ export class SocialClientPlugin
     // TODO: find a way to make this more dynamic
     if (!this.client.schemas["social"]) {
       console.info("adding social schema");
-      const schema = new Schema(
-        "social",
-        {
-          users: {
-            encrypted: false,
-            aggregate: {},
-            indexes: ["name", "did"],
-            rollup: 1000,
-            searchOptions: {
-              fields: ["name", "did"],
-            },
-            schema: {
-              type: "object",
-              properties: {
-                name: { type: "string" },
-                bio: { type: "string" },
-                avatar: { type: "string" },
-                did: { type: "string" },
-              },
-            },
-          },
-          connections: {
-            encrypted: true,
-            aggregate: {},
-            indexes: ["from", "to"],
-            rollup: 1000,
-            searchOptions: {
-              fields: ["from", "to"],
-            },
-            schema: {
-              type: "object",
-              properties: {
-                from: { type: "string" },
-                to: { type: "string" },
-                follow: { type: "boolean" },
-              },
-            },
-          },
-          posts: {
-            encrypted: true,
-            aggregate: {},
-            indexes: ["did", "cid"],
-            rollup: 1000,
-            searchOptions: {
-              fields: ["did", "cid", "title", "content", "tags", "comments"],
-            },
-            schema: {
-              type: "object",
-              properties: {
-                cid: { type: "string" },
-                author: { type: "string" },
-                title: { type: "string" },
-                body: { type: "string" },
-                coverMedia: {
-                  type: "object",
-                  properties: {
-                    type: { type: "string" },
-                    url: { type: "string" },
-                  },
-                },
-                tags: { type: "array", items: { type: "string" } },
-                reactions: {
-                  type: "array",
-                  items: {
-                    type: "string",
-                  },
-                },
-                comments: {
-                  type: "array",
-                  items: {
-                    type: "string",
-                  },
-                },
-                createdAt: { type: "number" },
-              },
-            },
-          },
-        },
-        this.client.dag
-      );
+      const schema = new Schema("social", SocialSchemaDef, this.client.dag);
       await this.client.addSchema("social", schema);
+    } else {
+      this.client.schemas["social"].setDefs(SocialSchemaDef);
     }
     this.client.on("/peer/connect", () => {
       if (!hasConnected) {
         hasConnected = true;
         setTimeout(() => {
           this.client.publish("/social/announce", {
-            requestID: uuid(),
+            requestId: uuid(),
             name: this.name,
             avatar: this.avatar,
           });
@@ -153,7 +77,7 @@ export class SocialClientPlugin
     // this.interval = setInterval(() => {
     //   if (!hasConnected) return;
     //   this.client.publish("/social/announce", {
-    //     requestID: uuid(),
+    //     requestId: uuid(),
     //     name: this.name,
     //     avatar: this.avatar,
     //   });
@@ -182,6 +106,91 @@ export class SocialClientPlugin
   async setBio(bio: string) {
     this.bio = bio;
     await this.saveLocalUser();
+  }
+
+  async createPost(
+    postData: Omit<Omit<Omit<SocialPost, "cid">, "id">, "authorId">
+  ): Promise<SocialPost> {
+    const authorId = await this.getLocalUserId();
+    if (authorId === undefined) {
+      throw new Error("failed to get local user id");
+    }
+
+    const schema = this.client.getSchema("social");
+    const table = schema?.getTable("posts");
+    if (!table) {
+      throw new Error("failed to get posts table");
+    }
+
+    const cid = await this.client.dag.store(postData);
+    if (!cid) {
+      throw new Error("failed to store post");
+    }
+
+    const post = { ...postData, authorId, cid: cid.toString() };
+    const postId = await table.upsert("cid", cid.toString(), post);
+
+    if (postId === undefined) {
+      throw new Error("failed to upsert post");
+    }
+
+    return { ...post, id: postId };
+  }
+
+  async getLocalUser(): Promise<SocialUser | undefined> {
+    const schema = this.client.getSchema("social");
+    const table = schema?.getTable("users");
+    if (!table) {
+      throw new Error("failed to get users table");
+    }
+
+    return this.getUserByDID(this.client.id);
+  }
+
+  async getLocalUserId(): Promise<number | undefined> {
+    const user = await this.getLocalUser();
+    return user?.id;
+  }
+
+  async getLocalProfile(): Promise<SocialProfile | undefined> {
+    const schema = this.client.getSchema("social");
+    const table = schema?.getTable<SocialProfile>("profiles");
+    if (!table) {
+      throw new Error("failed to get profiles table");
+    }
+
+    const localUserId = await this.getLocalUserId();
+    if (localUserId === undefined) {
+      throw new Error("failed to get local user id");
+    }
+
+    const profile = await table.findByIndex("userId", localUserId);
+
+    return profile;
+  }
+
+  async createProfile(
+    profileData: Omit<Omit<SocialProfile, "id">, "userId">
+  ): Promise<SocialProfile> {
+    const localUserId = await this.getLocalUserId();
+    if (localUserId === undefined) {
+      throw new Error("failed to get local user id");
+    }
+
+    const schema = this.client.getSchema("social");
+    const table = schema?.getTable("profiles");
+    if (!table) {
+      throw new Error("failed to get profiles table");
+    }
+
+    const profile = { ...profileData, userId: localUserId };
+    const profileId = await table.upsert("userId", this.client.id, profile);
+
+    if (profileId === undefined) {
+      throw new Error("failed to upsert profile");
+    }
+
+    return { ...profile, id: profileId };
   }
 
   async setState({
@@ -233,14 +242,33 @@ export class SocialClientPlugin
     }
   }
 
+  async getUserByDID(did: string): Promise<SocialUser | undefined> {
+    return this.client
+      .getSchema("social")
+      ?.getTable<SocialUser>("users")
+      ?.findByIndex("did", did);
+  }
+
   async onSocialConnection(message: PubsubMessage<SocialConnectionMessage>) {
+    const fromUserId = (await this.getUserByDID(message.data.from))?.id;
+    if (!fromUserId || message.data.from !== message.from) {
+      console.warn("failed to create connection from unknown user");
+      return;
+    }
+
+    const localUserId = await this.getLocalUserId();
+    if (!localUserId || message.data.to !== this.client.id) {
+      console.warn("failed to create connection to unknown user");
+      return;
+    }
+
     const connection = await this.client
       .getSchema("social")
       ?.getTable<SocialConnectionRecord>("connections")
       ?.find((connection: SocialConnectionRecord) => {
         if (
-          connection.to === message.data.to &&
-          connection.from === message.peer.did
+          connection.toId === localUserId &&
+          connection.fromId === fromUserId
         ) {
           return true;
         }
@@ -258,8 +286,8 @@ export class SocialClientPlugin
         .getSchema("social")
         ?.getTable<SocialConnectionRecord>("connections")
         ?.insert({
-          from: message.peer.did,
-          to: message.data.to,
+          fromId: fromUserId,
+          toId: localUserId,
           follow: message.data.follow,
         });
     }
@@ -294,22 +322,21 @@ export class SocialClientPlugin
   async onSocialUpdatesRequest(
     message: PubsubMessage<SocialUpdatesRequestMessage>
   ) {
+    const fromUserId = (await this.getUserByDID(message.from))?.id;
     // TODO: make sure this user is allowed to see this data
     const myPosts = await this.client
       .getSchema("social")
       ?.getTable<SocialPost>("posts")
       ?.where((post) => {
-        if (post.author === message.peer.did) {
+        if (post.authorId === fromUserId) {
           return true;
         }
         return false;
       });
     await this.client.send(message.peer.did, {
       topic: "/social/updates/response",
-      requestID: message.data.requestID,
-      updates: myPosts?.map((post) => ({
-        cid: post.cid,
-      })),
+      requestId: message.data.requestId,
+      updates: myPosts?.map((post) => post.id),
     });
   }
 
@@ -318,7 +345,12 @@ export class SocialClientPlugin
   ) {}
 
   async sendSocialConnection(to: string, follow: boolean) {
-    const message: SocialConnectionMessage = { to, follow, requestID: uuid() };
+    const message: SocialConnectionMessage = {
+      from: this.client.id,
+      to,
+      follow,
+      requestId: uuid(),
+    };
     await this.client.publish("/social/connection", message);
   }
 }

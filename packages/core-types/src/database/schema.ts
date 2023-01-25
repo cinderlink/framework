@@ -23,6 +23,7 @@ export interface SchemaInterface extends Emittery<SchemaEvents> {
   createTable(name: string, def: TableDefinition): Promise<void>;
   dropTable(name: string): Promise<void>;
   getTable<T extends TableRow = TableRow>(name: string): TableInterface<T>;
+  setDefs(defs: Record<string, TableDefinition>): void;
   save(): Promise<CID | undefined>;
 }
 

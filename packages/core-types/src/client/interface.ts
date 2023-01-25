@@ -10,10 +10,8 @@ import type { DIDDagInterface } from "../dag";
 import type { IdentityInterface } from "../identity";
 import { SchemaInterface } from "../database/schema";
 export interface CandorClientInterface<
-  PluginEvents extends PluginEventDef = PluginEventDef,
-  EmitEvents extends PluginEvents["emit"] &
-    CandorClientEvents = PluginEvents["emit"] & CandorClientEvents
-> extends Emittery<EmitEvents> {
+  PluginEvents extends PluginEventDef = PluginEventDef
+> extends Emittery<PluginEvents["emit"] & CandorClientEvents> {
   plugins: Record<PluginInterface["id"], PluginInterface<PluginEvents>>;
   started: boolean;
   hasServerConnection: boolean;

@@ -26,9 +26,10 @@ const build = (pkg) => {
   return new Promise((resolve) =>
     exec(cmd, { cwd: process.cwd() + "/" + pkg }, (err, stdout, stderr) => {
       if (err) {
-        throw new Error(`Error building ${pkg}: ${err}`);
+        console.error(`${pkg} / error: ${err}`);
+      } else {
+        console.log(`${pkg} / success`);
       }
-      console.log(`${pkg} : ${stdout}`);
       resolve();
     })
   );

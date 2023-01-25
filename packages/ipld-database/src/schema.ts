@@ -22,8 +22,21 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
     public encrypted = true
   ) {
     super();
+    console.info("creating schema", { name, defs, encrypted });
     Object.entries(defs).forEach(([name, def]) => {
       this.tables[name] = new Table(def, this.dag);
+    });
+  }
+
+  setDefs(defs: Record<string, TableDefinition>) {
+    Object.entries(defs).forEach(([name, def]) => {
+      if (!this.tables[name]) {
+        this.tables[name] = new Table(def, this.dag);
+      } else {
+        console.warn(
+          `WARNING: table "${name}" already exists, migrations not yet supported`
+        );
+      }
     });
   }
 

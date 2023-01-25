@@ -65,7 +65,7 @@ export interface TableInterface<T extends TableRow = TableRow>
   unwind(
     test: (block: TableBlock, cid: string | undefined) => Promise<boolean>
   ): Promise<void>;
-  findByIndex(index: string, value: string): Promise<T | undefined>;
+  findByIndex(index: string, value: string | number): Promise<T | undefined>;
   where(match: (row: T) => boolean): Promise<T[]>;
   find(match: (row: T) => boolean): Promise<T | undefined>;
   upsert(index: string, value: string | number, data: T): Promise<number>;
