@@ -10,6 +10,16 @@ importers:
       chokidar: 3.5.3
       minimist: 1.2.7
 
+  examples/server-example:
+    specifiers:
+      '@candor/plugin-identity-server': workspace:../../packages/plugin-identity-server
+      '@candor/plugin-social-server': workspace:../../packages/plugin-social-server
+      '@candor/server-bin': workspace:../../packages/server-bin
+    devDependencies:
+      '@candor/plugin-identity-server': link:../../packages/plugin-identity-server
+      '@candor/plugin-social-server': link:../../packages/plugin-social-server
+      '@candor/server-bin': link:../../packages/server-bin
+
   frontend:
     specifiers:
       '@candor/client': workspace:../packages/client
@@ -4417,7 +4427,7 @@ packages:
     peerDependencies:
       '@sveltejs/kit': ^1.0.0
     dependencies:
-      '@sveltejs/kit': 1.0.1_svelte@3.55.0+vite@4.0.2
+      '@sveltejs/kit': 1.0.1_svelte@3.55.0+vite@4.0.4
       import-meta-resolve: 2.2.0
     dev: true
 

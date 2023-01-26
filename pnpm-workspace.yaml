@@ -5,3 +5,4 @@ packages:
   - "registry-frontend/"
   - "ui-kit/"
   - "!**/test/**"
+  - "examples/*"
