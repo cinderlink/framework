@@ -32,6 +32,8 @@ export interface CandorClientInterface<
   get id(): string;
 
   addPlugin(plugin: PluginInterface<any>): Promise<void>;
+  getPlugin<T = PluginInterface<any>>(id: string): T;
+  hasPlugin(id: string): boolean;
 
   start(): Promise<void>;
   stop(): Promise<void>;

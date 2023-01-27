@@ -57,6 +57,7 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
     const tables: Record<string, string | undefined> = {};
     await Promise.all(
       Object.entries(this.tables).map(async ([name]) => {
+        console.info("saving table", name, this.tables[name]);
         const tableCID = await this.tables[name].save();
         if (tableCID) {
           tables[name] = tableCID?.toString();

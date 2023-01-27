@@ -88,9 +88,11 @@ export class Table<T extends TableRow = TableRow>
     this.currentBlock.toIndex = this.currentIndex;
     delete this.currentBlock.search;
     if (!this.currentBlock.prevCID) {
-      // can't save undefined
       delete this.currentBlock.prevCID;
     }
+
+    console.info("Rolling up block", this.def, this.currentBlock);
+
     const blockCID = this.encrypted
       ? await this.dag.storeEncrypted(this.currentBlock)
       : await this.dag.store(this.currentBlock);
@@ -141,7 +143,10 @@ export class Table<T extends TableRow = TableRow>
   async save() {
     if (Object.values(this.currentBlock.records).length > 0) {
       await this.rollup();
+    } else if (!this.currentBlock.prevCID) {
+      delete this.currentBlock.prevCID;
     }
+
     return this.currentBlock.prevCID;
   }
 

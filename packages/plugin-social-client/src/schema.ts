@@ -72,18 +72,17 @@ export const SocialSchemaDef = {
   posts: {
     encrypted: true,
     aggregate: {},
-    indexes: ["did", "cid"],
+    indexes: ["authorId", "cid"],
     rollup: 1000,
     searchOptions: {
-      fields: ["did", "cid", "title", "content", "tags", "comments"],
+      fields: ["authorId", "cid", "content", "tags", "comments"],
     },
     schema: {
       type: "object",
       properties: {
         cid: { type: "string" },
-        author: { type: "string" },
-        title: { type: "string" },
-        body: { type: "string" },
+        authorId: { type: "number" },
+        content: { type: "string" },
         coverMedia: {
           type: "object",
           properties: {

@@ -69,6 +69,10 @@ export class CandorClient<
     return this.plugins[id] as T;
   }
 
+  hasPlugin(id: string) {
+    return this.plugins[id] !== undefined;
+  }
+
   async start() {
     await this.ipfs.start();
     const info = await this.ipfs.id();

@@ -122,7 +122,7 @@ export class SocialClientPlugin
       throw new Error("failed to get posts table");
     }
 
-    const cid = await this.client.dag.store(postData);
+    const cid = await this.client.dag.store({ ...postData, authorId });
     if (!cid) {
       throw new Error("failed to store post");
     }
@@ -152,21 +152,46 @@ export class SocialClientPlugin
     return user?.id;
   }
 
-  async getLocalProfile(): Promise<SocialProfile | undefined> {
+  async getUserProfile(userId: number): Promise<SocialProfile | undefined> {
     const schema = this.client.getSchema("social");
     const table = schema?.getTable<SocialProfile>("profiles");
     if (!table) {
       throw new Error("failed to get profiles table");
     }
 
+    const profile = await table.find((row) => row.userId === userId);
+
+    return profile;
+  }
+
+  async getLocalProfile(): Promise<SocialProfile | undefined> {
     const localUserId = await this.getLocalUserId();
     if (localUserId === undefined) {
       throw new Error("failed to get local user id");
     }
 
-    const profile = await table.findByIndex("userId", localUserId);
+    return this.getUserProfile(localUserId);
+  }
 
-    return profile;
+  async getUserPosts(userId: number): Promise<SocialPost[]> {
+    const schema = this.client.getSchema("social");
+    const table = schema?.getTable<SocialPost>("posts");
+    if (!table) {
+      throw new Error("failed to get posts table");
+    }
+
+    const posts = await table.where((row) => row.authorId === userId);
+
+    return posts;
+  }
+
+  async getLocalUserPosts(): Promise<SocialPost[]> {
+    const localUserId = await this.getLocalUserId();
+    if (localUserId === undefined) {
+      throw new Error("failed to get local user id");
+    }
+
+    return this.getUserPosts(localUserId);
   }
 
   async createProfile(
@@ -247,6 +272,13 @@ export class SocialClientPlugin
       .getSchema("social")
       ?.getTable<SocialUser>("users")
       ?.findByIndex("did", did);
+  }
+
+  async getUser(userId: number): Promise<SocialUser | undefined> {
+    return this.client
+      .getSchema("social")
+      ?.getTable<SocialUser>("users")
+      ?.find((user: SocialUser) => user.id === userId);
   }
 
   async onSocialConnection(message: PubsubMessage<SocialConnectionMessage>) {
