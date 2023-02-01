@@ -1,4 +1,3 @@
-import { CandorClientEvents } from "../../dist";
 import { CandorClientInterface } from "../client/interface";
 import { PubsubMessage } from "../pubsub";
 

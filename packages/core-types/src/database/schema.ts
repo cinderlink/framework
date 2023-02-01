@@ -1,6 +1,6 @@
 import type Emittery from "emittery";
 import type { CID } from "multiformats";
-import type { DIDDagInterface } from "../../dist";
+import type { DIDDagInterface } from "../dag";
 import type { TableDefinition, TableInterface, TableRow } from "./table";
 
 export type SchemaEvents = {
