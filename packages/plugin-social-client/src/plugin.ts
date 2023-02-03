@@ -84,16 +84,7 @@ export class SocialClientPlugin
         name: this.name,
         avatar: this.avatar,
       });
-    }, Number(this.options.interval || 1000 * 15));
-
-    setTimeout(() => {
-      console.info("[timeout] announcing social presence");
-      this.client.publish("/social/announce", {
-        requestId: uuid(),
-        name: this.name,
-        avatar: this.avatar,
-      });
-    }, 3000);
+    }, Number(this.options.interval || 1000 * 180));
 
     await this.loadLocalUser();
     console.info("social client plugin ready");
