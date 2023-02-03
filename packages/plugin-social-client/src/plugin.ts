@@ -66,6 +66,7 @@ export class SocialClientPlugin
       if (!hasConnected) {
         hasConnected = true;
         setTimeout(() => {
+          console.info("peer connected, announcing social presence");
           this.client.publish("/social/announce", {
             requestId: uuid(),
             name: this.name,
@@ -74,14 +75,25 @@ export class SocialClientPlugin
         }, 3000);
       }
     });
-    // this.interval = setInterval(() => {
-    //   if (!hasConnected) return;
-    //   this.client.publish("/social/announce", {
-    //     requestId: uuid(),
-    //     name: this.name,
-    //     avatar: this.avatar,
-    //   });
-    // }, Number(this.options.interval || 1000 * 15));
+
+    this.interval = setInterval(() => {
+      if (!hasConnected) return;
+      console.info("[interval] announcing social presence");
+      this.client.publish("/social/announce", {
+        requestId: uuid(),
+        name: this.name,
+        avatar: this.avatar,
+      });
+    }, Number(this.options.interval || 1000 * 15));
+
+    setTimeout(() => {
+      console.info("[timeout] announcing social presence");
+      this.client.publish("/social/announce", {
+        requestId: uuid(),
+        name: this.name,
+        avatar: this.avatar,
+      });
+    }, 3000);
 
     await this.loadLocalUser();
     console.info("social client plugin ready");
