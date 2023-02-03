@@ -171,6 +171,7 @@ export class CandorClient<
   }
 
   async stop() {
+    console.info("stopping client");
     await Promise.all(
       Object.values(this.plugins).map(async (plugin) => {
         await plugin.stop?.();
