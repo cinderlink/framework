@@ -69,7 +69,7 @@ export class SocialServerPlugin implements PluginInterface<SocialServerEvents> {
     console.log("social connection", message);
   }
 
-  onPeerAnnounce(message: P2PMessage<SocialAnnounceMessage>) {
+  onPeerAnnounce(message: P2PMessage<string, SocialAnnounceMessage>) {
     if (!message.peer.did) {
       console.warn(
         `plugin/social/client > received social announce message without peer did`
@@ -89,28 +89,27 @@ export class SocialServerPlugin implements PluginInterface<SocialServerEvents> {
     });
   }
 
-  onPeerConnection(message: P2PMessage<SocialConnectionMessage>) {
+  onPeerConnection(message: P2PMessage<string, SocialConnectionMessage>) {
     console.log("peer connection", message);
   }
 
   async onUserSearchRequest(
-    message: P2PMessage<SocialUserSearchRequestMessage>
+    message: P2PMessage<string, SocialUserSearchRequestMessage>
   ) {
     console.info(
       `plugin/social/server > received user search request: ${message.data.query}`
     );
-    const matches =
-      (await this.client
-        .getSchema("social")
-        ?.getTable("users")
-        ?.search(message.data.query, 20)) || ([] as SocialUser[]);
-    console.info(`plugin/social/server > found ${matches.length} matches`);
+    const results = ((await this.client
+      .getSchema("social")
+      ?.getTable("users")
+      ?.search(message.data.query, 20)) || []) as SocialUser[];
+    console.info(`plugin/social/server > found ${results.length} matches`);
 
     await this.client.send(message.peer.peerId.toString(), {
       topic: "/social/users/search/response",
       data: {
-        query: message.data.query,
-        matches,
+        requestId: message.data.requestId,
+        results,
       },
     });
   }

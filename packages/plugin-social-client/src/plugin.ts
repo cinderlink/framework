@@ -22,6 +22,7 @@ import type {
   SocialUser,
   SocialProfile,
   SocialUserStatus,
+  SocialUserSearchResponseMessage,
 } from "@candor/plugin-social-core";
 import { loadSocialSchema } from "@candor/plugin-social-core";
 
@@ -52,6 +53,7 @@ export class SocialClientPlugin
     "/social/update": this.onSocialUpdate,
     "/social/updates/request": this.onSocialUpdatesRequest,
     "/social/updates/response": this.onSocialUpdatesResponse,
+    "/social/users/search/response": this.onUsersSearchResponse,
   };
 
   constructor(
@@ -334,7 +336,7 @@ export class SocialClientPlugin
   async onSocialConnection(
     message:
       | PubsubMessage<SocialConnectionMessage>
-      | P2PMessage<SocialConnectionMessage>
+      | P2PMessage<string, SocialConnectionMessage>
   ) {
     if (!message.peer.did) {
       console.warn(
@@ -404,7 +406,7 @@ export class SocialClientPlugin
   async onSocialAnnounce(
     message:
       | PubsubMessage<SocialAnnounceMessage>
-      | P2PMessage<SocialAnnounceMessage>
+      | P2PMessage<string, SocialAnnounceMessage>
   ) {
     if (!message.peer.did) {
       console.warn(
@@ -455,15 +457,23 @@ export class SocialClientPlugin
   async onSocialUpdate(
     message:
       | PubsubMessage<SocialUpdateMessage>
-      | P2PMessage<SocialUpdateMessage>
+      | P2PMessage<string, SocialUpdateMessage>
   ) {
-    const { cid } = message.data;
-    const post = await this.client.dag.load(CID.parse(cid));
+    const { post } = message.data;
     if (!post) return;
+
+    const cid = await this.client.dag.store(post);
+    if (!cid) {
+      console.warn(
+        `plugin/social/client > failed to store social update message (did: ${message.peer.did})`
+      );
+      return;
+    }
+
     await this.client
       .getSchema("social")
       ?.getTable("posts")
-      ?.upsert("cid", cid, {
+      ?.upsert("cid", cid.toString(), {
         ...post,
         cid,
         did: message.peer.did,
@@ -473,7 +483,7 @@ export class SocialClientPlugin
   async onSocialUpdatesRequest(
     message:
       | PubsubMessage<SocialUpdatesRequestMessage>
-      | P2PMessage<SocialUpdatesRequestMessage>
+      | P2PMessage<string, SocialUpdatesRequestMessage>
   ) {
     if (!message.peer.did) {
       console.warn(
@@ -495,15 +505,17 @@ export class SocialClientPlugin
       });
     await this.client.send(message.peer.peerId.toString(), {
       topic: "/social/updates/response",
-      requestId: message.data.requestId,
-      updates: myPosts?.map((post) => post.id),
+      data: {
+        requestId: message.data.requestId,
+        updates: myPosts?.map((post) => post) || [],
+      },
     });
   }
 
   onSocialUpdatesResponse(
     message:
       | PubsubMessage<SocialUpdatesResponseMessage>
-      | P2PMessage<SocialUpdatesResponseMessage>
+      | P2PMessage<string, SocialUpdatesResponseMessage>
   ) {}
 
   async sendSocialConnection(to: string, follow: boolean) {
@@ -514,6 +526,16 @@ export class SocialClientPlugin
       requestId: uuid(),
     };
     await this.client.publish("/social/connection", message);
+  }
+
+  async onUsersSearchResponse(
+    message: P2PMessage<string, SocialUserSearchResponseMessage>
+  ) {
+    const { requestId } = message.data;
+    this.emit(
+      `/search/users/${requestId}` as keyof SocialClientPluginEvents,
+      message.data
+    );
   }
 }
 

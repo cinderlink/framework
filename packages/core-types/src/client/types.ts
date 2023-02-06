@@ -1,3 +1,4 @@
+import { HandshakeSuccess, HandshakeError } from "./../p2p/types";
 import type { IPFSWithLibP2P } from "../ipfs";
 import type {
   HandshakeRequest,
@@ -30,6 +31,8 @@ export interface CandorClientEventDef extends PluginEventDef {
     "/candor/handshake/request": HandshakeRequest;
     "/candor/handshake/challenge": HandshakeChallenge;
     "/candor/handshake/complete": HandshakeComplete;
+    "/candor/handshake/success": HandshakeSuccess;
+    "/candor/handshake/error": HandshakeError;
     "/identity/resolve/request": IdentityResolveRequest;
     "/identity/resolve/response": IdentityResolveResponse;
   };
@@ -37,6 +40,8 @@ export interface CandorClientEventDef extends PluginEventDef {
     "/candor/handshake/request": HandshakeRequest;
     "/candor/handshake/challenge": HandshakeChallenge;
     "/candor/handshake/complete": HandshakeComplete;
+    "/candor/handshake/success": HandshakeSuccess;
+    "/candor/handshake/error": HandshakeError;
     "/identity/resolve/request": IdentityResolveRequest;
     "/identity/resolve/response": IdentityResolveResponse;
   };

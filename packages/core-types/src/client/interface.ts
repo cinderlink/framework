@@ -1,7 +1,12 @@
 import type Emittery from "emittery";
 import type { PluginInterface, PluginEventDef } from "../plugin/types";
 import type { CandorClientEventDef } from "./types";
-import type { P2PMessageEvents, PeerStoreInterface } from "../p2p";
+import type {
+  OutgoingP2PMessage,
+  P2PMessageEvents,
+  PeerRole,
+  PeerStoreInterface,
+} from "../p2p";
 import type { PubsubMessageEvents } from "../pubsub";
 import type { IPFSWithLibP2P } from "../ipfs";
 import type { DID } from "dids";
@@ -25,6 +30,7 @@ export interface CandorClientInterface<
       PluginEvents["subscribe"] | CandorClientEventDef["subscribe"]
     >
   >;
+
   p2p: Emittery<
     P2PMessageEvents<PluginEvents["receive"]> &
       P2PMessageEvents<CandorClientEventDef["receive"]>
@@ -39,22 +45,27 @@ export interface CandorClientInterface<
 
   get id(): string;
 
-  addPlugin<T extends PluginInterface<PluginEventDef>>(
-    plugin: T
-  ): Promise<void>;
-  getPlugin<
-    T extends PluginInterface<PluginEventDef> = PluginInterface<PluginEventDef>
-  >(
-    id: string
-  ): T;
+  addPlugin<T extends PluginInterface<any>>(plugin: T): Promise<void>;
+
+  getPlugin<T extends PluginInterface<any> = PluginInterface>(id: string): T;
+
   hasPlugin(id: string): boolean;
 
   start(): Promise<void>;
   stop(): Promise<void>;
   save(): Promise<void>;
   load(): Promise<void>;
-  connect(peerId: PeerId): Promise<void>;
-  send(peerId: string, message: unknown): Promise<void>;
+  connect(peerId: PeerId, role?: PeerRole): Promise<void>;
+
+  send<
+    E extends PluginEvents["send"] &
+      CandorClientEventDef["send"] = PluginEvents["send"] &
+      CandorClientEventDef["send"],
+    K extends keyof E = keyof E
+  >(
+    peerId: string,
+    message: OutgoingP2PMessage<E, K>
+  ): Promise<void>;
 
   subscribe(
     topic:

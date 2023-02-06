@@ -55,6 +55,7 @@ export type SocialComment = {
 
 export type SocialClientPluginEvents = {
   ready: void;
+  "/search/users/${string}": SocialUserSearchResponseMessage;
 };
 
 export type SocialConnectionMessage = {
@@ -75,7 +76,7 @@ export type SocialAnnounceMessage = {
 
 export type SocialUpdateMessage = {
   requestId: string;
-  cid: string;
+  post: SocialPost;
 };
 
 export type SocialUpdatesRequestMessage = {
@@ -85,7 +86,7 @@ export type SocialUpdatesRequestMessage = {
 
 export type SocialUpdatesResponseMessage = {
   requestId: string;
-  updates: SocialUpdateMessage[];
+  updates: SocialPost[];
 };
 
 export type SocialUserSearchRequestMessage = {

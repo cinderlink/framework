@@ -58,8 +58,11 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
   public peers: PeerStoreInterface = new Peerstore();
   public subscriptions: string[] = [];
 
-  public pubsub: Emittery<PubsubMessageEvents<PluginEvents["subscribe"]>> =
-    new Emittery();
+  public pubsub: Emittery<
+    PubsubMessageEvents<PluginEvents["subscribe"]> &
+      PubsubMessageEvents<CandorClientEventDef["subscribe"]>
+  > = new Emittery();
+
   public p2p: Emittery<
     P2PMessageEvents<PluginEvents["receive"]> &
       P2PMessageEvents<CandorClientEventDef["receive"]>
@@ -82,13 +85,11 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
     this.plugins = {};
   }
 
-  async addPlugin<T extends PluginInterface = PluginInterface>(plugin: T) {
+  async addPlugin(plugin: PluginInterface<any>) {
     this.plugins[plugin.id] = plugin;
   }
 
-  getPlugin<
-    T extends PluginInterface<PluginEventDef> = PluginInterface<PluginEventDef>
-  >(id: string) {
+  getPlugin<T extends PluginInterface<any> = PluginInterface>(id: string) {
     return this.plugins[id] as T;
   }
 
@@ -184,9 +185,14 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
     this.peers.updatePeer(peerId.toString(), { connected: true });
   }
 
-  async send<T extends Record<string, unknown> = Record<string, unknown>>(
+  async send<
+    E extends PluginEventDef["send"] &
+      CandorClientEventDef["send"] = PluginEventDef["send"] &
+      CandorClientEventDef["send"],
+    K extends keyof E = keyof E
+  >(
     peerId: string,
-    message: OutgoingP2PMessage<T>,
+    message: OutgoingP2PMessage<E, K>,
     {
       sign,
       encrypt,
@@ -203,7 +209,7 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
       this.protoStreams[peerId] = pushable();
     }
 
-    const encoded: Partial<EncodedP2PMessage> = {
+    const encoded: Partial<EncodedP2PMessage<E, K>> = {
       topic: message.topic,
     };
     if (sign) {
@@ -217,7 +223,7 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
       );
       encoded.encrypted = true;
     } else {
-      encoded.payload = message.data;
+      encoded.payload = message.data as E[K];
     }
 
     this.protoStreams[peerId].push(json.encode(encoded as EncodedP2PMessage));
@@ -317,22 +323,24 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
 
             if (topic === "/candor/handshake/request") {
               await self.onHandshakeRequest(
-                event as P2PMessage<HandshakeRequest>
+                event as P2PMessage<string, HandshakeRequest>
               );
             } else if (topic === "/candor/handshake/challenge") {
               await self.onHandshakeChallenge(
-                event as P2PMessage<HandshakeChallenge>
+                event as P2PMessage<string, HandshakeChallenge>
               );
             } else if (topic === "/candor/handshake/complete") {
               await self.onHandshakeComplete(
-                event as P2PMessage<HandshakeComplete>
+                event as P2PMessage<string, HandshakeComplete>
               );
             } else if (topic === "/candor/handshake/success") {
               await self.onHandshakeSuccess(
-                event as P2PMessage<HandshakeSuccess>
+                event as P2PMessage<string, HandshakeSuccess>
               );
             } else if (topic === "/candor/handshake/error") {
-              await self.onHandshakeError(event as P2PMessage<HandshakeError>);
+              await self.onHandshakeError(
+                event as P2PMessage<string, HandshakeError>
+              );
             } else if (event.peer.authenticated) {
               console.debug(
                 `p2p/in:${topic} > from ${event.peerId}, data: `,
@@ -418,10 +426,17 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
     await this.ipfs.libp2p.pubsub.publish(topic as string, encoded);
   }
 
-  async onHandshakeRequest(message: P2PMessage<HandshakeRequest>) {
+  async onHandshakeRequest(message: P2PMessage<string, HandshakeRequest>) {
     const peer = message.peer;
     if (!peer) {
       console.info(`p2p/handshake > unknown peer ${message.peerId}`);
+      return;
+    }
+
+    if (!message.data?.did) {
+      console.info(
+        `p2p/handshake > missing did in request from ${peer.peerId}`
+      );
       return;
     }
 
@@ -475,7 +490,7 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
     );
   }
 
-  async onHandshakeChallenge(message: P2PMessage<HandshakeChallenge>) {
+  async onHandshakeChallenge(message: P2PMessage<string, HandshakeChallenge>) {
     // send the challenge back to the peer
     const peer = message.peer;
     if (!peer) {
@@ -500,7 +515,7 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
     );
   }
 
-  async onHandshakeComplete(message: P2PMessage<HandshakeComplete>) {
+  async onHandshakeComplete(message: P2PMessage<string, HandshakeComplete>) {
     if (!message.signed) {
       console.warn(
         `p2p/handshake/complete > received unsigned message from ${message.peerId}`
@@ -557,7 +572,7 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
     );
   }
 
-  async onHandshakeError(message: P2PMessage<HandshakeError>) {
+  async onHandshakeError(message: P2PMessage<string, HandshakeError>) {
     console.warn(
       `p2p/handshake/error > received error from ${message.peerId} (${
         message.peer?.did ? message.peer.did : "N/A"
@@ -566,7 +581,7 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
     );
   }
 
-  async onHandshakeSuccess(message: P2PMessage<HandshakeSuccess>) {
+  async onHandshakeSuccess(message: P2PMessage<string, HandshakeSuccess>) {
     const peer = message.peer;
     if (!peer) {
       console.info(`p2p/handshake/success > unknown peer ${message.peerId}`);

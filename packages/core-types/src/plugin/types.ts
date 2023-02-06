@@ -35,14 +35,15 @@ export interface PluginInterface<
   p2p: {
     [key in keyof Events["receive"]]: PluginEventHandler<
       P2PMessage<
+        key extends string ? key : never,
         Events["receive"][key] extends Record<string, unknown>
           ? Events["receive"][key]
           : {}
       >
     >;
   };
-  events: {
-    [key in keyof Events["emit"]]: PluginEventHandler<Events["emit"][key]>;
+  emitters?: {
+    [key in keyof Events["emit"]]?: PluginEventHandler<Events["emit"][key]>;
   };
 }
 export default PluginInterface;

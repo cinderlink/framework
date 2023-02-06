@@ -23,6 +23,7 @@ export interface SocialClientEvents extends PluginEventDef {
     "/social/updates/response": SocialUpdatesResponseMessage;
     "/social/connection": SocialConnectionMessage;
     "/social/announce": SocialAnnounceMessage;
+    "/social/users/search/response": SocialUserSearchResponseMessage;
   };
   publish: {
     "/social/connection": SocialConnectionMessage;
