@@ -25,15 +25,15 @@
   "dependencies": {
     "@candor/client": "workspace:../client",
     "@candor/server": "workspace:../server",
-    "ipfs-http-gateway": "^0.12.0",
-    "ipfs-http-server": "^0.14.0",
+    "ipfs-http-gateway": "^0.13.0",
+    "ipfs-http-server": "^0.15.0",
     "minimist": "^1.2.7"
   },
   "devDependencies": {
     "@types/minimist": "^1.2.2",
     "chalk": "^5.2.0",
     "tsup": "^6.5.0",
-    "typescript": "^4.9.4",
-    "vitest": "^0.25.8"
+    "typescript": "^4.9.5",
+    "vitest": "^0.28.4"
   }
 }

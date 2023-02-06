@@ -1,3 +1,7 @@
+import { Schema } from "@candor/ipld-database";
+import { CandorClientInterface } from "@candor/core-types";
+import { SocialClientPluginEvents } from "./types";
+
 export const SocialSchemaDef = {
   users: {
     encrypted: false,
@@ -110,3 +114,15 @@ export const SocialSchemaDef = {
     },
   },
 };
+
+export default SocialSchemaDef;
+
+export async function loadSocialSchema(client: CandorClientInterface<any>) {
+  console.info(`plugin/social > preparing schema`);
+  if (!client.schemas["social"]) {
+    const schema = new Schema("social", SocialSchemaDef, client.dag);
+    await client.addSchema("social", schema);
+  } else {
+    client.schemas["social"].setDefs(SocialSchemaDef);
+  }
+}

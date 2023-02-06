@@ -1,7 +1,13 @@
 import type { IPFSWithLibP2P } from "../ipfs";
-import type { Peer } from "../p2p";
+import type {
+  HandshakeRequest,
+  HandshakeChallenge,
+  HandshakeComplete,
+  Peer,
+} from "../p2p";
 import type { PubsubMessage } from "../pubsub";
 import type { DID } from "dids";
+import { PluginEventDef } from "../plugin";
 
 export type IdentityResolveRequest = {
   requestID: string;
@@ -19,15 +25,31 @@ export type CandorConstructorOptions = {
   did: DID;
 };
 
-export type CandorClientEvents = {
-  "/client/ready": undefined;
-  "/peer/connect": Peer;
-  "/peer/disconnect": Peer;
-  "/peer/handshake": Peer;
-  "/peer/message": {
-    type: string;
-    peer: Peer;
-    message: unknown;
+export interface CandorClientEventDef extends PluginEventDef {
+  send: {
+    "/candor/handshake/request": HandshakeRequest;
+    "/candor/handshake/challenge": HandshakeChallenge;
+    "/candor/handshake/complete": HandshakeComplete;
+    "/identity/resolve/request": IdentityResolveRequest;
+    "/identity/resolve/response": IdentityResolveResponse;
   };
-  "/pubsub/message": PubsubMessage;
-};
+  receive: {
+    "/candor/handshake/request": HandshakeRequest;
+    "/candor/handshake/challenge": HandshakeChallenge;
+    "/candor/handshake/complete": HandshakeComplete;
+    "/identity/resolve/request": IdentityResolveRequest;
+    "/identity/resolve/response": IdentityResolveResponse;
+  };
+  emit: {
+    "/client/ready": undefined;
+    "/peer/connect": Peer;
+    "/peer/disconnect": Peer;
+    "/peer/handshake": Peer;
+    "/peer/message": {
+      type: string;
+      peer: Peer;
+      message: unknown;
+    };
+    "/pubsub/message": PubsubMessage;
+  };
+}

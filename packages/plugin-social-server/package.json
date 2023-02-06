@@ -20,12 +20,13 @@
   },
   "devDependencies": {
     "@candor/core-types": "workspace:../core-types",
+    "@candor/plugin-social-core": "workspace:../plugin-social-core",
     "@candor/plugin-social-client": "workspace:../plugin-social-client",
     "did-jwt": "^6.11.0",
     "dids": "^3.4.0",
     "tsup": "^6.5.0",
-    "typescript": "^4.9.4",
-    "vitest": "^0.25.8"
+    "typescript": "^4.9.5",
+    "vitest": "^0.28.4"
   },
   "peerDependencies": {
     "did-jwt": "^6.11.0",

@@ -14,6 +14,7 @@ const packages = [
   "packages/plugin-identity-server",
   "packages/server",
   "packages/server-bin",
+  "packages/plugin-social-core",
   "packages/plugin-social-client",
   "packages/plugin-social-server",
   "packages/test-adapters",

@@ -68,7 +68,7 @@ export class IdentityServerPlugin
       ?.getTable("pins")
       .upsert("did", message.peer.did, message.data);
 
-    return this.client.send(message.peer.did, {
+    return this.client.send(message.peer.peerId.toString(), {
       topic: "/identity/set/response",
       requestID: message.data.requestID,
       success: true,
@@ -81,7 +81,7 @@ export class IdentityServerPlugin
       ?.getTable<IdentityPinsRecord>("pins")
       .findByIndex("did", message.peer.did);
 
-    return this.client.send(message.peer.did, {
+    return this.client.send(message.peer.peerId.toString(), {
       topic: "/identity/resolve/response",
       requestID: message.data.requestID,
       cid: identity?.cid,

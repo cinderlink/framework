@@ -1,14 +1,15 @@
-import { Peer } from "../p2p";
+import { HandshakedPeer } from "./../p2p/types";
+import { PeerId } from "@libp2p/interface-peer-id";
 import { PluginEventPayloads } from "../plugin/types";
 
 export type PubsubCoreEvents = {
   "/pubsub/subscribe": {};
 };
 
-export type PubsubMessage<Data = any, FromType = any> = {
+export type PubsubMessage<Data = any, FromType = PeerId> = {
   type: "signed" | "unsigned";
   from: FromType;
-  peer: Peer;
+  peer: HandshakedPeer;
   sequenceNumber: number;
   topic: string;
   data: Data;

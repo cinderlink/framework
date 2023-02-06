@@ -1,11 +1,16 @@
-import type { DAGInterface } from "@candor/core-types";
+import type {
+  CandorClientInterface,
+  DAGInterface,
+  PluginEventDef,
+} from "@candor/core-types";
 import { DIDDag } from "./did/dag";
 import * as json from "multiformats/codecs/json";
-import CandorClient from "./client";
 import { CID } from "multiformats";
 
-export class ClientDag implements DAGInterface {
-  constructor(private client: CandorClient) {}
+export class ClientDag<Plugins extends PluginEventDef = PluginEventDef>
+  implements DAGInterface
+{
+  constructor(private client: CandorClientInterface<Plugins>) {}
 
   async store<T>(
     data: T,
@@ -29,8 +34,10 @@ export class ClientDag implements DAGInterface {
   }
 }
 
-export class ClientDIDDag extends DIDDag {
-  constructor(client: CandorClient<any>) {
+export class ClientDIDDag<
+  Plugins extends PluginEventDef = PluginEventDef
+> extends DIDDag {
+  constructor(client: CandorClientInterface<Plugins>) {
     super(client.did, new ClientDag(client));
   }
 }
