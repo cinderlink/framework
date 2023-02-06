@@ -82,9 +82,7 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
     this.plugins = {};
   }
 
-  async addPlugin<
-    T extends PluginInterface<PluginEventDef> = PluginInterface<PluginEventDef>
-  >(plugin: T) {
+  async addPlugin<T extends PluginInterface = PluginInterface>(plugin: T) {
     this.plugins[plugin.id] = plugin;
   }
 

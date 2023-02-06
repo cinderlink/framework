@@ -1,4 +1,4 @@
-import type { PluginEventDef } from "@candor/core-types";
+import type { CandorClientInterface, PluginEventDef } from "@candor/core-types";
 import { Options } from "ipfs-core";
 import { CandorClient } from "./client";
 import { createDID } from "./did/create";
@@ -9,6 +9,7 @@ export async function createClient<
 >(seed: Uint8Array, nodes: string[] = [], options: Partial<Options> = {}) {
   const ipfs = await createIPFS(nodes, options);
   const did = await createDID(seed);
-  const client = new CandorClient<PluginEvents>({ ipfs, did });
+  const client: CandorClientInterface<PluginEvents> =
+    new CandorClient<PluginEvents>({ ipfs, did });
   return client;
 }

@@ -1,4 +1,4 @@
-import { multiaddr } from "@multiformats/multiaddr";
+// import { multiaddr } from "@multiformats/multiaddr";
 import type {
   PluginInterface,
   CandorClientInterface,
@@ -23,7 +23,7 @@ import type {
   SocialProfile,
   SocialUserStatus,
 } from "@candor/plugin-social-core";
-import { SocialSchemaDef, loadSocialSchema } from "@candor/plugin-social-core";
+import { loadSocialSchema } from "@candor/plugin-social-core";
 
 export class SocialClientPlugin
   extends Emittery<SocialClientPluginEvents>
@@ -446,7 +446,7 @@ export class SocialClientPlugin
         console.warn(
           `plugin/social/client > discovered peer ${message.peer.peerId} without address, attempting relay (relay: ${relayAddr})`
         );
-        await this.client.ipfs.swarm.connect(multiaddr(relayAddr));
+        await this.client.ipfs.swarm.connect(relayAddr as any);
       }
       await this.client.connect(message.peer.peerId);
     }

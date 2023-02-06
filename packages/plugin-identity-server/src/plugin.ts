@@ -1,9 +1,9 @@
 import type {
   PluginInterface,
-  PubsubMessage,
   IdentityResolveRequest,
   IdentityResolveResponse,
   CandorClientInterface,
+  P2PMessage,
 } from "@candor/core-types";
 import { Schema } from "@candor/ipld-database";
 import { IdentityServerEvents, IdentitySetRequest } from "./types";
@@ -62,7 +62,15 @@ export class IdentityServerPlugin
   pubsub = {};
   events = {};
 
-  async onSetRequest(message: PubsubMessage<IdentitySetRequest>) {
+  async onSetRequest(message: P2PMessage<IdentitySetRequest>) {
+    if (!message.peer.did) {
+      return this.client.send(message.peer.peerId.toString(), {
+        topic: "/identity/set/response",
+        requestID: message.data.requestID,
+        success: false,
+        error: "did not found, peer not authenticated",
+      });
+    }
     await this.client
       .getSchema("identity")
       ?.getTable("pins")
@@ -75,7 +83,15 @@ export class IdentityServerPlugin
     });
   }
 
-  async onResolveRequest(message: PubsubMessage<IdentityResolveRequest>) {
+  async onResolveRequest(message: P2PMessage<IdentityResolveRequest>) {
+    if (!message.peer.did) {
+      return this.client.send(message.peer.peerId.toString(), {
+        topic: "/identity/resolve/response",
+        requestID: message.data.requestID,
+        cid: null,
+      });
+    }
+
     const identity = await this.client
       .getSchema("identity")
       ?.getTable<IdentityPinsRecord>("pins")
