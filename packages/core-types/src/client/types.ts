@@ -9,17 +9,12 @@ import type {
 import type { PubsubMessage } from "../pubsub";
 import type { DID } from "dids";
 import { PluginEventDef } from "../plugin";
-
-export type IdentityResolveRequest = {
-  requestID: string;
-  since: number;
-};
-
-export type IdentityResolveResponse = {
-  requestID: string;
-  cid?: string;
-  doc?: Record<string, unknown>;
-};
+import {
+  IdentityResolveRequest,
+  IdentityResolveResponse,
+  IdentitySetRequest,
+  IdentitySetResponse,
+} from "../identity/types";
 
 export type CandorConstructorOptions = {
   ipfs: IPFSWithLibP2P;
@@ -33,8 +28,10 @@ export interface CandorClientEventDef extends PluginEventDef {
     "/candor/handshake/complete": HandshakeComplete;
     "/candor/handshake/success": HandshakeSuccess;
     "/candor/handshake/error": HandshakeError;
+    "/identity/set/request": IdentitySetRequest;
     "/identity/resolve/request": IdentityResolveRequest;
     "/identity/resolve/response": IdentityResolveResponse;
+    "/identity/set/response": IdentitySetResponse;
   };
   receive: {
     "/candor/handshake/request": HandshakeRequest;
@@ -42,8 +39,10 @@ export interface CandorClientEventDef extends PluginEventDef {
     "/candor/handshake/complete": HandshakeComplete;
     "/candor/handshake/success": HandshakeSuccess;
     "/candor/handshake/error": HandshakeError;
+    "/identity/set/request": IdentitySetRequest;
     "/identity/resolve/request": IdentityResolveRequest;
     "/identity/resolve/response": IdentityResolveResponse;
+    "/identity/set/response": IdentitySetResponse;
   };
   emit: {
     "/client/ready": undefined;

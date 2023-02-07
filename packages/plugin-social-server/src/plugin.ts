@@ -99,11 +99,31 @@ export class SocialServerPlugin implements PluginInterface<SocialServerEvents> {
     console.info(
       `plugin/social/server > received user search request: ${message.data.query}`
     );
-    const results = ((await this.client
+    const table = this.client
       .getSchema("social")
-      ?.getTable("users")
-      ?.search(message.data.query, 20)) || []) as SocialUser[];
-    console.info(`plugin/social/server > found ${results.length} matches`);
+      ?.getTable<SocialUser>("users");
+
+    if (!table) {
+      console.warn(`plugin/social/server > users table not found`);
+      return;
+    }
+
+    const manualResults = await table.where((row) => {
+      return (
+        row.name?.indexOf(message.data.query) > -1 ||
+        row.bio?.indexOf(message.data.query) > -1
+      );
+    });
+    console.info(
+      `plugin/social/server > found ${manualResults.length} matches manually (index: ${table.currentIndex})`,
+      manualResults
+    );
+
+    const results = ((await table.search(message.data.query, 20)) ||
+      []) as SocialUser[];
+    console.info(
+      `plugin/social/server > found ${results.length} matches (index: ${table.currentIndex})`
+    );
 
     await this.client.send(message.peer.peerId.toString(), {
       topic: "/social/users/search/response",

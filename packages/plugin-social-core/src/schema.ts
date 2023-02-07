@@ -1,15 +1,15 @@
 import { Schema } from "@candor/ipld-database";
-import { CandorClientInterface } from "@candor/core-types";
+import { CandorClientInterface, TableDefinition } from "@candor/core-types";
 import { SocialClientPluginEvents } from "./types";
 
-export const SocialSchemaDef = {
+export const SocialSchemaDef: Record<string, TableDefinition> = {
   users: {
     encrypted: false,
     aggregate: {},
     indexes: ["name", "did"],
     rollup: 1000,
     searchOptions: {
-      fields: ["name", "did"],
+      fields: ["id", "name", "did"],
     },
     schema: {
       type: "object",

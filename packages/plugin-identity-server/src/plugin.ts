@@ -1,12 +1,15 @@
-import type {
+import {
   PluginInterface,
-  IdentityResolveRequest,
-  IdentityResolveResponse,
   CandorClientInterface,
   P2PMessage,
+  IdentityResolveRequest,
+  IdentityResolveResponse,
+  IdentitySetRequest,
+  IdentitySetResponse,
+  CandorClientEventDef,
 } from "@candor/core-types";
 import { Schema } from "@candor/ipld-database";
-import { IdentityServerEvents, IdentitySetRequest } from "./types";
+import { IdentityServerEvents } from "./types";
 
 export type IdentityPinsRecord = {
   id?: number;
@@ -62,13 +65,15 @@ export class IdentityServerPlugin
   pubsub = {};
   events = {};
 
-  async onSetRequest(message: P2PMessage<IdentitySetRequest>) {
+  async onSetRequest(message: P2PMessage<string, IdentitySetRequest>) {
     if (!message.peer.did) {
       return this.client.send(message.peer.peerId.toString(), {
         topic: "/identity/set/response",
-        requestID: message.data.requestID,
-        success: false,
-        error: "did not found, peer not authenticated",
+        data: {
+          requestID: message.data.requestID,
+          success: false,
+          error: "did not found, peer not authenticated",
+        },
       });
     }
     await this.client
@@ -78,17 +83,21 @@ export class IdentityServerPlugin
 
     return this.client.send(message.peer.peerId.toString(), {
       topic: "/identity/set/response",
-      requestID: message.data.requestID,
-      success: true,
+      data: {
+        requestID: message.data.requestID,
+        success: true,
+      },
     });
   }
 
-  async onResolveRequest(message: P2PMessage<IdentityResolveRequest>) {
+  async onResolveRequest(message: P2PMessage<string, IdentityResolveRequest>) {
     if (!message.peer.did) {
       return this.client.send(message.peer.peerId.toString(), {
         topic: "/identity/resolve/response",
-        requestID: message.data.requestID,
-        cid: null,
+        data: {
+          requestID: message.data.requestID,
+          cid: undefined,
+        },
       });
     }
 
@@ -97,11 +106,16 @@ export class IdentityServerPlugin
       ?.getTable<IdentityPinsRecord>("pins")
       .findByIndex("did", message.peer.did);
 
-    return this.client.send(message.peer.peerId.toString(), {
-      topic: "/identity/resolve/response",
-      requestID: message.data.requestID,
-      cid: identity?.cid,
-    } as IdentityResolveResponse);
+    return this.client.send<CandorClientEventDef["send"]>(
+      message.peer.peerId.toString(),
+      {
+        topic: "/identity/resolve/response",
+        data: {
+          requestID: message.data.requestID,
+          cid: identity?.cid,
+        },
+      }
+    );
   }
 }
 

@@ -91,11 +91,14 @@ export class Table<T extends TableRow = TableRow>
       delete this.currentBlock.prevCID;
     }
 
-    console.info("Rolling up block", this.def, this.currentBlock);
-
     const blockCID = this.encrypted
       ? await this.dag.storeEncrypted(this.currentBlock)
       : await this.dag.store(this.currentBlock);
+
+    console.info(
+      `ipld/table: rolled up block (prev: ${this.currentBlock.prevCID}, current: ${blockCID})`
+    );
+
     this.currentBlock = this.createBlock(blockCID?.toString());
   }
 

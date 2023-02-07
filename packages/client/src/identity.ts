@@ -1,7 +1,11 @@
 import { v4 as uuid } from "uuid";
 import localforage from "localforage";
 import { CID } from "multiformats";
-import type { CandorClientInterface, PluginEventDef } from "@candor/core-types";
+import type {
+  CandorClientEventDef,
+  CandorClientInterface,
+  PluginEventDef,
+} from "@candor/core-types";
 export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
   cid?: string;
   document?: Record<string, unknown>;
@@ -95,10 +99,13 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
       }
       servers.forEach((server) => {
         if (server.peerId) {
-          this.client.send(server.peerId.toString(), {
-            topic: "/identity/resolve/request",
-            data: { requestID },
-          });
+          this.client.send<CandorClientEventDef["send"]>(
+            server.peerId.toString(),
+            {
+              topic: "/identity/resolve/request",
+              data: { requestID },
+            }
+          );
         }
       });
     });
@@ -118,10 +125,13 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
     await Promise.all(
       this.client.peers.getServers().map(async (server) => {
         if (server.did) {
-          await this.client.send(server.peerId.toString(), {
-            topic: "/identity/set/request",
-            data: { requestID: uuid(), cid },
-          });
+          await this.client.send<CandorClientEventDef["send"]>(
+            server.peerId.toString(),
+            {
+              topic: "/identity/set/request",
+              data: { requestID: uuid(), cid },
+            }
+          );
         }
       })
     );
