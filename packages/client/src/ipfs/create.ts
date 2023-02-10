@@ -10,10 +10,6 @@ export async function createIPFS(
   nodes: string[] = [],
   overrides: Partial<Options> = {}
 ): Promise<IPFSWithLibP2P> {
-  console.info(
-    "swarm",
-    nodes.map((node) => `${node}/p2p-circuit`)
-  );
   const options: Options = {
     init: {
       allowNew: true,

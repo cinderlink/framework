@@ -14,6 +14,8 @@ export const SocialSchemaDef = {
         bio: { type: "string" },
         avatar: { type: "string" },
         did: { type: "string" },
+        status: { type: "string" },
+        updatedAt: { type: "number" },
       },
     },
   },

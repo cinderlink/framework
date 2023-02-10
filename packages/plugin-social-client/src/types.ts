@@ -7,12 +7,16 @@ export type SocialConnectionRecord = {
   follow: boolean;
 };
 
+export type SocialUserStatus = "online" | "offline" | "away";
+
 export type SocialUser = {
   id?: number;
   name: string;
   bio: string;
+  status: SocialUserStatus;
   avatar: string;
   did: string;
+  updatedAt: number;
 };
 
 export type SocialProfile = {
@@ -65,7 +69,10 @@ export type SocialConnectionMessage = {
 export type SocialAnnounceMessage = {
   requestId: string;
   name: string;
+  bio: string;
   avatar: string;
+  status: "online" | "offline" | "away";
+  updatedAt: number;
 };
 
 export type SocialUpdateMessage = {

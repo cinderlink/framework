@@ -19,6 +19,7 @@ import {
   SocialPost,
   SocialUser,
   SocialProfile,
+  SocialUserStatus,
 } from "./types";
 import { SocialSchemaDef } from "./schema";
 
@@ -30,6 +31,8 @@ export class SocialClientPlugin
   name = "guest";
   bio = "";
   avatar = "";
+  status: SocialUserStatus = "online";
+  updatedAt = Date.now();
   interval: NodeJS.Timer | null = null;
   ready = false;
 
@@ -66,22 +69,31 @@ export class SocialClientPlugin
       if (!hasConnected) {
         hasConnected = true;
         setTimeout(() => {
+          console.info("peer connected, announcing social presence");
           this.client.publish("/social/announce", {
             requestId: uuid(),
             name: this.name,
+            bio: this.bio,
+            status: this.status,
             avatar: this.avatar,
+            updatedAt: this.updatedAt,
           });
         }, 3000);
       }
     });
-    // this.interval = setInterval(() => {
-    //   if (!hasConnected) return;
-    //   this.client.publish("/social/announce", {
-    //     requestId: uuid(),
-    //     name: this.name,
-    //     avatar: this.avatar,
-    //   });
-    // }, Number(this.options.interval || 1000 * 15));
+
+    this.interval = setInterval(() => {
+      if (!hasConnected) return;
+      console.info("[interval] announcing social presence");
+      this.client.publish("/social/announce", {
+        requestId: uuid(),
+        name: this.name,
+        avatar: this.avatar,
+        bio: this.bio,
+        status: this.status,
+        updatedAt: this.updatedAt,
+      });
+    }, Number(this.options.interval || 1000 * 180));
 
     await this.loadLocalUser();
     console.info("social client plugin ready");
@@ -95,16 +107,25 @@ export class SocialClientPlugin
 
   async setName(name: string) {
     this.name = name;
+    this.updatedAt = Date.now();
     await this.saveLocalUser();
   }
 
   async setAvatar(avatar: string) {
     this.avatar = avatar;
+    this.updatedAt = Date.now();
     await this.saveLocalUser();
   }
 
   async setBio(bio: string) {
     this.bio = bio;
+    this.updatedAt = Date.now();
+    await this.saveLocalUser();
+  }
+
+  async setStatus(status: SocialUserStatus) {
+    this.status = status;
+    this.updatedAt = Date.now();
     await this.saveLocalUser();
   }
 
@@ -332,8 +353,11 @@ export class SocialClientPlugin
       ?.getTable("users")
       ?.upsert("did", message.peer.did, {
         name: message.data.name,
+        bio: message.data.bio,
+        status: message.data.status,
         avatar: message.data.avatar,
         did: message.peer.did,
+        updatedAt: message.data.updatedAt,
       });
   }
 
