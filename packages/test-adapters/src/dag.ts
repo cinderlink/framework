@@ -1,9 +1,10 @@
-import { CID } from "multiformats";
+import { CID } from "multiformats/cid";
 import { sha256 } from "multiformats/hashes/sha2";
 import * as json from "multiformats/codecs/json";
-import type { DAGInterface } from "@candor/core-types/src/dag/interface";
+import type { DAGInterface } from "@candor/core-types";
 import type { DID } from "dids";
 import type { JWE } from "did-jwt";
+import { DIDDagInterface } from "@candor/core-types";
 
 export class TestDag implements DAGInterface {
   cache: Record<string, unknown> = {};
@@ -17,13 +18,17 @@ export class TestDag implements DAGInterface {
     this.cache[cid.toString()] = data;
     return cid;
   }
-  async load<Data = unknown>(cid: CID): Promise<Data> {
+  async load<Data = unknown>(cid: CID, path?: string): Promise<Data> {
     if (!cid) return undefined as any;
-    return this.cache[cid.toString()] as Data;
+    const cached = this.cache[cid.toString()] as Data;
+    if (path) {
+      return path.split("/").reduce((acc, key) => key?.length ? acc[key] : acc, cached);
+    }
+    return cached;
   }
 }
 
-export class TestDIDDag {
+export class TestDIDDag implements DIDDagInterface {
   private dag: DAGInterface;
   constructor(public did: DID) {
     this.dag = new TestDag();
@@ -33,8 +38,11 @@ export class TestDIDDag {
     return this.dag.store(data);
   }
 
-  async load<Data = unknown>(cid: CID): Promise<Data> {
-    return this.dag.load<Data>(cid);
+  async load<Data = unknown>(
+    cid: CID,
+    path?: string
+  ): Promise<Data | undefined> {
+    return this.dag.load<Data>(cid, path);
   }
 
   async storeEncrypted<
@@ -47,14 +55,17 @@ export class TestDIDDag {
     return this.dag.store(jwe);
   }
 
-  async loadEncrypted(cid: CID): Promise<JWE> {
-    return this.dag.load<JWE>(cid);
+  async loadEncrypted(cid: CID, path?: string): Promise<JWE | undefined> {
+    return this.dag.load<JWE>(cid, path);
   }
 
   async loadDecrypted<
     Data extends Record<string, unknown> = Record<string, unknown>
-  >(cid: CID): Promise<Data> {
+  >(cid: CID): Promise<Data | undefined> {
     const jwe = await this.loadEncrypted(cid);
+    if (!jwe) {
+      throw new Error("Unable to load JWE");
+    }
     const decrypted = await this.did.decryptDagJWE(jwe);
     return decrypted as Data;
   }

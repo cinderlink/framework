@@ -108,22 +108,22 @@ export class SocialServerPlugin implements PluginInterface<SocialServerEvents> {
       return;
     }
 
-    const manualResults = await table.where((row) => {
+    const results = await table.where((row) => {
       return (
         row.name?.indexOf(message.data.query) > -1 ||
         row.bio?.indexOf(message.data.query) > -1
       );
     });
     console.info(
-      `plugin/social/server > found ${manualResults.length} matches manually (index: ${table.currentIndex})`,
-      manualResults
+      `plugin/social/server > found ${results.length} matches manually (index: ${table.currentIndex})`,
+      results
     );
 
-    const results = ((await table.search(message.data.query, 20)) ||
-      []) as SocialUser[];
-    console.info(
-      `plugin/social/server > found ${results.length} matches (index: ${table.currentIndex})`
-    );
+    // const results = ((await table.search(message.data.query, 20)) ||
+    //   []) as SocialUser[];
+    // console.info(
+    //   `plugin/social/server > found ${results.length} matches (index: ${table.currentIndex})`
+    // );
 
     await this.client.send(message.peer.peerId.toString(), {
       topic: "/social/users/search/response",
@@ -138,6 +138,25 @@ export class SocialServerPlugin implements PluginInterface<SocialServerEvents> {
     console.info(
       `plugin/social/client > received social announce message (did: ${did})`
     );
+
+    const table = await this.client.getSchema("social")?.getTable("users");
+
+    if (!table) {
+      console.warn(`plugin/social/server > users table not found`);
+      return;
+    }
+
+    const existingUser = await table.findByIndex("did", did);
+    if (existingUser?.avatar && existingUser.avatar !== user.avatar) {
+      // unpin the old avatar CID
+      await this.client.ipfs.pin.rm(existingUser.avatar as string);
+    }
+
+    // pin the avatar CID
+    if (user.avatar) {
+      await this.client.ipfs.pin.add(user.avatar);
+    }
+
     await this.client
       .getSchema("social")
       ?.getTable("users")

@@ -22,7 +22,6 @@
     "@candor/client": "workspace:../client"
   },
   "devDependencies": {
-    "@candor/client": "workspace:../client",
     "@candor/core-types": "workspace:../core-types",
     "ipfs-core": "^0.18.0",
     "ipfs-core-types": "^0.14.0",

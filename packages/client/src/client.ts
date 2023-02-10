@@ -1,5 +1,5 @@
-import { Pushable } from "it-pushable";
-import { pushable } from "it-pushable";
+import { Pushable, pushable } from "it-pushable";
+import { CID } from "multiformats/cid";
 import type {
   Peer,
   P2PMessage,
@@ -23,6 +23,9 @@ import type {
   PeerRole,
   HandshakeError,
   HandshakeSuccess,
+  PubsubEncodedMessage,
+  PubsubEncodingType,
+  PubsubEncodedPayload,
 } from "@candor/core-types";
 import type { Connection, Stream } from "@libp2p/interface-connection";
 import Emittery from "emittery";
@@ -48,9 +51,12 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
     PluginInterface["id"],
     PluginInterface<PluginEventDef>
   >;
-  public protoStreams: Record<
+  public protocol: Record<
     string,
-    Pushable<json.ByteView<EncodedP2PMessage>>
+    {
+      push?: Pushable<json.ByteView<EncodedP2PMessage>>;
+      stream?: Stream;
+    }
   > = {};
   public pluginEvents: Emittery<PluginEvents["emit"]> = new Emittery();
   public started = false;
@@ -205,8 +211,12 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
       );
       return;
     }
-    if (!this.protoStreams[peerId]) {
-      this.protoStreams[peerId] = pushable();
+    if (!this.protocol[peerId]) {
+      this.protocol[peerId] = {};
+    }
+
+    if (!this.protocol[peerId].push) {
+      this.protocol[peerId].push = pushable();
     }
 
     const encoded: Partial<EncodedP2PMessage<E, K>> = {
@@ -226,7 +236,7 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
       encoded.payload = message.data as E[K];
     }
 
-    this.protoStreams[peerId].push(json.encode(encoded as EncodedP2PMessage));
+    this.protocol[peerId].push?.push(json.encode(encoded as EncodedP2PMessage));
   }
 
   async handleCandorProtocol({
@@ -240,16 +250,38 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
     const peerId = connection.remotePeer.toString();
     const peer = this.peers.getPeer(peerId);
 
+    if (this.protocol[peerId]?.stream) {
+      console.info(
+        `p2p/in > already connected to ${peerId}, closing existing stream...`
+      );
+      this.protocol[peerId].stream?.close();
+      return;
+    }
+
     if (!peer) {
       console.info(`p2p/in > ignoring message from unknown peer ${peerId}`);
       return;
     }
 
-    if (!this.protoStreams[peerId]) {
-      this.protoStreams[peerId] = pushable();
+    if (!this.protocol[peerId]) {
+      this.protocol[peerId] = {};
     }
 
-    pipe(this.protoStreams[peerId], lp.encode(), stream.sink);
+    if (!this.protocol[peerId].push) {
+      console.info(`p2p/in > creating push stream for ${peerId}`);
+      this.protocol[peerId].push = pushable();
+    }
+
+    this.protocol[peerId].stream = stream;
+    console.info(`p2p/in > connected to ${peerId} on /candor/1.0.0`);
+
+    console.info(`p2p/in > piping push stream for ${peerId}`);
+    pipe(
+      this.protocol[peerId].push as Pushable<json.ByteView<EncodedP2PMessage>>,
+      lp.encode(),
+      stream.sink
+    );
+    console.info(`p2p/in > piping source stream for ${peerId}`);
     pipe(
       stream.source,
       lp.decode(),
@@ -364,6 +396,7 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
       }
     );
 
+    console.info(`p2p/in > sending handshake request to ${peerId}`);
     const protocols = await this.ipfs.libp2p.peerStore.protoBook.get(
       peer.peerId
     );
@@ -417,8 +450,64 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
 
   async publish<
     K extends keyof PluginEvents["publish"] = keyof PluginEvents["publish"]
-  >(topic: K, message: PluginEvents["publish"][K]) {
-    const encoded = json.encode(message);
+  >(
+    topic: K,
+    message: PluginEvents["publish"][K],
+    {
+      sign,
+      encrypt,
+      recipients,
+      cid,
+    }: {
+      sign?: boolean;
+      encrypt?: boolean;
+      cid?: boolean;
+      recipients?: string[];
+    } = {}
+  ) {
+    const payload: Partial<PubsubEncodedMessage> = {
+      from: this.did.id,
+    };
+    if (sign) {
+      payload.type = "signed";
+      const jws = await this.did.createJWS(message as Record<string, unknown>);
+      if (cid) {
+        const _cid = await this.ipfs.dag.put(jws, {
+          inputCodec: "dag-jose",
+          hashAlg: "sha2-256",
+        });
+        payload.cid = _cid.toString();
+      } else {
+        payload.payload = jws;
+      }
+    } else if (encrypt) {
+      payload.type = "encrypted";
+      const jwe = await this.did.createDagJWE(
+        message as Record<string, unknown>,
+        recipients || [this.did.id]
+      );
+      const cid = await this.ipfs.dag.put(jwe, {
+        inputCodec: "dag-jose",
+        hashAlg: "sha2-256",
+      });
+      if (cid) {
+        payload.cid = cid.toString();
+      } else {
+        payload.payload = jwe;
+      }
+    } else {
+      payload.type = "json";
+      if (cid) {
+        const _cid = await this.ipfs.dag.put(
+          message as Record<string, unknown>
+        );
+        payload.cid = _cid.toString();
+      } else {
+        payload.payload = message as Record<string, unknown>;
+      }
+    }
+    const encoded = json.encode(payload);
+
     console.info(
       `pubsub/publish > topic "${topic as string}" (length: ${encoded.length})`
     );
@@ -595,23 +684,95 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
   async onPubsubMessage(message: any) {
     const msg = message.detail as PubsubMessage;
     if (msg.from === this.ipfs.libp2p.peerId) return;
-    const peer = this.peers.getPeer(msg.from.toString());
 
-    const decoded = json.decode<
-      PluginEvents["subscribe"][keyof PluginEvents["subscribe"]]
-    >(msg.data);
+    let peer: Peer;
+    if (!this.peers.hasPeer(msg.from.toString())) {
+      peer = this.peers.addPeer(msg.from, "peer");
+    } else {
+      peer = this.peers.getPeer(msg.from.toString());
+    }
+
+    const encoded = json.decode<PubsubEncodedMessage>(msg.data);
+    let payload: PubsubEncodedPayload<PubsubEncodingType> | undefined;
+    let decoded: any;
+
+    if (encoded.cid) {
+      const stored = await this.ipfs.dag.get(CID.parse(encoded.cid));
+      payload = stored.value;
+    } else {
+      payload = encoded.payload;
+    }
+
+    if (!payload) {
+      console.warn(
+        `pubsub/message > received message from ${msg.from} with no payload`
+      );
+      return;
+    }
+
+    if (encoded.type === "signed") {
+      const verified = await this.did.verifyJWS(
+        payload as PubsubEncodedPayload<"signed">
+      );
+      if (!verified?.payload) {
+        console.warn(
+          `pubsub/message > failed to verify signed message from ${msg.from}`
+        );
+        return;
+      }
+
+      if (verified.didResolutionResult?.didDocument?.id !== encoded.from) {
+        console.warn(
+          `pubsub/message > signed message from ${msg.from} is not from the expected DID ${encoded.from}`
+        );
+        return;
+      }
+
+      if (!peer.did) {
+        peer.did = encoded.from;
+        this.peers.updatePeer(msg.from.toString(), peer);
+      }
+
+      decoded = verified.payload;
+    }
+
+    if (encoded.type === "encrypted") {
+      const decrypted = await this.did.decryptJWE(
+        payload as PubsubEncodedPayload<"encrypted">,
+        {
+          did: encoded.from,
+        }
+      );
+      if (!decrypted) {
+        console.warn(
+          `pubsub/message > failed to decrypt message from ${msg.from}`
+        );
+        return;
+      }
+
+      if (!peer.did) {
+        peer.did = encoded.from;
+        this.peers.updatePeer(msg.from.toString(), peer);
+      }
+
+      decoded = json.decode(decrypted);
+    } else {
+      decoded = payload as PubsubEncodedPayload<"json">;
+    }
 
     const event = {
       ...msg,
       peer,
+      from: encoded.from,
+      type: encoded.type,
+      recipients: encoded.recipients,
       data: decoded,
     };
 
-    if (!peer || !peer.did || !peer.authenticated) {
+    if (!peer) {
       console.warn(
-        `pubsub/message > received message from unauthenticated peer ${msg.from}`
+        `pubsub/message > received pubsub message from unknown peer ${msg.from}`
       );
-      return;
     }
 
     this.pubsub.emit(msg.topic, event as any);

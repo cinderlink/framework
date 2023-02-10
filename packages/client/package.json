@@ -23,7 +23,7 @@
     }
   },
   "scripts": {
-    "build": "rm -rf dist/ && tsup",
+    "build": "tsup",
     "watch": "pnpm build --watch --",
     "watch:browser": "vite build --watch",
     "build:browser": "vite build",
@@ -42,12 +42,14 @@
     "@multiformats/multiaddr": "^11.4.0",
     "@stablelib/ed25519": "^1.0.3",
     "@types/ajv": "^1.0.0",
+    "@types/lodash-es": "^4.17.6",
     "@types/node": "^18.11.18",
     "@types/uuid": "^9.0.0",
     "dotenv": "^16.0.3",
     "ipfs-core-types": "^0.14.0",
     "it-pushable": "^3.1.2",
     "libp2p": "^0.42.2",
+    "lodash-es": "^4.17.21",
     "tsup": "^6.5.0",
     "typescript": "^4.9.5",
     "vite": "^4.1.1",

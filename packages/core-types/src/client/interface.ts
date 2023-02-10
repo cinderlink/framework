@@ -72,6 +72,7 @@ export interface CandorClientInterface<
       | keyof PluginEvents["subscribe"]
       | keyof CandorClientEventDef["subscribe"]
   ): Promise<void>;
+
   unsubscribe(
     topic:
       | keyof PluginEvents["subscribe"]

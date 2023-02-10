@@ -22,6 +22,6 @@
   "peerDependencies": {
     "did-jwt": "^6.11.0",
     "dids": "^3.4.0",
-    "multiformats": "^10.0.3"
+    "multiformats": "^11.0.1"
   }
 }

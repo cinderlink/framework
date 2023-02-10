@@ -7,68 +7,120 @@ import type {
   Options as SearchOptions,
 } from "minisearch";
 import type { DIDDagInterface } from "../dag";
+import { TableQueryInterface } from "./query";
+import {
+  BlockAggregateDef,
+  BlockData,
+  BlockFilters,
+  BlockHeaders,
+  BlockIndexDef,
+  BlockIndex,
+  BlockAggregates,
+  BlockAggregator,
+} from "./block";
 
 export type TableRow<Data extends Record<string, unknown> = {}> = {
-  id?: number;
+  id: number;
   [key: string]: unknown;
 } & Data;
 
+export interface TableBlockInterface<
+  Row extends TableRow = TableRow,
+  Def extends TableDefinition = TableDefinition
+> {
+  table: TableInterface<Row, Def>;
+  cid: CID | undefined;
+  cache?: Partial<BlockData<Row>>;
+  changed: boolean;
+  needsRollup: boolean;
+  prevCID(): Promise<string | undefined>;
+  getCID(): Promise<CID | undefined>;
+  headers(): Promise<BlockHeaders>;
+  filters(): Promise<BlockFilters>;
+  records(): Promise<Record<number, Row>>;
+  search(query: string, limit: number): Promise<Row[]>;
+  save(): Promise<CID | undefined>;
+  load(force?: boolean): Promise<void>;
+  aggregate(): Promise<BlockAggregates>;
+  violatesUniqueConstraints(row: Omit<Row, "id">): Promise<boolean>;
+  assertUniqueConstraints(row: Omit<Row, "id">): Promise<void>;
+  addRecord(row: Row): Promise<void>;
+  updateRecord(id: number, update: Partial<Row>): Promise<void>;
+  deleteRecord(id: number): Promise<void>;
+  toJSON(): BlockData<Row>;
+  toString(): string;
+}
+
 export type TableDefinition = {
   encrypted: boolean;
+  schemaId: string;
   schema: SchemaObject;
-  indexes: string[];
-  aggregate: {
-    [key: string]:
-      | "sum"
-      | "count"
-      | "avg"
-      | "min"
-      | "max"
-      | "distinct"
-      | "range";
-  };
+  indexes: Record<string, BlockIndexDef>;
+  aggregate: Record<string, BlockAggregator>;
   searchOptions: SearchOptions;
   rollup: number;
 };
 
-export type TableBlock<T extends TableRow = TableRow> = {
-  prevCID?: string;
-  fromIndex: number;
-  toIndex: number;
-  records: Record<number, T>;
-  indexes: Record<string, Record<string, number[]>>;
-  aggregates: Record<string, number | string | string[] | [number, number]>;
-  search?: Minisearch;
-  index?: AsPlainObject;
+export type TableEvents<
+  Row extends TableRow = TableRow,
+  Def extends TableDefinition = TableDefinition
+> = {
+  "/table/loaded": TableInterface<Row, Def>;
+  "/table/saved": TableInterface<Row, Def>;
+  "/block/loaded": TableBlockInterface<Row, Def>;
+  "/block/saved": TableBlockInterface<Row, Def>;
+  "/record/inserted": Row;
+  "/record/updated": Row;
+  "/record/deleted": Row;
+  "/index/inserted": BlockIndex;
+  "/index/updated": BlockIndex;
+  "/index/deleted": BlockIndex;
+  "/aggregate/updated": {
+    field: string;
+    value: BlockAggregates[keyof BlockAggregates];
+  };
+  "/search/updated": undefined;
+  "/write/started": undefined;
+  "/write/finished": number;
 };
 
-export type TableEvents = {
-  "/table/loaded": undefined;
-};
-
-export interface TableInterface<T extends TableRow = TableRow>
-  extends Emittery<TableEvents> {
+export interface TableInterface<
+  Row extends TableRow = TableRow,
+  Def extends TableDefinition = TableDefinition
+> extends Emittery<TableEvents> {
+  tableId: string;
   currentIndex: number;
-  currentBlock: TableBlock;
+  currentBlock: TableBlockInterface<Row, Def>;
   encrypted: boolean;
   def: TableDefinition;
   dag: DIDDagInterface;
+  writing: boolean;
+  writeStartAt: number;
 
-  createBlock(prevCID: string | undefined): TableBlock;
-  insert(data: T): Promise<number>;
-  search(query: string, limit: number): Promise<T[]>;
-  rollup(): Promise<void>;
-  updateBlockAggregates(block: TableBlock): void;
-  save(): Promise<string | undefined>;
-  update(id: number, data: Partial<T>): Promise<number>;
-  load(cid: CID | string): Promise<void>;
+  createBlock(prevCID: string | undefined): TableBlockInterface<Row, Def>;
+  setBlock(block: TableBlockInterface<Row, Def>): void;
+  insert(data: Omit<Row, "id">): Promise<number>;
+  search(query: string, limit: number): Promise<Row[]>;
+  save(): Promise<CID | undefined>;
+  query(): TableQueryInterface<Row, Def>;
+  load(cid: CID): Promise<void>;
+  search(query: string, limit: number): Promise<Row[]>;
   unwind(
-    test: (block: TableBlock, cid: string | undefined) => Promise<boolean>
+    next: (event: TableUnwindEvent) => Promise<void> | void
   ): Promise<void>;
-  findByIndex(index: string, value: string | number): Promise<T | undefined>;
-  where(match: (row: T) => boolean): Promise<T[]>;
-  find(match: (row: T) => boolean): Promise<T | undefined>;
-  upsert(index: string, value: string | number, data: T): Promise<number>;
-  assertValid(data: T): void;
-  isValid(data: T): boolean;
+  assertValid(data: Omit<Row, "id">): void;
+  isValid(data: Omit<Row, "id">): boolean;
+  lock(): void;
+  unlock(): void;
+  awaitLock(): Promise<void>;
+  awaitUnlock(): Promise<void>;
 }
+
+export type TableUnwindEvent<
+  Row extends TableRow = TableRow,
+  Def extends TableDefinition = TableDefinition
+> = {
+  cid: string | undefined;
+  block: TableBlockInterface<Row, Def>;
+  resolved: boolean;
+};

@@ -1,6 +1,5 @@
 import { Schema } from "@candor/ipld-database";
 import { CandorClientInterface, TableDefinition } from "@candor/core-types";
-import { SocialClientPluginEvents } from "./types";
 
 export const SocialSchemaDef: Record<string, TableDefinition> = {
   users: {
@@ -20,6 +19,43 @@ export const SocialSchemaDef: Record<string, TableDefinition> = {
         did: { type: "string" },
         status: { type: "string" },
         updatedAt: { type: "number" },
+      },
+    },
+  },
+  user_pins: {
+    encrypted: true,
+    aggregate: {},
+    indexes: ["userId", "cid", "textId"],
+    rollup: 1000,
+    searchOptions: {
+      fields: ["userId", "cid", "textId"],
+    },
+    schema: {
+      type: "object",
+      properties: {
+        userId: { type: "number" },
+        cid: { type: "string" },
+        textId: { type: "string" },
+        createdAt: { type: "number" },
+        updatedAt: { type: "number" },
+      },
+    },
+  },
+  user_sync: {
+    encrypted: true,
+    aggregate: {},
+    indexes: ["userId", "cid"],
+    rollup: 1000,
+    searchOptions: {
+      fields: ["id", "userId", "cid"],
+    },
+    schema: {
+      type: "object",
+      properties: {
+        userId: { type: "number" },
+        cid: { type: "string" },
+        createdAt: { type: "number" },
+        syncedAt: { type: "number" },
       },
     },
   },

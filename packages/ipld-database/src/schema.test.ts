@@ -3,11 +3,16 @@ import type { DID } from "dids";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { Schema } from "./schema";
 import { TableDefinition } from "@candor/core-types";
-import { createSeed, createDID } from "@candor/client";
+import { createSeed, createDID } from "../../client";
 
 const tableDefinition: TableDefinition = {
   encrypted: false,
-  indexes: ["name", "id"],
+  indexes: {
+    name: {
+      unique: true,
+      fields: ["name"],
+    },
+  },
   aggregate: {
     count: "max",
   },

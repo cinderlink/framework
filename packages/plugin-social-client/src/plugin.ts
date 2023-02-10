@@ -1,4 +1,3 @@
-// import { multiaddr } from "@multiformats/multiaddr";
 import type {
   PluginInterface,
   CandorClientInterface,
@@ -8,7 +7,6 @@ import type {
 } from "@candor/core-types";
 import Emittery from "emittery";
 import { v4 as uuid } from "uuid";
-import { CID } from "multiformats";
 import { SocialClientEvents } from "./types";
 import type {
   SocialAnnounceMessage,
@@ -338,7 +336,7 @@ export class SocialClientPlugin
       | PubsubMessage<SocialConnectionMessage>
       | P2PMessage<string, SocialConnectionMessage>
   ) {
-    if (!message.peer.did) {
+    if (!message.peer?.did) {
       console.warn(
         `plugin/social/client > failed to create connection from unknown peer`,
         message.peer
@@ -410,7 +408,7 @@ export class SocialClientPlugin
   ) {
     if (!message.peer.did) {
       console.warn(
-        `plugin/social/client > received social announce message from unauthorized peer`
+        `plugin/social/client > received social announce message from unauthenticated peer (peerId: ${message.peer.peerId})`
       );
       return;
     }
@@ -463,6 +461,7 @@ export class SocialClientPlugin
     if (!post) return;
 
     const cid = await this.client.dag.store(post);
+    // TODO: pin & add to user_pins
     if (!cid) {
       console.warn(
         `plugin/social/client > failed to store social update message (did: ${message.peer.did})`
@@ -532,6 +531,9 @@ export class SocialClientPlugin
     message: P2PMessage<string, SocialUserSearchResponseMessage>
   ) {
     const { requestId } = message.data;
+    console.info(
+      `plugin/social/client > received users search response (requestId: ${requestId})`
+    );
     this.emit(
       `/search/users/${requestId}` as keyof SocialClientPluginEvents,
       message.data
