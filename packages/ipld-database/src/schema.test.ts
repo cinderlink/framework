@@ -6,6 +6,7 @@ import { TableDefinition } from "@candor/core-types";
 import { createSeed, createDID } from "../../client";
 
 const tableDefinition: TableDefinition = {
+  schemaId: "test",
   encrypted: false,
   indexes: {
     name: {
@@ -52,14 +53,14 @@ describe("@candor/ipld-database/schema", () => {
     for (let i = 0; i < 15; i++) {
       await schema.tables.test?.insert({ name: `test #${i}`, count: i });
     }
+    const block = schema.tables.test.currentBlock.toJSON();
     const cid = await schema.save();
     expect(cid).not.toBeUndefined();
     expect(schema.tables.test).toMatchSnapshot();
 
     if (!cid) throw new Error("CID is undefined");
     const restored = await Schema.load(cid, dag, false);
-    expect(restored.tables.test.currentIndex).toMatchObject(
-      schema.tables.test.currentIndex
-    );
+    const restoredBlock = restored.tables.test.currentBlock.toJSON();
+    expect(restoredBlock).toMatchObject(block);
   });
 });

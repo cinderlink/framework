@@ -56,11 +56,12 @@ export class Table<
   setBlock(block: TableBlockInterface<Row, Def>) {
     this.currentBlock = block;
     this.currentBlockIndex = block.cache!.headers!.index || 0;
-    this.currentIndex = block.cache!.headers!.recordsTo - 1 || 0;
+    this.currentIndex = block.cache!.headers!.recordsTo || 0;
   }
 
   async insert(data: Omit<Row, "id">) {
     this.assertValid(data);
+    await this.awaitLock();
     const id = this.currentIndex++;
     await this.currentBlock.addRecord({ ...data, id } as Row);
     if (
@@ -72,6 +73,7 @@ export class Table<
         this.currentBlock = this.createBlock(cid.toString());
       }
     }
+    this.unlock();
     return id;
   }
 
@@ -92,7 +94,6 @@ export class Table<
   }
 
   async getById(id: number) {
-    console.info(`getById(${id}): ${this.currentBlock}`);
     const results = await this.query().where("id", "=", id).select().execute();
     return results.first();
   }
@@ -111,7 +112,7 @@ export class Table<
   }
 
   async save() {
-    if (Object.values(this.currentBlock.records).length > 0) {
+    if (!this.currentBlock.cid || this.currentBlock.changed) {
       await this.currentBlock.save();
     }
 
@@ -120,8 +121,8 @@ export class Table<
 
   async load(cid: CID) {
     this.currentBlock = new TableBlock<Row, Def>(this, cid);
-    const headers = await this.currentBlock.headers();
-    this.currentIndex = headers.recordsTo;
+    await this.currentBlock.load();
+    this.currentIndex = this.currentBlock.cache!.headers!.recordsTo;
   }
 
   async unwind(next: (event: TableUnwindEvent) => Promise<void> | void) {
@@ -207,7 +208,7 @@ export class Table<
   }
 
   awaitLock(): Promise<void> {
-    if (this.writing) {
+    if (!this.writing) {
       return Promise.resolve(this.lock());
     }
     return this.once("/write/finished").then(() => {

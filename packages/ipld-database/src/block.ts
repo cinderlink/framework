@@ -311,6 +311,9 @@ export class TableBlock<
     for (const [name, index] of Object.entries(this.table.def.indexes)) {
       const values = index.fields.map((f) => row[f] as string);
       if (index.unique && (await this.hasIndexValues(name, values, id))) {
+        console.error(
+          `ipld-database/block: Unique index violation: index ${name} already has values: ${values}`
+        );
         throw new Error(
           `ipld-database/block: Unique index violation: index ${name} already has values: ${values}`
         );
@@ -321,14 +324,24 @@ export class TableBlock<
   async addRecord(row: Row) {
     await this.assertUniqueConstraints(row, row.id);
     if (!this.cache.headers) {
+      console.error(
+        `ipld-database/block: cannot set record ${row.id} without headers`
+      );
       throw new Error(
-        `ipld-database/block: Cannot set record ${row.id} without headers`
+        `ipld-database/block: cannot set record ${row.id} without headers`
       );
     }
 
     if (row.id > this.cache.headers!.recordsTo + 1) {
+      console.error(
+        `ipld-database/block: record id ${row.id} is too high for this block`
+      );
       throw new Error(
-        `ipld-database/block: Record id ${row.id} is too high for this block`
+        `ipld-database/block: Record id ${
+          row.id
+        } is too high for this block (max: ${
+          this.cache.headers!.recordsTo + 1
+        })`
       );
     }
     this.cache.headers!.recordsTo = row.id;
@@ -394,15 +407,15 @@ export class TableBlock<
       );
     }
 
+    await this.prevCID();
     await this.headers();
     await this.filters();
     await this.records();
   }
 
   async save() {
-    console.info(`ipld/block: block save requested`);
+    await this.prevCID();
     if (!this._changed) {
-      console.info("ipld/block: no changes to save");
       return this.cid;
     }
 
@@ -414,7 +427,6 @@ export class TableBlock<
     );
 
     if (recordsFrom !== this.cache.headers!.recordsFrom) {
-      console.info(`ipld/block: invalid block headers`);
       throw new Error(
         `ipld/block: recordsFrom mismatch: ${recordsFrom} (min id) !== ${
           this.cache.headers!.recordsFrom
@@ -422,7 +434,6 @@ export class TableBlock<
       );
     }
     if (recordsTo !== this.cache.headers!.recordsTo) {
-      console.info(`ipld/block: invalid block headers`);
       throw new Error(
         `ipld/block: recordsFrom mismatch: ${recordsTo} (max id) !== ${
           this.cache.headers!.recordsTo
@@ -430,19 +441,13 @@ export class TableBlock<
       );
     }
 
-    console.info(`ipld/block: aggregating block`);
     await this.aggregate();
 
-    console.info(`ipld/block: storing block`);
     this.cid = this.table.encrypted
       ? await this.table.dag.storeEncrypted(
           this.toJSON() as Record<string, any>
         )
       : await this.table.dag.store(this.toJSON());
-
-    console.info(
-      `ipld/block: saved block (prev: ${this.cache.prevCID}, current: ${this.cid})`
-    );
 
     return this.cid;
   }
@@ -458,7 +463,6 @@ export class TableBlock<
     if (!this.cache) {
       throw new Error("Block not loaded");
     }
-
     return this.cache as BlockData<Row>;
   }
 

@@ -61,6 +61,8 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
         const tableCID = await this.tables[name].save();
         if (tableCID) {
           tables[name] = tableCID?.toString();
+        } else {
+          console.info(`Table "${name}" is empty, not saving`);
         }
       })
     );
@@ -92,6 +94,7 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
     await Promise.all(
       Object.entries(data.tables).map(async ([name, tableCID]) => {
         if (tableCID) {
+          console.info(`Loading table "${name}" from ${tableCID}`);
           await schema.tables[name]?.load(CID.parse(tableCID));
         }
       })

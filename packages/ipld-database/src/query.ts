@@ -1,6 +1,6 @@
-import { CID } from "multiformats/cid";
 import {
   BlockFilters,
+  BlockHeaders,
   InstructionType,
   TableDefinition,
 } from "@candor/core-types";
@@ -261,9 +261,6 @@ export class TableQuery<
     });
 
     if (unwound.length) {
-      console.info(
-        `ipld-database/table-query: ${unwound.length} blocks unwound. looking for updates...`
-      );
       let writeStarted = false;
       let rewriteBlock: TableBlockInterface<Row, Def> | undefined;
       let prevCID: string | undefined;
@@ -277,9 +274,6 @@ export class TableQuery<
           writeStarted = true;
           const headers = await block.headers();
           prevCID = await block.prevCID();
-          console.info(
-            `ipld-database/table-query: first rewrite block found: ${block.cid} (prev: ${prevCID})`
-          );
           rewriteBlock = new TableBlock<Row, Def>(this.table, undefined, {
             prevCID,
             headers,
@@ -292,27 +286,21 @@ export class TableQuery<
 
         if (writeStarted && rewriteBlock) {
           const records = await block.records();
-          for (const [index, record] of Object.entries(records)) {
-            console.info(
-              `ipld-database/table-query: rewriting record: ${record.id} (${index})`
-            );
+          for (const [, record] of Object.entries(records)) {
             await rewriteBlock.addRecord(record);
           }
           if (rewriteBlock.needsRollup) {
-            console.info(
-              `ipld-database/table-query: rewrite block saving: ${block.cid}`
-            );
             prevCID = (await rewriteBlock.save())?.toString();
+            const headers = rewriteBlock.cache?.headers as BlockHeaders;
             console.info(
-              `ipld-database/table-query: block rewritten. old CID: ${block.cid}, new CID: ${prevCID}`
+              `ipld-database/table-query: block rewritten. old CID: ${block.cid}, new CID: ${prevCID}, range: [${headers.recordsFrom}, ${headers.recordsTo}]`
             );
-            const headers = await rewriteBlock.headers();
             rewriteBlock = new TableBlock<Row, Def>(this.table, undefined, {
               prevCID: prevCID?.toString(),
               headers: {
                 ...headers,
-                recordsFrom: headers.recordsFrom + 1,
-                recordsTo: headers.recordsFrom,
+                recordsFrom: headers.recordsTo + 1,
+                recordsTo: headers.recordsTo,
               },
               filters: {
                 indexes: {},
@@ -323,11 +311,6 @@ export class TableQuery<
         }
       }
       if (rewriteBlock) {
-        console.info(
-          `ipld-database/table-query: block rewrite complete. ${
-            rewriteBlock.cid
-          } (records: ${Object.keys(rewriteBlock.cache!.records || {}).length})`
-        );
         this.table.setBlock(rewriteBlock);
       }
       this.table.unlock();
@@ -520,5 +503,9 @@ export class TableQueryResult<Row extends TableRow = TableRow>
     });
 
     return new TableQueryResult(extracted);
+  }
+
+  count() {
+    return this.rows.length;
   }
 }
