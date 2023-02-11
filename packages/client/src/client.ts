@@ -146,7 +146,9 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
       const peerId = connection.detail.remotePeer.toString();
       if (!this.peers.hasPeer(peerId)) return;
       const peer = this.peers.getPeer(peerId);
-      this.peers.updatePeer(peerId, { connected: false });
+      this.peers.updatePeer(peerId, { connected: false, authenticated: false });
+      this.protocol[peerId]?.stream?.close();
+      delete this.protocol[peerId];
       this.emit("/peer/disconnect", peer);
     });
 
@@ -710,6 +712,10 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
       return;
     }
 
+    console.info(
+      `pubsub/message > received message from ${msg.from} (${encoded.type})`
+    );
+
     if (encoded.type === "signed") {
       const verified = await this.did.verifyJWS(
         payload as PubsubEncodedPayload<"signed">
@@ -733,10 +739,13 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
         this.peers.updatePeer(msg.from.toString(), peer);
       }
 
-      decoded = verified.payload;
-    }
+      console.info(
+        `pubsub/message > verified signed message from ${msg.from}`,
+        verified
+      );
 
-    if (encoded.type === "encrypted") {
+      decoded = verified.payload;
+    } else if (encoded.type === "encrypted") {
       const decrypted = await this.did.decryptJWE(
         payload as PubsubEncodedPayload<"encrypted">,
         {

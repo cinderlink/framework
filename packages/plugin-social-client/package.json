@@ -36,7 +36,8 @@
     "did-jwt": "^6.11.0",
     "dids": "^3.4.0",
     "emittery": "^1.0.1",
-    "multiformats": "^10.0.3"
+    "multiformats": "^11.0.1",
+    "@multiformats/multiaddr": "^11.4.0"
   },
   "dependencies": {
     "uuid": "^9.0.0"

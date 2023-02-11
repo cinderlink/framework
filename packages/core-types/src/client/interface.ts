@@ -84,7 +84,13 @@ export interface CandorClientInterface<
     V extends (PluginEvents | CandorClientEventDef)["subscribe"][K]
   >(
     topic: K,
-    message: V
+    message: V,
+    options?: {
+      sign?: boolean;
+      encrypt?: boolean;
+      cid?: boolean;
+      recipients?: string[];
+    }
   ): Promise<void>;
 
   hasSchema(name: string): boolean;

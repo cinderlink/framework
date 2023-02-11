@@ -23,6 +23,7 @@ import type {
   SocialUserSearchResponseMessage,
 } from "@candor/plugin-social-core";
 import { loadSocialSchema } from "@candor/plugin-social-core";
+import { multiaddr } from "@multiformats/multiaddr";
 
 export class SocialClientPlugin
   extends Emittery<SocialClientPluginEvents>
@@ -64,6 +65,7 @@ export class SocialClientPlugin
 
   async start() {
     let hasConnected = false;
+    let hasPublished = false;
 
     console.info(`plugin/social/client > loading schema`);
     await loadSocialSchema(this.client);
@@ -72,44 +74,55 @@ export class SocialClientPlugin
       console.info(
         `plugin/social/client > announcing (new peer: ${peer.peerId})`
       );
-      await this.client.send(peer.peerId.toString(), {
-        topic: "/social/announce",
-        data: {
-          requestId: uuid(),
-          name: this.name,
-          bio: this.bio,
-          status: this.status,
-          avatar: this.avatar,
-          updatedAt: this.updatedAt,
-        },
-      });
+      if (!hasPublished) {
+        hasPublished = true;
+        console.info(`plugin/social/client > announcing (pubsub, initial)`);
+        await this.client.publish(
+          "/social/announce",
+          {
+            requestId: uuid(),
+            name: this.name,
+            avatar: this.avatar,
+            bio: this.bio,
+            status: this.status,
+            updatedAt: this.updatedAt,
+          },
+          { sign: true }
+        );
+      } else {
+        console.info(`plugin/social/client > announcing (p2p, peer connected)`);
+        await this.client.send(peer.peerId.toString(), {
+          topic: "/social/announce",
+          data: {
+            requestId: uuid(),
+            name: this.name,
+            bio: this.bio,
+            status: this.status,
+            avatar: this.avatar,
+            updatedAt: this.updatedAt,
+          },
+        });
+      }
     });
 
     this.interval = setInterval(() => {
       if (!hasConnected) return;
       console.info(`plugin/social/client > announcing (pubsub, interval)`);
-      this.client.publish("/social/announce", {
-        requestId: uuid(),
-        name: this.name,
-        avatar: this.avatar,
-        bio: this.bio,
-        status: this.status,
-        updatedAt: this.updatedAt,
-      });
+      this.client.publish(
+        "/social/announce",
+        {
+          requestId: uuid(),
+          name: this.name,
+          avatar: this.avatar,
+          bio: this.bio,
+          status: this.status,
+          updatedAt: this.updatedAt,
+        },
+        { sign: true }
+      );
     }, Number(this.options.interval || 1000 * 180));
 
     await this.loadLocalUser();
-    if (this.client.peers.peerCount() > 0) {
-      console.info(`plugin/social/client > announcing (pubsub, initial)`);
-      await this.client.publish("/social/announce", {
-        requestId: uuid(),
-        name: this.name,
-        avatar: this.avatar,
-        bio: this.bio,
-        status: this.status,
-        updatedAt: this.updatedAt,
-      });
-    }
 
     this.ready = true;
     console.info(`plugin/social/client > ready`);
@@ -164,19 +177,20 @@ export class SocialClientPlugin
     }
 
     const post = { ...postData, authorId, cid: cid.toString() };
-    const postId = await table.upsert("cid", cid.toString(), post);
+    const saved = await table.upsert("cid", cid.toString(), post);
 
-    if (postId === undefined) {
+    if (saved === undefined) {
       throw new Error("failed to upsert post");
     }
 
-    return { ...post, id: postId };
+    return saved as SocialPost;
   }
 
   async getLocalUser(): Promise<SocialUser | undefined> {
     const schema = this.client.getSchema("social");
     const table = schema?.getTable("users");
     if (!table) {
+      console.info("users table not found", { schema, table });
       throw new Error("failed to get users table");
     }
 
@@ -195,7 +209,9 @@ export class SocialClientPlugin
       throw new Error("failed to get profiles table");
     }
 
-    const profile = await table.find((row) => row.userId === userId);
+    const profile = (
+      await table.query().where("userId", "=", userId).select().execute()
+    ).first();
 
     return profile;
   }
@@ -216,9 +232,13 @@ export class SocialClientPlugin
       throw new Error("failed to get posts table");
     }
 
-    const posts = await table.where((row) => row.authorId === userId);
+    const posts = await table
+      .query()
+      .where("authorId", "=", userId)
+      .select()
+      .execute();
 
-    return posts;
+    return posts.all();
   }
 
   async getLocalUserPosts(): Promise<SocialPost[]> {
@@ -245,13 +265,13 @@ export class SocialClientPlugin
     }
 
     const profile = { ...profileData, userId: localUserId };
-    const profileId = await table.upsert("userId", this.client.id, profile);
+    const saved = await table.upsert("userId", this.client.id, profile);
 
-    if (profileId === undefined) {
+    if (saved === undefined) {
       throw new Error("failed to upsert profile");
     }
 
-    return { ...profile, id: profileId };
+    return saved as SocialProfile;
   }
 
   async setState({
@@ -293,9 +313,9 @@ export class SocialClientPlugin
 
     console.info(`plugin/social/client > saving local user`);
 
-    await table.upsert("did", this.client.id, localUser);
-    const user = await table.findByIndex("did", this.client.id);
-    if (!user) {
+    const user = await table.upsert("did", this.client.id, localUser);
+    // .findByIndex("did", this.client.id);
+    if (!user?.id) {
       console.error(
         `plugin/social/client > failed to save local user, user not found after upsert (did: ${this.client.id}))`
       );
@@ -306,10 +326,15 @@ export class SocialClientPlugin
   }
 
   async loadLocalUser() {
-    const user = await this.client
-      .getSchema("social")
-      ?.getTable("users")
-      ?.findByIndex("did", this.client.id);
+    const user = (
+      await this.client
+        .getSchema("social")
+        ?.getTable("users")
+        ?.query()
+        .where("did", "=", this.client.id)
+        .select()
+        .execute()
+    )?.first();
     if (user?.name && user?.avatar) {
       this.name = user.name as string;
       this.avatar = user.avatar as string;
@@ -318,17 +343,30 @@ export class SocialClientPlugin
   }
 
   async getUserByDID(did: string): Promise<SocialUser | undefined> {
-    return this.client
-      .getSchema("social")
-      ?.getTable<SocialUser>("users")
-      ?.findByIndex("did", did);
+    const schema = this.client.getSchema("social");
+    const table = schema?.getTable("users");
+    console.info(
+      `plugin/social/client > getting user by did: ${did}...`,
+      schema,
+      table
+    );
+    return table
+      ?.query()
+      .where("did", "=", did)
+      .select()
+      .execute()
+      .then((result) => result.first() as SocialUser | undefined);
   }
 
   async getUser(userId: number): Promise<SocialUser | undefined> {
     return this.client
       .getSchema("social")
-      ?.getTable<SocialUser>("users")
-      ?.find((user: SocialUser) => user.id === userId);
+      ?.getTable("users")
+      ?.query()
+      .where("id", "=", userId)
+      .select()
+      .execute()
+      .then((result) => result.first() as SocialUser | undefined);
   }
 
   async onSocialConnection(
@@ -339,7 +377,7 @@ export class SocialClientPlugin
     if (!message.peer?.did) {
       console.warn(
         `plugin/social/client > failed to create connection from unknown peer`,
-        message.peer
+        message
       );
       return;
     }
@@ -370,34 +408,27 @@ export class SocialClientPlugin
       return;
     }
 
-    const connection = await this.client
+    const connectionsTable = await this.client
       .getSchema("social")
-      ?.getTable<SocialConnectionRecord>("connections")
-      ?.find((connection: SocialConnectionRecord) => {
-        if (
-          connection.toId === localUserId &&
-          connection.fromId === fromUserId
-        ) {
-          return true;
-        }
-        return false;
-      });
+      ?.getTable<SocialConnectionRecord>("connections");
+
+    const connection = await connectionsTable
+      ?.query()
+      .select()
+      .where("fromId", "=", fromUserId)
+      .where("toId", "=", localUserId)
+      .execute()
+      .then((result) => result.first() as SocialConnectionRecord | undefined);
     if (connection?.id) {
-      await this.client
-        .getSchema("social")
-        ?.getTable<SocialConnectionRecord>("connections")
-        ?.update(connection.id, {
-          follow: message.data.follow,
-        });
+      await connectionsTable?.update(connection.id, {
+        follow: message.data.follow,
+      });
     } else {
-      await this.client
-        .getSchema("social")
-        ?.getTable<SocialConnectionRecord>("connections")
-        ?.insert({
-          fromId: fromUserId,
-          toId: localUserId,
-          follow: message.data.follow,
-        });
+      await connectionsTable?.insert({
+        fromId: fromUserId,
+        toId: localUserId,
+        follow: message.data.follow,
+      });
     }
   }
 
@@ -414,7 +445,8 @@ export class SocialClientPlugin
     }
 
     console.info(
-      `plugin/social/client > received social announce message (did: ${message.peer.did})`
+      `plugin/social/client > received social announce message (did: ${message.peer.did})`,
+      message.data
     );
     await this.client
       .getSchema("social")
@@ -428,27 +460,36 @@ export class SocialClientPlugin
         updatedAt: message.data.updatedAt,
       });
 
-    const peers = this.client.ipfs.libp2p.getPeers();
-    if (
-      peers.length < this.maxConnectionCount &&
-      !peers.map((p) => p.toString()).includes(message.peer.peerId.toString())
-    ) {
-      const addr = await this.client.ipfs.libp2p.peerStore.addressBook.get(
-        message.peer.peerId
-      );
-      if (addr[0]) {
-        console.warn(
-          `plugin/social/client > discovered peer ${message.peer.peerId} (address: ${addr[0].multiaddr})`
+    try {
+      const peers = this.client.ipfs.libp2p.getPeers() || [];
+      if (
+        peers.length < this.maxConnectionCount &&
+        !peers
+          .map((p) => p.toString())
+          ?.includes(message.peer.peerId.toString())
+      ) {
+        const addr = await this.client.ipfs.libp2p.peerStore.addressBook.get(
+          message.peer.peerId
         );
-        await this.client.ipfs.swarm.connect(addr[0].multiaddr);
-      } else {
-        const relayAddr = `${this.client.relayAddresses[0]}/p2p-circuit/p2p/${message.peer.peerId}`;
-        console.warn(
-          `plugin/social/client > discovered peer ${message.peer.peerId} without address, attempting relay (relay: ${relayAddr})`
-        );
-        await this.client.ipfs.swarm.connect(relayAddr as any);
+        if (addr[0]) {
+          console.warn(
+            `plugin/social/client > discovered peer ${message.peer.peerId} (address: ${addr[0].multiaddr})`
+          );
+          await this.client.ipfs.swarm.connect(addr[0].multiaddr);
+        } else {
+          const relayAddr = `${this.client.relayAddresses[0]}/p2p-circuit/p2p/${message.peer.peerId}`;
+          console.warn(
+            `plugin/social/client > discovered peer ${message.peer.peerId} without address, attempting relay (relay: ${relayAddr})`
+          );
+          await this.client.ipfs.swarm.connect(multiaddr(relayAddr));
+        }
+        await this.client.connect(message.peer.peerId);
       }
-      await this.client.connect(message.peer.peerId);
+    } catch (e) {
+      console.warn(
+        `plugin/social/client > failed to connect to peer ${message.peer.peerId}`,
+        e
+      );
     }
   }
 
@@ -492,16 +533,20 @@ export class SocialClientPlugin
     }
 
     const fromUserId = (await this.getUserByDID(message.peer.did))?.id;
+    if (!fromUserId) {
+      console.warn(
+        `plugin/social/client > received social updates request message from unknown user`
+      );
+      return;
+    }
     // TODO: make sure this user is allowed to see this data
     const myPosts = await this.client
       .getSchema("social")
       ?.getTable<SocialPost>("posts")
-      ?.where((post) => {
-        if (post.authorId === fromUserId) {
-          return true;
-        }
-        return false;
-      });
+      ?.query()
+      .where("authorId", "=", fromUserId)
+      .execute()
+      .then((result) => result.all());
     await this.client.send(message.peer.peerId.toString(), {
       topic: "/social/updates/response",
       data: {
@@ -524,7 +569,9 @@ export class SocialClientPlugin
       follow,
       requestId: uuid(),
     };
-    await this.client.publish("/social/connection", message);
+    await this.client.publish("/social/connection", message, {
+      sign: true,
+    });
   }
 
   async onUsersSearchResponse(

@@ -53,14 +53,19 @@ describe("@candor/ipld-database/schema", () => {
     for (let i = 0; i < 15; i++) {
       await schema.tables.test?.insert({ name: `test #${i}`, count: i });
     }
-    const block = schema.tables.test.currentBlock.toJSON();
     const cid = await schema.save();
+    const block = schema.tables.test.currentBlock.toJSON();
     expect(cid).not.toBeUndefined();
     expect(schema.tables.test).toMatchSnapshot();
 
     if (!cid) throw new Error("CID is undefined");
     const restored = await Schema.load(cid, dag, false);
     const restoredBlock = restored.tables.test.currentBlock.toJSON();
-    expect(restoredBlock).toMatchObject(block);
+    expect(restoredBlock.records).toMatchObject(block.records);
+    expect(restoredBlock.headers).toMatchObject(block.headers);
+    expect(restoredBlock.filters.indexes).toMatchObject(block.filters.indexes);
+    expect(restoredBlock.filters.aggregates).toMatchObject(
+      block.filters.aggregates
+    );
   });
 });

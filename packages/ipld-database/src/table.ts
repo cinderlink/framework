@@ -77,20 +77,31 @@ export class Table<
     return id;
   }
 
-  async upsert(index: string, value: any, data: Omit<Row, "id">) {
+  async upsert<Index extends keyof Row = keyof Row>(
+    index: Index,
+    value: Row[Index],
+    data: Omit<Row, "id">
+  ) {
     this.assertValid(data);
     const existing = (
       await this.query().where(index, "=", value).select().execute()
     ).first();
     if (existing?.id) {
       return this.update(existing.id, data as Row);
-    } else {
-      return this.insert({ ...data, [index]: value } as Row);
     }
+    return this.insert({ ...data, [index]: value } as Row).then((id) =>
+      this.getById(id)
+    );
   }
 
   async update(id: number, update: Partial<Row>) {
-    return this.query().where("id", "=", id).update(update).execute();
+    return (
+      await this.query()
+        .where("id", "=", id)
+        .update(update)
+        .returning()
+        .execute()
+    ).first() as Row;
   }
 
   async getById(id: number) {
@@ -101,6 +112,7 @@ export class Table<
   async search(query: string, limit = 10): Promise<Row[]> {
     let results: Row[] = [];
     await this.unwind(async (event) => {
+      await event.block.filters();
       const searchResults = (await event.block.search(
         query,
         limit - results.length

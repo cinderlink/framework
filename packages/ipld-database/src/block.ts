@@ -48,10 +48,9 @@ export class TableBlock<
       return undefined;
     }
 
-    this.cache.prevCID = await this.table.dag.load<string>(
-      this.cid,
-      "/prevCID"
-    );
+    this.cache.prevCID = await this.table.dag
+      .load<string>(this.cid, "/prevCID")
+      .catch(() => undefined);
 
     return this.cache.prevCID;
   }
@@ -89,12 +88,26 @@ export class TableBlock<
       this.cache.filters = {
         indexes: {},
         aggregates: {},
+        search: this.index.toJSON(),
       } as BlockFilters;
     } else if (!this.cache.filters) {
       this.cache.filters = await this.table.dag.load<BlockFilters>(
         this.cid!,
         "/filters"
       );
+      if (!this.cache.filters) {
+        this.cache.filters = {
+          indexes: {},
+          aggregates: {},
+          search: this.index.toJSON(),
+        } as BlockFilters;
+      } else if (this.cache.filters?.search) {
+        this.index = Minisearch.loadJS(
+          this.cache.filters.search,
+          this.table.def.searchOptions
+        );
+      }
+      await this.aggregate();
     }
 
     if (!this.cache.filters) {
@@ -112,6 +125,8 @@ export class TableBlock<
         this.cid!,
         "/records"
       );
+      this.index.removeAll();
+      this.index.addAll(Object.values(this.cache.records || {}));
     }
 
     if (!this.cache.records) {
@@ -165,9 +180,10 @@ export class TableBlock<
   async hasIndexValues(name: string, value: string[], id?: number) {
     const indexes = (await this.filters()).indexes;
     const serialized = TableBlock.serialize(value);
-    return id
-      ? indexes[name]?.[serialized]?.ids.includes(id)
-      : indexes[name]?.[serialized] !== undefined;
+    return (
+      indexes[name]?.[serialized] !== undefined &&
+      (!id || !indexes[name]?.[serialized]?.ids.includes(id))
+    );
   }
 
   /**
@@ -356,6 +372,12 @@ export class TableBlock<
       );
     }
 
+    if (this.index.has(row.id)) {
+      this.index.replace(row);
+    } else {
+      this.index.add(row);
+    }
+
     if (!this.cache.records) {
       this.cache.records = {};
     }
@@ -411,6 +433,13 @@ export class TableBlock<
     await this.headers();
     await this.filters();
     await this.records();
+    await this.aggregate();
+    if (this.cache.filters?.search) {
+      this.index = Minisearch.loadJS(
+        this.cache.filters.search,
+        this.table.def.searchOptions
+      );
+    }
   }
 
   async save() {
@@ -463,7 +492,13 @@ export class TableBlock<
     if (!this.cache) {
       throw new Error("Block not loaded");
     }
-    return this.cache as BlockData<Row>;
+    return {
+      ...this.cache,
+      filters: {
+        ...this.cache.filters,
+        search: this.index.toJSON(),
+      },
+    } as BlockData<Row>;
   }
 
   toString() {

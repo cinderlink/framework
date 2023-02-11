@@ -2,6 +2,7 @@ import {
   BlockFilters,
   BlockHeaders,
   InstructionType,
+  QueryBuilderInterface,
   TableDefinition,
 } from "@candor/core-types";
 import {
@@ -29,10 +30,13 @@ export type QueryUnwindState<
   Def extends TableDefinition = TableDefinition
 > = { cid: string; block: TableBlockInterface<Row, Def>; changed: boolean };
 
-export class QueryBuilder<Row extends TableRow = TableRow> {
-  _terminator: string | false = false;
+export class QueryBuilder<Row extends TableRow = TableRow>
+  implements QueryBuilderInterface<Row>
+{
+  terminator: string | undefined = undefined;
   constructor(public instructions: QueryInstruction[] = []) {}
   where<Key extends keyof Row = keyof Row>(
+    this: QueryBuilderInterface<Row>,
     field: Key,
     operation: Operation,
     value: Row[Key]
@@ -47,6 +51,7 @@ export class QueryBuilder<Row extends TableRow = TableRow> {
   }
 
   orderBy<Key extends keyof Row = keyof Row>(
+    this: QueryBuilderInterface<Row>,
     field: Key,
     direction: "asc" | "desc"
   ) {
@@ -58,7 +63,7 @@ export class QueryBuilder<Row extends TableRow = TableRow> {
     return this;
   }
 
-  limit(value: number) {
+  limit(this: QueryBuilderInterface<Row>, value: number) {
     this.instructions.push({
       instruction: "limit",
       limit: value,
@@ -66,7 +71,7 @@ export class QueryBuilder<Row extends TableRow = TableRow> {
     return this;
   }
 
-  offset(value: number) {
+  offset(this: QueryBuilderInterface<Row>, value: number) {
     this.instructions.push({
       instruction: "offset",
       offset: value,
@@ -74,10 +79,13 @@ export class QueryBuilder<Row extends TableRow = TableRow> {
     return this;
   }
 
-  and(fn: (qb: QueryBuilder) => void) {
+  and(
+    this: QueryBuilderInterface<Row>,
+    fn: (qb: QueryBuilderInterface<Row>) => void
+  ) {
     const instructions: QueryInstruction[] = [];
-    const qb = new QueryBuilder(instructions);
-    fn(qb);
+    const qb = new QueryBuilder<Row>(instructions);
+    fn(qb as QueryBuilderInterface<Row>);
 
     this.instructions.push({
       instruction: "and",
@@ -87,10 +95,13 @@ export class QueryBuilder<Row extends TableRow = TableRow> {
     return this;
   }
 
-  or(fn: (qb: QueryBuilder) => void) {
+  or(
+    this: QueryBuilderInterface<Row>,
+    fn: (qb: QueryBuilderInterface<Row>) => void
+  ) {
     const instructions: QueryInstruction[] = [];
-    const qb = new QueryBuilder(instructions);
-    fn(qb);
+    const qb = new QueryBuilder<Row>(instructions);
+    fn(qb as QueryBuilderInterface<Row>);
 
     this.instructions.push({
       instruction: "or",
@@ -100,12 +111,12 @@ export class QueryBuilder<Row extends TableRow = TableRow> {
     return this;
   }
 
-  update(values: Partial<Row>) {
-    if (this._terminator)
+  update(this: QueryBuilderInterface<Row>, values: Partial<Row>) {
+    if (this.terminator)
       throw new Error(
-        `Cannot execute ${this._terminator} after ${this._terminator}`
+        `Cannot execute ${this.terminator} after ${this.terminator}`
       );
-    this._terminator = "update";
+    this.terminator = "update";
     this.instructions.push({
       instruction: "update",
       values,
@@ -113,29 +124,43 @@ export class QueryBuilder<Row extends TableRow = TableRow> {
     return this;
   }
 
-  delete() {
-    if (this._terminator)
+  delete(this: QueryBuilderInterface<Row>) {
+    if (this.terminator)
       throw new Error(
-        `Cannot execute ${this._terminator} after ${this._terminator}`
+        `Cannot execute ${this.terminator} after ${this.terminator}`
       );
-    this._terminator = "delete";
+    this.terminator = "delete";
     this.instructions.push({
       instruction: "delete",
     } as DeleteInstruction);
     return this;
   }
 
-  select(fields: (keyof Row)[] = []) {
-    if (this._terminator)
+  select(this: QueryBuilderInterface<Row>, fields?: (keyof Row)[]) {
+    if (this.terminator)
       throw new Error(
-        `Cannot execute ${this._terminator} after ${this._terminator}`
+        `Cannot execute ${this.terminator} after ${this.terminator}`
       );
-    this._terminator = "select";
+    this.terminator = "select";
     this.instructions.push({
       instruction: "select",
-      fields: fields as string[],
+      fields: (fields || []) as (keyof Row)[],
     } as SelectInstruction);
     return this;
+  }
+
+  returning(this: QueryBuilderInterface<Row>, fields?: (keyof Row)[]) {
+    this.instructions.push({
+      instruction: "returning",
+      fields: (fields || []) as (keyof Row)[],
+    } as ReturningInstruction);
+    return this;
+  }
+
+  async execute(this: QueryBuilderInterface<Row>): Promise<QueryResult<Row>> {
+    throw new Error(
+      "Execute not implemented in base QueryBuilder class. TableQuery extends this class."
+    );
   }
 }
 
@@ -174,7 +199,7 @@ export class TableQuery<
   }
 
   async execute() {
-    if (!this._terminator) {
+    if (!this.terminator) {
       throw new Error("No terminator method called (update, delete, select)");
     }
 
@@ -182,7 +207,7 @@ export class TableQuery<
       await this.table.awaitUnlock();
     }
 
-    let terminator = this._terminator;
+    let terminator = this.terminator;
     let offset = this._offset;
     let limit = this._limit;
 
@@ -190,6 +215,11 @@ export class TableQuery<
     const unwound: TableBlockInterface<Row, Def>[] = [];
     let returning: Row[] = [];
     await this.table.unwind(async (event) => {
+      // we need to make sure the block is aggregated before we can use it
+      if (!event.block.cid) {
+        await event.block.aggregate();
+      }
+
       if (["update", "delete"].includes(terminator)) {
         unwound.push(event.block as TableBlockInterface<Row, Def>);
       }
@@ -207,7 +237,7 @@ export class TableQuery<
         return;
       }
 
-      if (this._terminator === "update") {
+      if (this.terminator === "update") {
         const updateInstruction = this.instructions.find(
           (i) => i.instruction === "update"
         ) as UpdateInstruction;
@@ -233,11 +263,11 @@ export class TableQuery<
               )
             : returning.concat(matches);
         }
-      } else if (this._terminator === "delete") {
+      } else if (this.terminator === "delete") {
         for (const match of matches) {
           event.block.deleteRecord(match.id);
         }
-      } else if (this._terminator === "select") {
+      } else if (this.terminator === "select") {
         const selectInstruction = this.instructions.find(
           (i) => i.instruction === "select"
         ) as SelectInstruction;
@@ -320,7 +350,6 @@ export class TableQuery<
   }
 
   instructionsMatchBlock(filters: BlockFilters) {
-    let match = true;
     const whereInstructions: WhereInstruction[] = this.instructions
       .filter((i) => i.instruction === "where")
       .concat(
@@ -348,8 +377,7 @@ export class TableQuery<
           (operation === "in" && Math.max(...value) < aggregation) ||
           (operation === "between" && value?.[1] < aggregation)
         ) {
-          match = false;
-          break;
+          return false;
         }
       } else if (aggregate === "max") {
         if (
@@ -359,8 +387,7 @@ export class TableQuery<
           (operation === "in" && Math.min(...value) > aggregation) ||
           (operation === "between" && value?.[0] > aggregation)
         ) {
-          match = false;
-          break;
+          return false;
         }
       } else if (aggregate === "range") {
         const [min, max] = aggregation as [number, number];
@@ -374,33 +401,32 @@ export class TableQuery<
             (Math.min(...value) > max || Math.max(...value) < min)) ||
           (operation === "between" && (value?.[1] < min || value?.[0] > max))
         ) {
-          match = false;
-          break;
+          return false;
         }
       }
 
       // Check if this block can be skipped due to conditional exceptions for indexes
-      if (match) {
-        const relatedIndexes = Object.entries(this.table.def.indexes).filter(
-          ([, index]) => index.fields.includes(field)
-        );
-        if (operation === "=" || operation === "!=") {
-          for (const [indexName, index] of relatedIndexes) {
-            const valuePosition = index.fields.indexOf(field);
-            const indexValue = filters.indexes?.[indexName]?.[valuePosition];
-            if (operation === "=" && indexValue !== value) {
-              match = false;
-              break;
-            } else if (operation === "!=" && indexValue === value) {
-              match = false;
-              break;
-            }
+      const relatedIndexes = Object.entries(this.table.def.indexes).filter(
+        ([, index]) => index.fields.includes(field)
+      );
+      if (operation === "=" || operation === "!=") {
+        for (const [indexName, index] of relatedIndexes) {
+          const valuePosition = index.fields.indexOf(field);
+          const hasValidIndex = Object.values(
+            filters.indexes?.[indexName] || {}
+          ).some((index) =>
+            operation === "="
+              ? index.values[valuePosition] === value
+              : index.values[valuePosition] !== value
+          );
+          if (!hasValidIndex) {
+            return false;
           }
         }
       }
     }
 
-    return match;
+    return true;
   }
 
   instructionsMatchRecord(record: Row) {

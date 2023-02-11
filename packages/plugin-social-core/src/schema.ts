@@ -3,9 +3,15 @@ import { CandorClientInterface, TableDefinition } from "@candor/core-types";
 
 export const SocialSchemaDef: Record<string, TableDefinition> = {
   users: {
+    schemaId: "social",
     encrypted: false,
     aggregate: {},
-    indexes: ["name", "did"],
+    indexes: {
+      did: {
+        unique: true,
+        fields: ["did"],
+      },
+    },
     rollup: 1000,
     searchOptions: {
       fields: ["id", "name", "did"],
@@ -23,9 +29,19 @@ export const SocialSchemaDef: Record<string, TableDefinition> = {
     },
   },
   user_pins: {
+    schemaId: "social",
     encrypted: true,
     aggregate: {},
-    indexes: ["userId", "cid", "textId"],
+    indexes: {
+      userCid: {
+        unique: true,
+        fields: ["cid"],
+      },
+      userTextId: {
+        unique: true,
+        fields: ["userId", "textId"],
+      },
+    },
     rollup: 1000,
     searchOptions: {
       fields: ["userId", "cid", "textId"],
@@ -42,9 +58,15 @@ export const SocialSchemaDef: Record<string, TableDefinition> = {
     },
   },
   user_sync: {
+    schemaId: "social",
     encrypted: true,
     aggregate: {},
-    indexes: ["userId", "cid"],
+    indexes: {
+      userCid: {
+        unique: true,
+        fields: ["userId", "cid"],
+      },
+    },
     rollup: 1000,
     searchOptions: {
       fields: ["id", "userId", "cid"],
@@ -60,9 +82,15 @@ export const SocialSchemaDef: Record<string, TableDefinition> = {
     },
   },
   profiles: {
+    schemaId: "social",
     encrypted: false,
     aggregate: {},
-    indexes: ["userId"],
+    indexes: {
+      userId: {
+        unique: true,
+        fields: ["userId"],
+      },
+    },
     rollup: 1000,
     searchOptions: {
       fields: ["userId"],
@@ -95,9 +123,15 @@ export const SocialSchemaDef: Record<string, TableDefinition> = {
     },
   },
   connections: {
+    schemaId: "social",
     encrypted: true,
     aggregate: {},
-    indexes: ["from", "to"],
+    indexes: {
+      outgoing: {
+        unique: true,
+        fields: ["from", "to"],
+      },
+    },
     rollup: 1000,
     searchOptions: {
       fields: ["from", "to"],
@@ -112,9 +146,19 @@ export const SocialSchemaDef: Record<string, TableDefinition> = {
     },
   },
   posts: {
+    schemaId: "social",
     encrypted: true,
     aggregate: {},
-    indexes: ["authorId", "cid"],
+    indexes: {
+      cid: {
+        unique: true,
+        fields: ["cid"],
+      },
+      authorId: {
+        unique: false,
+        fields: ["authorId"],
+      },
+    },
     rollup: 1000,
     searchOptions: {
       fields: ["authorId", "cid", "content", "tags", "comments"],

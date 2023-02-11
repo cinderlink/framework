@@ -5,6 +5,58 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { Table } from "./table";
 import { BlockData, TableDefinition } from "@candor/core-types";
 
+export const schema: Record<string, TableDefinition> = {
+  users: {
+    schemaId: "social",
+    encrypted: false,
+    aggregate: {},
+    indexes: {
+      did: {
+        unique: true,
+        fields: ["did"],
+      },
+    },
+    rollup: 1000,
+    searchOptions: {
+      fields: ["id", "name", "did"],
+    },
+    schema: {
+      type: "object",
+      properties: {
+        name: { type: "string" },
+        bio: { type: "string" },
+        avatar: { type: "string" },
+        did: { type: "string" },
+        status: { type: "string" },
+        updatedAt: { type: "number" },
+      },
+    },
+  },
+  connections: {
+    schemaId: "social",
+    encrypted: true,
+    aggregate: {},
+    indexes: {
+      outgoing: {
+        unique: true,
+        fields: ["from", "to"],
+      },
+    },
+    rollup: 1000,
+    searchOptions: {
+      fields: ["from", "to"],
+    },
+    schema: {
+      type: "object",
+      properties: {
+        from: { type: "string" },
+        to: { type: "string" },
+        follow: { type: "boolean" },
+      },
+    },
+  },
+};
+
 const validDefinition: TableDefinition = {
   schemaId: "test",
   encrypted: false,
@@ -93,7 +145,15 @@ describe("@candor/ipld-database/table", () => {
     await table.insert({ name: "bar", count: 1 });
     await table.insert({ name: "baz", count: 1 });
     const results = await table.search("foo");
-    expect(results).toMatchInlineSnapshot("[]");
+    expect(results).toMatchInlineSnapshot(`
+      [
+        {
+          "count": 1,
+          "id": 1,
+          "name": "foo",
+        },
+      ]
+    `);
   });
 
   it("should rollup records", async () => {
@@ -152,7 +212,60 @@ describe("@candor/ipld-database/table", () => {
       await table.insert({ name: `test #${i}`, count: i });
     }
     const results = await table.search("test #3");
-    expect(results).toMatchInlineSnapshot("[]");
+    expect(results).toMatchInlineSnapshot(`
+      [
+        {
+          "count": 10,
+          "id": 11,
+          "name": "test #10",
+        },
+        {
+          "count": 2,
+          "id": 3,
+          "name": "test #2",
+        },
+        {
+          "count": 3,
+          "id": 4,
+          "name": "test #3",
+        },
+        {
+          "count": 0,
+          "id": 1,
+          "name": "test #0",
+        },
+        {
+          "count": 1,
+          "id": 2,
+          "name": "test #1",
+        },
+        {
+          "count": 4,
+          "id": 5,
+          "name": "test #4",
+        },
+        {
+          "count": 5,
+          "id": 6,
+          "name": "test #5",
+        },
+        {
+          "count": 6,
+          "id": 7,
+          "name": "test #6",
+        },
+        {
+          "count": 7,
+          "id": 8,
+          "name": "test #7",
+        },
+        {
+          "count": 8,
+          "id": 9,
+          "name": "test #8",
+        },
+      ]
+    `);
   });
 
   it("should rewrite previous blocks to execute an update operation", async () => {
@@ -180,6 +293,7 @@ describe("@candor/ipld-database/table", () => {
       for (let i = 0; i < 11; i++) {
         await table.insert({ name: `test #${i}`, count: i });
       }
+
       const result = await table.getById(2);
       expect(result).toMatchObject({
         id: 2,
@@ -212,6 +326,64 @@ describe("@candor/ipld-database/table", () => {
         name: "test #1",
         count: 1,
       });
+    });
+
+    it("should insert records with unique indexes", async () => {
+      const users = new Table("users", schema.users, dag);
+      const returned = await users.upsert("did", "foo:bar", { name: "bar" });
+      expect(returned).toMatchInlineSnapshot(`
+        {
+          "did": "foo:bar",
+          "id": 1,
+          "name": "bar",
+        }
+      `);
+      const selected = await users
+        .query()
+        .select()
+        .where("did", "=", "foo:bar")
+        .execute()
+        .then((r) => r.first());
+      expect(selected).toMatchInlineSnapshot(`
+        {
+          "did": "foo:bar",
+          "id": 1,
+          "name": "bar",
+        }
+      `);
+      expect(returned).toMatchObject(selected);
+    });
+
+    it("should update records with unique indexes", async () => {
+      const users = new Table("users", schema.users, dag);
+      const inserted = await users.insert({ did: "foo:bar", name: "bar" });
+      expect(inserted).toMatchInlineSnapshot('1');
+
+      const upserted = await users.upsert("did", "foo:bar", { name: "baz" });
+      expect(upserted).toMatchInlineSnapshot(`
+        {
+          "did": "foo:bar",
+          "id": 1,
+          "name": "baz",
+        }
+      `);
+
+      const selected = await users
+        .query()
+        .select()
+        .where("did", "=", "foo:bar")
+        .execute()
+        .then((r) => r.first());
+      expect(selected).toMatchInlineSnapshot(`
+        {
+          "did": "foo:bar",
+          "id": 1,
+          "name": "baz",
+        }
+      `);
+
+      expect(upserted).toMatchObject(selected);
+      expect(upserted).not.toMatchObject(inserted);
     });
   });
 });

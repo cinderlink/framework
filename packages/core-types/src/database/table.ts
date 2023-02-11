@@ -100,6 +100,12 @@ export interface TableInterface<
   createBlock(prevCID: string | undefined): TableBlockInterface<Row, Def>;
   setBlock(block: TableBlockInterface<Row, Def>): void;
   insert(data: Omit<Row, "id">): Promise<number>;
+  update(id: number, data: Partial<Row>): Promise<Row>;
+  upsert<Index extends keyof Row = keyof Row>(
+    index: Index,
+    value: Row[Index],
+    data: Omit<Row, "id">
+  ): Promise<Row>;
   search(query: string, limit: number): Promise<Row[]>;
   save(): Promise<CID | undefined>;
   query(): TableQueryInterface<Row, Def>;

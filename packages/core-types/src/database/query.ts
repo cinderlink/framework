@@ -85,15 +85,25 @@ export type Operation =
 
 export interface QueryBuilderInterface<Row extends TableRow = TableRow> {
   instructions: QueryInstruction[];
-  where(field: string, operation: Operation, value: any): QueryBuilderInterface;
-  orderBy(field: string, direction: "asc" | "desc"): QueryBuilderInterface;
-  limit(value: number): QueryBuilderInterface;
-  offset(value: number): QueryBuilderInterface;
-  and(fn: (qb: QueryBuilderInterface) => void): QueryBuilderInterface;
-  or(fn: (qb: QueryBuilderInterface) => void): QueryBuilderInterface;
-  update(fields: Partial<Row>): QueryBuilderInterface;
-  select(fields: (keyof Row)[]): QueryBuilderInterface;
-  delete(): QueryBuilderInterface;
+  terminator: string | undefined;
+  where<Key extends keyof Row = keyof Row>(
+    field: Key,
+    operation: Operation,
+    value: Row[Key]
+  ): QueryBuilderInterface<Row>;
+  orderBy(
+    field: keyof Row,
+    direction: "asc" | "desc"
+  ): QueryBuilderInterface<Row>;
+  limit(value: number): QueryBuilderInterface<Row>;
+  offset(value: number): QueryBuilderInterface<Row>;
+  and(fn: (qb: QueryBuilderInterface) => void): QueryBuilderInterface<Row>;
+  or(fn: (qb: QueryBuilderInterface) => void): QueryBuilderInterface<Row>;
+  update(fields: Partial<Row>): QueryBuilderInterface<Row>;
+  delete(): QueryBuilderInterface<Row>;
+  select(fields?: (keyof Row)[]): QueryBuilderInterface<Row>;
+  returning(fields?: (keyof Row)[]): QueryBuilderInterface<Row>;
+  execute(): Promise<QueryResult<Row>>;
 }
 
 export interface QueryResult<Row = TableRow> {
@@ -109,7 +119,7 @@ export interface QueryResult<Row = TableRow> {
 export interface TableQueryInterface<
   Row extends TableRow = TableRow,
   Def extends TableDefinition = TableDefinition
-> extends QueryBuilderInterface {
+> extends QueryBuilderInterface<Row> {
   table: TableInterface<Row, Def>;
   instructions: QueryInstruction[];
   execute(): Promise<QueryResult<Row>>;

@@ -52,8 +52,10 @@ export class SocialServerPlugin implements PluginInterface<SocialServerEvents> {
   events = {};
 
   onSocialAnnounce(message: PubsubMessage<SocialAnnounceMessage>) {
+    if (this.client.hasPlugin("socialClient")) return;
     console.info(
-      `plugin/social/server > received pubsub announce message (did: ${message.peer.did})`
+      `plugin/social/server > received pubsub announce message (did: ${message.peer.did})`,
+      message?.data
     );
     return this.saveUser(message.peer.did, {
       name: message.data.name,
@@ -70,14 +72,16 @@ export class SocialServerPlugin implements PluginInterface<SocialServerEvents> {
   }
 
   onPeerAnnounce(message: P2PMessage<string, SocialAnnounceMessage>) {
+    if (this.client.hasPlugin("socialClient")) return;
     if (!message.peer.did) {
       console.warn(
-        `plugin/social/client > received social announce message without peer did`
+        `plugin/social/server > received social announce message without peer did`
       );
       return;
     }
     console.info(
-      `plugin/social/server > received peer announce message (did: ${message.peer.did})`
+      `plugin/social/server > received peer announce message (did: ${message.peer.did})`,
+      message?.data
     );
     return this.saveUser(message.peer.did, {
       name: message.data.name,
@@ -108,22 +112,21 @@ export class SocialServerPlugin implements PluginInterface<SocialServerEvents> {
       return;
     }
 
-    const results = await table.where((row) => {
-      return (
-        row.name?.indexOf(message.data.query) > -1 ||
-        row.bio?.indexOf(message.data.query) > -1
-      );
-    });
-    console.info(
-      `plugin/social/server > found ${results.length} matches manually (index: ${table.currentIndex})`,
-      results
-    );
-
-    // const results = ((await table.search(message.data.query, 20)) ||
-    //   []) as SocialUser[];
+    // const results = await table
+    //   .query()
+    //   .select()
+    //   .execute()
+    //   .then((r) => r.all());
     // console.info(
-    //   `plugin/social/server > found ${results.length} matches (index: ${table.currentIndex})`
+    //   `plugin/social/server > found ${results.length} matches`,
+    //   results
     // );
+
+    const results = ((await table.search(message.data.query, 20)) ||
+      []) as SocialUser[];
+    console.info(
+      `plugin/social/server > found ${results.length} matches (index: ${table.currentIndex})`
+    );
 
     await this.client.send(message.peer.peerId.toString(), {
       topic: "/social/users/search/response",
@@ -134,9 +137,9 @@ export class SocialServerPlugin implements PluginInterface<SocialServerEvents> {
     });
   }
 
-  async saveUser(did: string, user: SocialUser) {
+  async saveUser(did: string, user: Omit<SocialUser, "id">) {
     console.info(
-      `plugin/social/client > received social announce message (did: ${did})`
+      `plugin/social/server > received social announce message (did: ${did})`
     );
 
     const table = await this.client.getSchema("social")?.getTable("users");
@@ -146,7 +149,12 @@ export class SocialServerPlugin implements PluginInterface<SocialServerEvents> {
       return;
     }
 
-    const existingUser = await table.findByIndex("did", did);
+    const existingUser = await table
+      .query()
+      .where("did", "=", did)
+      .select()
+      .execute()
+      .then((r) => r.first());
     if (existingUser?.avatar && existingUser.avatar !== user.avatar) {
       // unpin the old avatar CID
       await this.client.ipfs.pin.rm(existingUser.avatar as string);

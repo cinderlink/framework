@@ -2,6 +2,23 @@
 
 exports[`@candor/ipld-database/table > should create a current block 1`] = `
 {
+  "filters": {
+    "search": {
+      "averageFieldLength": [],
+      "dirtCount": 0,
+      "documentCount": 0,
+      "documentIds": {},
+      "fieldIds": {
+        "id": 1,
+        "name": 0,
+      },
+      "fieldLength": {},
+      "index": [],
+      "nextId": 0,
+      "serializationVersion": 2,
+      "storedFields": {},
+    },
+  },
   "headers": {
     "encrypted": false,
     "index": 0,

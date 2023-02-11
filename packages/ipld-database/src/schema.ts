@@ -23,7 +23,8 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
   ) {
     super();
     Object.entries(defs).forEach(([tableId, def]) => {
-      this.tables[schemaId] = new Table(tableId, def, this.dag);
+      console.info(`Creating table "${tableId}"`);
+      this.tables[tableId] = new Table(tableId, def, this.dag);
     });
   }
 
@@ -33,7 +34,7 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
         this.tables[tableId] = new Table(tableId, def, this.dag);
       } else {
         console.warn(
-          `WARNING: table "${name}" already exists, migrations not yet supported`
+          `WARNING: table "${tableId}" already exists, migrations not yet supported`
         );
       }
     });

@@ -1,5 +1,5 @@
 export type SocialConnectionRecord = {
-  id?: number;
+  id: number;
   fromId: number;
   toId: number;
   follow: boolean;
@@ -8,7 +8,7 @@ export type SocialConnectionRecord = {
 export type SocialUserStatus = "online" | "offline" | "away";
 
 export type SocialUser = {
-  id?: number;
+  id: number;
   name: string;
   bio: string;
   status: SocialUserStatus;
