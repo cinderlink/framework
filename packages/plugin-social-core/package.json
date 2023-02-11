@@ -1,6 +1,6 @@
 {
-  "name": "@candor/plugin-social-server",
-  "description": "Social network server plugin for Candor",
+  "name": "@candor/plugin-social-core",
+  "description": "Core types and utilities for the Candor social client plugin",
   "authors": "Drew <drew@cinderlink.com>",
   "version": "1.0.0-rc.1",
   "type": "module",
@@ -20,16 +20,9 @@
   },
   "devDependencies": {
     "@candor/core-types": "workspace:../core-types",
-    "@candor/plugin-social-core": "workspace:../plugin-social-core",
-    "@candor/plugin-social-client": "workspace:../plugin-social-client",
-    "did-jwt": "^6.11.0",
-    "dids": "^3.4.0",
+    "@candor/ipld-database": "workspace:../ipld-database",
     "tsup": "^6.5.0",
     "typescript": "^4.9.5",
     "vitest": "^0.28.4"
-  },
-  "peerDependencies": {
-    "did-jwt": "^6.11.0",
-    "dids": "^3.4.0"
   }
 }

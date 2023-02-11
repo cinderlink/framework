@@ -8,21 +8,26 @@ export type SchemaEvents = {
 };
 
 export type SavedSchema = {
-  name: string;
+  schemaId: string;
   defs: Record<string, TableDefinition>;
   tables: Record<string, string | undefined>;
 };
 
 export interface SchemaInterface extends Emittery<SchemaEvents> {
   tables: Record<string, TableInterface>;
-  name: string;
+  schemaId: string;
   defs: Record<string, TableDefinition>;
   dag: DIDDagInterface;
   encrypted: boolean;
 
   createTable(name: string, def: TableDefinition): Promise<void>;
   dropTable(name: string): Promise<void>;
-  getTable<T extends TableRow = TableRow>(name: string): TableInterface<T>;
+  getTable<
+    Row extends TableRow = TableRow,
+    Def extends TableDefinition = TableDefinition
+  >(
+    name: string
+  ): TableInterface<Row, Def>;
   setDefs(defs: Record<string, TableDefinition>): void;
   save(): Promise<CID | undefined>;
 }

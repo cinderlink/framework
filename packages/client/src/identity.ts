@@ -1,15 +1,15 @@
 import { v4 as uuid } from "uuid";
 import localforage from "localforage";
 import { CID } from "multiformats";
-import { CandorClient } from "./client";
 import type {
-  PubsubMessage,
-  IdentityResolveResponse,
+  CandorClientEventDef,
+  CandorClientInterface,
+  PluginEventDef,
 } from "@candor/core-types";
-export class Identity {
+export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
   cid?: string;
-  document?: any;
-  constructor(public client: CandorClient<any>) {}
+  document?: Record<string, unknown>;
+  constructor(public client: CandorClientInterface<PluginEvents>) {}
 
   async resolve() {
     let resolved = await this.resolveLocal();
@@ -85,15 +85,12 @@ export class Identity {
       let _timeout = setTimeout(() => {
         resolve(undefined);
       }, timeout);
-      this.client.p2p.on(
-        "/identity/resolve/response",
-        (message: PubsubMessage<IdentityResolveResponse>) => {
-          if (message.data.requestID === requestID) {
-            clearTimeout(_timeout);
-            resolve(message.data.cid as string);
-          }
+      this.client.p2p.on("/identity/resolve/response", (message) => {
+        if (message.data.requestID === requestID) {
+          clearTimeout(_timeout);
+          resolve(message.data.cid as string);
         }
-      );
+      });
       const servers = this.client.peers.getServers();
       if (!servers.length) {
         clearTimeout(_timeout);
@@ -101,10 +98,15 @@ export class Identity {
         return;
       }
       servers.forEach((server) => {
-        this.client.send(server.did, {
-          topic: "/identity/resolve/request",
-          requestID,
-        });
+        if (server.peerId) {
+          this.client.send<CandorClientEventDef["send"]>(
+            server.peerId.toString(),
+            {
+              topic: "/identity/resolve/request",
+              data: { requestID },
+            }
+          );
+        }
       });
     });
     const document = cid
@@ -122,11 +124,15 @@ export class Identity {
     await this.client.ipfs.name.publish(cid);
     await Promise.all(
       this.client.peers.getServers().map(async (server) => {
-        await this.client.send(server.did, {
-          topic: "/identity/set/request",
-          requestID: uuid(),
-          cid,
-        });
+        if (server.did) {
+          await this.client.send<CandorClientEventDef["send"]>(
+            server.peerId.toString(),
+            {
+              topic: "/identity/set/request",
+              data: { requestID: uuid(), cid },
+            }
+          );
+        }
       })
     );
   }

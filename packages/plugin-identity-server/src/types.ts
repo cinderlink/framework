@@ -1,24 +1,16 @@
 import type {
   IdentityResolveResponse,
   IdentityResolveRequest,
+  IdentitySetRequest,
+  IdentitySetResponse,
 } from "@candor/core-types";
-
-export type IdentitySetRequest = {
-  requestID: string;
-  cid: string;
-};
-
-export type IdentitySetResponse = {
-  requestID: string;
-  cid: string;
-};
 
 export type IdentityServerEvents = {
   publish: {};
   subscribe: {};
   send: {
     "/identity/resolve/response": IdentityResolveResponse;
-    "/identity/set/response": IdentitySetRequest;
+    "/identity/set/response": IdentitySetResponse;
   };
   receive: {
     "/identity/set/request": IdentitySetRequest;

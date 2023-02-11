@@ -1,6 +1,6 @@
 import Emittery from "emittery";
 import type { DIDDagInterface } from "@candor/core-types";
-import type { CID } from "multiformats";
+import { CID } from "multiformats";
 import type {
   SavedSchema,
   SchemaEvents,
@@ -16,57 +16,59 @@ import { Table } from "./table";
 export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
   public tables: Record<string, TableInterface> = {};
   constructor(
-    public name: string,
+    public schemaId: string,
     public defs: Record<string, TableDefinition>,
     public dag: DIDDagInterface,
     public encrypted = true
   ) {
     super();
-    console.info("creating schema", { name, defs, encrypted });
-    Object.entries(defs).forEach(([name, def]) => {
-      this.tables[name] = new Table(def, this.dag);
+    Object.entries(defs).forEach(([tableId, def]) => {
+      console.info(`Creating table "${tableId}"`);
+      this.tables[tableId] = new Table(tableId, def, this.dag);
     });
   }
 
   setDefs(defs: Record<string, TableDefinition>) {
-    Object.entries(defs).forEach(([name, def]) => {
-      if (!this.tables[name]) {
-        this.tables[name] = new Table(def, this.dag);
+    Object.entries(defs).forEach(([tableId, def]) => {
+      if (!this.tables[tableId]) {
+        this.tables[tableId] = new Table(tableId, def, this.dag);
       } else {
         console.warn(
-          `WARNING: table "${name}" already exists, migrations not yet supported`
+          `WARNING: table "${tableId}" already exists, migrations not yet supported`
         );
       }
     });
   }
 
-  async createTable(name: string, def: TableDefinition) {
-    this.tables[name] = new Table(def, this.dag);
+  async createTable(tableId: string, def: TableDefinition) {
+    this.tables[tableId] = new Table(tableId, def, this.dag);
   }
 
   async dropTable(name: string) {
     delete this.tables[name];
   }
 
-  getTable<T extends TableRow = TableRow>(name: string) {
-    return this.tables[name] as Table<T>;
+  getTable<
+    Row extends TableRow = TableRow,
+    Def extends TableDefinition = TableDefinition
+  >(tableId: string) {
+    return this.tables[tableId] as TableInterface<Row, Def>;
   }
 
   async save() {
-    console.info("saving schema", this.name);
     const tables: Record<string, string | undefined> = {};
     await Promise.all(
       Object.entries(this.tables).map(async ([name]) => {
-        console.info("saving table", name, this.tables[name]);
         const tableCID = await this.tables[name].save();
         if (tableCID) {
           tables[name] = tableCID?.toString();
+        } else {
+          console.info(`Table "${name}" is empty, not saving`);
         }
       })
     );
-    console.info("storing schema", this.name, this.defs, tables);
     const savedSchema = {
-      name: this.name,
+      schemaId: this.schemaId,
       defs: this.defs,
       tables,
     };
@@ -79,6 +81,7 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
     const data = encrypted
       ? await dag.loadDecrypted<SavedSchema>(cid)
       : await dag.load<SavedSchema>(cid);
+    if (!data) throw new Error("Invalid schema data");
     return Schema.fromSavedSchema(data, dag);
   }
 
@@ -88,12 +91,13 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
     encrypted = true
   ) {
     if (!data) throw new Error("Invalid schema data");
-    console.info("loading from saved schema", data);
-    const schema = new Schema(data.name, data.defs, dag, encrypted);
+    const schema = new Schema(data.schemaId, data.defs, dag, encrypted);
     await Promise.all(
       Object.entries(data.tables).map(async ([name, tableCID]) => {
-        console.info("loading table", { name, tableCID });
-        await schema.tables[name]?.load(tableCID!);
+        if (tableCID) {
+          console.info(`Loading table "${name}" from ${tableCID}`);
+          await schema.tables[name]?.load(CID.parse(tableCID));
+        }
       })
     );
     schema.emit("/schema/loaded");

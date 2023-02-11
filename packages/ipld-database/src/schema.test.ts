@@ -3,11 +3,17 @@ import type { DID } from "dids";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { Schema } from "./schema";
 import { TableDefinition } from "@candor/core-types";
-import { createSeed, createDID } from "@candor/client";
+import { createSeed, createDID } from "../../client";
 
 const tableDefinition: TableDefinition = {
+  schemaId: "test",
   encrypted: false,
-  indexes: ["name", "id"],
+  indexes: {
+    name: {
+      unique: true,
+      fields: ["name"],
+    },
+  },
   aggregate: {
     count: "max",
   },
@@ -48,13 +54,18 @@ describe("@candor/ipld-database/schema", () => {
       await schema.tables.test?.insert({ name: `test #${i}`, count: i });
     }
     const cid = await schema.save();
+    const block = schema.tables.test.currentBlock.toJSON();
     expect(cid).not.toBeUndefined();
     expect(schema.tables.test).toMatchSnapshot();
 
     if (!cid) throw new Error("CID is undefined");
     const restored = await Schema.load(cid, dag, false);
-    expect(restored.tables.test.currentIndex).toMatchObject(
-      schema.tables.test.currentIndex
+    const restoredBlock = restored.tables.test.currentBlock.toJSON();
+    expect(restoredBlock.records).toMatchObject(block.records);
+    expect(restoredBlock.headers).toMatchObject(block.headers);
+    expect(restoredBlock.filters.indexes).toMatchObject(block.filters.indexes);
+    expect(restoredBlock.filters.aggregates).toMatchObject(
+      block.filters.aggregates
     );
   });
 });

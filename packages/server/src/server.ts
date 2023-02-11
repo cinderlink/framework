@@ -1,7 +1,7 @@
-import { CandorClient } from "@candor/client";
+import { CandorClientInterface } from "@candor/core-types";
 
 export class CandorServer {
-  constructor(private _client: CandorClient) {}
+  constructor(private _client: CandorClientInterface) {}
 
   get client() {
     return this._client;

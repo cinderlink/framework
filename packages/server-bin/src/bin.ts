@@ -102,6 +102,7 @@ if (!config.seed) {
   );
 
   console.log(`starting ${chalk.cyan("candor")}...`);
+  console.info(config.plugins);
   const seed = await createSeed(config.seed);
   const server = await createServer(seed, plugins, config.nodes, config.ipfs);
   await server.start();

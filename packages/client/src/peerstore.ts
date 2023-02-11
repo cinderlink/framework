@@ -1,34 +1,42 @@
-import type { Peer } from "@candor/core-types";
+import type { Peer, PeerStoreInterface } from "@candor/core-types";
 import { PeerId } from "@libp2p/interface-peer-id";
-import { fromPeerId } from "./did/util";
 
-export class Peerstore {
+export class Peerstore implements PeerStoreInterface {
   peers: Record<string, Peer> = {};
-  idMap: Record<string, string> = {};
+  peerIds: Record<string, string> = {};
 
-  addPeer(did: string, peerId: string, role: "server" | "peer" = "peer") {
-    this.idMap[peerId] = did;
-    this.peers[did] = {
+  addPeer(peerId: PeerId, role: "server" | "peer" = "peer", did?: string) {
+    if (did) {
+      this.peerIds[did] = peerId.toString();
+    }
+
+    this.peers[peerId.toString()] = {
       did,
+      peerId,
       role,
       subscriptions: [],
       metadata: {},
       connected: false,
-      handshake: false,
+      authenticated: false,
     };
-    return this.peers[did];
+    return this.peers[peerId.toString()];
   }
 
-  hasPeer(did: string) {
-    return !!this.peers[did];
+  hasPeer(peerId: string) {
+    return !!this.peers[peerId.toString()];
   }
 
-  hasServer() {
-    return Object.values(this.peers).some((peer) => peer.role === "server");
+  hasServer(peerId: string) {
+    return this.getPeer(peerId)?.role === "server" ? true : false;
   }
 
   getServers() {
     return Object.values(this.peers).filter((peer) => peer.role === "server");
+  }
+
+  getServerCount() {
+    return Object.values(this.peers).filter((peer) => peer.role === "server")
+      .length;
   }
 
   getPeers() {
@@ -39,44 +47,57 @@ export class Peerstore {
     return Object.keys(this.peers).length;
   }
 
-  addPeerByPeerId(peerId: PeerId) {
-    const did = fromPeerId(peerId);
-    return this.addPeer(did, peerId.toString());
+  removePeer(peerId: string) {
+    delete this.peers[peerId.toString()];
   }
 
-  hasPeerWithPeerId(peerId: PeerId | string) {
-    return !!this.idMap[peerId.toString()];
+  getPeer(peerId: string) {
+    return this.peers[peerId.toString()];
   }
 
-  getPeerByPeerId(peerId: PeerId | string) {
-    if (!this.hasPeerWithPeerId(peerId))
-      return this.addPeerByPeerId(peerId as PeerId);
-    return this.peers[this.idMap[peerId.toString()]];
-  }
-
-  removePeer(did: string) {
-    delete this.peers[did];
-  }
-
-  getPeer(did: string) {
-    return this.peers[did];
-  }
-
-  updatePeer(did: string, peer: Partial<Peer>) {
-    this.peers[did] = {
-      ...this.peers[did],
+  updatePeer(peerId: string, peer: Partial<Peer>) {
+    this.peers[peerId.toString()] = {
+      ...this.peers[peerId.toString()],
       ...peer,
     };
   }
 
-  setMetadata(did: string, key: string, value: string) {
-    if (!this.peers[did]) {
+  setMetadata(peerId: string, key: string, value: string) {
+    if (!this.peers[peerId.toString()]) {
       throw new Error("peer not found");
     }
-    this.peers[did].metadata[key] = value;
+    this.peers[peerId.toString()].metadata[key] = value;
   }
 
-  isConnected(did: string) {
-    return this.peers[did]?.connected;
+  isConnected(peerId: string) {
+    return this.peers[peerId.toString()]?.connected;
+  }
+
+  isAuthenticated(peerId: string) {
+    return this.peers[peerId.toString()]?.authenticated || false;
+  }
+
+  hasPeerByDID(did: string) {
+    return !!this.peerIds[did];
+  }
+
+  getPeerByDID(did: string) {
+    if (!this.hasPeerByDID(did)) {
+      return undefined;
+    }
+
+    return this.peers[this.peerIds[did]];
+  }
+
+  getPeerIdByDID(did: string) {
+    if (!this.hasPeerByDID(did)) {
+      return undefined;
+    }
+
+    return this.peerIds[did];
+  }
+
+  getDIDByPeerId(peerId: string) {
+    return this.peers[peerId.toString()]?.did;
   }
 }

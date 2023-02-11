@@ -3,6 +3,7 @@ import type { Options } from "ipfs-core";
 import { webSockets } from "@libp2p/websockets";
 import { all } from "@libp2p/websockets/filters";
 import { noise } from "@chainsafe/libp2p-noise";
+import { mplex } from "@libp2p/mplex";
 
 import { IPFSWithLibP2P } from "./types";
 
@@ -23,13 +24,13 @@ export async function createIPFS(
     EXPERIMENTAL: {
       ipnsPubsub: true,
     },
-    peerStoreCacheSize: 2048,
 
     libp2p: {
       connectionManager: {
         autoDial: false,
       },
       connectionEncryption: [noise()],
+      streamMuxers: [mplex()],
       transports: [
         webSockets({
           filter: all,
