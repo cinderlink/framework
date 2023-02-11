@@ -12,7 +12,7 @@ import { Schema } from "@candor/ipld-database";
 import { IdentityServerEvents } from "./types";
 
 export type IdentityPinsRecord = {
-  id?: number;
+  id: number;
   name: string;
   avatar: string;
   did: string;
@@ -33,9 +33,18 @@ export class IdentityServerPlugin
       "identity",
       {
         pins: {
+          schemaId: "identity",
           encrypted: true,
           aggregate: {},
-          indexes: ["name", "did"],
+          indexes: {
+            name: {
+              fields: ["name"],
+            },
+            did: {
+              unique: true,
+              fields: ["did"],
+            },
+          },
           rollup: 1000,
           searchOptions: {
             fields: ["name"],
@@ -104,7 +113,11 @@ export class IdentityServerPlugin
     const identity = await this.client
       .getSchema("identity")
       ?.getTable<IdentityPinsRecord>("pins")
-      .findByIndex("did", message.peer.did);
+      .query()
+      .where("did", "=", message.peer.did)
+      .select()
+      .execute()
+      .then((r) => r.first());
 
     return this.client.send<CandorClientEventDef["send"]>(
       message.peer.peerId.toString(),

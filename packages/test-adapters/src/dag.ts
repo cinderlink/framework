@@ -22,7 +22,12 @@ export class TestDag implements DAGInterface {
     if (!cid) return undefined as any;
     const cached = this.cache[cid.toString()] as Data;
     if (path) {
-      return path.split("/").reduce((acc, key) => key?.length ? acc[key] : acc, cached);
+      return path
+        .split("/")
+        .reduce(
+          (acc: any, key: string) => (key?.length ? acc[key] : acc),
+          cached
+        );
     }
     return cached;
   }
