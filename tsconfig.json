@@ -6,6 +6,7 @@
     "src/**/*.test.ts",
     "src/**/*.e2e-spec.ts",
     "src/**/*.e2e-test.ts",
-    "src/**/*.d.ts"
+    "src/**/*.d.ts",
+    "**/vite.config.js.timestamp.*"
   ]
 }
