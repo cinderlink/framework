@@ -5,7 +5,7 @@ import { CandorServer } from "./server";
 
 export async function createServer(
   seed: Uint8Array,
-  plugins: [PluginConstructor, Record<string, unknown>][] = [],
+  plugins: [PluginConstructor<any>, Record<string, unknown>][] = [],
   nodes: string[] = [],
   options: Partial<Options> = {}
 ) {

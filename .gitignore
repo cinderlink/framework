@@ -3,3 +3,5 @@
 examples/*/candor
 packages/*/example/**/candor/
 docker/data/**
+**/.turbo
+**/.svelte-kit

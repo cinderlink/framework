@@ -1,15 +1,18 @@
-import type {
+import {
   PluginInterface,
-  PubsubMessage,
+  CandorClientInterface,
+  P2PMessage,
   IdentityResolveRequest,
   IdentityResolveResponse,
-  CandorClientInterface,
+  IdentitySetRequest,
+  IdentitySetResponse,
+  CandorClientEventDef,
 } from "@candor/core-types";
 import { Schema } from "@candor/ipld-database";
-import { IdentityServerEvents, IdentitySetRequest } from "./types";
+import { IdentityServerEvents } from "./types";
 
 export type IdentityPinsRecord = {
-  id?: number;
+  id: number;
   name: string;
   avatar: string;
   did: string;
@@ -30,9 +33,18 @@ export class IdentityServerPlugin
       "identity",
       {
         pins: {
+          schemaId: "identity",
           encrypted: true,
           aggregate: {},
-          indexes: ["name", "did"],
+          indexes: {
+            name: {
+              fields: ["name"],
+            },
+            did: {
+              unique: true,
+              fields: ["did"],
+            },
+          },
           rollup: 1000,
           searchOptions: {
             fields: ["name"],
@@ -62,30 +74,61 @@ export class IdentityServerPlugin
   pubsub = {};
   events = {};
 
-  async onSetRequest(message: PubsubMessage<IdentitySetRequest>) {
+  async onSetRequest(message: P2PMessage<string, IdentitySetRequest>) {
+    if (!message.peer.did) {
+      return this.client.send(message.peer.peerId.toString(), {
+        topic: "/identity/set/response",
+        data: {
+          requestID: message.data.requestID,
+          success: false,
+          error: "did not found, peer not authenticated",
+        },
+      });
+    }
     await this.client
       .getSchema("identity")
       ?.getTable("pins")
       .upsert("did", message.peer.did, message.data);
 
-    return this.client.send(message.peer.did, {
+    return this.client.send(message.peer.peerId.toString(), {
       topic: "/identity/set/response",
-      requestID: message.data.requestID,
-      success: true,
+      data: {
+        requestID: message.data.requestID,
+        success: true,
+      },
     });
   }
 
-  async onResolveRequest(message: PubsubMessage<IdentityResolveRequest>) {
+  async onResolveRequest(message: P2PMessage<string, IdentityResolveRequest>) {
+    if (!message.peer.did) {
+      return this.client.send(message.peer.peerId.toString(), {
+        topic: "/identity/resolve/response",
+        data: {
+          requestID: message.data.requestID,
+          cid: undefined,
+        },
+      });
+    }
+
     const identity = await this.client
       .getSchema("identity")
       ?.getTable<IdentityPinsRecord>("pins")
-      .findByIndex("did", message.peer.did);
+      .query()
+      .where("did", "=", message.peer.did)
+      .select()
+      .execute()
+      .then((r) => r.first());
 
-    return this.client.send(message.peer.did, {
-      topic: "/identity/resolve/response",
-      requestID: message.data.requestID,
-      cid: identity?.cid,
-    } as IdentityResolveResponse);
+    return this.client.send<CandorClientEventDef["send"]>(
+      message.peer.peerId.toString(),
+      {
+        topic: "/identity/resolve/response",
+        data: {
+          requestID: message.data.requestID,
+          cid: identity?.cid,
+        },
+      }
+    );
   }
 }
 

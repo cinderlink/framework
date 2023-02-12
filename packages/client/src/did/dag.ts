@@ -10,8 +10,13 @@ export class DIDDag implements DIDDagInterface {
     return this.dag.store(data);
   }
 
-  async load<Data = unknown>(cid: CID): Promise<Data> {
-    return this.dag.load<Data>(cid);
+  async load<Data = unknown>(cid: CID, path?: string): Promise<Data> {
+    console.info("DIDDag.load", cid, path)
+    const loaded = await this.dag.load<Data>(cid, path);
+    if (!loaded) {
+      throw new Error("Unable to load data");
+    }
+    return loaded;
   }
 
   async storeEncrypted<
@@ -24,15 +29,21 @@ export class DIDDag implements DIDDagInterface {
     return this.dag.store(jwe);
   }
 
-  async loadEncrypted(cid: CID): Promise<JWE> {
-    return this.dag.load<JWE>(cid);
+  async loadEncrypted(cid: CID, path?: string): Promise<JWE> {
+    const encrypted = await this.dag.load<JWE>(cid, path);
+    if (!encrypted) {
+      throw new Error("Unable to load encrypted data");
+    }
+    return encrypted;
   }
 
   async loadDecrypted<
     Data extends Record<string, unknown> = Record<string, unknown>
-  >(cid: CID): Promise<Data> {
-    const jwe = await this.loadEncrypted(cid);
-    console.info("decrypting JWE", jwe);
+  >(cid: CID, path?: string): Promise<Data | undefined> {
+    const jwe = await this.loadEncrypted(cid, path);
+    if (!jwe) {
+      throw new Error("Unable to load JWE");
+    }
     const decrypted = await this.did.decryptDagJWE(jwe);
     return decrypted as Data;
   }
