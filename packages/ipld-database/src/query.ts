@@ -329,8 +329,8 @@ export class TableQuery<
               prevCID: prevCID?.toString(),
               headers: {
                 ...headers,
-                recordsFrom: headers.recordsTo + 1,
-                recordsTo: headers.recordsTo,
+                recordsFrom: headers.recordsTo,
+                recordsTo: headers.recordsTo + 1,
               },
               filters: {
                 indexes: {},
@@ -430,12 +430,11 @@ export class TableQuery<
   }
 
   instructionsMatchRecord(record: Row) {
-    let match = true;
     const whereInstructions: WhereInstruction[] = this.instructions
       .filter((i) => i.instruction === "where")
       .concat(
         this.instructions
-          .filter((i) => i.instruction === "and" || i.instruction === "or")
+          .filter((i) => i.instruction === "and")
           .map((i) =>
             (i as AndInstruction | OrInstruction).queries.filter(
               (q) => q.instruction === "where"
@@ -444,7 +443,33 @@ export class TableQuery<
           .flat()
       ) as WhereInstruction[];
 
-    for (const query of whereInstructions) {
+    const orInstructions: OrInstruction[] = this.instructions.filter(
+      (i) => i.instruction === "or"
+    ) as OrInstruction[];
+
+    return (
+      this.whereInstructionsMatchRecord(whereInstructions, record) ||
+      orInstructions.some((orInstruction) => {
+        const whereInstructions: WhereInstruction[] = orInstruction.queries
+          .filter((q) => q.instruction === "where")
+          .concat(
+            orInstruction.queries
+              .filter((i) => i.instruction === "and")
+              .map((i) =>
+                (i as AndInstruction | OrInstruction).queries.filter(
+                  (q) => q.instruction === "where"
+                )
+              )
+              .flat()
+          ) as WhereInstruction[];
+        return this.whereInstructionsMatchRecord(whereInstructions, record);
+      })
+    );
+  }
+
+  whereInstructionsMatchRecord(where: WhereInstruction[], record: Row) {
+    let match = true;
+    for (const query of where) {
       const { field, operation, value } = query;
 
       if (operation === "=") {

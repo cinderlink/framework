@@ -11,7 +11,6 @@ import type { PubsubMessageEvents } from "../pubsub";
 import type { IPFSWithLibP2P } from "../ipfs";
 import type { DID } from "dids";
 import type { PeerId } from "@libp2p/interface-peer-id";
-import type { Connection, Stream } from "@libp2p/interface-connection";
 import type { DIDDagInterface } from "../dag";
 import type { IdentityInterface } from "../identity";
 import { SchemaInterface } from "../database/schema";

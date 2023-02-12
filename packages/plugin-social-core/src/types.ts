@@ -1,8 +1,12 @@
 export type SocialConnectionRecord = {
   id: number;
-  fromId: number;
-  toId: number;
+  from: string;
+  to: string;
   follow: boolean;
+};
+
+export type SocialConnection = SocialConnectionRecord & {
+  direction: "in" | "out" | "mutual";
 };
 
 export type SocialUserStatus = "online" | "offline" | "away";
@@ -55,7 +59,12 @@ export type SocialComment = {
 
 export type SocialClientPluginEvents = {
   ready: void;
-  "/search/users/${string}": SocialUserSearchResponseMessage;
+  "/response/${string}":
+    | SocialUserSearchResponseMessage
+    | SocialUserGetResponseMessage;
+  "/chat/message/sent": SocialChatMessageRequest;
+  "/chat/message/received": SocialChatMessageRecord;
+  "/chat/message/response": SocialChatMessageRecord;
 };
 
 export type SocialConnectionMessage = {
@@ -72,6 +81,31 @@ export type SocialAnnounceMessage = {
   avatar: string;
   status: "online" | "offline" | "away";
   updatedAt: number;
+};
+
+export type SocialChatMessageOutgoing = {
+  to: string;
+  message: string;
+  attachments?: string[];
+};
+
+export type SocialChatMessageRequest = SocialChatMessageOutgoing & {
+  remoteId: string;
+  cid: string;
+  from: string;
+};
+
+export type SocialChatMessageResponse = {
+  remoteId: string;
+  accepted: boolean;
+  cid: string;
+};
+
+export type SocialChatMessageRecord = SocialChatMessageRequest & {
+  id: number;
+  createdAt: number;
+  acceptedAt: number;
+  rejectedAt?: number;
 };
 
 export type SocialUpdateMessage = {
@@ -98,3 +132,15 @@ export type SocialUserSearchResponseMessage = {
   requestId: string;
   results: SocialUser[];
 };
+
+export type SocialUserGetRequestMessage = {
+  requestId: string;
+  did: string;
+};
+
+export type SocialUserGetResponseMessage = {
+  requestId: string;
+  user: SocialUser;
+};
+
+export type SocialConnectionFilter = "in" | "out" | "mutual" | "all";

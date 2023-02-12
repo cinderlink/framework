@@ -6,5 +6,6 @@
     "esModuleInterop": true,
     "module": "esnext",
     "target": "esnext"
-  }
+  },
+  "exclude": ["node_modules", "dist"]
 }

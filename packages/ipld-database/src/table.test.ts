@@ -161,7 +161,7 @@ describe("@candor/ipld-database/table", () => {
     for (let i = 0; i < 1000; i++) {
       await table.insert({ name: `test #${i}`, count: i });
     }
-    expect(table.currentIndex).toBe(1001);
+    expect(table.currentIndex).toBe(1000);
     expect(table.currentBlock.cache?.prevCID).not.toBeUndefined();
   });
 
@@ -219,51 +219,6 @@ describe("@candor/ipld-database/table", () => {
           "id": 11,
           "name": "test #10",
         },
-        {
-          "count": 2,
-          "id": 3,
-          "name": "test #2",
-        },
-        {
-          "count": 3,
-          "id": 4,
-          "name": "test #3",
-        },
-        {
-          "count": 0,
-          "id": 1,
-          "name": "test #0",
-        },
-        {
-          "count": 1,
-          "id": 2,
-          "name": "test #1",
-        },
-        {
-          "count": 4,
-          "id": 5,
-          "name": "test #4",
-        },
-        {
-          "count": 5,
-          "id": 6,
-          "name": "test #5",
-        },
-        {
-          "count": 6,
-          "id": 7,
-          "name": "test #6",
-        },
-        {
-          "count": 7,
-          "id": 8,
-          "name": "test #7",
-        },
-        {
-          "count": 8,
-          "id": 9,
-          "name": "test #8",
-        },
       ]
     `);
   });
@@ -284,7 +239,7 @@ describe("@candor/ipld-database/table", () => {
       }
     `);
 
-    expect(table.currentIndex).toBe(100);
+    expect(table.currentIndex).toBe(101);
   });
 
   describe("upsert", () => {
@@ -357,7 +312,7 @@ describe("@candor/ipld-database/table", () => {
     it("should update records with unique indexes", async () => {
       const users = new Table("users", schema.users, dag);
       const inserted = await users.insert({ did: "foo:bar", name: "bar" });
-      expect(inserted).toMatchInlineSnapshot('1');
+      expect(inserted).toMatchInlineSnapshot("1");
 
       const upserted = await users.upsert("did", "foo:bar", { name: "baz" });
       expect(upserted).toMatchInlineSnapshot(`

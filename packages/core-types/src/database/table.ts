@@ -1,15 +1,10 @@
 import type { SchemaObject } from "ajv";
 import type { CID } from "multiformats";
 import type Emittery from "emittery";
-import type {
-  default as Minisearch,
-  AsPlainObject,
-  Options as SearchOptions,
-} from "minisearch";
+import type { Options as SearchOptions } from "minisearch";
 import type { DIDDagInterface } from "../dag";
 import { TableQueryInterface } from "./query";
 import {
-  BlockAggregateDef,
   BlockData,
   BlockFilters,
   BlockHeaders,

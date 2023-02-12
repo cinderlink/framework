@@ -11,7 +11,7 @@ export class DIDDag implements DIDDagInterface {
   }
 
   async load<Data = unknown>(cid: CID, path?: string): Promise<Data> {
-    console.info("DIDDag.load", cid, path)
+    console.info("DIDDag.load", cid, path);
     const loaded = await this.dag.load<Data>(cid, path);
     if (!loaded) {
       throw new Error("Unable to load data");
@@ -37,9 +37,10 @@ export class DIDDag implements DIDDagInterface {
     return encrypted;
   }
 
-  async loadDecrypted<
-    Data extends Record<string, unknown> = Record<string, unknown>
-  >(cid: CID, path?: string): Promise<Data | undefined> {
+  async loadDecrypted<Data = Record<string, unknown>>(
+    cid: CID,
+    path?: string
+  ): Promise<Data | undefined> {
     const jwe = await this.loadEncrypted(cid, path);
     if (!jwe) {
       throw new Error("Unable to load JWE");

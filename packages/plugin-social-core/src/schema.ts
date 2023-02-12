@@ -193,6 +193,45 @@ export const SocialSchemaDef: Record<string, TableDefinition> = {
       },
     },
   },
+  chat_messages: {
+    schemaId: "social",
+    encrypted: true,
+    aggregate: {
+      createdAt: "range",
+    },
+    indexes: {
+      cid: {
+        unique: true,
+        fields: ["cid"],
+      },
+      conversation: {
+        unique: false,
+        fields: ["from", "to"],
+      },
+    },
+    rollup: 1000,
+    searchOptions: {
+      fields: ["authorId", "cid", "content", "tags", "comments"],
+    },
+    schema: {
+      type: "object",
+      properties: {
+        remoteId: { type: "string" },
+        cid: { type: "string" },
+        from: { type: "string" },
+        to: { type: "string" },
+        message: { type: "string" },
+        attachments: {
+          type: "array",
+          items: {
+            type: "string",
+          },
+        },
+        createdAt: { type: "number" },
+        receivedAt: { type: "number" },
+      },
+    },
+  },
 };
 
 export default SocialSchemaDef;
