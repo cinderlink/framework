@@ -17,7 +17,6 @@ import {
   SocialUpdateMessage,
   SocialClientPluginEvents,
   SocialConnectionRecord,
-  SocialConnection,
   SocialPost,
   SocialUser,
   SocialProfile,
@@ -413,8 +412,11 @@ export class SocialClientPlugin
     user: string,
     filter: SocialConnectionFilter,
     limit: number = 100
-  ): Promise<SocialConnection[]> {
-    const query = this.table("connections").query().limit(limit).select();
+  ): Promise<SocialConnectionRecord[]> {
+    const query = this.table<SocialConnectionRecord>("connections")
+      .query()
+      .limit(limit)
+      .select();
 
     if (filter === "in" || filter === "mutual") {
       query.where("to", "=", user);
@@ -422,28 +424,59 @@ export class SocialClientPlugin
       query.where("from", "=", user);
     }
 
+    if (filter === "mutual") {
+      query.or((qb) => {
+        qb.where("from", "=", user);
+      });
+    }
+
     const results = (await query.execute()).all();
 
     console.info(`plugin/social/client > getConnections`, { filter, results });
-
-    const connections = results.map((result) => {
-      const other = results.filter((other) => {
-        return other.from === result.to && other.to === result.from;
-      });
-      return {
-        ...result,
-        direction:
-          other.length > 0 ? "mutual" : result.to === user ? "in" : "out",
-      };
-    }) as SocialConnection[];
-
     if (filter === "mutual") {
-      return connections.filter(
-        (connection) => connection.direction === "mutual"
-      );
+      return results
+        .filter((row) => row.to === user)
+        .filter((result) => {
+          return results
+            .filter((row) => row.from === user)
+            .some((other) => {
+              return other.from === result.to && other.to === result.from;
+            });
+        });
     }
 
-    return connections;
+    return results;
+  }
+
+  async getConnectionDirection(to: string, from: string = this.client.id) {
+    const incoming = await this.table("connections")
+      .query()
+      .where("to", "=", to)
+      .where("from", "=", from)
+      .select()
+      .execute()
+      .then((result) => result.all());
+    const outgoing = await this.table("connections")
+      .query()
+      .where("from", "=", to)
+      .where("to", "=", from)
+      .select()
+      .execute()
+      .then((result) => result.all());
+
+    if (incoming.length > 0 && outgoing.length > 0) {
+      return "mutual";
+    }
+
+    if (incoming.length > 0) {
+      return "in";
+    }
+
+    if (outgoing.length > 0) {
+      return "out";
+    }
+
+    return "none";
   }
 
   async getConnectionsCount(user: string, filter: SocialConnectionFilter) {
@@ -516,33 +549,6 @@ export class SocialClientPlugin
     return (
       (await this.hasConnectionFrom(user)) || (await this.hasConnectionTo(user))
     );
-  }
-
-  async connectionStateTo(
-    user: string
-  ): Promise<"mutual" | "follower" | "following" | "none"> {
-    const from = await this.hasConnectionFrom(user);
-    const to = await this.hasConnectionTo(user);
-    const all = await this.table("connections")
-      .query()
-      .select()
-      .execute()
-      .then((result) => result.all());
-    console.info(`plugin/social/client > connection state to ${user}`, {
-      from,
-      to,
-      all,
-    });
-    if (from && to) {
-      return "mutual";
-    }
-    if (from) {
-      return "follower";
-    }
-    if (to) {
-      return "following";
-    }
-    return "none";
   }
 
   async onConnection(

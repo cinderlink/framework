@@ -5,10 +5,6 @@ export type SocialConnectionRecord = {
   follow: boolean;
 };
 
-export type SocialConnection = SocialConnectionRecord & {
-  direction: "in" | "out" | "mutual";
-};
-
 export type SocialUserStatus = "online" | "offline" | "away";
 
 export type SocialUser = {
