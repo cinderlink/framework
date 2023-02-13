@@ -809,15 +809,27 @@ export class SocialClientPlugin
     });
   }
 
-  async deleteConnection(to: string) {
+  async deleteConnection(from: string, to: string) {
     const connection = await this.table("connections")
       .query()
-      .where("from", "=", this.client.id)
+      .where("from", "=", from)
       .where("to", "=", to)
-      .delete()
+      .select()
       .execute()
       .then((result) => result.first());
-    if (!connection) {
+    console.info(
+      `plugin/social/client > deleting connection (from: ${this.client.id}, to: ${to})`,
+      connection
+    );
+    const deleted = await this.table("connections")
+      .query()
+      .where("from", "=", from)
+      .where("to", "=", to)
+      .delete()
+      .returning()
+      .execute()
+      .then((result) => result.first());
+    if (!deleted) {
       console.warn(
         `plugin/social/client > failed to delete connection (from: ${this.client.id}, to: ${to})`
       );

@@ -287,6 +287,9 @@ export class TableBlock<
   }
 
   async aggregate() {
+    if (this.cache.filters?.aggregates && !this._changed) {
+      return this.cache.filters.aggregates;
+    }
     const filters = await this.filters();
     const records = await this.records();
     const entries = Object.entries(records);
@@ -329,7 +332,6 @@ export class TableBlock<
     });
 
     this.cache.filters = filters;
-    this._changed = true;
     return filters.aggregates;
   }
 
@@ -418,6 +420,7 @@ export class TableBlock<
   }
 
   async deleteRecord(id: number) {
+    console.info(`ipld-database/block: deleting record ${id}`);
     // delete from indexes
     const indexes = this.table.def.indexes;
     for (const [name, index] of Object.entries(indexes)) {
@@ -428,6 +431,10 @@ export class TableBlock<
       );
     }
     delete this.cache!.records![id];
+    console.info(
+      `ipld-database/block: deleted record ${id}`,
+      this.cache.records
+    );
     this._changed = true;
   }
 
@@ -512,6 +519,10 @@ export class TableBlock<
       );
     }
 
+    console.warn(
+      `ipld-database/block: preparing block data for table ${this.table.tableId}`
+    );
+
     await Promise.all([
       this.prevCID(),
       this.filters(),
@@ -526,6 +537,7 @@ export class TableBlock<
       `ipld-database/block: saving block (${this.cid}) for table ${this.table.tableId}`,
       data
     );
+    this._changed = false;
 
     // this.cid = await (this.table.encrypted
     //   ? this.table.dag.storeEncrypted(data as Record<string, any>)
@@ -538,7 +550,11 @@ export class TableBlock<
       return undefined;
     });
 
-    this._changed = false;
+    console.warn(
+      `ipld-database/block: saved block (${this.cid}) for table ${this.table.tableId}`,
+      data
+    );
+
     return this.cid;
   }
 

@@ -254,24 +254,9 @@ export class TableQuery<
             );
           });
         }
-        const returningInstruction = this.instructions.find(
-          (i) => i.instruction === "returning"
-        ) as ReturningInstruction;
-        if (returningInstruction) {
-          returning = returningInstruction.fields?.length
-            ? returning.concat(
-                matches.map(
-                  (m: Row) =>
-                    returningInstruction.fields?.reduce(
-                      (acc, field) => ({ ...acc, [field]: m[field] }),
-                      {}
-                    ) as Row
-                )
-              )
-            : returning.concat(matches);
-        }
       } else if (this.terminator === "delete") {
         for (const match of matches) {
+          console.info("deleting", match.id, match);
           event.block.deleteRecord(match.id);
         }
       } else if (this.terminator === "select") {
@@ -289,6 +274,23 @@ export class TableQuery<
               )
             : matches
         );
+      }
+
+      const returningInstruction = this.instructions.find(
+        (i) => i.instruction === "returning"
+      ) as ReturningInstruction;
+      if (returningInstruction) {
+        returning = returningInstruction.fields?.length
+          ? returning.concat(
+              matches.map(
+                (m: Row) =>
+                  returningInstruction.fields?.reduce(
+                    (acc, field) => ({ ...acc, [field]: m[field] }),
+                    {}
+                  ) as Row
+              )
+            )
+          : returning.concat(matches);
       }
 
       if (returning.length >= limit) {
@@ -323,6 +325,10 @@ export class TableQuery<
 
         if (writeStarted && rewriteBlock) {
           const records = await block.records();
+          console.info(
+            `ipld-database/table-query: rewriting block ${block.cid}`,
+            records
+          );
           for (const [, record] of Object.entries(records)) {
             await rewriteBlock.addRecord(record);
           }
@@ -348,6 +354,10 @@ export class TableQuery<
         }
       }
       if (rewriteBlock) {
+        console.info(
+          `ipld-database/table-query: saving rewritten block`,
+          rewriteBlock
+        );
         this.table.setBlock(rewriteBlock);
       }
       this.table.unlock();

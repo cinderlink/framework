@@ -147,6 +147,7 @@ export class Table<
 
   async save() {
     if (!this.currentBlock.cid || this.currentBlock.changed) {
+      console.info(`table/${this.tableId} > saving`, this.currentBlock.cid);
       await this.currentBlock.save();
     }
 
