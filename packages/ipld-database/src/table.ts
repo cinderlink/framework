@@ -61,6 +61,7 @@ export class Table<
       index: this.currentBlockIndex,
       currentIndex: this.currentIndex,
     });
+    this.emit("/block/saved", block);
   }
 
   async insert(data: Omit<Row, "id">) {
