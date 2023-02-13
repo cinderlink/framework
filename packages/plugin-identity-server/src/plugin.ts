@@ -3,9 +3,7 @@ import {
   CandorClientInterface,
   P2PMessage,
   IdentityResolveRequest,
-  IdentityResolveResponse,
   IdentitySetRequest,
-  IdentitySetResponse,
   CandorClientEventDef,
 } from "@candor/core-types";
 import { Schema } from "@candor/ipld-database";

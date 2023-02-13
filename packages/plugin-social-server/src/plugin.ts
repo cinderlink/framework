@@ -1,8 +1,9 @@
 import {
+  loadSocialSchema,
+  SocialUser,
   SocialUserGetRequestMessage,
   SocialUserGetResponseMessage,
-} from "./../../plugin-social-core/src/types";
-import { loadSocialSchema, SocialUser } from "@candor/plugin-social-core";
+} from "@candor/plugin-social-core";
 import type {
   PluginInterface,
   CandorClientInterface,

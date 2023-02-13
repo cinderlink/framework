@@ -93,6 +93,12 @@ export class Table<
     const existing = (
       await this.query().where(index, "=", value).select().execute()
     ).first();
+    console.info(`table/${this.tableId} > upserting record`, {
+      existing,
+      index,
+      value,
+      data,
+    });
     if (existing?.id) {
       return this.update(existing.id, data as Row);
     }
@@ -114,6 +120,7 @@ export class Table<
   }
 
   async getById(id: number) {
+    await this.awaitUnlock();
     const results = await this.query().where("id", "=", id).select().execute();
     return results.first();
   }
@@ -121,7 +128,13 @@ export class Table<
   async search(query: string, limit = 10): Promise<Row[]> {
     let results: Row[] = [];
     await this.unwind(async (event) => {
-      await event.block.filters();
+      if (!event.block.index) {
+        event.block.buildSearchIndex();
+      }
+      console.info(
+        `block index loaded for ${event.block.cid}`,
+        event.block.index
+      );
       const searchResults = (await event.block.search(
         query,
         limit - results.length
@@ -165,6 +178,7 @@ export class Table<
       const prevCID = await event.block?.prevCID();
       event.cid = !event.resolved ? prevCID : undefined;
       if (!event.cid) {
+        console.warn(`ipld-database/table/unwind: no prevCID found`);
         event.resolved = true;
       } else {
         event.block = new TableBlock<Row, Def>(this, CID.parse(event.cid));

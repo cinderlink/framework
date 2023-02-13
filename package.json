@@ -23,6 +23,6 @@
   "license": "ISC",
   "devDependencies": {
     "chokidar": "^3.5.3",
-    "minimist": "^1.2.7"
+    "minimist": "^1.2.8"
   }
 }

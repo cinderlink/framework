@@ -75,7 +75,6 @@ export class SocialClientPlugin
 
   async start() {
     let hasConnected = false;
-    let hasPublished = false;
 
     console.info(`plugin/social/client > loading schema`);
     await loadSocialSchema(this.client);
@@ -84,24 +83,19 @@ export class SocialClientPlugin
       console.info(
         `plugin/social/client > announcing (new peer: ${peer.peerId})`
       );
-      if (!hasPublished) {
-        hasPublished = true;
-        console.info(`plugin/social/client > announcing (pubsub, initial)`);
-        await this.publishAnnounceMessage();
-      } else {
-        console.info(`plugin/social/client > announcing (p2p, peer connected)`);
-        await this.client.send(peer.peerId.toString(), {
-          topic: "/social/announce",
-          data: {
-            requestId: uuid(),
-            name: this.name,
-            bio: this.bio,
-            status: this.status,
-            avatar: this.avatar,
-            updatedAt: this.updatedAt,
-          },
-        });
-      }
+
+      console.info(`plugin/social/client > announcing (p2p, peer connected)`);
+      await this.client.send(peer.peerId.toString(), {
+        topic: "/social/announce",
+        data: {
+          requestId: uuid(),
+          name: this.name,
+          bio: this.bio,
+          status: this.status,
+          avatar: this.avatar,
+          updatedAt: this.updatedAt,
+        },
+      });
 
       if (await this.hasConnectionTo(peer.peerId.toString())) {
         console.info(
@@ -292,6 +286,7 @@ export class SocialClientPlugin
         query,
       },
     });
+    console.info({ requestId, query });
 
     const message = await this.once(
       `/response/${requestId}` as keyof SocialClientPluginEvents
@@ -449,14 +444,14 @@ export class SocialClientPlugin
   }
 
   async getConnectionDirection(to: string, from: string = this.client.id) {
-    const incoming = await this.table("connections")
+    const outgoing = await this.table("connections")
       .query()
       .where("to", "=", to)
       .where("from", "=", from)
       .select()
       .execute()
       .then((result) => result.all());
-    const outgoing = await this.table("connections")
+    const incoming = await this.table("connections")
       .query()
       .where("from", "=", to)
       .where("to", "=", from)

@@ -258,7 +258,7 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
       console.info(
         `p2p/in > already connected to ${peerId}, using existing stream...`
       );
-      // this.protocol[peerId].stream?.close();
+      this.protocol[peerId].stream?.close();
       return;
     }
 

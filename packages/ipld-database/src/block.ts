@@ -19,7 +19,7 @@ export class TableBlock<
   Def extends TableDefinition = TableDefinition
 > implements TableBlockInterface<Row, Def>
 {
-  public index: Minisearch;
+  public index?: Minisearch;
   private _changed: boolean = false;
 
   constructor(
@@ -27,12 +27,25 @@ export class TableBlock<
     public cid: CID | undefined,
     public cache: Partial<BlockData<Row>> = {}
   ) {
-    this.index = this.cache.filters?.search
-      ? Minisearch.loadJS(
+    this.buildSearchIndex();
+  }
+
+  buildSearchIndex() {
+    if (this.cache.filters?.search) {
+      try {
+        this.index = Minisearch.loadJS(
           this.cache.filters.search,
           this.table.def.searchOptions
-        )
-      : new Minisearch(this.table.def.searchOptions);
+        );
+      } catch (e) {
+        console.warn(`table/${this.table.tableId} > invalid search index`, e);
+        this.index = new Minisearch(this.table.def.searchOptions);
+        this.index.addAll(Object.values(this.cache.records || {}));
+      }
+      return;
+    }
+    this.index = new Minisearch(this.table.def.searchOptions);
+    this.index.addAll(Object.values(this.cache.records || {}));
   }
 
   get changed() {
@@ -98,13 +111,15 @@ export class TableBlock<
         this.cid!,
         "/filters"
       ).catch(() => undefined)) as BlockFilters | undefined;
+      console.info("filters", this.cache.filters);
+      this.buildSearchIndex();
     }
 
     if (!this.cache.filters?.indexes) {
       this.cache.filters = {
         indexes: {},
         aggregates: {},
-        search: this.index.toJSON(),
+        search: this.index?.toJSON(),
       };
     }
 
@@ -122,8 +137,8 @@ export class TableBlock<
         this.cid!,
         "/records"
       ).catch(() => ({}));
-      this.index.removeAll();
-      this.index.addAll(Object.values(this.cache.records || {}));
+      this.index?.removeAll();
+      this.index?.addAll(Object.values(this.cache.records || {}));
     }
 
     if (!this.cache.records) {
@@ -186,7 +201,8 @@ export class TableBlock<
     const serialized = TableBlock.serialize(value);
     return (
       indexes[name]?.[serialized] !== undefined &&
-      (!id || !indexes[name]?.[serialized]?.ids?.includes?.(id))
+      (!id ||
+        !Object.values(indexes[name]?.[serialized]?.ids || {}).includes?.(id))
     );
   }
 
@@ -368,10 +384,10 @@ export class TableBlock<
     }
     this.cache.headers!.recordsTo = row.id;
 
-    if (this.index.has(row.id)) {
+    if (this.index?.has(row.id)) {
       this.index.replace(row);
     } else {
-      this.index.add(row);
+      this.index?.add(row);
     }
 
     if (!this.cache.records) {
@@ -395,7 +411,6 @@ export class TableBlock<
 
   async updateRecord(id: number, update: Partial<Row>) {
     await this.assertUniqueConstraints(update as Row, id);
-
     const records = await this.records();
     records[id] = { ...records[id], ...update };
     this.cache.records = records;
@@ -417,7 +432,8 @@ export class TableBlock<
   }
 
   async search(query: string): Promise<Row[]> {
-    const results = this.index.search(query);
+    const results = this.index?.search(query, { fuzzy: 0.2 }) || [];
+    console.info(`ipld-database/block: search results for ${query}`, results);
     const records: Row[] = [];
     for (const result of results) {
       const record = await this.recordById(result.id);
@@ -448,18 +464,7 @@ export class TableBlock<
         `ipld-database/block: loading search index for ${this.cid}`,
         this.cache.filters?.search
       );
-      try {
-        this.index = Minisearch.loadJS(
-          this.cache.filters.search,
-          this.table.def.searchOptions
-        );
-      } catch (error) {
-        console.error(
-          `ipld-database/block: error loading search index for ${this.cid}`,
-          error
-        );
-        this.index = new Minisearch(this.table.def.searchOptions);
-      }
+      this.buildSearchIndex();
     }
   }
 
@@ -552,7 +557,7 @@ export class TableBlock<
       ...this.cache,
       filters: {
         ...this.cache.filters,
-        search: this.index.toJSON(),
+        search: this.index?.toJSON(),
       },
     }) as unknown as BlockData<Row>;
   }

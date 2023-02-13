@@ -1,7 +1,6 @@
-import { TestDIDDag } from "@candor/test-adapters/src/dag";
-import { createSeed, createDID } from "../../client";
-import type { DID } from "dids";
-import { describe, it, expect, beforeEach } from "vitest";
+import { rmSync } from "fs";
+import { createSeed, createClient, CandorClient } from "../../client";
+import { describe, it, expect, beforeEach, afterEach, afterAll } from "vitest";
 import { Table } from "./table";
 import { BlockData, TableDefinition } from "@candor/core-types";
 
@@ -82,30 +81,38 @@ const validDefinition: TableDefinition = {
   rollup: 10,
 };
 
-let seed: Uint8Array;
-let dag: TestDIDDag;
-let did: DID;
+let client: CandorClient;
 describe("@candor/ipld-database/table", () => {
-  beforeEach(async () => {
-    seed = await createSeed("test seed");
-    did = await createDID(seed);
-    dag = new TestDIDDag(did);
+  beforeEach(async (tst) => {
+    const seed = await createSeed("test seed");
+    client = (await createClient(seed, [], {
+      repo: "test-data/" + tst.meta.name,
+    })) as CandorClient;
+    await client.start();
+  });
+
+  afterEach(async () => {
+    await client.stop();
+  });
+
+  afterAll(() => {
+    rmSync("./test-data", { recursive: true, force: true });
   });
 
   it("should create a current block", () => {
-    const table = new Table("test", validDefinition, dag);
+    const table = new Table("test", validDefinition, client.dag);
     expect(table.currentBlock).toMatchSnapshot();
   });
 
   it("should validate records", () => {
-    const table = new Table("test", validDefinition, dag);
+    const table = new Table("test", validDefinition, client.dag);
     expect(() => table.assertValid({ name: "foo", count: 1 })).not.toThrow();
     expect(() => table.assertValid({ name: "foo", count: "1" })).toThrow();
     expect(() => table.assertValid({ name: 1, count: 1 })).toThrow();
   });
 
   it("should insert records", async () => {
-    const table = new Table("test", validDefinition, dag);
+    const table = new Table("test", validDefinition, client.dag);
     const id = await table.insert({ name: "foo", count: 1 });
     expect(Object.values(table.currentBlock.cache?.records || {}).length).toBe(
       1
@@ -134,13 +141,13 @@ describe("@candor/ipld-database/table", () => {
   });
 
   it("should index records", async () => {
-    const table = new Table("test", validDefinition, dag);
+    const table = new Table("test", validDefinition, client.dag);
     await table.insert({ name: "foo", count: 1 });
     expect(table.currentBlock.cache?.filters?.indexes).toMatchSnapshot();
   });
 
   it("should search records", async () => {
-    const table = new Table("test", validDefinition, dag);
+    const table = new Table("test", validDefinition, client.dag);
     await table.insert({ name: "foo", count: 1 });
     await table.insert({ name: "bar", count: 1 });
     await table.insert({ name: "baz", count: 1 });
@@ -157,7 +164,7 @@ describe("@candor/ipld-database/table", () => {
   });
 
   it("should rollup records", async () => {
-    const table = new Table("test", validDefinition, dag);
+    const table = new Table("test", validDefinition, client.dag);
     for (let i = 0; i < 1000; i++) {
       await table.insert({ name: `test #${i}`, count: i });
     }
@@ -166,11 +173,11 @@ describe("@candor/ipld-database/table", () => {
   });
 
   it("should aggregate records", async () => {
-    const table = new Table("test", validDefinition, dag);
+    const table = new Table("test", validDefinition, client.dag);
     for (let i = 0; i < 11; i++) {
       await table.insert({ name: `test #${i}`, count: i });
     }
-    const prevBlock = await dag.load<BlockData>(
+    const prevBlock = await client.dag.load<BlockData>(
       table.currentBlock.cache!.prevCID! as any
     );
     expect(prevBlock?.filters.aggregates).toMatchInlineSnapshot(`
@@ -181,22 +188,22 @@ describe("@candor/ipld-database/table", () => {
   });
 
   it("should rollup records with indexes", async () => {
-    const table = new Table("test", validDefinition, dag);
+    const table = new Table("test", validDefinition, client.dag);
     for (let i = 0; i < 11; i++) {
       await table.insert({ name: `test #${i}`, count: i });
     }
-    const prevBlock = await dag.load<BlockData>(
+    const prevBlock = await client.dag.load<BlockData>(
       table.currentBlock.cache!.prevCID! as any
     );
     expect(prevBlock?.filters.indexes).toMatchSnapshot();
   });
 
   it("should rollup records with aggregates", async () => {
-    const table = new Table("test", validDefinition, dag);
+    const table = new Table("test", validDefinition, client.dag);
     for (let i = 0; i < 11; i++) {
       await table.insert({ name: `test #${i}`, count: i });
     }
-    const prevBlock = await dag.load<BlockData>(
+    const prevBlock = await client.dag.load<BlockData>(
       table.currentBlock.cache!.prevCID! as any
     );
     expect(prevBlock?.filters.aggregates).toMatchInlineSnapshot(`
@@ -207,7 +214,7 @@ describe("@candor/ipld-database/table", () => {
   });
 
   it("should rollup records with search", async () => {
-    const table = new Table("test", validDefinition, dag);
+    const table = new Table("test", validDefinition, client.dag);
     for (let i = 0; i < 11; i++) {
       await table.insert({ name: `test #${i}`, count: i });
     }
@@ -223,12 +230,19 @@ describe("@candor/ipld-database/table", () => {
     `);
   });
 
-  it("should rewrite previous blocks to execute an update operation", async () => {
-    const table = new Table("test", validDefinition, dag);
+  it("should rewrite previous blocks to update", async () => {
+    const table = new Table("test", validDefinition, client.dag);
     for (let i = 0; i < 100; i++) {
       await table.insert({ name: `test #${i}`, count: i });
     }
     await table.update(2, { name: "test three", count: 1337 });
+
+    const allRecords = await table
+      .query()
+      .select()
+      .execute()
+      .then((r) => r.all());
+    expect(allRecords).toHaveLength(100);
 
     const updated = await table.getById(2);
     expect(updated).toMatchInlineSnapshot(`
@@ -240,11 +254,11 @@ describe("@candor/ipld-database/table", () => {
     `);
 
     expect(table.currentIndex).toBe(101);
-  });
+  }, 30000);
 
   describe("upsert", () => {
     it("should update inserted records", async () => {
-      const table = new Table("test", validDefinition, dag);
+      const table = new Table("test", validDefinition, client.dag);
       for (let i = 0; i < 11; i++) {
         await table.insert({ name: `test #${i}`, count: i });
       }
@@ -269,7 +283,7 @@ describe("@candor/ipld-database/table", () => {
     });
 
     it("should insert new records", async () => {
-      const table = new Table("test", validDefinition, dag);
+      const table = new Table("test", validDefinition, client.dag);
       for (let i = 0; i < 11; i++) {
         await table.upsert("name", `test #${i}`, { count: i });
       }
@@ -284,7 +298,7 @@ describe("@candor/ipld-database/table", () => {
     });
 
     it("should insert records with unique indexes", async () => {
-      const users = new Table("users", schema.users, dag);
+      const users = new Table("users", schema.users, client.dag);
       const returned = await users.upsert("did", "foo:bar", { name: "bar" });
       expect(returned).toMatchInlineSnapshot(`
         {
@@ -310,7 +324,7 @@ describe("@candor/ipld-database/table", () => {
     });
 
     it("should update records with unique indexes", async () => {
-      const users = new Table("users", schema.users, dag);
+      const users = new Table("users", schema.users, client.dag);
       const inserted = await users.insert({ did: "foo:bar", name: "bar" });
       expect(inserted).toMatchInlineSnapshot("1");
 

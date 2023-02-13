@@ -215,8 +215,10 @@ export class TableQuery<
     const unwound: TableBlockInterface<Row, Def>[] = [];
     let returning: Row[] = [];
     await this.table.unwind(async (event) => {
+      console.info("unwinding", event.block.cid, event.block.records);
+      await event.block.headers();
       // we need to make sure the block is aggregated before we can use it
-      if (!event.block.cid) {
+      if (!event.block.cache?.filters?.aggregates || !event.block.cid) {
         await event.block.aggregate();
       }
 
@@ -245,7 +247,12 @@ export class TableQuery<
           for (const [key, value] of Object.entries(updateInstruction.values)) {
             match[key as keyof Row] = value;
           }
-          event.block.updateRecord(match.id, match);
+          await event.block.updateRecord(match.id, match).catch(() => {
+            console.error(
+              "Failed to update record (unique key constraint violation)",
+              match
+            );
+          });
         }
         const returningInstruction = this.instructions.find(
           (i) => i.instruction === "returning"

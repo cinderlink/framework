@@ -17,6 +17,7 @@
     "isolatedModules": true,
     "noEmit": true,
     "moduleResolution": "node",
+    "sourceMap": true,
     "baseUrl": "src",
     "paths": {
       "@src/*": ["src/*"]
