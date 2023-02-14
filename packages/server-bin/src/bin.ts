@@ -9,7 +9,7 @@ import { HttpApi } from "ipfs-http-server";
 import { HttpGateway } from "ipfs-http-gateway";
 
 const argv = minimist(process.argv.slice(2));
-const [command, ...args] = argv._;
+const [command] = argv._;
 const configPath = argv.config || "./candor.config.json";
 
 if (command === "help" || argv.help) {

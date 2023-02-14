@@ -143,6 +143,7 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
     });
 
     this.ipfs.libp2p.addEventListener("peer:disconnect", (connection) => {
+      console.info(`peer:disconnect`, connection);
       const peerId = connection.detail.remotePeer.toString();
       if (!this.peers.hasPeer(peerId)) return;
       const peer = this.peers.getPeer(peerId);
@@ -182,14 +183,15 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
     if (!this.peers.hasPeer(peerId.toString())) {
       this.peers.addPeer(peerId, role);
     }
-    await this.ipfs.libp2p.dial(peerId);
-    const connection = this.ipfs.libp2p.getConnections(peerId)[0];
+    console.info(`peer/connect > dialing ${peerId.toString()}`);
     const stream = await this.ipfs.libp2p.dialProtocol(peerId, "/candor/1.0.0");
+    const connection = this.ipfs.libp2p.getConnections(peerId)[0];
     await this.handleCandorProtocol({ stream, connection });
   }
 
   async onConnect(peerId: PeerId) {
-    console.info(`peer/connect > connected to ${peerId.toString()}`);
+    const peer = this.peers.getPeer(peerId.toString());
+    console.info(`peer/connect > connected to ${peerId.toString()}`, peer);
     this.peers.updatePeer(peerId.toString(), { connected: true });
   }
 
@@ -254,7 +256,7 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
 
     if (this.protocol[peerId]?.stream) {
       console.info(
-        `p2p/in > already connected to ${peerId}, closing existing stream...`
+        `p2p/in > already connected to ${peerId}, using existing stream...`
       );
       this.protocol[peerId].stream?.close();
       return;
@@ -417,6 +419,7 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
 
   async stop() {
     console.info(`stop > shutting down...`);
+    await this.save();
     await Promise.all(
       Object.values(this.plugins).map(async (plugin) => {
         await plugin.stop?.();
@@ -426,8 +429,6 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
         });
       })
     );
-
-    await this.save();
 
     this.ipfs.stop();
   }

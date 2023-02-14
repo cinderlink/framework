@@ -13,8 +13,9 @@
     "registry-contracts/"
   ],
   "scripts": {
-    "watch": "node scripts/build.js --watch --build",
-    "build": "node scripts/build.js --build",
+    "watch": "turbo watch",
+    "build": "turbo build",
+    "dev": "turbo dev",
     "test": "pnpm --parallel --stream --filter=./packages/* -r test"
   },
   "keywords": [],
@@ -22,6 +23,6 @@
   "license": "ISC",
   "devDependencies": {
     "chokidar": "^3.5.3",
-    "minimist": "^1.2.7"
+    "minimist": "^1.2.8"
   }
 }

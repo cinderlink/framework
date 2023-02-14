@@ -57,16 +57,28 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
 
   async save() {
     const tables: Record<string, string | undefined> = {};
-    await Promise.all(
-      Object.entries(this.tables).map(async ([name]) => {
-        const tableCID = await this.tables[name].save();
-        if (tableCID) {
-          tables[name] = tableCID?.toString();
-        } else {
-          console.info(`Table "${name}" is empty, not saving`);
-        }
-      })
-    );
+    try {
+      await Promise.all(
+        Object.entries(this.tables).map(async ([name]) => {
+          const tableCID = await this.tables[name].save().catch((err) => {
+            console.error(`Failed to save table "${name}"`, err);
+          });
+          if (tableCID) {
+            console.info(`Saved table "${name}" to ${tableCID}`);
+            tables[name] = tableCID?.toString();
+          } else {
+            console.info(
+              `Table "${name}" failed to save (empty or invalid table)`
+            );
+          }
+        })
+      ).catch((err) => {
+        console.error("Failed to save tables", err);
+      });
+    } catch (err) {
+      console.error("Failed to save tables", err);
+    }
+    console.info(`Tables saved: ${JSON.stringify(tables)}`);
     const savedSchema = {
       schemaId: this.schemaId,
       defs: this.defs,
@@ -92,6 +104,7 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
   ) {
     if (!data) throw new Error("Invalid schema data");
     const schema = new Schema(data.schemaId, data.defs, dag, encrypted);
+    console.info(`Loading schema "${data.schemaId}"`, data);
     await Promise.all(
       Object.entries(data.tables).map(async ([name, tableCID]) => {
         if (tableCID) {

@@ -22,7 +22,7 @@ export class Table<
   extends Emittery<TableEvents>
   implements TableInterface<Row, Def>
 {
-  currentIndex: number = 1;
+  currentIndex: number = 0;
   currentBlock: TableBlockInterface<Row, Def>;
   currentBlockIndex: number = 0;
   encrypted: boolean;
@@ -55,14 +55,20 @@ export class Table<
 
   setBlock(block: TableBlockInterface<Row, Def>) {
     this.currentBlock = block;
-    this.currentBlockIndex = block.cache!.headers!.index || 0;
-    this.currentIndex = block.cache!.headers!.recordsTo || 0;
+    this.currentBlockIndex = Number(block.cache!.headers!.index) || 0;
+    this.currentIndex = Number(block.cache!.headers!.recordsTo) || 0;
+    console.info(`table/${this.tableId} > set block ${block.cid}`, {
+      index: this.currentBlockIndex,
+      currentIndex: this.currentIndex,
+    });
+    this.emit("/block/saved", block);
   }
 
   async insert(data: Omit<Row, "id">) {
     this.assertValid(data);
     await this.awaitLock();
-    const id = this.currentIndex++;
+    const id = ++this.currentIndex;
+    console.info(`table/${this.tableId} > inserting record ${id}`, data);
     await this.currentBlock.addRecord({ ...data, id } as Row);
     if (
       Object.values(this.currentBlock.cache?.records || {}).length >=
@@ -74,6 +80,8 @@ export class Table<
       }
     }
     this.unlock();
+    this.emit("/record/inserted", { id, ...data });
+    console.info(`table/${this.tableId} > inserted record ${id}`, data);
     return id;
   }
 
@@ -86,6 +94,12 @@ export class Table<
     const existing = (
       await this.query().where(index, "=", value).select().execute()
     ).first();
+    console.info(`table/${this.tableId} > upserting record`, {
+      existing,
+      index,
+      value,
+      data,
+    });
     if (existing?.id) {
       return this.update(existing.id, data as Row);
     }
@@ -95,16 +109,19 @@ export class Table<
   }
 
   async update(id: number, update: Partial<Row>) {
-    return (
+    const updated = (
       await this.query()
         .where("id", "=", id)
         .update(update)
         .returning()
         .execute()
     ).first() as Row;
+    this.emit("/record/updated", updated);
+    return updated;
   }
 
   async getById(id: number) {
+    await this.awaitUnlock();
     const results = await this.query().where("id", "=", id).select().execute();
     return results.first();
   }
@@ -112,7 +129,13 @@ export class Table<
   async search(query: string, limit = 10): Promise<Row[]> {
     let results: Row[] = [];
     await this.unwind(async (event) => {
-      await event.block.filters();
+      if (!event.block.index) {
+        event.block.buildSearchIndex();
+      }
+      console.info(
+        `block index loaded for ${event.block.cid}`,
+        event.block.index
+      );
       const searchResults = (await event.block.search(
         query,
         limit - results.length
@@ -125,16 +148,19 @@ export class Table<
 
   async save() {
     if (!this.currentBlock.cid || this.currentBlock.changed) {
+      console.info(`table/${this.tableId} > saving`, this.currentBlock.cid);
       await this.currentBlock.save();
     }
+
+    console.info(`table/${this.tableId} > saved`, this.currentBlock.cid);
 
     return this.currentBlock.cid;
   }
 
   async load(cid: CID) {
-    this.currentBlock = new TableBlock<Row, Def>(this, cid);
-    await this.currentBlock.load();
-    this.currentIndex = this.currentBlock.cache!.headers!.recordsTo;
+    const block = new TableBlock<Row, Def>(this, cid);
+    await block.load();
+    this.setBlock(block);
   }
 
   async unwind(next: (event: TableUnwindEvent) => Promise<void> | void) {
@@ -154,6 +180,7 @@ export class Table<
       const prevCID = await event.block?.prevCID();
       event.cid = !event.resolved ? prevCID : undefined;
       if (!event.cid) {
+        console.warn(`ipld-database/table/unwind: no prevCID found`);
         event.resolved = true;
       } else {
         event.block = new TableBlock<Row, Def>(this, CID.parse(event.cid));

@@ -6,6 +6,10 @@ import type {
   SocialAnnounceMessage,
   SocialUpdateMessage,
   SocialUserSearchResponseMessage,
+  SocialChatMessageRequest,
+  SocialChatMessageResponse,
+  SocialUserGetRequestMessage,
+  SocialUserGetResponseMessage,
 } from "@candor/plugin-social-core";
 import { SocialUserSearchRequestMessage } from "@candor/plugin-social-core/src";
 
@@ -17,6 +21,10 @@ export interface SocialClientEvents extends PluginEventDef {
     "/social/announce": SocialAnnounceMessage;
     "/social/users/search/request": SocialUserSearchRequestMessage;
     "/social/users/search/response": SocialUserSearchResponseMessage;
+    "/social/user/get/request": SocialUserGetRequestMessage;
+    "/social/user/get/response": SocialUserGetResponseMessage;
+    "/social/chat/message/request": SocialChatMessageRequest;
+    "/social/chat/message/response": SocialChatMessageResponse;
   };
   receive: {
     "/social/updates/request": SocialUpdatesRequestMessage;
@@ -24,6 +32,9 @@ export interface SocialClientEvents extends PluginEventDef {
     "/social/connection": SocialConnectionMessage;
     "/social/announce": SocialAnnounceMessage;
     "/social/users/search/response": SocialUserSearchResponseMessage;
+    "/social/user/get/response": SocialUserGetResponseMessage;
+    "/social/chat/message/request": SocialChatMessageRequest;
+    "/social/chat/message/response": SocialChatMessageResponse;
   };
   publish: {
     "/social/connection": SocialConnectionMessage;
@@ -35,5 +46,9 @@ export interface SocialClientEvents extends PluginEventDef {
     "/social/announce": SocialAnnounceMessage;
     "/social/update": SocialUpdateMessage;
   };
-  emit: {};
+  emit: {
+    "/chat/message/sent": SocialChatMessageRequest;
+    "/chat/message/received": SocialChatMessageRequest;
+    "/chat/message/response": SocialChatMessageResponse;
+  };
 }

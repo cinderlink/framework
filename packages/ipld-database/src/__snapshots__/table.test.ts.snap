@@ -4,30 +4,24 @@ exports[`@candor/ipld-database/table > should create a current block 1`] = `
 {
   "filters": {
     "search": {
-      "averageFieldLength": [],
       "dirtCount": 0,
       "documentCount": 0,
-      "documentIds": {},
       "fieldIds": {
         "id": 1,
         "name": 0,
       },
-      "fieldLength": {},
-      "index": [],
       "nextId": 0,
       "serializationVersion": 2,
-      "storedFields": {},
     },
   },
   "headers": {
     "encrypted": false,
     "index": 0,
-    "recordsFrom": 1,
-    "recordsTo": 1,
+    "recordsFrom": 0,
+    "recordsTo": 0,
     "schema": "test",
     "table": "test",
   },
-  "prevCID": undefined,
 }
 `;
 
@@ -50,84 +44,84 @@ exports[`@candor/ipld-database/table > should rollup records with indexes 1`] = 
 {
   "name": {
     "zPbkLwYJQbRmZQwe": {
-      "ids": [
-        1,
-      ],
-      "values": [
-        "test #0",
-      ],
+      "ids": {
+        "0": 1,
+      },
+      "values": {
+        "0": "test #0",
+      },
     },
     "zPbkLwYJQbRmZkRa": {
-      "ids": [
-        2,
-      ],
-      "values": [
-        "test #1",
-      ],
+      "ids": {
+        "0": 2,
+      },
+      "values": {
+        "0": "test #1",
+      },
     },
     "zPbkLwYJQbRma5uW": {
-      "ids": [
-        3,
-      ],
-      "values": [
-        "test #2",
-      ],
+      "ids": {
+        "0": 3,
+      },
+      "values": {
+        "0": "test #2",
+      },
     },
     "zPbkLwYJQbRmaRPS": {
-      "ids": [
-        4,
-      ],
-      "values": [
-        "test #3",
-      ],
+      "ids": {
+        "0": 4,
+      },
+      "values": {
+        "0": "test #3",
+      },
     },
     "zPbkLwYJQbRmaksN": {
-      "ids": [
-        5,
-      ],
-      "values": [
-        "test #4",
-      ],
+      "ids": {
+        "0": 5,
+      },
+      "values": {
+        "0": "test #4",
+      },
     },
     "zPbkLwYJQbRmb6MJ": {
-      "ids": [
-        6,
-      ],
-      "values": [
-        "test #5",
-      ],
+      "ids": {
+        "0": 6,
+      },
+      "values": {
+        "0": "test #5",
+      },
     },
     "zPbkLwYJQbRmbRqE": {
-      "ids": [
-        7,
-      ],
-      "values": [
-        "test #6",
-      ],
+      "ids": {
+        "0": 7,
+      },
+      "values": {
+        "0": "test #6",
+      },
     },
     "zPbkLwYJQbRmbmKA": {
-      "ids": [
-        8,
-      ],
-      "values": [
-        "test #7",
-      ],
+      "ids": {
+        "0": 8,
+      },
+      "values": {
+        "0": "test #7",
+      },
     },
     "zPbkLwYJQbRmc6o6": {
-      "ids": [
-        9,
-      ],
-      "values": [
-        "test #8",
-      ],
+      "ids": {
+        "0": 9,
+      },
+      "values": {
+        "0": "test #8",
+      },
     },
     "zPbkLwYJQbRmcSH2": {
-      "ids": [
-        10,
-      ],
-      "values": [
-        "test #9",
-      ],
+      "ids": {
+        "0": 10,
+      },
+      "values": {
+        "0": "test #9",
+      },
     },
   },
 }
