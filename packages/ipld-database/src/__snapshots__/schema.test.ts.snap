@@ -4,30 +4,24 @@ exports[`@candor/ipld-database/schema > should create tables 1`] = `
 {
   "filters": {
     "search": {
-      "averageFieldLength": [],
       "dirtCount": 0,
       "documentCount": 0,
-      "documentIds": {},
       "fieldIds": {
         "id": 1,
         "name": 0,
       },
-      "fieldLength": {},
-      "index": [],
       "nextId": 0,
       "serializationVersion": 2,
-      "storedFields": {},
     },
   },
   "headers": {
     "encrypted": false,
     "index": 0,
-    "recordsFrom": 1,
-    "recordsTo": 1,
+    "recordsFrom": 0,
+    "recordsTo": 0,
     "schema": "test",
     "table": "test",
   },
-  "prevCID": undefined,
 }
 `;
 
@@ -41,52 +35,52 @@ Table {
       "indexes": {
         "name": {
           "z2ikNK1j9q8xKhdHit": {
-            "ids": [
-              11,
-            ],
-            "values": [
-              "test #10",
-            ],
+            "ids": {
+              "0": 11,
+            },
+            "values": {
+              "0": "test #10",
+            },
           },
           "z2ikNK1j9q8xKhddCp": {
-            "ids": [
-              12,
-            ],
-            "values": [
-              "test #11",
-            ],
+            "ids": {
+              "0": 12,
+            },
+            "values": {
+              "0": "test #11",
+            },
           },
           "z2ikNK1j9q8xKhdxgk": {
-            "ids": [
-              13,
-            ],
-            "values": [
-              "test #12",
-            ],
+            "ids": {
+              "0": 13,
+            },
+            "values": {
+              "0": "test #12",
+            },
           },
           "z2ikNK1j9q8xKheJAg": {
-            "ids": [
-              14,
-            ],
-            "values": [
-              "test #13",
-            ],
+            "ids": {
+              "0": 14,
+            },
+            "values": {
+              "0": "test #13",
+            },
           },
           "z2ikNK1j9q8xKhedec": {
-            "ids": [
-              15,
-            ],
-            "values": [
-              "test #14",
-            ],
+            "ids": {
+              "0": 15,
+            },
+            "values": {
+              "0": "test #14",
+            },
           },
         },
       },
       "search": {
-        "averageFieldLength": [
-          2,
-          1,
-        ],
+        "averageFieldLength": {
+          "0": 2,
+          "1": 1,
+        },
         "dirtCount": 0,
         "documentCount": 5,
         "documentIds": {
@@ -101,39 +95,39 @@ Table {
           "name": 0,
         },
         "fieldLength": {
-          "0": [
-            2,
-            1,
-          ],
-          "1": [
-            2,
-            1,
-          ],
-          "2": [
-            2,
-            1,
-          ],
-          "3": [
-            2,
-            1,
-          ],
-          "4": [
-            2,
-            1,
-          ],
+          "0": {
+            "0": 2,
+            "1": 1,
+          },
+          "1": {
+            "0": 2,
+            "1": 1,
+          },
+          "2": {
+            "0": 2,
+            "1": 1,
+          },
+          "3": {
+            "0": 2,
+            "1": 1,
+          },
+          "4": {
+            "0": 2,
+            "1": 1,
+          },
         },
-        "index": [
-          [
-            "15",
-            {
+        "index": {
+          "0": {
+            "0": "15",
+            "1": {
               "1": {
                 "4": 1,
               },
             },
-          ],
-          [
-            "14",
-            {
+          },
+          "1": {
+            "0": "14",
+            "1": {
               "0": {
                 "4": 1,
               },
@@ -141,10 +135,10 @@ Table {
                 "3": 1,
               },
             },
-          ],
-          [
-            "13",
-            {
+          },
+          "2": {
+            "0": "13",
+            "1": {
               "0": {
                 "3": 1,
               },
@@ -152,10 +146,10 @@ Table {
                 "2": 1,
               },
             },
-          ],
-          [
-            "12",
-            {
+          },
+          "3": {
+            "0": "12",
+            "1": {
               "0": {
                 "2": 1,
               },
@@ -163,10 +157,10 @@ Table {
                 "1": 1,
               },
             },
-          ],
-          [
-            "11",
-            {
+          },
+          "4": {
+            "0": "11",
+            "1": {
               "0": {
                 "1": 1,
               },
@@ -174,18 +168,18 @@ Table {
                 "0": 1,
               },
             },
-          ],
-          [
-            "10",
-            {
+          },
+          "5": {
+            "0": "10",
+            "1": {
               "0": {
                 "0": 1,
               },
             },
-          ],
-          [
-            "test",
-            {
+          },
+          "6": {
+            "0": "test",
+            "1": {
               "0": {
                 "0": 1,
                 "1": 1,
@@ -194,22 +188,21 @@ Table {
                 "4": 1,
               },
             },
-          ],
-        ],
+          },
+        },
         "nextId": 5,
         "serializationVersion": 2,
-        "storedFields": {},
       },
     },
     "headers": {
       "encrypted": false,
       "index": 0,
-      "recordsFrom": 11,
+      "recordsFrom": 10,
       "recordsTo": 15,
       "schema": "test",
       "table": "test",
     },
-    "prevCID": "bagaaieralnu77mm3dv7pzhqdx75kkhrxm4rdlzqb525xa3mndlnrrewl2x5a",
+    "prevCID": "bagaaieraov5tnjmponm6mmvgourv6ex2ho2svk2qenkwqjak2e3h5l7xntna",
     "records": {
       "11": {
         "count": 10,
@@ -239,52 +232,11 @@ Table {
     },
   },
   "currentBlockIndex": 0,
-  "currentIndex": 16,
+  "currentIndex": 15,
   "dag": TestDIDDag {
     "dag": TestDag {
       "cache": {
-        "bagaaiera4cuuwkkqaouspd62bczp43yozyf3esnpaqymev3wnnpq5hxzwd3q": {
-          "defs": {
-            "test": {
-              "aggregate": {
-                "count": "max",
-              },
-              "encrypted": false,
-              "indexes": {
-                "name": {
-                  "fields": [
-                    "name",
-                  ],
-                  "unique": true,
-                },
-              },
-              "rollup": 10,
-              "schema": {
-                "properties": {
-                  "count": {
-                    "type": "number",
-                  },
-                  "name": {
-                    "type": "string",
-                  },
-                },
-                "type": "object",
-              },
-              "schemaId": "test",
-              "searchOptions": {
-                "fields": [
-                  "name",
-                  "id",
-                ],
-              },
-            },
-          },
-          "schemaId": "test",
-          "tables": {
-            "test": "bagaaierapykbw62b6mpsfxtmupkefa2uklrxkg4mzb6kcpvyeheejwasz67a",
-          },
-        },
-        "bagaaieralnu77mm3dv7pzhqdx75kkhrxm4rdlzqb525xa3mndlnrrewl2x5a": {
+        "bagaaieraov5tnjmponm6mmvgourv6ex2ho2svk2qenkwqjak2e3h5l7xntna": {
           "filters": {
             "aggregates": {
               "count": 9,
@@ -292,92 +244,92 @@ Table {
             "indexes": {
               "name": {
                 "zPbkLwYJQbRmZQwe": {
-                  "ids": [
-                    1,
-                  ],
-                  "values": [
-                    "test #0",
-                  ],
+                  "ids": {
+                    "0": 1,
+                  },
+                  "values": {
+                    "0": "test #0",
+                  },
                 },
                 "zPbkLwYJQbRmZkRa": {
-                  "ids": [
-                    2,
-                  ],
-                  "values": [
-                    "test #1",
-                  ],
+                  "ids": {
+                    "0": 2,
+                  },
+                  "values": {
+                    "0": "test #1",
+                  },
                 },
                 "zPbkLwYJQbRma5uW": {
-                  "ids": [
-                    3,
-                  ],
-                  "values": [
-                    "test #2",
-                  ],
+                  "ids": {
+                    "0": 3,
+                  },
+                  "values": {
+                    "0": "test #2",
+                  },
                 },
                 "zPbkLwYJQbRmaRPS": {
-                  "ids": [
-                    4,
-                  ],
-                  "values": [
-                    "test #3",
-                  ],
+                  "ids": {
+                    "0": 4,
+                  },
+                  "values": {
+                    "0": "test #3",
+                  },
                 },
                 "zPbkLwYJQbRmaksN": {
-                  "ids": [
-                    5,
-                  ],
-                  "values": [
-                    "test #4",
-                  ],
+                  "ids": {
+                    "0": 5,
+                  },
+                  "values": {
+                    "0": "test #4",
+                  },
                 },
                 "zPbkLwYJQbRmb6MJ": {
-                  "ids": [
-                    6,
-                  ],
-                  "values": [
-                    "test #5",
-                  ],
+                  "ids": {
+                    "0": 6,
+                  },
+                  "values": {
+                    "0": "test #5",
+                  },
                 },
                 "zPbkLwYJQbRmbRqE": {
-                  "ids": [
-                    7,
-                  ],
-                  "values": [
-                    "test #6",
-                  ],
+                  "ids": {
+                    "0": 7,
+                  },
+                  "values": {
+                    "0": "test #6",
+                  },
                 },
                 "zPbkLwYJQbRmbmKA": {
-                  "ids": [
-                    8,
-                  ],
-                  "values": [
-                    "test #7",
-                  ],
+                  "ids": {
+                    "0": 8,
+                  },
+                  "values": {
+                    "0": "test #7",
+                  },
                 },
                 "zPbkLwYJQbRmc6o6": {
-                  "ids": [
-                    9,
-                  ],
-                  "values": [
-                    "test #8",
-                  ],
+                  "ids": {
+                    "0": 9,
+                  },
+                  "values": {
+                    "0": "test #8",
+                  },
                 },
                 "zPbkLwYJQbRmcSH2": {
-                  "ids": [
-                    10,
-                  ],
-                  "values": [
-                    "test #9",
-                  ],
+                  "ids": {
+                    "0": 10,
+                  },
+                  "values": {
+                    "0": "test #9",
+                  },
                 },
               },
             },
             "search": {
-              "averageFieldLength": [
-                2,
-                1,
-              ],
+              "averageFieldLength": {
+                "0": 2,
+                "1": 1,
+              },
               "dirtCount": 0,
               "documentCount": 10,
               "documentIds": {
@@ -397,51 +349,51 @@ Table {
                 "name": 0,
               },
               "fieldLength": {
-                "0": [
-                  2,
-                  1,
-                ],
-                "1": [
-                  2,
-                  1,
-                ],
-                "2": [
-                  2,
-                  1,
-                ],
-                "3": [
-                  2,
-                  1,
-                ],
-                "4": [
-                  2,
-                  1,
-                ],
-                "5": [
-                  2,
-                  1,
-                ],
-                "6": [
-                  2,
-                  1,
-                ],
-                "7": [
-                  2,
-                  1,
-                ],
-                "8": [
-                  2,
-                  1,
-                ],
-                "9": [
-                  2,
-                  1,
-                ],
+                "0": {
+                  "0": 2,
+                  "1": 1,
+                },
+                "1": {
+                  "0": 2,
+                  "1": 1,
+                },
+                "2": {
+                  "0": 2,
+                  "1": 1,
+                },
+                "3": {
+                  "0": 2,
+                  "1": 1,
+                },
+                "4": {
+                  "0": 2,
+                  "1": 1,
+                },
+                "5": {
+                  "0": 2,
+                  "1": 1,
+                },
+                "6": {
+                  "0": 2,
+                  "1": 1,
+                },
+                "7": {
+                  "0": 2,
+                  "1": 1,
+                },
+                "8": {
+                  "0": 2,
+                  "1": 1,
+                },
+                "9": {
+                  "0": 2,
+                  "1": 1,
+                },
               },
-              "index": [
-                [
-                  "9",
-                  {
+              "index": {
+                "0": {
+                  "0": "9",
+                  "1": {
                     "0": {
                       "9": 1,
                     },
@@ -449,10 +401,10 @@ Table {
                       "8": 1,
                     },
                   },
-                ],
-                [
-                  "8",
-                  {
+                },
+                "1": {
+                  "0": "8",
+                  "1": {
                     "0": {
                       "8": 1,
                     },
@@ -460,103 +412,18 @@ Table {
                       "7": 1,
                     },
                   },
-                ],
-                [
-                  "7",
-                  {
-                    "0": {
-                      "7": 1,
-                    },
-                    "1": {
-                      "6": 1,
-                    },
-                  },
-                ],
-                [
-                  "6",
-                  {
-                    "0": {
-                      "6": 1,
-                    },
-                    "1": {
-                      "5": 1,
-                    },
-                  },
-                ],
-                [
-                  "5",
-                  {
-                    "0": {
-                      "5": 1,
-                    },
-                    "1": {
-                      "4": 1,
-                    },
-                  },
-                ],
-                [
-                  "4",
-                  {
-                    "0": {
-                      "4": 1,
-                    },
-                    "1": {
-                      "3": 1,
-                    },
-                  },
-                ],
-                [
-                  "3",
-                  {
-                    "0": {
-                      "3": 1,
-                    },
-                    "1": {
-                      "2": 1,
-                    },
-                  },
-                ],
-                [
-                  "2",
-                  {
-                    "0": {
-                      "2": 1,
-                    },
-                    "1": {
-                      "1": 1,
-                    },
-                  },
-                ],
-                [
-                  "10",
-                  {
-                    "1": {
-                      "9": 1,
-                    },
-                  },
-                ],
-                [
-                  "1",
-                  {
-                    "0": {
-                      "1": 1,
-                    },
-                    "1": {
-                      "0": 1,
-                    },
-                  },
-                ],
-                [
-                  "0",
-                  {
+                },
+                "10": {
+                  "0": "0",
+                  "1": {
                     "0": {
                       "0": 1,
                     },
                   },
-                ],
-                [
-                  "test",
-                  {
+                },
+                "11": {
+                  "0": "test",
+                  "1": {
                     "0": {
                       "0": 1,
                       "1": 1,
@@ -570,22 +437,105 @@ Table {
                       "9": 1,
                     },
                   },
-                ],
-              ],
+                },
+                "2": {
+                  "0": "7",
+                  "1": {
+                    "0": {
+                      "7": 1,
+                    },
+                    "1": {
+                      "6": 1,
+                    },
+                  },
+                },
+                "3": {
+                  "0": "6",
+                  "1": {
+                    "0": {
+                      "6": 1,
+                    },
+                    "1": {
+                      "5": 1,
+                    },
+                  },
+                },
+                "4": {
+                  "0": "5",
+                  "1": {
+                    "0": {
+                      "5": 1,
+                    },
+                    "1": {
+                      "4": 1,
+                    },
+                  },
+                },
+                "5": {
+                  "0": "4",
+                  "1": {
+                    "0": {
+                      "4": 1,
+                    },
+                    "1": {
+                      "3": 1,
+                    },
+                  },
+                },
+                "6": {
+                  "0": "3",
+                  "1": {
+                    "0": {
+                      "3": 1,
+                    },
+                    "1": {
+                      "2": 1,
+                    },
+                  },
+                },
+                "7": {
+                  "0": "2",
+                  "1": {
+                    "0": {
+                      "2": 1,
+                    },
+                    "1": {
+                      "1": 1,
+                    },
+                  },
+                },
+                "8": {
+                  "0": "10",
+                  "1": {
+                    "1": {
+                      "9": 1,
+                    },
+                  },
+                },
+                "9": {
+                  "0": "1",
+                  "1": {
+                    "0": {
+                      "1": 1,
+                    },
+                    "1": {
+                      "0": 1,
+                    },
+                  },
+                },
+              },
               "nextId": 10,
               "serializationVersion": 2,
-              "storedFields": {},
             },
           },
           "headers": {
             "encrypted": false,
             "index": 0,
-            "recordsFrom": 1,
+            "recordsFrom": 0,
             "recordsTo": 10,
             "schema": "test",
             "table": "test",
           },
-          "prevCID": undefined,
           "records": {
             "1": {
               "count": 0,
@@ -639,7 +589,48 @@ Table {
             },
           },
         },
-        "bagaaierapykbw62b6mpsfxtmupkefa2uklrxkg4mzb6kcpvyeheejwasz67a": {
+        "bagaaieravul2q66d2ghrd5an4vr73jnvi7d2r4sfuf4d5deja2wlb7lyodsa": {
+          "defs": {
+            "test": {
+              "aggregate": {
+                "count": "max",
+              },
+              "encrypted": false,
+              "indexes": {
+                "name": {
+                  "fields": [
+                    "name",
+                  ],
+                  "unique": true,
+                },
+              },
+              "rollup": 10,
+              "schema": {
+                "properties": {
+                  "count": {
+                    "type": "number",
+                  },
+                  "name": {
+                    "type": "string",
+                  },
+                },
+                "type": "object",
+              },
+              "schemaId": "test",
+              "searchOptions": {
+                "fields": [
+                  "name",
+                  "id",
+                ],
+              },
+            },
+          },
+          "schemaId": "test",
+          "tables": {
+            "test": "bagaaieravyvvy2c63gm3kymuhe5il46pgf6hnduyjqeyoqxaupw4w2aq4lfq",
+          },
+        },
+        "bagaaieravyvvy2c63gm3kymuhe5il46pgf6hnduyjqeyoqxaupw4w2aq4lfq": {
           "filters": {
             "aggregates": {
               "count": 14,
@@ -647,52 +638,52 @@ Table {
             "indexes": {
               "name": {
                 "z2ikNK1j9q8xKhdHit": {
-                  "ids": [
-                    11,
-                  ],
-                  "values": [
-                    "test #10",
-                  ],
+                  "ids": {
+                    "0": 11,
+                  },
+                  "values": {
+                    "0": "test #10",
+                  },
                 },
                 "z2ikNK1j9q8xKhddCp": {
-                  "ids": [
-                    12,
-                  ],
-                  "values": [
-                    "test #11",
-                  ],
+                  "ids": {
+                    "0": 12,
+                  },
+                  "values": {
+                    "0": "test #11",
+                  },
                 },
                 "z2ikNK1j9q8xKhdxgk": {
-                  "ids": [
-                    13,
-                  ],
-                  "values": [
-                    "test #12",
-                  ],
+                  "ids": {
+                    "0": 13,
+                  },
+                  "values": {
+                    "0": "test #12",
+                  },
                 },
                 "z2ikNK1j9q8xKheJAg": {
-                  "ids": [
-                    14,
-                  ],
-                  "values": [
-                    "test #13",
-                  ],
+                  "ids": {
+                    "0": 14,
+                  },
+                  "values": {
+                    "0": "test #13",
+                  },
                 },
                 "z2ikNK1j9q8xKhedec": {
-                  "ids": [
-                    15,
-                  ],
-                  "values": [
-                    "test #14",
-                  ],
+                  "ids": {
+                    "0": 15,
+                  },
+                  "values": {
+                    "0": "test #14",
+                  },
                 },
               },
             },
             "search": {
-              "averageFieldLength": [
-                2,
-                1,
-              ],
+              "averageFieldLength": {
+                "0": 2,
+                "1": 1,
+              },
               "dirtCount": 0,
               "documentCount": 5,
               "documentIds": {
@@ -707,39 +698,39 @@ Table {
                 "name": 0,
               },
               "fieldLength": {
-                "0": [
-                  2,
-                  1,
-                ],
-                "1": [
-                  2,
-                  1,
-                ],
-                "2": [
-                  2,
-                  1,
-                ],
-                "3": [
-                  2,
-                  1,
-                ],
-                "4": [
-                  2,
-                  1,
-                ],
+                "0": {
+                  "0": 2,
+                  "1": 1,
+                },
+                "1": {
+                  "0": 2,
+                  "1": 1,
+                },
+                "2": {
+                  "0": 2,
+                  "1": 1,
+                },
+                "3": {
+                  "0": 2,
+                  "1": 1,
+                },
+                "4": {
+                  "0": 2,
+                  "1": 1,
+                },
               },
-              "index": [
-                [
-                  "15",
-                  {
+              "index": {
+                "0": {
+                  "0": "15",
+                  "1": {
                     "1": {
                       "4": 1,
                     },
                   },
-                ],
-                [
-                  "14",
-                  {
+                },
+                "1": {
+                  "0": "14",
+                  "1": {
                     "0": {
                       "4": 1,
                     },
@@ -747,10 +738,10 @@ Table {
                       "3": 1,
                     },
                   },
-                ],
-                [
-                  "13",
-                  {
+                },
+                "2": {
+                  "0": "13",
+                  "1": {
                     "0": {
                       "3": 1,
                     },
@@ -758,10 +749,10 @@ Table {
                       "2": 1,
                     },
                   },
-                ],
-                [
-                  "12",
-                  {
+                },
+                "3": {
+                  "0": "12",
+                  "1": {
                     "0": {
                       "2": 1,
                     },
@@ -769,10 +760,10 @@ Table {
                       "1": 1,
                     },
                   },
-                ],
-                [
-                  "11",
-                  {
+                },
+                "4": {
+                  "0": "11",
+                  "1": {
                     "0": {
                       "1": 1,
                     },
@@ -780,18 +771,18 @@ Table {
                       "0": 1,
                     },
                   },
-                ],
-                [
-                  "10",
-                  {
+                },
+                "5": {
+                  "0": "10",
+                  "1": {
                     "0": {
                       "0": 1,
                     },
                   },
-                ],
-                [
-                  "test",
-                  {
+                },
+                "6": {
+                  "0": "test",
+                  "1": {
                     "0": {
                       "0": 1,
                       "1": 1,
@@ -800,22 +791,21 @@ Table {
                       "4": 1,
                     },
                   },
-                ],
-              ],
+                },
+              },
               "nextId": 5,
               "serializationVersion": 2,
-              "storedFields": {},
             },
           },
           "headers": {
             "encrypted": false,
             "index": 0,
-            "recordsFrom": 11,
+            "recordsFrom": 10,
             "recordsTo": 15,
             "schema": "test",
             "table": "test",
           },
-          "prevCID": "bagaaieralnu77mm3dv7pzhqdx75kkhrxm4rdlzqb525xa3mndlnrrewl2x5a",
+          "prevCID": "bagaaieraov5tnjmponm6mmvgourv6ex2ho2svk2qenkwqjak2e3h5l7xntna",
           "records": {
             "11": {
               "count": 10,

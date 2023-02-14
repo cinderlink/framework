@@ -18,6 +18,7 @@
     "noEmit": true,
     "moduleResolution": "node",
     "baseUrl": "src",
+    "sourceMap": true,
     "paths": {
       "@src/*": ["src/*"]
     }

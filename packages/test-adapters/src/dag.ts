@@ -64,9 +64,9 @@ export class TestDIDDag implements DIDDagInterface {
     return this.dag.load<JWE>(cid, path);
   }
 
-  async loadDecrypted<
-    Data extends Record<string, unknown> = Record<string, unknown>
-  >(cid: CID): Promise<Data | undefined> {
+  async loadDecrypted<Data = Record<string, unknown>>(
+    cid: CID
+  ): Promise<Data | undefined> {
     const jwe = await this.loadEncrypted(cid);
     if (!jwe) {
       throw new Error("Unable to load JWE");

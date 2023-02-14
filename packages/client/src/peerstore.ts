@@ -60,6 +60,7 @@ export class Peerstore implements PeerStoreInterface {
       ...this.peers[peerId.toString()],
       ...peer,
     };
+    if (peer.did) this.peerIds[peer.did] = peerId.toString();
   }
 
   setMetadata(peerId: string, key: string, value: string) {

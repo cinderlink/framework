@@ -1,4 +1,9 @@
-import { loadSocialSchema, SocialUser } from "@candor/plugin-social-core";
+import {
+  loadSocialSchema,
+  SocialUser,
+  SocialUserGetRequestMessage,
+  SocialUserGetResponseMessage,
+} from "@candor/plugin-social-core";
 import type {
   PluginInterface,
   CandorClientInterface,
@@ -20,9 +25,11 @@ export type SocialServerEvents = {
   subscribe: SocialClientEvents["subscribe"];
   send: {
     "/social/users/search/response": SocialUserSearchResponseMessage;
+    "/social/user/get/response": SocialUserGetResponseMessage;
   };
   receive: {
     "/social/users/search/request": SocialUserSearchRequestMessage;
+    "/social/user/get/request": SocialUserGetRequestMessage;
   };
   emit: {};
 };
@@ -44,6 +51,7 @@ export class SocialServerPlugin implements PluginInterface<SocialServerEvents> {
     "/social/announce": this.onPeerAnnounce,
     "/social/connection": this.onPeerConnection,
     "/social/users/search/request": this.onUserSearchRequest,
+    "/social/user/get/request": this.onUserGetRequest,
   };
   pubsub = {
     "/social/announce": this.onSocialAnnounce,
@@ -112,16 +120,6 @@ export class SocialServerPlugin implements PluginInterface<SocialServerEvents> {
       return;
     }
 
-    // const results = await table
-    //   .query()
-    //   .select()
-    //   .execute()
-    //   .then((r) => r.all());
-    // console.info(
-    //   `plugin/social/server > found ${results.length} matches`,
-    //   results
-    // );
-
     const results = ((await table.search(message.data.query, 20)) ||
       []) as SocialUser[];
     console.info(
@@ -133,6 +131,37 @@ export class SocialServerPlugin implements PluginInterface<SocialServerEvents> {
       data: {
         requestId: message.data.requestId,
         results,
+      },
+    });
+  }
+
+  async onUserGetRequest(
+    message: P2PMessage<string, SocialUserGetRequestMessage>
+  ) {
+    console.info(
+      `plugin/social/server > received user get request: ${message.data.did}`
+    );
+    const table = this.client
+      .getSchema("social")
+      ?.getTable<SocialUser>("users");
+
+    if (!table) {
+      console.warn(`plugin/social/server > users table not found`);
+      return;
+    }
+
+    const user = await table
+      .query()
+      .where("did", "=", message.data.did)
+      .select()
+      .execute()
+      .then((r) => r.first());
+
+    await this.client.send(message.peer.peerId.toString(), {
+      topic: "/social/user/get/response",
+      data: {
+        requestId: message.data.requestId,
+        user,
       },
     });
   }

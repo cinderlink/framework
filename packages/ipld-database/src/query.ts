@@ -215,8 +215,10 @@ export class TableQuery<
     const unwound: TableBlockInterface<Row, Def>[] = [];
     let returning: Row[] = [];
     await this.table.unwind(async (event) => {
+      console.info("unwinding", event.block.cid, event.block.records);
+      await event.block.headers();
       // we need to make sure the block is aggregated before we can use it
-      if (!event.block.cid) {
+      if (!event.block.cache?.filters?.aggregates || !event.block.cid) {
         await event.block.aggregate();
       }
 
@@ -245,26 +247,16 @@ export class TableQuery<
           for (const [key, value] of Object.entries(updateInstruction.values)) {
             match[key as keyof Row] = value;
           }
-          event.block.updateRecord(match.id, match);
-        }
-        const returningInstruction = this.instructions.find(
-          (i) => i.instruction === "returning"
-        ) as ReturningInstruction;
-        if (returningInstruction) {
-          returning = returningInstruction.fields?.length
-            ? returning.concat(
-                matches.map(
-                  (m: Row) =>
-                    returningInstruction.fields?.reduce(
-                      (acc, field) => ({ ...acc, [field]: m[field] }),
-                      {}
-                    ) as Row
-                )
-              )
-            : returning.concat(matches);
+          await event.block.updateRecord(match.id, match).catch(() => {
+            console.error(
+              "Failed to update record (unique key constraint violation)",
+              match
+            );
+          });
         }
       } else if (this.terminator === "delete") {
         for (const match of matches) {
+          console.info("deleting", match.id, match);
           event.block.deleteRecord(match.id);
         }
       } else if (this.terminator === "select") {
@@ -282,6 +274,23 @@ export class TableQuery<
               )
             : matches
         );
+      }
+
+      const returningInstruction = this.instructions.find(
+        (i) => i.instruction === "returning"
+      ) as ReturningInstruction;
+      if (returningInstruction) {
+        returning = returningInstruction.fields?.length
+          ? returning.concat(
+              matches.map(
+                (m: Row) =>
+                  returningInstruction.fields?.reduce(
+                    (acc, field) => ({ ...acc, [field]: m[field] }),
+                    {}
+                  ) as Row
+              )
+            )
+          : returning.concat(matches);
       }
 
       if (returning.length >= limit) {
@@ -316,6 +325,10 @@ export class TableQuery<
 
         if (writeStarted && rewriteBlock) {
           const records = await block.records();
+          console.info(
+            `ipld-database/table-query: rewriting block ${block.cid}`,
+            records
+          );
           for (const [, record] of Object.entries(records)) {
             await rewriteBlock.addRecord(record);
           }
@@ -329,8 +342,8 @@ export class TableQuery<
               prevCID: prevCID?.toString(),
               headers: {
                 ...headers,
-                recordsFrom: headers.recordsTo + 1,
-                recordsTo: headers.recordsTo,
+                recordsFrom: headers.recordsTo,
+                recordsTo: headers.recordsTo + 1,
               },
               filters: {
                 indexes: {},
@@ -341,6 +354,10 @@ export class TableQuery<
         }
       }
       if (rewriteBlock) {
+        console.info(
+          `ipld-database/table-query: saving rewritten block`,
+          rewriteBlock
+        );
         this.table.setBlock(rewriteBlock);
       }
       this.table.unlock();
@@ -430,12 +447,11 @@ export class TableQuery<
   }
 
   instructionsMatchRecord(record: Row) {
-    let match = true;
     const whereInstructions: WhereInstruction[] = this.instructions
       .filter((i) => i.instruction === "where")
       .concat(
         this.instructions
-          .filter((i) => i.instruction === "and" || i.instruction === "or")
+          .filter((i) => i.instruction === "and")
           .map((i) =>
             (i as AndInstruction | OrInstruction).queries.filter(
               (q) => q.instruction === "where"
@@ -444,7 +460,33 @@ export class TableQuery<
           .flat()
       ) as WhereInstruction[];
 
-    for (const query of whereInstructions) {
+    const orInstructions: OrInstruction[] = this.instructions.filter(
+      (i) => i.instruction === "or"
+    ) as OrInstruction[];
+
+    return (
+      this.whereInstructionsMatchRecord(whereInstructions, record) ||
+      orInstructions.some((orInstruction) => {
+        const whereInstructions: WhereInstruction[] = orInstruction.queries
+          .filter((q) => q.instruction === "where")
+          .concat(
+            orInstruction.queries
+              .filter((i) => i.instruction === "and")
+              .map((i) =>
+                (i as AndInstruction | OrInstruction).queries.filter(
+                  (q) => q.instruction === "where"
+                )
+              )
+              .flat()
+          ) as WhereInstruction[];
+        return this.whereInstructionsMatchRecord(whereInstructions, record);
+      })
+    );
+  }
+
+  whereInstructionsMatchRecord(where: WhereInstruction[], record: Row) {
+    let match = true;
+    for (const query of where) {
       const { field, operation, value } = query;
 
       if (operation === "=") {

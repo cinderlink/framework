@@ -2,10 +2,11 @@
   "$schema": "https://turbo.build/schema.json",
   "pipeline": {
     "build": {
+      "inputs": ["src/**", "!ui-kit/", "!frontend", "!registry-frontend"],
       "outputs": ["dist/**"]
     },
     "watch": {
-      "inputs": ["src/**"],
+      "inputs": ["src/**", "!ui-kit/", "!frontend", "!registry-frontend"],
       "outputs": ["dist/**"]
     },
     "dev": {

@@ -5,3 +5,4 @@ packages/*/example/**/candor/
 docker/data/**
 **/.turbo
 **/.svelte-kit
+**/vite.config.js.timestamp.*

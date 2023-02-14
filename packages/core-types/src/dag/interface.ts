@@ -23,7 +23,7 @@ export interface DIDDagInterface extends DAGInterface {
     recipients?: string[]
   ): Promise<CID | undefined>;
   loadEncrypted(cid: CID | string, path?: string): Promise<JWE | undefined>;
-  loadDecrypted<Data extends Record<string, unknown> = Record<string, unknown>>(
+  loadDecrypted<Data = Record<string, unknown>>(
     cid: CID | string,
     path?: string
   ): Promise<Data | undefined>;
