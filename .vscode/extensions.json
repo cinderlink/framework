@@ -1,0 +1,21 @@
+{
+  "recommendations": [
+    "svelte.svelte-vscode",
+    "antfu.file-nesting",
+    "antfu.iconify",
+    "antfu.smart-clicks",
+    "antfu.unocss",
+    "antfu.vite",
+    "ZixuanChen.vitest-explorer",
+    "esbenp.prettier-vscode",
+    "mikestead.dotenv",
+    "GitHub.copilot",
+    "GitHub.copilot-labs",
+    "Box-Of-Hats.bemhelper",
+    "stylelint.vscode-stylelint",
+    "dbaeumer.vscode-eslint",
+    "christian-kohler.npm-intellisense",
+    "christian-kohler.path-intellisense",
+    "steoates.autoimport"
+  ]
+}

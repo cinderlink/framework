@@ -1,0 +1,211 @@
+{
+  "version": "2.0.0",
+  "presentation": {
+    "echo": false,
+    "reveal": "always",
+    "focus": false,
+    "panel": "dedicated",
+    "showReuseMessage": true
+  },
+  "tasks": [
+    {
+      "label": "Create terminals",
+      "dependsOn": [
+        "core watch",
+        "ui-kit dev",
+        "frontend dev",
+        "anvil",
+        "anvil deploy",
+        "candor server"
+      ],
+      "dependsOrder": "sequence",
+      // Mark as the default build task so cmd/ctrl+shift+b will create them
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      // Try start the task on folder open
+      "runOptions": {
+        "runOn": "folderOpen"
+      }
+    },
+    {
+      // The name that shows up in terminal tab
+      "label": "core watch",
+      "type": "shell",
+      "command": "pnpm watch",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "isBackground": true,
+      "icon": {
+        "color": "terminal.ansiYellow",
+        "id": "eye-watch"
+      },
+      "problemMatcher": {
+        "owner": "external",
+        "fileLocation": ["relative", "${workspaceFolder}"],
+        "pattern": {
+          "regexp": "^(.*):(\\d+):(\\d+) - (.*)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "message": 4
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "Running watch in",
+          "endsPattern": "Successfully built '@candor/ui-kit' package."
+        }
+      },
+      "presentation": {
+        "group": "watchers"
+      }
+    },
+    {
+      "label": "ui-kit dev",
+      "type": "shell",
+      "command": "pnpm dev",
+      "options": {
+        "cwd": "${workspaceFolder}/ui-kit"
+      },
+      "isBackground": true,
+
+      "icon": {
+        "color": "terminal.ansiYellow",
+        "id": "eye-watch"
+      },
+      "problemMatcher": {
+        "owner": "external",
+        "fileLocation": ["relative", "${workspaceFolder}"],
+        "pattern": {
+          "regexp": "^(.*):(\\d+):(\\d+) - (.*)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "message": 4
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "vite dev --port 3000",
+          "endsPattern": "ready in"
+        }
+      },
+      "presentation": {
+        "group": "watchers"
+      }
+    },
+    {
+      "label": "frontend dev",
+      "type": "shell",
+      "command": "pnpm dev",
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "isBackground": true,
+      "icon": {
+        "color": "terminal.ansiYellow",
+        "id": "eye-watch"
+      },
+      "problemMatcher": {
+        "owner": "external",
+        "fileLocation": ["relative", "${workspaceFolder}"],
+        "pattern": {
+          "regexp": "^(.*):(\\d+):(\\d+) - (.*)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "message": 4
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "vite dev --port 3001",
+          "endsPattern": "ready in"
+        }
+      },
+      "presentation": {
+        "group": "watchers"
+      }
+    },
+    {
+      "label": "anvil",
+      "type": "shell",
+      "command": "pnpm anvil",
+      "options": {
+        "cwd": "${workspaceFolder}/registry-contracts"
+      },
+      "isBackground": true,
+      "icon": {
+        "color": "terminal.ansiRed",
+        "id": "circle-large-filled"
+      },
+      "problemMatcher": {
+        "owner": "external",
+        "fileLocation": ["relative", "${workspaceFolder}"],
+        "pattern": {
+          "regexp": "^(.*):(\\d+):(\\d+) - (.*)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "message": 4
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "Available Accounts",
+          "endsPattern": "Listening on 127.0.0.1:8545"
+        }
+      },
+      "presentation": {
+        "group": "anvil"
+      }
+    },
+    {
+      "label": "anvil deploy",
+      "type": "shell",
+      "command": "pnpm anvil:deploy",
+      "options": {
+        "cwd": "${workspaceFolder}/registry-contracts"
+      },
+      "isBackground": false,
+      "icon": {
+        "color": "terminal.ansiRed",
+        "id": "checklist"
+      },
+      "presentation": {
+        "group": "anvil"
+      }
+    },
+    {
+      "label": "candor server",
+      "type": "shell",
+      "command": "pnpm example start",
+      "options": {
+        "cwd": "${workspaceFolder}/examples/server-example"
+      },
+      "isBackground": true,
+      "icon": {
+        "color": "terminal.ansiGreen",
+        "id": "server-process"
+      },
+      "presentation": {
+        "group": "server"
+      },
+      "problemMatcher": {
+        "owner": "external",
+        "fileLocation": ["relative", "${workspaceFolder}"],
+        "pattern": {
+          "regexp": "^(.*):(\\d+):(\\d+) - (.*)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "message": 4
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "loading plugins",
+          "endsPattern": "listening:"
+        }
+      }
+    }
+  ]
+}

@@ -5,14 +5,12 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "server",
+      "name": "debug candor server",
       "type": "node",
       "request": "launch",
-      "args": ["${workspaceFolder}/packages/server-bin/src/bin.ts", "start"],
-      "runtimeArgs": ["--loader", "ts-node/esm"],
       "cwd": "${workspaceRoot}/examples/server-example/",
-      "protocol": "inspector",
-      "internalConsoleOptions": "openOnSessionStart"
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["example", "start"]
     }
   ]
 }

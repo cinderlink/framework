@@ -2,12 +2,13 @@
   "$schema": "https://turbo.build/schema.json",
   "pipeline": {
     "build": {
-      "inputs": ["src/**", "!ui-kit/", "!frontend", "!registry-frontend"],
+      "inputs": ["src/**"],
       "outputs": ["dist/**"]
     },
     "watch": {
-      "inputs": ["src/**", "!ui-kit/", "!frontend", "!registry-frontend"],
-      "outputs": ["dist/**"]
+      "inputs": ["src/**", "!frontend", "!registry-frontend"],
+      "outputs": ["dist/**"],
+      "persistent": true
     },
     "dev": {
       "inputs": ["src/**"],
