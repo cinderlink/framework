@@ -1,0 +1,18 @@
+{
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "svelte.plugin.svelte.defaultScriptLanguage": "ts",
+  "editor.formatOnSave": true,
+  "svelte.enable-ts-plugin": true,
+  "[svelte]": {
+    "editor.defaultFormatter": "svelte.svelte-vscode"
+  },
+  "svelte.plugin.css.diagnostics.enable": false,
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/package": true
+  },
+  "search.useIgnoreFiles": true,
+  "search.useGlobalIgnoreFiles": true,
+  "search.useParentIgnoreFiles": true
+}
