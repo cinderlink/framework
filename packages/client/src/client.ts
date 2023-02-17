@@ -26,7 +26,9 @@ import type {
   PubsubEncodedMessage,
   PubsubEncodingType,
   PubsubEncodedPayload,
+  EncodingOptions,
 } from "@candor/core-types";
+import type { OfflineSyncClientPluginInterface } from "@candor/plugin-offline-sync-core";
 import type { Connection, Stream } from "@libp2p/interface-connection";
 import Emittery from "emittery";
 import * as json from "multiformats/codecs/json";
@@ -47,10 +49,7 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
   extends Emittery<CandorClientEventDef["emit"]>
   implements CandorClientInterface<PluginEvents>
 {
-  public plugins: Record<
-    PluginInterface["id"],
-    PluginInterface<PluginEventDef>
-  >;
+  public plugins: Record<PluginInterface["id"], PluginInterface<any>>;
   public protocol: Record<
     string,
     {
@@ -95,7 +94,9 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
     this.plugins[plugin.id] = plugin;
   }
 
-  getPlugin<T extends PluginInterface<any> = PluginInterface>(id: string) {
+  getPlugin<T extends PluginInterface<any> = PluginInterface<any>>(
+    id: string
+  ): T {
     return this.plugins[id] as T;
   }
 
@@ -143,18 +144,18 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
     });
 
     this.ipfs.libp2p.addEventListener("peer:disconnect", (connection) => {
-      console.info(`peer:disconnect`, connection);
       const peerId = connection.detail.remotePeer.toString();
       if (!this.peers.hasPeer(peerId)) return;
       const peer = this.peers.getPeer(peerId);
+      console.info(`client > peer:disconnect`, peer);
       this.peers.updatePeer(peerId, { connected: false, authenticated: false });
       this.protocol[peerId]?.stream?.close();
       delete this.protocol[peerId];
       this.emit("/peer/disconnect", peer);
     });
 
-    this.ipfs.libp2p.pubsub.addEventListener("subscription-change", (event) => {
-      console.info("subscription change", event);
+    this.ipfs.libp2p.pubsub.addEventListener("subscription-change", () => {
+      // console.info("subscription change", event);
     });
 
     console.info(
@@ -162,17 +163,35 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
     );
     console.info(`plugins > initializing message handlers`);
     await Promise.all(
-      Object.values(this.plugins).map(async (plugin: PluginInterface) => {
-        await plugin.start?.();
-        Object.entries(plugin.pubsub).forEach(([topic, handler]) => {
-          this.pubsub.on(topic, (handler as PluginEventHandler).bind(plugin));
-          this.subscribe(topic);
-        });
+      Object.values(this.plugins).map(
+        async (plugin: PluginInterface<PluginEvents>) => {
+          await plugin.start?.();
+          Object.entries(plugin.pubsub).forEach(([topic, handler]) => {
+            this.pubsub.on(topic, (handler as PluginEventHandler).bind(plugin));
+            this.subscribe(topic);
+          });
 
-        Object.entries(plugin.p2p).forEach(([topic, handler]) => {
-          this.p2p.on(topic, (handler as PluginEventHandler).bind(plugin));
-        });
-      })
+          Object.entries(plugin.p2p).forEach(([topic, handler]) => {
+            this.p2p.on(topic, (handler as PluginEventHandler).bind(plugin));
+          });
+
+          if (plugin.coreEvents)
+            Object.entries(plugin.coreEvents).forEach(([topic, handler]) => {
+              this.on(
+                topic as keyof CandorClientEventDef["emit"],
+                (handler as PluginEventHandler).bind(plugin)
+              );
+            });
+
+          if (plugin.pluginEvents)
+            Object.entries(plugin.pluginEvents).forEach(([topic, handler]) => {
+              this.pluginEvents.on(
+                topic as keyof PluginEvents["emit"],
+                (handler as PluginEventHandler).bind(plugin)
+              );
+            });
+        }
+      )
     );
 
     console.info(`client > ready`);
@@ -203,11 +222,7 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
   >(
     peerId: string,
     message: OutgoingP2PMessage<E, K>,
-    {
-      sign,
-      encrypt,
-      recipients,
-    }: { sign?: boolean; encrypt?: boolean; recipients?: string[] } = {}
+    { sign, encrypt, recipients }: EncodingOptions = {}
   ) {
     if (!this.peers.hasPeer(peerId)) {
       console.warn(
@@ -223,8 +238,35 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
       this.protocol[peerId].push = pushable();
     }
 
+    const encoded = await this.encodeMessage(message, {
+      sign,
+      encrypt,
+      recipients,
+    });
+
+    const peer = this.peers.getPeer(peerId);
+    if (peer.did && !peer.connected) {
+      if (this.hasPlugin("offlineSync")) {
+        console.info(`p2p/out > sending message to offline peer ${peerId}`);
+        await this.getPlugin<OfflineSyncClientPluginInterface>(
+          "offlineSync"
+        ).sendMessage(peer.did, encoded);
+      }
+    }
+    this.protocol[peerId].push?.push(json.encode(encoded as EncodedP2PMessage));
+  }
+
+  async encodeMessage<
+    E extends PluginEventDef["send"] &
+      CandorClientEventDef["send"] = PluginEventDef["send"] &
+      CandorClientEventDef["send"],
+    K extends keyof E = keyof E
+  >(
+    message: OutgoingP2PMessage<E, K>,
+    { sign, encrypt, recipients }: EncodingOptions = {}
+  ) {
     const encoded: Partial<EncodedP2PMessage<E, K>> = {
-      topic: message.topic,
+      topic: message.topic as K,
     };
     if (sign) {
       const jws = await this.did.createJWS(message);
@@ -239,8 +281,7 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
     } else {
       encoded.payload = message.data as E[K];
     }
-
-    this.protocol[peerId].push?.push(json.encode(encoded as EncodedP2PMessage));
+    return encoded as EncodedP2PMessage<E, K>;
   }
 
   async handleCandorProtocol({
@@ -255,11 +296,9 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
     const peer = this.peers.getPeer(peerId);
 
     if (this.protocol[peerId]?.stream) {
-      console.info(
-        `p2p/in > already connected to ${peerId}, using existing stream...`
-      );
-      this.protocol[peerId].stream?.close();
-      return;
+      // console.info(
+      //   `p2p/in > already connected to ${peerId}, using existing stream...`
+      // );
     }
 
     if (!peer) {
@@ -296,104 +335,14 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
       },
       async function (source) {
         for await (const encoded of source) {
-          const { topic, payload, signed, encrypted } = encoded;
-          if (!topic) {
-            console.info(`p2p/in > missing topic in message from ${peerId}`);
+          const peer = self.peers.getPeer(connection.remotePeer.toString());
+          if (!peer) {
+            console.warn(
+              `p2p/in > ignoring message from unknown peer ${peerId}`
+            );
             return;
           }
-
-          try {
-            let data: Record<string, unknown> | undefined = undefined;
-            const peer = self.peers.getPeer(connection.remotePeer.toString());
-
-            if (!peer) {
-              console.info(`p2p/in:${topic} > peer not found: ${peerId}`);
-              return;
-            }
-
-            if (signed) {
-              // convert array of ints to uint8array
-              const verification: VerifyJWSResult | false = await self.did
-                .verifyJWS(payload as DagJWS)
-                .catch(() => false);
-              if (verification && verification.payload) {
-                data = verification.payload.data as Record<string, unknown>;
-                peer.did = verification.didResolutionResult.didDocument?.id;
-              } else {
-                console.info(
-                  `p2p/in:${topic} > failed to verify signed message from ${peerId}`
-                );
-                return;
-              }
-            } else if (encrypted) {
-              const decrypted: json.ByteView<Record<string, unknown>> | false =
-                await self.did.decryptJWE(payload as JWE).catch(() => false);
-              if (!decrypted) {
-                console.info(
-                  `p2p/in:${topic} > failed to decrypt message from ${peerId}`
-                );
-                return;
-              }
-              data = json.decode(
-                decrypted as json.ByteView<Record<string, unknown>>
-              );
-            } else {
-              data = payload as Record<string, unknown>;
-            }
-
-            if (!data) {
-              console.info(
-                `p2p/in:${topic} > no payload data in message from ${peerId}`
-              );
-              return;
-            }
-
-            const event: P2PMessage = {
-              topic,
-              data,
-              peerId: connection.remotePeer,
-              peer,
-              signed,
-              encrypted,
-            };
-
-            if (topic === "/candor/handshake/request") {
-              await self.onHandshakeRequest(
-                event as P2PMessage<string, HandshakeRequest>
-              );
-            } else if (topic === "/candor/handshake/challenge") {
-              await self.onHandshakeChallenge(
-                event as P2PMessage<string, HandshakeChallenge>
-              );
-            } else if (topic === "/candor/handshake/complete") {
-              await self.onHandshakeComplete(
-                event as P2PMessage<string, HandshakeComplete>
-              );
-            } else if (topic === "/candor/handshake/success") {
-              await self.onHandshakeSuccess(
-                event as P2PMessage<string, HandshakeSuccess>
-              );
-            } else if (topic === "/candor/handshake/error") {
-              await self.onHandshakeError(
-                event as P2PMessage<string, HandshakeError>
-              );
-            } else if (event.peer.authenticated) {
-              console.debug(
-                `p2p/in:${topic} > from ${event.peerId}, data: `,
-                event.data
-              );
-              await self.p2p.emit(topic as string, event as any);
-            } else {
-              console.warn("ignoring unauthenticated p2p message", {
-                topic,
-                data,
-                peerId: connection.remotePeer,
-                peer: self.peers.getPeer(connection.remotePeer.toString()),
-              });
-            }
-          } catch (err) {
-            console.error("error handling p2p stream", err);
-          }
+          await self.handleEncodedMessage(encoded, peer);
         }
 
         console.info(`p2p > stream ended by ${peerId}`);
@@ -415,6 +364,119 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
       },
       { sign: true }
     );
+  }
+
+  peerReadable(peer: Peer) {
+    return `[peerId: ${peer.peerId ? peer.peerId : "(none)"}, did: ${
+      peer.did ? peer.did : "(none)"
+    }]`;
+  }
+
+  async handleEncodedMessage(
+    encoded: EncodedP2PMessage<PluginEvents["receive"]>,
+    peer: Peer
+  ) {
+    const { topic, payload, signed, encrypted } = encoded;
+    const logId = this.peerReadable(peer);
+    if (!topic) {
+      console.info(`p2p/in > missing topic in message from ${logId}`);
+      return;
+    }
+
+    try {
+      let data: Record<string, unknown> | undefined = undefined;
+
+      if (signed) {
+        // convert array of ints to uint8array
+        const verification: VerifyJWSResult | false = await this.did
+          .verifyJWS(payload as DagJWS)
+          .catch(() => false);
+        if (verification && verification.payload) {
+          data = verification.payload.data as Record<string, unknown>;
+          peer.did = verification.didResolutionResult.didDocument?.id;
+        } else {
+          console.info(
+            `p2p/in:${
+              topic as string
+            } > failed to verify signed message from ${logId}`
+          );
+          return;
+        }
+      } else if (encrypted) {
+        const decrypted: json.ByteView<Record<string, unknown>> | false =
+          await this.did.decryptJWE(payload as JWE).catch(() => false);
+        if (!decrypted) {
+          console.info(
+            `p2p/in:${
+              topic as string
+            } > failed to decrypt message from ${logId}`
+          );
+          return;
+        }
+        data = json.decode(decrypted as json.ByteView<Record<string, unknown>>);
+      } else {
+        data = payload as Record<string, unknown>;
+      }
+
+      if (!data) {
+        console.info(
+          `p2p/in:${topic as string} > no payload data in message from ${logId}`
+        );
+        return;
+      }
+
+      const event: P2PMessage = {
+        topic: topic as string,
+        data,
+        peer,
+        signed,
+        encrypted,
+      };
+
+      if (event.data.requestId) {
+        console.info(
+          `received request response: ${event.data.requestId}`,
+          event.data
+        );
+        this.emit(`/request/${event.data.requestId}/response`, event);
+      }
+
+      if (topic === "/candor/handshake/request") {
+        await this.onHandshakeRequest(
+          event as P2PMessage<string, HandshakeRequest>
+        );
+      } else if (topic === "/candor/handshake/challenge") {
+        await this.onHandshakeChallenge(
+          event as P2PMessage<string, HandshakeChallenge>
+        );
+      } else if (topic === "/candor/handshake/complete") {
+        await this.onHandshakeComplete(
+          event as P2PMessage<string, HandshakeComplete>
+        );
+      } else if (topic === "/candor/handshake/success") {
+        await this.onHandshakeSuccess(
+          event as P2PMessage<string, HandshakeSuccess>
+        );
+      } else if (topic === "/candor/handshake/error") {
+        await this.onHandshakeError(
+          event as P2PMessage<string, HandshakeError>
+        );
+      } else if (event.peer.authenticated) {
+        console.debug(
+          `p2p/in:${topic as string} > from ${event.peer.did}, data: `,
+          event.data
+        );
+        await this.p2p.emit(topic as string, event as any);
+      } else {
+        console.warn("ignoring unauthenticated p2p message", {
+          topic,
+          data,
+          peer,
+        });
+      }
+    } catch (err) {
+      console.error("error handling p2p stream", err);
+    }
   }
 
   async stop() {
@@ -521,7 +583,7 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
   async onHandshakeRequest(message: P2PMessage<string, HandshakeRequest>) {
     const peer = message.peer;
     if (!peer) {
-      console.info(`p2p/handshake > unknown peer ${message.peerId}`);
+      console.info(`p2p/handshake > unknown peer ${message.peer}`);
       return;
     }
 
@@ -538,7 +600,7 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
           peer.did ? peer.did : "N/A"
         })`
       );
-      return this.send(message.peerId.toString(), {
+      return this.send(message.peer.peerId.toString(), {
         topic: "/candor/handshake/success",
         data: {},
       });
@@ -549,7 +611,7 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
         })`
       );
       return this.send(
-        message.peerId.toString(),
+        message.peer.peerId.toString(),
         {
           topic: "/candor/handshake/error",
           data: {
@@ -563,7 +625,7 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
     peer.did = message.data.did;
     peer.challenge = uuid();
     peer.challengedAt = Date.now();
-    this.peers.updatePeer(message.peerId.toString(), peer);
+    this.peers.updatePeer(message.peer.peerId.toString(), peer);
 
     console.info(
       `p2p/handshake > sending challenge to ${peer.peerId} (${
@@ -571,7 +633,7 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
       })`
     );
     await this.send(
-      message.peerId.toString(),
+      message.peer.peerId.toString(),
       {
         topic: "/candor/handshake/challenge",
         data: {
@@ -585,18 +647,17 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
   async onHandshakeChallenge(message: P2PMessage<string, HandshakeChallenge>) {
     // send the challenge back to the peer
     const peer = message.peer;
+    const logId = this.peerReadable(peer);
     if (!peer) {
-      console.info(`p2p/handshake/challenge > unknown peer ${message.peerId}`);
+      console.info(`p2p/handshake/challenge > unknown peer ${logId}`);
       return;
     }
 
     console.info(
-      `p2p/handshake/challenge > completing challenge for ${peer.peerId} (${
-        peer.did ? peer.did : "N/A"
-      })`
+      `p2p/handshake/challenge > completing challenge for peer ${logId}`
     );
     await this.send(
-      message.peerId.toString(),
+      message.peer.peerId.toString(),
       {
         topic: "/candor/handshake/complete",
         data: {
@@ -608,16 +669,17 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
   }
 
   async onHandshakeComplete(message: P2PMessage<string, HandshakeComplete>) {
+    const logId = this.peerReadable(message.peer);
     if (!message.signed) {
       console.warn(
-        `p2p/handshake/complete > received unsigned message from ${message.peerId}`
+        `p2p/handshake/complete > received unsigned message from ${logId}`
       );
       return;
     }
 
     const peer = message.peer;
     if (!peer) {
-      console.warn(`p2p/handshake/complete > unknown peer ${message.peerId}`);
+      console.warn(`p2p/handshake/complete > unknown peer ${logId}`);
       return;
     }
 
@@ -631,7 +693,7 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
     }
 
     console.info(
-      `p2p/handshake/complete > authenticating ${peer.peerId} (${
+      `p2p/handshake/complete > authenticating! ${peer.peerId} (${
         peer.did ? peer.did : "N/A"
       })`
     );
@@ -640,9 +702,9 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
     peer.challengedAt = undefined;
     peer.challenge = undefined;
 
-    this.peers.updatePeer(message.peerId.toString(), peer);
+    this.peers.updatePeer(message.peer.peerId.toString(), peer);
     await this.send(
-      message.peerId.toString(),
+      message.peer.peerId.toString(),
       {
         topic: "/candor/handshake/success",
         data: {},
@@ -666,22 +728,26 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
 
   async onHandshakeError(message: P2PMessage<string, HandshakeError>) {
     console.warn(
-      `p2p/handshake/error > received error from ${message.peerId} (${
-        message.peer?.did ? message.peer.did : "N/A"
-      })`,
+      `p2p/handshake/error > received handshake error from peer ${this.peerReadable(
+        message.peer
+      )}`,
       message.data.error
     );
   }
 
   async onHandshakeSuccess(message: P2PMessage<string, HandshakeSuccess>) {
     const peer = message.peer;
+    const logId = this.peerReadable(peer);
     if (!peer) {
-      console.info(`p2p/handshake/success > unknown peer ${message.peerId}`);
+      console.info(`p2p/handshake/success > unknown peer ${logId}`);
       return;
     }
 
-    console.info(`p2p/handshake/success > authenticated ${peer.peerId}`);
+    peer.connected = true;
+    this.peers.updatePeer(peer.peerId.toString(), peer);
+    console.info(`p2p/handshake/success > authenticated ${logId}`);
     this.emit("/peer/connect", peer);
+    this.emit("/peer/handshake", peer);
   }
 
   async onPubsubMessage(message: any) {
@@ -804,7 +870,7 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
       schemas: schemaCIDs,
       updatedAt: Date.now(),
     };
-    console.info(`save > encrypting root document`);
+    console.info(`save > encrypting root document`, rootDoc);
     const rootCID = await this.dag.storeEncrypted(rootDoc);
     if (rootCID) {
       console.log(`save > saved root document with CID ${rootCID.toString()}`);
@@ -839,6 +905,39 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
     }
   }
 
+  async request<Data = any>(
+    peerId: string,
+    message: OutgoingP2PMessage,
+    options?: EncodingOptions
+  ) {
+    const peer = this.peers.getPeer(peerId);
+    if (!peer) {
+      throw new Error(`peer does not exist: ${peerId}`);
+    }
+
+    const requestId = (message.data as any).requestId || uuid();
+    const request = {
+      requestId,
+      ...message,
+    };
+
+    await this.send(peerId, request, options);
+    return new Promise((resolve) => {
+      let _timeout: any;
+      const wait = this.once(`/request/${requestId}/response`);
+      _timeout = setTimeout(() => {
+        console.info(`request response timed out: ${requestId}`);
+        wait.off();
+        resolve(undefined);
+      }, 3000);
+      wait.then((value) => {
+        console.info(`request response: ${requestId}`, value);
+        clearTimeout(_timeout);
+        resolve(value as Data);
+      });
+    }) as Promise<Data | undefined>;
+  }
+
   hasSchema(name: string) {
     return this.schemas[name] !== undefined;
   }
@@ -849,7 +948,7 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
     return this.schemas[name];
   }
 
-  async addSchema(name: string, schema: Schema) {
+  async addSchema(name: string, schema: SchemaInterface) {
     this.schemas[name] = schema;
     await this.save();
   }

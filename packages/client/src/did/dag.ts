@@ -7,12 +7,16 @@ export class DIDDag implements DIDDagInterface {
   constructor(public did: DID, private dag: DAGInterface) {}
 
   async store<Data = unknown>(data: Data): Promise<CID | undefined> {
-    return this.dag.store(data);
+    console.info(`client/did/dag/store:`, { data });
+    return this.dag.store(data).catch((err) => {
+      throw new Error("Client DAG failed to store data: " + err.message);
+    });
   }
 
   async load<Data = unknown>(cid: CID, path?: string): Promise<Data> {
-    console.info("DIDDag.load", cid, path);
-    const loaded = await this.dag.load<Data>(cid, path);
+    const loaded = await this.dag.load<Data>(cid, path).catch((err) => {
+      throw new Error("Client DAG failed to load data: " + err.message);
+    });
     if (!loaded) {
       throw new Error("Unable to load data");
     }
@@ -26,6 +30,10 @@ export class DIDDag implements DIDDagInterface {
     recipients: string[] = [this.did.id]
   ): Promise<CID | undefined> {
     const jwe = await this.did.createDagJWE(data, recipients);
+    if (!jwe) {
+      throw new Error("Unable to create JWE");
+    }
+    console.info(`client/did/dag/storeEncrypted:`, { jwe });
     return this.dag.store(jwe);
   }
 

@@ -1,9 +1,15 @@
+import { Stream } from "@libp2p/interface-connection";
+import { Pushable } from "it-pushable";
+import * as json from "multiformats/codecs/json";
 import type Emittery from "emittery";
 import type { PluginInterface, PluginEventDef } from "../plugin/types";
 import type { CandorClientEventDef } from "./types";
 import type {
+  EncodedP2PMessage,
+  EncodingOptions,
   OutgoingP2PMessage,
   P2PMessageEvents,
+  Peer,
   PeerRole,
   PeerStoreInterface,
 } from "../p2p";
@@ -17,12 +23,19 @@ import { SchemaInterface } from "../database/schema";
 export interface CandorClientInterface<
   PluginEvents extends PluginEventDef = PluginEventDef
 > extends Emittery<CandorClientEventDef["emit"]> {
-  plugins: Record<PluginInterface["id"], PluginInterface<PluginEventDef>>;
+  plugins: Record<PluginInterface["id"], PluginInterface<any>>;
   started: boolean;
   hasServerConnection: boolean;
   peers: PeerStoreInterface;
   subscriptions: string[];
   relayAddresses: string[];
+  protocol: Record<
+    string,
+    {
+      push?: Pushable<json.ByteView<EncodedP2PMessage>>;
+      stream?: Stream;
+    }
+  >;
 
   pubsub: Emittery<
     PubsubMessageEvents<
@@ -44,9 +57,16 @@ export interface CandorClientInterface<
 
   get id(): string;
 
-  addPlugin<T extends PluginInterface<any>>(plugin: T): Promise<void>;
+  addPlugin<T extends PluginInterface<any> = PluginInterface<any>>(
+    plugin: T
+  ): Promise<void>;
 
-  getPlugin<T extends PluginInterface<any> = PluginInterface>(id: string): T;
+  getPlugin<
+    E extends PluginEventDef = PluginEventDef,
+    T extends PluginInterface<E> = PluginInterface<E>
+  >(
+    id: string
+  ): T;
 
   hasPlugin(id: string): boolean;
 
@@ -56,6 +76,21 @@ export interface CandorClientInterface<
   load(): Promise<void>;
   connect(peerId: PeerId, role?: PeerRole): Promise<void>;
 
+  encodeMessage<
+    E extends PluginEventDef["send"] &
+      CandorClientEventDef["send"] = PluginEventDef["send"] &
+      CandorClientEventDef["send"],
+    K extends keyof E = keyof E
+  >(
+    message: OutgoingP2PMessage<E, K>,
+    options: EncodingOptions
+  ): Promise<EncodedP2PMessage<E, K>>;
+
+  handleEncodedMessage(
+    message: EncodedP2PMessage<PluginEvents["receive"]>,
+    peer: Peer
+  ): Promise<void>;
+
   send<
     E extends PluginEvents["send"] &
       CandorClientEventDef["send"] = PluginEvents["send"] &
@@ -63,8 +98,15 @@ export interface CandorClientInterface<
     K extends keyof E = keyof E
   >(
     peerId: string,
-    message: OutgoingP2PMessage<E, K>
+    message: OutgoingP2PMessage<E, K>,
+    options?: EncodingOptions
   ): Promise<void>;
+
+  request<Data = any>(
+    peerId: string,
+    message: OutgoingP2PMessage,
+    options?: EncodingOptions
+  ): Promise<Data | undefined>;
 
   subscribe(
     topic:

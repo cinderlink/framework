@@ -1,34 +1,40 @@
 import { TableDefinition, TableInterface, TableRow } from "./table";
 
-export type InstructionType = {
-  where: WhereInstruction;
-  orderBy: OrderByInstruction;
+export type InstructionType<Row extends TableRow = TableRow> = {
+  where: WhereInstruction<Row>;
+  orderBy: OrderByInstruction<Row>;
   limit: LimitInstruction;
   offset: OffsetInstruction;
-  or: OrInstruction;
-  and: AndInstruction;
-  update: UpdateInstruction;
+  or: OrInstruction<Row>;
+  and: AndInstruction<Row>;
+  update: UpdateInstruction<Row>;
   delete: DeleteInstruction;
-  select: SelectInstruction;
-  returning: ReturningInstruction;
+  select: SelectInstruction<Row>;
+  returning: ReturningInstruction<Row>;
+  nocache: NoCacheInstruction;
 };
 
 export type QueryInstruction<
-  I extends keyof InstructionType = keyof InstructionType
+  Row extends TableRow = TableRow,
+  I extends keyof InstructionType<Row> = keyof InstructionType<Row>
 > = {
   instruction: I;
-} & InstructionType[I];
+} & InstructionType<Row>[I];
 
-export interface WhereInstruction {
+export interface WhereInstruction<Row extends TableRow = TableRow> {
   instruction: "where";
-  field: string;
+  field: keyof Row;
   operation: Operation;
-  value: any;
+  value: Operation extends "in" | "!in" | "contains" | "!contains"
+    ? Row[keyof Row][]
+    : Operation extends "between" | "!between"
+    ? [Row[keyof Row], Row[keyof Row]]
+    : Row[keyof Row];
 }
 
-export interface OrderByInstruction {
+export interface OrderByInstruction<Row extends TableRow = TableRow> {
   instruction: "orderBy";
-  field: string;
+  field: keyof Row;
   direction: "asc" | "desc";
 }
 
@@ -42,33 +48,38 @@ export interface OffsetInstruction {
   offset: number;
 }
 
-export interface OrInstruction {
+export interface OrInstruction<Row extends TableRow = TableRow> {
   instruction: "or";
-  queries: QueryInstruction[];
+  queries: QueryInstruction<Row>[];
 }
 
-export interface AndInstruction {
+export interface AndInstruction<Row extends TableRow = TableRow> {
   instruction: "and";
-  queries: QueryInstruction[];
+  queries: QueryInstruction<Row>[];
 }
 
-export interface UpdateInstruction {
+export interface UpdateInstruction<Row extends TableRow = TableRow> {
   instruction: "update";
-  values: Record<string, any>;
+  values?: Partial<Row>;
+  fn?: (row: Row) => Row;
 }
 
 export interface DeleteInstruction {
   instruction: "delete";
 }
 
-export interface SelectInstruction {
+export interface SelectInstruction<Row extends TableRow = TableRow> {
   instruction: "select";
-  fields?: string[];
+  fields?: (keyof Row)[];
 }
 
-export interface ReturningInstruction {
+export interface ReturningInstruction<Row extends TableRow = TableRow> {
   instruction: "returning";
-  fields?: string[];
+  fields?: (keyof Row)[];
+}
+
+export interface NoCacheInstruction {
+  instruction: "nocache";
 }
 
 export type Operation =
@@ -81,10 +92,12 @@ export type Operation =
   | "between"
   | "!between"
   | "in"
-  | "!in";
+  | "!in"
+  | "contains"
+  | "!contains";
 
 export interface QueryBuilderInterface<Row extends TableRow = TableRow> {
-  instructions: QueryInstruction[];
+  instructions: QueryInstruction<Row>[];
   terminator: string | undefined;
   where<Key extends keyof Row = keyof Row>(
     field: Key,
@@ -97,9 +110,15 @@ export interface QueryBuilderInterface<Row extends TableRow = TableRow> {
   ): QueryBuilderInterface<Row>;
   limit(value: number): QueryBuilderInterface<Row>;
   offset(value: number): QueryBuilderInterface<Row>;
-  and(fn: (qb: QueryBuilderInterface) => void): QueryBuilderInterface<Row>;
-  or(fn: (qb: QueryBuilderInterface) => void): QueryBuilderInterface<Row>;
+  and(fn: (qb: QueryBuilderInterface<Row>) => void): QueryBuilderInterface<Row>;
+  or(fn: (qb: QueryBuilderInterface<Row>) => void): QueryBuilderInterface<Row>;
   update(fields: Partial<Row>): QueryBuilderInterface<Row>;
+  nocache(): QueryBuilderInterface<Row>;
+  update(
+    values:
+      | Partial<Row>
+      | ((row: Row) => Promise<Exclude<Row, "id">> | Exclude<Row, "id">)
+  ): QueryBuilderInterface<Row>;
   delete(): QueryBuilderInterface<Row>;
   select(fields?: (keyof Row)[]): QueryBuilderInterface<Row>;
   returning(fields?: (keyof Row)[]): QueryBuilderInterface<Row>;
@@ -114,13 +133,14 @@ export interface QueryResult<Row = TableRow> {
     fields: Keys
   ): QueryResult<Extract<Row, Keys>>;
   all(): Row[];
+  count(): number;
 }
 
 export interface TableQueryInterface<
   Row extends TableRow = TableRow,
-  Def extends TableDefinition = TableDefinition
+  Def extends TableDefinition<Row> = TableDefinition<Row>
 > extends QueryBuilderInterface<Row> {
   table: TableInterface<Row, Def>;
-  instructions: QueryInstruction[];
+  instructions: QueryInstruction<Row>[];
   execute(): Promise<QueryResult<Row>>;
 }

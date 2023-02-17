@@ -4,6 +4,7 @@ import {
   BlockData,
   BlockFilters,
   BlockHeaders,
+  BlockIndexes,
   TableBlockInterface,
   TableDefinition,
   TableInterface,
@@ -13,10 +14,11 @@ import type { CID } from "multiformats/cid";
 
 import * as json from "multiformats/codecs/json";
 import { base58btc } from "multiformats/bases/base58";
+import { cache } from "./cache";
 
 export class TableBlock<
   Row extends TableRow = TableRow,
-  Def extends TableDefinition = TableDefinition
+  Def extends TableDefinition<Row> = TableDefinition<Row>
 > implements TableBlockInterface<Row, Def>
 {
   public index?: Minisearch;
@@ -25,7 +27,7 @@ export class TableBlock<
   constructor(
     public table: TableInterface<Row, Def>,
     public cid: CID | undefined,
-    public cache: Partial<BlockData<Row>> = {}
+    public cache: Partial<BlockData<Row, Def>> = {}
   ) {
     this.buildSearchIndex();
   }
@@ -38,7 +40,10 @@ export class TableBlock<
           this.table.def.searchOptions
         );
       } catch (e) {
-        console.warn(`table/${this.table.tableId} > invalid search index`, e);
+        console.warn(
+          `table/${this.table.tableId} > invalid search index`,
+          this.cache.filters?.search
+        );
         this.index = new Minisearch(this.table.def.searchOptions);
         this.index.addAll(Object.values(this.cache.records || {}));
       }
@@ -107,10 +112,10 @@ export class TableBlock<
 
   async filters() {
     if (!this.cache.filters && this.cid) {
-      this.cache.filters = (await this.loadData<BlockHeaders>(
+      this.cache.filters = (await this.loadData<BlockFilters<Row, Def>>(
         this.cid!,
         "/filters"
-      ).catch(() => undefined)) as BlockFilters | undefined;
+      ).catch(() => undefined)) as BlockFilters<Row, Def> | undefined;
       console.info("filters", this.cache.filters);
       this.buildSearchIndex();
     }
@@ -118,9 +123,9 @@ export class TableBlock<
     if (!this.cache.filters?.indexes) {
       this.cache.filters = {
         indexes: {},
-        aggregates: {},
+        aggregates: {} as BlockAggregates<Row>,
         search: this.index?.toJSON(),
-      };
+      } as BlockFilters<Row, Def>;
     }
 
     if (!this.cache.filters) {
@@ -178,7 +183,11 @@ export class TableBlock<
    * @param value
    * @returns
    */
-  async hasIndexValue(name: string, value: string, key: number = 0) {
+  async hasIndexValue(
+    name: keyof Def["indexes"],
+    value: Row[keyof Row],
+    key: number = 0
+  ) {
     const indexes = (await this.filters()).indexes;
     return (
       indexes[name] &&
@@ -196,7 +205,11 @@ export class TableBlock<
    * @param value
    * @returns
    */
-  async hasIndexValues(name: string, value: string[], id?: number) {
+  async hasIndexValues(
+    name: string,
+    value: Partial<Row>[keyof Row][],
+    id?: number
+  ) {
     const indexes = (await this.filters()).indexes;
     const serialized = TableBlock.serialize(value);
     return (
@@ -235,31 +248,37 @@ export class TableBlock<
    * @param value
    * @param id
    */
-  async addIndexWithValues(index: string, values: string[], id: number) {
-    if (!this.table.def.indexes[index]) {
-      throw new Error(`Index ${index} not found`);
+  async addIndexWithValues(
+    index: keyof Def["indexes"],
+    values: Row[keyof Row][],
+    id: number
+  ) {
+    if (!this.table.def.indexes[index as string]) {
+      throw new Error(`Index ${index as string} not found`);
     }
     const filters = await this.filters();
     if (!filters.indexes) {
-      filters.indexes = {};
+      filters.indexes = {} as BlockIndexes<Row, Def>;
     }
     if (!filters.indexes[index]) {
       filters.indexes[index] = {};
     }
     const serialized = TableBlock.serialize(values);
     if (!filters.indexes[index][serialized]) {
-      filters.indexes[index][serialized] = {
-        values,
+      filters.indexes[index as string][serialized] = {
+        values: values as Row[keyof Row][],
         ids: [id],
       };
     } else {
       if (
-        this.table.def.indexes[index].unique &&
+        this.table.def.indexes[index as string].unique &&
         filters.indexes[index][serialized]?.ids.length &&
         filters.indexes[index][serialized].ids[0] !== id
       ) {
         throw new Error(
-          `Unique index violation: ${index} already has value ${values}`
+          `Unique index violation: ${
+            index as string
+          } already has value ${values}`
         );
       }
       if (!filters.indexes[index][serialized].ids?.includes?.(id)) {
@@ -277,7 +296,7 @@ export class TableBlock<
    * @param value
    * @returns
    */
-  async getIndexMatchIds(name: string, value: string) {
+  async getIndexMatchIds(name: keyof Def["indexes"], value: Row[keyof Row]) {
     if (!(await this.hasIndexValue(name, value))) return [];
     const indexes = (await this.filters()).indexes;
     return Object.values(indexes[name])
@@ -293,40 +312,40 @@ export class TableBlock<
     const filters = await this.filters();
     const records = await this.records();
     const entries = Object.entries(records);
-    filters.aggregates = {} as BlockAggregates;
+    filters.aggregates = {} as BlockAggregates<Row>;
 
     Object.entries(this.table.def.aggregate).forEach(([key, type]) => {
+      const _key = key as keyof Row;
       if (type === "sum") {
-        filters.aggregates[key] = entries.reduce(
-          (acc, [, row]) => acc + (row[key] as number),
+        filters.aggregates[_key] = entries.reduce(
+          (acc, [, row]) => acc + (row[_key] as number),
           0
-        );
+        ) as number;
       } else if (type === "count") {
-        filters.aggregates[key] = entries.reduce(
-          (acc, [, row]) => acc + (row[key] ? 1 : 0),
+        filters.aggregates[_key] = entries.reduce(
+          (acc, [, row]) => acc + (row[_key] ? 1 : 0),
           0
-        );
+        ) as number;
       } else if (type === "avg") {
-        filters.aggregates[key] = entries.reduce(
-          (acc, [, row]) => acc + (row[key] as number),
-          0
-        );
+        filters.aggregates[_key] =
+          entries.reduce((acc, [, row]) => acc + (row[_key] as number), 0) /
+          entries.length;
       } else if (type === "min") {
-        filters.aggregates[key] = Math.min(
-          ...entries.map(([, row]) => row[key] as number)
+        filters.aggregates[_key] = Math.min(
+          ...entries.map(([, row]) => row[_key] as number)
         );
       } else if (type === "max") {
-        filters.aggregates[key] = Math.max(
-          ...entries.map(([, row]) => row[key] as number)
+        filters.aggregates[_key] = Math.max(
+          ...entries.map(([, row]) => row[_key] as number)
         );
       } else if (type === "distinct") {
-        filters.aggregates[key] = [
-          ...new Set(entries.map(([, row]) => row[key] as string)),
+        filters.aggregates[_key] = [
+          ...new Set(entries.map(([, row]) => row[_key] as string)),
         ];
       } else if (type === "range") {
-        filters.aggregates[key] = [
-          Math.min(...entries.map(([, row]) => row[key] as number)),
-          Math.max(...entries.map(([, row]) => row[key] as number)),
+        filters.aggregates[_key] = [
+          Math.min(...entries.map(([, row]) => row[_key] as number)),
+          Math.max(...entries.map(([, row]) => row[_key] as number)),
         ];
       }
     });
@@ -335,9 +354,9 @@ export class TableBlock<
     return filters.aggregates;
   }
 
-  async violatesUniqueConstraints(row: Omit<Row, "id">, id?: number) {
+  async violatesUniqueConstraints(row: Partial<Row>, id?: number) {
     for (const [name, index] of Object.entries(this.table.def.indexes)) {
-      const values = index.fields.map((f) => row[f] as string);
+      const values = index.fields.map((f: keyof Row) => row[f]);
       if (index.unique && (await this.hasIndexValues(name, values, id))) {
         return true;
       }
@@ -345,14 +364,15 @@ export class TableBlock<
     return false;
   }
 
-  async assertUniqueConstraints(row: Omit<Row, "id">, id?: number) {
+  async assertUniqueConstraints(row: Partial<Row>, id?: number) {
     for (const [name, index] of Object.entries(this.table.def.indexes)) {
-      const values = index.fields.map((f) => row[f] as string);
+      const values = index.fields.map((f) => row[f] as Row[keyof Row]);
       if (index.unique && (await this.hasIndexValues(name, values, id))) {
         console.error(
           `ipld-database/block: Unique index violation: index ${name} already has values: ${values}`,
           this.table.currentBlock.cache?.filters?.indexes,
-          this.table.currentBlock.cache?.records
+          this.table.currentBlock.cache?.records,
+          id
         );
         throw new Error(
           `ipld-database/block: Unique index violation: index ${name} already has values: ${values}`
@@ -403,7 +423,7 @@ export class TableBlock<
     for (const [name, index] of Object.entries(indexes)) {
       await this.addIndexWithValues(
         name,
-        index.fields.map((f) => row[f] as string),
+        index.fields.map((f) => row[f]),
         row.id
       );
     }
@@ -412,6 +432,7 @@ export class TableBlock<
   }
 
   async updateRecord(id: number, update: Partial<Row>) {
+    this.table.assertValid(update);
     await this.assertUniqueConstraints(update as Row, id);
     const records = await this.records();
     records[id] = { ...records[id], ...update };
@@ -466,6 +487,7 @@ export class TableBlock<
       this.filters(),
       this.aggregate(),
     ]);
+    cache.cacheBlock(this);
     if (this.cache.filters?.search) {
       console.info(
         `ipld-database/block: loading search index for ${this.cid}`,
@@ -535,7 +557,7 @@ export class TableBlock<
 
     console.warn(
       `ipld-database/block: saving block (${this.cid}) for table ${this.table.tableId}`,
-      data
+      data.filters
     );
     this._changed = false;
 
@@ -554,6 +576,8 @@ export class TableBlock<
       `ipld-database/block: saved block (${this.cid}) for table ${this.table.tableId}`,
       data
     );
+
+    cache.invalidateTable(this.table.tableId);
 
     return this.cid;
   }
@@ -618,15 +642,14 @@ export class TableBlock<
     return new TableBlock<T>(table, cid, cache);
   }
 
-  static fromString<T extends TableRow = TableRow>(
-    value: string,
-    table: TableInterface,
-    cid?: CID
-  ) {
-    return new TableBlock(
+  static fromString<
+    Row extends TableRow = TableRow,
+    Def extends TableDefinition<Row> = TableDefinition<Row>
+  >(value: string, table: TableInterface<Row, Def>, cid?: CID) {
+    return new TableBlock<Row, Def>(
       table,
       cid,
-      TableBlock.deserialize(value) as BlockData<T>
+      TableBlock.deserialize(value) as BlockData<Row, Def>
     );
   }
 

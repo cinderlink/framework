@@ -1,6 +1,7 @@
 import { CandorClientInterface } from "../client/interface";
 import { P2PMessage } from "../p2p";
 import { PubsubMessage } from "../pubsub";
+import { CandorClientEventDef } from "../client";
 
 export type PluginEventPayloads = Record<string, unknown>;
 
@@ -34,15 +35,15 @@ export interface PluginInterface<
   };
   p2p: {
     [key in keyof Events["receive"]]: PluginEventHandler<
-      P2PMessage<
-        key extends string ? key : never,
-        Events["receive"][key] extends Record<string, unknown>
-          ? Events["receive"][key]
-          : {}
-      >
+      P2PMessage<string, any>
     >;
   };
-  emitters?: {
+  coreEvents?: {
+    [key in keyof CandorClientEventDef["emit"]]?: PluginEventHandler<
+      CandorClientEventDef["emit"][key]
+    >;
+  };
+  pluginEvents?: {
     [key in keyof Events["emit"]]?: PluginEventHandler<Events["emit"][key]>;
   };
 }

@@ -6,9 +6,8 @@
       "outputs": ["dist/**"]
     },
     "watch": {
-      "inputs": ["src/**", "!frontend", "!registry-frontend"],
-      "outputs": ["dist/**"],
-      "persistent": true
+      "inputs": ["src/**"],
+      "outputs": ["dist/**"]
     },
     "dev": {
       "inputs": ["src/**"],

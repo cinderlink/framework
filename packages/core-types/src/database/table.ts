@@ -15,14 +15,13 @@ import {
   BlockAggregator,
 } from "./block";
 
-export type TableRow<Data extends Record<string, unknown> = {}> = {
+export interface TableRow {
   id: number;
-  [key: string]: unknown;
-} & Data;
+}
 
 export interface TableBlockInterface<
   Row extends TableRow = TableRow,
-  Def extends TableDefinition = TableDefinition
+  Def extends TableDefinition<Row> = TableDefinition<Row>
 > {
   table: TableInterface<Row, Def>;
   cid: CID | undefined;
@@ -34,14 +33,14 @@ export interface TableBlockInterface<
   prevCID(): Promise<string | undefined>;
   getCID(): Promise<CID | undefined>;
   headers(): Promise<BlockHeaders>;
-  filters(): Promise<BlockFilters>;
+  filters(): Promise<BlockFilters<Row, Def>>;
   records(): Promise<Record<number, Row>>;
   search(query: string, limit: number): Promise<Row[]>;
   save(): Promise<CID | undefined>;
   load(force?: boolean): Promise<void>;
-  aggregate(): Promise<BlockAggregates>;
-  violatesUniqueConstraints(row: Omit<Row, "id">): Promise<boolean>;
-  assertUniqueConstraints(row: Omit<Row, "id">): Promise<void>;
+  aggregate(): Promise<BlockAggregates<Row>>;
+  violatesUniqueConstraints(row: Partial<Row>): Promise<boolean>;
+  assertUniqueConstraints(row: Partial<Row>): Promise<void>;
   addRecord(row: Row): Promise<void>;
   updateRecord(id: number, update: Partial<Row>): Promise<void>;
   deleteRecord(id: number): Promise<void>;
@@ -49,19 +48,19 @@ export interface TableBlockInterface<
   toString(): string;
 }
 
-export type TableDefinition = {
+export interface TableDefinition<Row extends TableRow = TableRow> {
   encrypted: boolean;
   schemaId: string;
   schema: SchemaObject;
-  indexes: Record<string, BlockIndexDef>;
-  aggregate: Record<string, BlockAggregator>;
+  indexes: Record<string, BlockIndexDef<Row>>;
+  aggregate: Partial<Record<keyof Row, BlockAggregator>>;
   searchOptions: SearchOptions;
   rollup: number;
-};
+}
 
 export type TableEvents<
   Row extends TableRow = TableRow,
-  Def extends TableDefinition = TableDefinition
+  Def extends TableDefinition<Row> = TableDefinition<Row>
 > = {
   "/table/loaded": TableInterface<Row, Def>;
   "/table/saved": TableInterface<Row, Def>;
@@ -84,13 +83,13 @@ export type TableEvents<
 
 export interface TableInterface<
   Row extends TableRow = TableRow,
-  Def extends TableDefinition = TableDefinition
-> extends Emittery<TableEvents> {
+  Def extends TableDefinition<Row> = TableDefinition<Row>
+> extends Emittery<TableEvents<Row, Def>> {
   tableId: string;
   currentIndex: number;
   currentBlock: TableBlockInterface<Row, Def>;
   encrypted: boolean;
-  def: TableDefinition;
+  def: Def;
   dag: DIDDagInterface;
   writing: boolean;
   writeStartAt: number;
@@ -102,7 +101,7 @@ export interface TableInterface<
   upsert<Index extends keyof Row = keyof Row>(
     index: Index,
     value: Row[Index],
-    data: Omit<Row, "id">
+    data: Partial<Row>
   ): Promise<Row>;
   search(query: string, limit: number): Promise<Row[]>;
   save(): Promise<CID | undefined>;
@@ -110,10 +109,10 @@ export interface TableInterface<
   load(cid: CID): Promise<void>;
   search(query: string, limit: number): Promise<Row[]>;
   unwind(
-    next: (event: TableUnwindEvent) => Promise<void> | void
+    next: (event: TableUnwindEvent<Row, Def>) => Promise<void> | void
   ): Promise<void>;
-  assertValid(data: Omit<Row, "id">): void;
-  isValid(data: Omit<Row, "id">): boolean;
+  assertValid(data: Partial<Row>): void;
+  isValid(data: Partial<Row>): boolean;
   lock(): void;
   unlock(): void;
   awaitLock(): Promise<void>;
@@ -122,7 +121,7 @@ export interface TableInterface<
 
 export type TableUnwindEvent<
   Row extends TableRow = TableRow,
-  Def extends TableDefinition = TableDefinition
+  Def extends TableDefinition<Row> = TableDefinition<Row>
 > = {
   cid: string | undefined;
   block: TableBlockInterface<Row, Def>;

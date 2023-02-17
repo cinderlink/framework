@@ -85,7 +85,7 @@ export class IdentityServerPlugin
     }
     await this.client
       .getSchema("identity")
-      ?.getTable("pins")
+      ?.getTable<IdentityPinsRecord>("pins")
       .upsert("did", message.peer.did, message.data);
 
     return this.client.send(message.peer.peerId.toString(), {

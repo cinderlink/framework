@@ -5,6 +5,7 @@ import type {
   HandshakeChallenge,
   HandshakeComplete,
   Peer,
+  P2PMessage,
 } from "../p2p";
 import type { PubsubMessage } from "../pubsub";
 import type { DID } from "dids";
@@ -55,5 +56,10 @@ export interface CandorClientEventDef extends PluginEventDef {
       message: unknown;
     };
     "/pubsub/message": PubsubMessage;
+  } & {
+    [key in `/request/${string}/response`]: P2PMessage<
+      string,
+      PluginEventDef["send"]
+    >;
   };
 }

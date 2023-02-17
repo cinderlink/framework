@@ -17,9 +17,9 @@ const ajv = new Ajv();
 
 export class Table<
     Row extends TableRow = TableRow,
-    Def extends TableDefinition = TableDefinition
+    Def extends TableDefinition<Row> = TableDefinition<Row>
   >
-  extends Emittery<TableEvents>
+  extends Emittery<TableEvents<Row, Def>>
   implements TableInterface<Row, Def>
 {
   currentIndex: number = 0;
@@ -31,7 +31,7 @@ export class Table<
 
   constructor(
     public tableId: string,
-    public def: TableDefinition,
+    public def: Def,
     public dag: DIDDagInterface
   ) {
     super();
@@ -57,15 +57,12 @@ export class Table<
     this.currentBlock = block;
     this.currentBlockIndex = Number(block.cache!.headers!.index) || 0;
     this.currentIndex = Number(block.cache!.headers!.recordsTo) || 0;
-    console.info(`table/${this.tableId} > set block ${block.cid}`, {
-      index: this.currentBlockIndex,
-      currentIndex: this.currentIndex,
-    });
     this.emit("/block/saved", block);
   }
 
   async insert(data: Omit<Row, "id">) {
-    this.assertValid(data);
+    this.assertValid(data as Partial<Row>);
+    await this.assertUniqueConstraint(data as Row);
     await this.awaitLock();
     const id = ++this.currentIndex;
     console.info(`table/${this.tableId} > inserting record ${id}`, data);
@@ -80,7 +77,7 @@ export class Table<
       }
     }
     this.unlock();
-    this.emit("/record/inserted", { id, ...data });
+    this.emit("/record/inserted", { ...data, id } as Row);
     console.info(`table/${this.tableId} > inserted record ${id}`, data);
     return id;
   }
@@ -88,23 +85,26 @@ export class Table<
   async upsert<Index extends keyof Row = keyof Row>(
     index: Index,
     value: Row[Index],
-    data: Omit<Row, "id">
+    data: Partial<Row>
   ) {
     this.assertValid(data);
-    const existing = (
-      await this.query().where(index, "=", value).select().execute()
-    ).first();
-    console.info(`table/${this.tableId} > upserting record`, {
-      existing,
-      index,
-      value,
-      data,
-    });
+    const existing = data.id
+      ? await this.getById(data.id)
+      : await this.query()
+          .where(index, "=", value)
+          .select()
+          .nocache()
+          .execute()
+          .then((r) => r.first());
+
     if (existing?.id) {
       return this.update(existing.id, data as Row);
+    } else if (data.id) {
+      throw new Error(`Failed upsert with id ${data.id}, record not found`);
     }
-    return this.insert({ ...data, [index]: value } as Row).then((id) =>
-      this.getById(id)
+    this.unlock();
+    return this.insert({ ...data, [index]: value } as Omit<Row, "id">).then(
+      (id) => this.getById(id)
     );
   }
 
@@ -122,7 +122,11 @@ export class Table<
 
   async getById(id: number) {
     await this.awaitUnlock();
-    const results = await this.query().where("id", "=", id).select().execute();
+    const results = await this.query()
+      .where("id", "=", id)
+      .select()
+      .nocache()
+      .execute();
     return results.first();
   }
 
@@ -147,7 +151,7 @@ export class Table<
   }
 
   async save() {
-    if (!this.currentBlock.cid || this.currentBlock.changed) {
+    if (this.currentBlock.changed) {
       console.info(`table/${this.tableId} > saving`, this.currentBlock.cid);
       await this.currentBlock.save();
     }
@@ -163,8 +167,10 @@ export class Table<
     this.setBlock(block);
   }
 
-  async unwind(next: (event: TableUnwindEvent) => Promise<void> | void) {
-    const event: TableUnwindEvent = {
+  async unwind(
+    next: (event: TableUnwindEvent<Row, Def>) => Promise<void> | void
+  ) {
+    const event: TableUnwindEvent<Row, Def> = {
       cid: undefined,
       block: this.currentBlock,
       resolved: false,
@@ -180,7 +186,6 @@ export class Table<
       const prevCID = await event.block?.prevCID();
       event.cid = !event.resolved ? prevCID : undefined;
       if (!event.cid) {
-        console.warn(`ipld-database/table/unwind: no prevCID found`);
         event.resolved = true;
       } else {
         event.block = new TableBlock<Row, Def>(this, CID.parse(event.cid));
@@ -188,7 +193,7 @@ export class Table<
     }
   }
 
-  assertValid(data: Omit<Row, "id">) {
+  assertValid(data: Partial<Row>) {
     const validate = ajv.compile(this.def.schema);
     const valid = validate(data);
     if (!valid) {
@@ -203,7 +208,9 @@ export class Table<
   async assertUniqueConstraint(data: Row) {
     let valid = true;
     await this.unwind(async (event) => {
-      if (await event.block.assertUniqueConstraints(data).catch(() => false)) {
+      if (
+        !(await event.block.assertUniqueConstraints(data).catch(() => false))
+      ) {
         valid = false;
         event.resolved = true;
       }
@@ -211,7 +218,7 @@ export class Table<
     return valid;
   }
 
-  isValid(data: Omit<Row, "id">) {
+  isValid(data: Partial<Row>) {
     const validate = ajv.compile(this.def.schema);
     return validate(data);
   }

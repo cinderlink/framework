@@ -167,11 +167,11 @@ export class SocialServerPlugin implements PluginInterface<SocialServerEvents> {
   }
 
   async saveUser(did: string, user: Omit<SocialUser, "id">) {
-    console.info(
-      `plugin/social/server > received social announce message (did: ${did})`
-    );
+    console.info(`plugin/social/server > saving user (did: ${did})`, user);
 
-    const table = await this.client.getSchema("social")?.getTable("users");
+    const table = await this.client
+      .getSchema("social")
+      ?.getTable<SocialUser>("users");
 
     if (!table) {
       console.warn(`plugin/social/server > users table not found`);
@@ -184,9 +184,12 @@ export class SocialServerPlugin implements PluginInterface<SocialServerEvents> {
       .select()
       .execute()
       .then((r) => r.first());
-    if (existingUser?.avatar && existingUser.avatar !== user.avatar) {
+
+    if (existingUser?.avatar) {
       // unpin the old avatar CID
-      await this.client.ipfs.pin.rm(existingUser.avatar as string);
+      await this.client.ipfs.pin
+        .rm(existingUser.avatar as string)
+        .catch(() => {});
     }
 
     // pin the avatar CID
@@ -194,10 +197,7 @@ export class SocialServerPlugin implements PluginInterface<SocialServerEvents> {
       await this.client.ipfs.pin.add(user.avatar);
     }
 
-    await this.client
-      .getSchema("social")
-      ?.getTable("users")
-      ?.upsert("did", did, user);
+    await table?.upsert("did", did, user);
   }
 }
 

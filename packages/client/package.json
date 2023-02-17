@@ -31,6 +31,7 @@
     "test": "vitest"
   },
   "devDependencies": {
+    "@candor/plugin-offline-sync-core": "workspace:../plugin-offline-sync-core",
     "@chainsafe/libp2p-gossipsub": "^6.1.0",
     "@chainsafe/libp2p-noise": "^11.0.0",
     "@libp2p/crypto": "^1.0.12",

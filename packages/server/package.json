@@ -18,10 +18,8 @@
     "build": "tsup --format cjs,esm src/index.ts --dts ",
     "watch": "pnpm build --watch"
   },
-  "dependencies": {
-    "@candor/client": "workspace:../client"
-  },
   "devDependencies": {
+    "@candor/client": "workspace:../client",
     "@candor/core-types": "workspace:../core-types",
     "ipfs-core": "^0.18.0",
     "ipfs-core-types": "^0.14.0",
@@ -32,6 +30,7 @@
     "vitest": "^0.28.5"
   },
   "peerDependencies": {
+    "@candor/client": "workspace:../client",
     "ipfs-core": "^0.17.0"
   }
 }

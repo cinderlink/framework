@@ -94,9 +94,14 @@ export type P2PMessage<
 > = {
   topic: EventKey;
   peer: Peer;
-  peerId: PeerId;
   data: Data;
   signed?: boolean;
   encrypted?: boolean;
   signature?: string;
+};
+
+export type EncodingOptions = {
+  sign?: boolean;
+  encrypt?: boolean;
+  recipients?: string[];
 };

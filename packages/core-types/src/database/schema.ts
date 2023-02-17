@@ -14,21 +14,28 @@ export type SavedSchema = {
 };
 
 export interface SchemaInterface extends Emittery<SchemaEvents> {
-  tables: Record<string, TableInterface>;
+  tables: Record<string, TableInterface<any>>;
   schemaId: string;
-  defs: Record<string, TableDefinition>;
+  defs: Record<string, TableDefinition<any>>;
   dag: DIDDagInterface;
   encrypted: boolean;
 
-  createTable(name: string, def: TableDefinition): Promise<void>;
+  createTable<Def extends TableDefinition<any> = TableDefinition<any>>(
+    name: string,
+    def: Def
+  ): Promise<void>;
   dropTable(name: string): Promise<void>;
+
   getTable<
     Row extends TableRow = TableRow,
-    Def extends TableDefinition = TableDefinition
+    Def extends TableDefinition<Row> = TableDefinition<Row>
   >(
     name: string
   ): TableInterface<Row, Def>;
-  setDefs(defs: Record<string, TableDefinition>): void;
+
+  setDefs<Def extends TableDefinition = TableDefinition>(
+    defs: Record<string, Def>
+  ): void;
   save(): Promise<CID | undefined>;
 }
 

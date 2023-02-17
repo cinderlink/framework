@@ -22,6 +22,7 @@
     "@candor/core-types": "workspace:../core-types",
     "@candor/ipld-database": "workspace:../ipld-database",
     "@candor/plugin-social-core": "workspace:../plugin-social-core",
+    "@candor/plugin-offline-sync-core": "workspace:../plugin-offline-sync-core",
     "@multiformats/multiaddr": "^11.4.0",
     "@types/uuid": "^9.0.0",
     "did-jwt": "^6.11.0",

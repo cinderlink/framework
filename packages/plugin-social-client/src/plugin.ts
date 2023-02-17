@@ -5,6 +5,8 @@ import type {
   Peer,
   P2PMessage,
   TableRow,
+  TableDefinition,
+  CandorClientEventDef,
 } from "@candor/core-types";
 import Emittery from "emittery";
 import { v4 as uuid } from "uuid";
@@ -31,8 +33,14 @@ import {
 } from "@candor/plugin-social-core";
 import { loadSocialSchema } from "@candor/plugin-social-core";
 import { multiaddr } from "@multiformats/multiaddr";
+import type {
+  OfflineSyncClientEvents,
+  OfflineSyncClientPluginInterface,
+} from "@candor/plugin-offline-sync-core";
 
-export class SocialClientPlugin
+export class SocialClientPlugin<
+    PluginEvents extends SocialClientEvents = SocialClientEvents
+  >
   extends Emittery<SocialClientPluginEvents>
   implements PluginInterface<SocialClientEvents>
 {
@@ -66,7 +74,7 @@ export class SocialClientPlugin
   };
 
   constructor(
-    public client: CandorClientInterface<SocialClientEvents>,
+    public client: CandorClientInterface<PluginEvents>,
     public options: Record<string, unknown> = {}
   ) {
     super();
@@ -84,18 +92,29 @@ export class SocialClientPlugin
         `plugin/social/client > announcing (new peer: ${peer.peerId})`
       );
 
-      console.info(`plugin/social/client > announcing (p2p, peer connected)`);
-      await this.client.send(peer.peerId.toString(), {
-        topic: "/social/announce",
-        data: {
-          requestId: uuid(),
+      if (peer.role === "server") {
+        hasConnected = true;
+      }
+
+      if (this.name && this.name !== "guest") {
+        console.info(`plugin/social/client > announcing (pubsub)`, {
           name: this.name,
+          avatar: this.avatar,
           bio: this.bio,
           status: this.status,
-          avatar: this.avatar,
-          updatedAt: this.updatedAt,
-        },
-      });
+        });
+        await this.client.send(peer.peerId.toString(), {
+          topic: "/social/announce",
+          data: {
+            requestId: uuid(),
+            name: this.name,
+            bio: this.bio,
+            status: this.status,
+            avatar: this.avatar,
+            updatedAt: this.updatedAt,
+          },
+        });
+      }
 
       if (await this.hasConnectionTo(peer.peerId.toString())) {
         console.info(
@@ -106,10 +125,10 @@ export class SocialClientPlugin
     });
 
     this.interval = setInterval(async () => {
-      if (!hasConnected) return;
+      if (!hasConnected || !this.name || this.name === "guest") return;
       console.info(`plugin/social/client > announcing (pubsub, interval)`);
       await this.publishAnnounceMessage();
-    }, Number(this.options.interval || 1000 * 180));
+    }, Number(this.options.interval || 1000 * 60));
 
     await this.loadLocalUser();
 
@@ -119,6 +138,13 @@ export class SocialClientPlugin
   }
 
   async publishAnnounceMessage() {
+    if (!this.name || this.name === "guest") return;
+    console.info(`plugin/social/client > announcing (pubsub)`, {
+      name: this.name,
+      avatar: this.avatar,
+      bio: this.bio,
+      status: this.status,
+    });
     await this.client.publish(
       "/social/announce",
       {
@@ -141,8 +167,11 @@ export class SocialClientPlugin
     return schema;
   }
 
-  table<Row extends TableRow = TableRow>(name: string) {
-    const table = this.db.getTable<Row>(name);
+  table<
+    Row extends TableRow = TableRow,
+    Def extends TableDefinition<Row> = TableDefinition<Row>
+  >(name: string) {
+    const table = this.db.getTable<Row, Def>(name);
     if (!table) {
       throw new Error(`plugin/social/client > failed to get table ${name}`);
     }
@@ -191,7 +220,11 @@ export class SocialClientPlugin
     }
 
     const post = { ...postData, authorId, cid: cid.toString() };
-    const saved = await this.table("posts").upsert("cid", cid.toString(), post);
+    const saved = await this.table<SocialPost>("posts").upsert(
+      "cid",
+      cid.toString(),
+      post
+    );
 
     if (saved === undefined) {
       throw new Error("failed to upsert post");
@@ -258,9 +291,9 @@ export class SocialClientPlugin
     }
 
     const profile = { ...profileData, userId: localUserId };
-    const saved = await this.table("profiles").upsert(
+    const saved = await this.table<SocialProfile>("profiles").upsert(
       "userId",
-      this.client.id,
+      localUserId,
       profile
     );
 
@@ -347,14 +380,14 @@ export class SocialClientPlugin
   }
 
   async saveLocalUser() {
-    const localUser = {
+    const localUser: Partial<SocialUser> = {
       name: this.name || "(guest)",
       avatar: this.avatar || "",
       did: this.client.id,
     };
 
     console.info(`plugin/social/client > saving local user`);
-    const user = await this.table("users").upsert(
+    const user = await this.table<SocialUser>("users").upsert(
       "did",
       this.client.id,
       localUser
@@ -366,13 +399,11 @@ export class SocialClientPlugin
       );
       return;
     }
-
-    await this.client.save();
   }
 
   async loadLocalUser() {
     const user = (
-      await this.table("users")
+      await this.table<SocialUser>("users")
         .query()
         .where("did", "=", this.client.id)
         .select()
@@ -386,7 +417,7 @@ export class SocialClientPlugin
   }
 
   async getUserByDID(did: string): Promise<SocialUser | undefined> {
-    return this.table("users")
+    return this.table<SocialUser>("users")
       .query()
       .where("did", "=", did)
       .select()
@@ -444,14 +475,15 @@ export class SocialClientPlugin
   }
 
   async getConnectionDirection(to: string, from: string = this.client.id) {
-    const outgoing = await this.table("connections")
+    const connections = await this.table<SocialConnectionRecord>("connections");
+    const outgoing = await connections
       .query()
       .where("to", "=", to)
       .where("from", "=", from)
       .select()
       .execute()
       .then((result) => result.all());
-    const incoming = await this.table("connections")
+    const incoming = await connections
       .query()
       .where("from", "=", to)
       .where("to", "=", from)
@@ -475,8 +507,9 @@ export class SocialClientPlugin
   }
 
   async getConnectionsCount(user: string, filter: SocialConnectionFilter) {
+    const connections = await this.table<SocialConnectionRecord>("connections");
     if (filter === "all") {
-      return this.table("connections")
+      return connections
         .query()
         .where("from", "=", user)
         .or((qb) => qb.where("to", "=", user))
@@ -485,7 +518,7 @@ export class SocialClientPlugin
         .then((result) => result.all().length);
     }
     if (filter === "in") {
-      return this.table("connections")
+      return connections
         .query()
         .where("to", "=", user)
         .select()
@@ -493,7 +526,7 @@ export class SocialClientPlugin
         .then((result) => result.all().length);
     }
     if (filter === "out") {
-      return this.table("connections")
+      return connections
         .query()
         .where("from", "=", user)
         .select()
@@ -501,7 +534,7 @@ export class SocialClientPlugin
         .then((result) => result.all().length);
     }
     if (filter === "mutual") {
-      return this.table("connections")
+      return connections
         .query()
         .where("from", "=", user)
         .and((qb) => qb.where("to", "=", user))
@@ -513,7 +546,7 @@ export class SocialClientPlugin
   }
 
   async hasConnectionTo(user: string): Promise<boolean> {
-    const connections = await this.table("connections")
+    const connections = await this.table<SocialConnectionRecord>("connections")
       .query()
       .where("to", "=", user)
       .where("from", "=", this.client.id)
@@ -524,7 +557,7 @@ export class SocialClientPlugin
   }
 
   async hasConnectionFrom(user: string): Promise<boolean> {
-    const connections = await this.table("connections")
+    const connections = await this.table<SocialConnectionRecord>("connections")
       .query()
       .where("from", "=", user)
       .where("to", "=", this.client.id)
@@ -570,16 +603,14 @@ export class SocialClientPlugin
       return;
     }
 
+    const users = this.table<SocialUser>("users");
+
     let fromUserId = (await this.getUserByDID(message.peer.did))?.id;
     if (!fromUserId) {
       // we don't have the user, so we need to fetch it
-      const user = await this.getUserFromServer(message.peer.did);
+      const { id, ...user } = await this.getUserFromServer(message.peer.did);
       if (user) {
-        const fromUser = await this.table("users").upsert(
-          "did",
-          message.peer.did,
-          user
-        );
+        const fromUser = await users.upsert("did", message.peer.did, user);
         fromUserId = fromUser?.id;
       }
     }
@@ -589,11 +620,7 @@ export class SocialClientPlugin
       // we don't have the user, so we need to fetch it
       const user = await this.getUserFromServer(message.data.to);
       if (user) {
-        const toUser = await this.table("users").upsert(
-          "did",
-          message.data.to,
-          user
-        );
+        const toUser = await users.upsert("did", message.data.to, user);
         toUserId = toUser?.id;
       }
     }
@@ -649,7 +676,7 @@ export class SocialClientPlugin
       `plugin/social/client > received social announce message (did: ${message.peer.did})`,
       message.data
     );
-    await this.table("users")?.upsert("did", message.peer.did, {
+    await this.table<SocialUser>("users")?.upsert("did", message.peer.did, {
       name: message.data.name,
       bio: message.data.bio,
       status: message.data.status,
@@ -686,6 +713,22 @@ export class SocialClientPlugin
         }
         await this.client.ipfs.swarm.connect(message.peer.peerId);
         await this.client.connect(message.peer.peerId);
+      } else {
+        console.warn(
+          `plugin/social/client > already connected to peer ${message.peer.peerId}`
+        );
+        let peer = this.client.peers.getPeer(message.peer.peerId.toString());
+        if (peer) {
+          peer.peerId = message.peer.peerId;
+          peer.did = message.peer.did;
+          peer.connected = true;
+          this.client.peers.updatePeer(peer.peerId.toString(), peer);
+        } else {
+          peer = this.client.peers.addPeer(message.peer.peerId, "peer");
+          peer.did = message.peer.did;
+          peer.connected = true;
+          this.client.peers.updatePeer(peer.peerId.toString(), peer);
+        }
       }
     } catch (e) {
       console.warn(
@@ -701,7 +744,7 @@ export class SocialClientPlugin
       | P2PMessage<string, SocialUpdateMessage>
   ) {
     const { post } = message.data;
-    if (!post) return;
+    if (!post?.id) return;
 
     const cid = await this.client.dag.store(post);
     // TODO: pin & add to user_pins
@@ -712,10 +755,24 @@ export class SocialClientPlugin
       return;
     }
 
-    await this.table("posts").upsert("cid", cid.toString(), {
+    if (!message.peer.did) {
+      console.warn(
+        `plugin/social/client > received social update message from unauthorized peer`
+      );
+      return;
+    }
+
+    const authorId = (await this.getUserByDID(message.peer.did))?.id;
+    if (!authorId) {
+      console.warn(
+        `plugin/social/client > received social update message from unknown user`
+      );
+      return;
+    }
+    await this.table<SocialPost>("posts").upsert("id", post.id, {
       ...post,
-      cid,
-      did: message.peer.did,
+      cid: cid.toString(),
+      authorId,
     });
   }
 
@@ -810,7 +867,8 @@ export class SocialClientPlugin
   }
 
   async deleteConnection(from: string, to: string) {
-    const connection = await this.table("connections")
+    const connections = await this.table<SocialConnectionRecord>("connections");
+    const connection = connections
       .query()
       .where("from", "=", from)
       .where("to", "=", to)
@@ -821,7 +879,7 @@ export class SocialClientPlugin
       `plugin/social/client > deleting connection (from: ${this.client.id}, to: ${to})`,
       connection
     );
-    const deleted = await this.table("connections")
+    const deleted = connections
       .query()
       .where("from", "=", from)
       .where("to", "=", to)
@@ -844,35 +902,64 @@ export class SocialClientPlugin
   async sendChatMessage(
     message: SocialChatMessageOutgoing
   ): Promise<SocialChatMessageRecord> {
-    // if we're not connected to this user throw an error
-    const peer = this.client.peers.getPeerByDID(message.to);
-    if (!peer?.did) {
-      console.info(this.client.peers.getPeers());
-      throw new Error(`not connected to user: ${message.to}`);
-    }
-
     const chatMessage: Omit<SocialChatMessageRequest, "cid"> = {
-      remoteId: uuid(),
+      requestId: uuid(),
       from: this.client.id,
       ...message,
     };
+    console.info("sending chat message");
 
-    const cid = await this.client.dag.storeEncrypted(chatMessage, [peer.did]);
+    const cid = await this.client.dag.storeEncrypted(chatMessage, [message.to]);
 
     if (!cid) {
       throw new Error("failed to store chat message");
     }
-    await this.client.ipfs.pin.add(cid);
+    await this.client.ipfs.pin.add(cid, { recursive: true });
 
     const savedMessage: SocialChatMessageRequest = {
       ...chatMessage,
       cid: cid.toString(),
     };
 
-    await this.client.send(peer.peerId.toString(), {
-      topic: "/social/chat/message/request",
-      data: savedMessage,
-    });
+    const peer = this.client.peers.getPeerByDID(message.to);
+    // if the peer isn't online
+    if (
+      !peer ||
+      !peer.connected ||
+      !this.client.protocol[peer.peerId.toString()]
+    ) {
+      const encoded = await this.client.encodeMessage<
+        SocialClientEvents["send"] & CandorClientEventDef["send"],
+        "/social/chat/message/request"
+      >(
+        {
+          topic: "/social/chat/message/request",
+          data: savedMessage,
+        },
+        {
+          encrypt: true,
+        }
+      );
+
+      // it seems like giving another application cursor focus will cause the
+      // application to stop sending messages
+
+      console.info("sending chat message offline");
+      await this.client
+        .getPlugin<OfflineSyncClientEvents, OfflineSyncClientPluginInterface>(
+          "offlineSyncClient"
+        )
+        ?.sendMessage<
+          SocialClientEvents["send"],
+          "/social/chat/message/request"
+        >(message.to, encoded);
+      console.info("done sending chat message offline");
+    } else {
+      await this.client.request(peer.peerId.toString(), {
+        topic: "/social/chat/message/request",
+        data: savedMessage,
+      });
+    }
 
     const now = Date.now();
     const id = await this.table("chat_messages").insert({
@@ -927,6 +1014,10 @@ export class SocialClientPlugin
       return;
     }
 
+    console.info(`plugin/social/client > received chat message request`, {
+      message: message.data,
+    });
+
     const request = message.data;
     const { cid, ...msg } = request;
 
@@ -960,12 +1051,14 @@ export class SocialClientPlugin
     await this.client.ipfs.pin.add(cid);
     const stored = await this.table<SocialChatMessageRecord>(
       "chat_messages"
-    ).upsert("remoteId", request.remoteId, {
+    ).upsert("requestId", request.requestId, {
       ...msg,
       cid,
       createdAt: Date.now(),
       acceptedAt: Date.now(),
     });
+
+    console.info(`plugin/social/client > stored chat message`, stored);
 
     this.emit("/chat/message/received", stored);
 
@@ -976,7 +1069,7 @@ export class SocialClientPlugin
     await this.client.send(message.peer.peerId.toString(), {
       topic: "/social/chat/message/response",
       data: {
-        remoteId: message.data.remoteId,
+        requestId: message.data.requestId,
         accepted: true,
         cid,
       },
@@ -994,7 +1087,7 @@ export class SocialClientPlugin
     }
 
     const { cid } = message.data;
-    const stored = await this.table("chat_messages")
+    const stored = await this.table<SocialChatMessageRecord>("chat_messages")
       .query()
       .where("cid", "=", cid)
       .select()

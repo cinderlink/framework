@@ -13,8 +13,8 @@
     "registry-contracts/"
   ],
   "scripts": {
-    "watch": "turbo watch",
-    "build": "turbo build",
+    "watch": "turbo watch --filter='./packages/*' --filter='./ui-kit' --continue --parallel",
+    "build": "turbo build --filter='./packages/*' --filter='./ui-kit' --continue --parallel",
     "dev": "turbo dev",
     "test": "pnpm --parallel --stream --filter=./packages/* -r test"
   },
