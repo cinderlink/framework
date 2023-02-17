@@ -2,7 +2,7 @@
   "name": "@candor/plugin-offline-sync-server",
   "description": "Offline messaging sync server plugin for Candor",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -19,9 +19,9 @@
     "watch": "pnpm build --watch"
   },
   "devDependencies": {
-    "@candor/core-types": "0.1.0",
-    "@candor/plugin-offline-sync-client": "0.1.0",
-    "@candor/plugin-offline-sync-core": "0.1.0",
+    "@candor/core-types": "0.1.1",
+    "@candor/plugin-offline-sync-client": "0.1.1",
+    "@candor/plugin-offline-sync-core": "0.1.1",
     "did-jwt": "^6.11.1",
     "dids": "^3.4.0",
     "tsup": "^6.6.3",

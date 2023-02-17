@@ -2,7 +2,7 @@
   "name": "@candor/ipld-database",
   "description": "IPLD database for @candor/client",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -20,8 +20,8 @@
     "test": "vitest"
   },
   "devDependencies": {
-    "@candor/core-types": "0.1.0",
-    "@candor/test-adapters": "0.1.0",
+    "@candor/core-types": "0.1.1",
+    "@candor/test-adapters": "0.1.1",
     "@types/ajv": "^1.0.0",
     "@types/node": "^18.13.0",
     "dids": "^3.4.0",

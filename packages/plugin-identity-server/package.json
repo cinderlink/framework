@@ -2,7 +2,7 @@
   "name": "@candor/plugin-identity-server",
   "description": "Identity server plugin for Candor",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -19,9 +19,9 @@
     "watch": "pnpm build --watch"
   },
   "dependencies": {
-    "@candor/client": "0.1.0",
-    "@candor/core-types": "0.1.0",
-    "@candor/ipld-database": "0.1.0"
+    "@candor/client": "0.1.1",
+    "@candor/core-types": "0.1.1",
+    "@candor/ipld-database": "0.1.1"
   },
   "devDependencies": {
     "tsup": "^6.6.3",

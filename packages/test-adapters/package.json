@@ -2,7 +2,7 @@
   "name": "@candor/test-adapters",
   "description": "Test adapters for Candor",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -11,7 +11,7 @@
     "test": "vitest"
   },
   "devDependencies": {
-    "@candor/core-types": "0.1.0",
+    "@candor/core-types": "0.1.1",
     "did-jwt": "^6.11.1",
     "dids": "^3.4.0",
     "multiformats": "^11.0.1",

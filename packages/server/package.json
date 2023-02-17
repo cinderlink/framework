@@ -2,7 +2,7 @@
   "name": "@candor/server",
   "description": "Federated pinning & messaging server for Candor networks",
   "authors": "Drew Ewing <drew@cinderlink.com>",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -19,8 +19,8 @@
     "watch": "pnpm build --watch"
   },
   "devDependencies": {
-    "@candor/client": "0.1.0",
-    "@candor/core-types": "0.1.0",
+    "@candor/client": "0.1.1",
+    "@candor/core-types": "0.1.1",
     "ipfs-core": "^0.18.0",
     "ipfs-core-types": "^0.14.0",
     "ipfs-http-gateway": "^0.13.0",

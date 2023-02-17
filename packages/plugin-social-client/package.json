@@ -2,7 +2,7 @@
   "name": "@candor/plugin-social-client",
   "description": "Social client plugin for candor enabling following and unfollowing of other users & posting of messages to the social network",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -19,10 +19,10 @@
     "watch": "pnpm build --watch"
   },
   "devDependencies": {
-    "@candor/core-types": "0.1.0",
-    "@candor/ipld-database": "0.1.0",
-    "@candor/plugin-offline-sync-core": "0.1.0",
-    "@candor/plugin-social-core": "0.1.0",
+    "@candor/core-types": "0.1.1",
+    "@candor/ipld-database": "0.1.1",
+    "@candor/plugin-offline-sync-core": "0.1.1",
+    "@candor/plugin-social-core": "0.1.1",
     "@multiformats/multiaddr": "^11.4.0",
     "@types/uuid": "^9.0.0",
     "did-jwt": "^6.11.1",
