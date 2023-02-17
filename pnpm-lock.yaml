@@ -32,17 +32,15 @@ importers:
 
   frontend:
     specifiers:
-      '@candor/client': '@candor/client'
-      '@candor/core-types': '@candor/core-types'
-      '@candor/ipld-database': '@candor/ipld-database'
-      '@candor/plugin-notification-client': '@candor/plugin-notification-client'
-      '@candor/plugin-offline-sync-client': '@candor/plugin-offline-sync-client'
-      '@candor/plugin-offline-sync-core': '@candor/plugin-offline-sync-core'
-      '@candor/plugin-social-client': '@candor/plugin-social-client'
-      '@candor/plugin-social-core': '@candor/plugin-social-core'
-      '@candor/ui-kit': '@candor/ui-kit'
-      '@esbuild-plugins/node-globals-polyfill': ^0.2.3
-      '@esbuild-plugins/node-modules-polyfill': ^0.2.2
+      '@candor/client': 0.1.0
+      '@candor/core-types': 0.1.0
+      '@candor/ipld-database': 0.1.0
+      '@candor/plugin-notification-client': 0.1.0
+      '@candor/plugin-offline-sync-client': 0.1.0
+      '@candor/plugin-offline-sync-core': 0.1.0
+      '@candor/plugin-social-client': 0.1.0
+      '@candor/plugin-social-core': 0.1.0
+      '@candor/ui-kit': 0.1.0
       '@iconify-json/logos': ^1.1.23
       '@iconify-json/mdi': ^1.1.47
       '@iconify-json/tabler': ^1.1.60
@@ -53,7 +51,6 @@ importers:
       '@sveltejs/adapter-static': ^1.0.6
       '@sveltejs/kit': ^1.7.1
       '@sveltejs/package': ^1.0.2
-      '@types/it-all': ^1.0.4
       '@types/uuid': ^9.0.0
       '@typescript-eslint/eslint-plugin': ^5.52.0
       '@typescript-eslint/parser': ^5.52.0
@@ -70,7 +67,6 @@ importers:
       net-browserify: ^0.2.4
       prettier: ^2.8.4
       prettier-plugin-svelte: ^2.9.0
-      rollup-plugin-node-polyfills: ^0.2.1
       svelte: ^3.55.1
       svelte-check: ^3.0.3
       tslib: ^2.5.0
@@ -80,17 +76,15 @@ importers:
       vite: ^4.1.1
       vitest: ^0.28.5
     devDependencies:
-      '@candor/client': link:@candor/client
-      '@candor/core-types': link:@candor/core-types
-      '@candor/ipld-database': link:@candor/ipld-database
-      '@candor/plugin-notification-client': link:@candor/plugin-notification-client
-      '@candor/plugin-offline-sync-client': link:@candor/plugin-offline-sync-client
-      '@candor/plugin-offline-sync-core': link:@candor/plugin-offline-sync-core
-      '@candor/plugin-social-client': link:@candor/plugin-social-client
-      '@candor/plugin-social-core': link:@candor/plugin-social-core
-      '@candor/ui-kit': link:@candor/ui-kit
-      '@esbuild-plugins/node-globals-polyfill': 0.2.3
-      '@esbuild-plugins/node-modules-polyfill': 0.2.2
+      '@candor/client': link:../packages/client
+      '@candor/core-types': link:../packages/core-types
+      '@candor/ipld-database': link:../packages/ipld-database
+      '@candor/plugin-notification-client': link:../packages/plugin-notification-client
+      '@candor/plugin-offline-sync-client': link:../packages/plugin-offline-sync-client
+      '@candor/plugin-offline-sync-core': link:../packages/plugin-offline-sync-core
+      '@candor/plugin-social-client': link:../packages/plugin-social-client
+      '@candor/plugin-social-core': link:../packages/plugin-social-core
+      '@candor/ui-kit': link:../ui-kit
       '@iconify-json/logos': 1.1.23
       '@iconify-json/mdi': 1.1.47
       '@iconify-json/tabler': 1.1.60
@@ -101,7 +95,6 @@ importers:
       '@sveltejs/adapter-static': 1.0.6_@sveltejs+kit@1.7.1
       '@sveltejs/kit': 1.7.1_svelte@3.55.1+vite@4.1.1
       '@sveltejs/package': 1.0.2_4x7phaipmicbaooxtnresslofa
-      '@types/it-all': 1.0.4
       '@types/uuid': 9.0.0
       '@typescript-eslint/eslint-plugin': 5.52.0_6cfvjsbua5ptj65675bqcn6oza
       '@typescript-eslint/parser': 5.52.0_7kw3g6rralp5ps6mg3uyzz6azm
@@ -118,7 +111,6 @@ importers:
       net-browserify: 0.2.4
       prettier: 2.8.4
       prettier-plugin-svelte: 2.9.0_jrsxveqmsx2uadbqiuq74wlc4u
-      rollup-plugin-node-polyfills: 0.2.1
       svelte: 3.55.1
       svelte-check: 3.0.3_svelte@3.55.1
       tslib: 2.5.0
@@ -2129,21 +2121,6 @@ packages:
       '@ethersproject/wallet': 5.7.0
       '@stablelib/random': 1.0.2
       caip: 1.1.0
-
-  /@esbuild-plugins/node-globals-polyfill/0.2.3:
-    resolution: {integrity: sha512-r3MIryXDeXDOZh7ih1l/yE9ZLORCd5e8vWg02azWRGj5SPTuoh69A2AIyn0Z31V/kHBfZ4HgWJ+OK3GTTwLmnw==}
-    peerDependencies:
-      esbuild: '*'
-    dev: true
-
-  /@esbuild-plugins/node-modules-polyfill/0.2.2:
-    resolution: {integrity: sha512-LXV7QsWJxRuMYvKbiznh+U1ilIop3g2TeKRzUxOG5X3YITc8JyyTa90BmLwqqv0YnX4v32CSlG+vsziZp9dMvA==}
-    peerDependencies:
-      esbuild: '*'
-    dependencies:
-      escape-string-regexp: 4.0.0
-      rollup-plugin-node-polyfills: 0.2.1
-    dev: true
 
   /@esbuild/android-arm/0.16.17:
     resolution: {integrity: sha512-N9x1CMXVhtWEAMS7pNNONyA14f71VPQN9Cnavj1XQh6T7bskqiLLrSca4O0Vr8Wdcga943eThxnVp3JLnBMYtw==}
@@ -4656,13 +4633,6 @@ packages:
     deprecated: This is a stub types definition. highlight.js provides its own type definitions, so you do not need this installed.
     dependencies:
       highlight.js: 11.7.0
-    dev: true
-
-  /@types/it-all/1.0.4:
-    resolution: {integrity: sha512-7z/YlZnxNoc/fipGfQNfK3SLTXdPA9sa3jxXtOFDpe+Bw7u1TwlfnqN19ud8U/xhHKLViQscigOlKRz63CscOg==}
-    deprecated: This is a stub types definition. it-all provides its own type definitions, so you do not need this installed.
-    dependencies:
-      it-all: 2.0.0
     dev: true
 
   /@types/json-schema/7.0.11:
@@ -7523,6 +7493,7 @@ packages:
 
   /estree-walker/0.6.1:
     resolution: {integrity: sha512-SqmZANLWS0mnatqbSfRP5g8OXZC12Fgg1IwNtLsyHDzJizORW4khDfjPqJZsemPWBB2uqykUah5YpQ6epsqC/w==}
+    dev: false
 
   /estree-walker/1.0.1:
     resolution: {integrity: sha512-1fMXF3YP4pZZVozF8j/ZLfvnR8NSIljt56UhbZ5PeeDmmGHpgpdwQt7ITlGvYaQukCvuBRMLEiKiYC+oeIg4cg==}
@@ -9822,6 +9793,7 @@ packages:
     resolution: {integrity: sha512-RmF0AsMzgt25qzqqLc1+MbHmhdx0ojF2Fvs4XnOqz2ZOBXzzkEwc/dJQZCYHAn7v1jbVOjAZfK8msRn4BxO4VQ==}
     dependencies:
       sourcemap-codec: 1.4.8
+    dev: false
 
   /magic-string/0.27.0:
     resolution: {integrity: sha512-8UnnX2PeRAPZuN12svgR9j7M1uWMovg/CEnIwIG0LFkXSJJe4PdfUGiTGl8V9bsBHFUtfVINcSyYxd7q+kx9fA==}
@@ -11701,21 +11673,6 @@ packages:
       maxmin: 2.1.0
     dev: false
 
-  /rollup-plugin-inject/3.0.2:
-    resolution: {integrity: sha512-ptg9PQwzs3orn4jkgXJ74bfs5vYz1NCZlSQMBUA0wKcGp5i5pA1AO3fOUEte8enhGUC+iapTCzEWw2jEFFUO/w==}
-    deprecated: This package has been deprecated and is no longer maintained. Please use @rollup/plugin-inject.
-    dependencies:
-      estree-walker: 0.6.1
-      magic-string: 0.25.9
-      rollup-pluginutils: 2.8.2
-    dev: true
-
-  /rollup-plugin-node-polyfills/0.2.1:
-    resolution: {integrity: sha512-4kCrKPTJ6sK4/gLL/U5QzVT8cxJcofO0OU74tnB19F40cmuAKSzH5/siithxlofFEjwvw1YAhPmbvGNA6jEroA==}
-    dependencies:
-      rollup-plugin-inject: 3.0.2
-    dev: true
-
   /rollup-plugin-postcss/4.0.2_postcss@8.4.21:
     resolution: {integrity: sha512-05EaY6zvZdmvPUDi3uCcAQoESDcYnv8ogJJQRp6V5kZ6J6P7uAVJlrTZcaaA20wTH527YTnKfkAoPxWI/jPp4w==}
     engines: {node: '>=10'}
@@ -11789,6 +11746,7 @@ packages:
     resolution: {integrity: sha512-EEp9NhnUkwY8aif6bxgovPHMoMoNr2FulJziTndpt5H9RdwC47GSGuII9XxpSdzVGM0GWrNPHV6ie1LTNJPaLQ==}
     dependencies:
       estree-walker: 0.6.1
+    dev: false
 
   /rollup/2.79.1:
     resolution: {integrity: sha512-uKxbd0IhMZOhjAiD5oAFp7BqvkA4Dv47qpOCtaNvng4HBwdbWtdOh8f5nZNuk2rp51PMGk3bzfWu5oayNEuYnw==}
@@ -12136,6 +12094,7 @@ packages:
   /sourcemap-codec/1.4.8:
     resolution: {integrity: sha512-9NykojV5Uih4lgo5So5dtw+f0JgJX30KCNI8gwhz2J9A15wD0Ml6tjHKwf6fTSa6fAdVBdZeNOs9eJ71qCk8vA==}
     deprecated: Please use @jridgewell/sourcemap-codec instead
+    dev: false
 
   /sparse-array/1.3.2:
     resolution: {integrity: sha512-ZT711fePGn3+kQyLuv1fpd3rNSkNF8vd5Kv2D+qnOANeyKs3fx6bUMGWRPvgTTcYV64QMqZKZwcuaQSP3AZ0tg==}
