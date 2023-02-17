@@ -1,5 +1,5 @@
 import Emittery from "emittery";
-import type { DIDDagInterface } from "@candor/core-types";
+import type { DIDDagInterface, TableRow } from "@candor/core-types";
 import { CID } from "multiformats";
 import type {
   SavedSchema,
@@ -9,15 +9,14 @@ import type {
 import type {
   TableDefinition,
   TableInterface,
-  TableRow,
 } from "@candor/core-types/src/database/table";
 import { Table } from "./table";
 
 export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
-  public tables: Record<string, TableInterface> = {};
+  public tables: Record<string, TableInterface<any, any>> = {};
   constructor(
     public schemaId: string,
-    public defs: Record<string, TableDefinition>,
+    public defs: Record<string, TableDefinition<any>>,
     public dag: DIDDagInterface,
     public encrypted = true
   ) {
@@ -40,7 +39,7 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
     });
   }
 
-  async createTable(tableId: string, def: TableDefinition) {
+  async createTable(tableId: string, def: TableDefinition<any>) {
     this.tables[tableId] = new Table(tableId, def, this.dag);
   }
 
@@ -50,7 +49,7 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
 
   getTable<
     Row extends TableRow = TableRow,
-    Def extends TableDefinition = TableDefinition
+    Def extends TableDefinition<Row> = TableDefinition<Row>
   >(tableId: string) {
     return this.tables[tableId] as TableInterface<Row, Def>;
   }
@@ -60,30 +59,35 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
     try {
       await Promise.all(
         Object.entries(this.tables).map(async ([name]) => {
-          const tableCID = await this.tables[name].save().catch((err) => {
-            console.error(`Failed to save table "${name}"`, err);
-          });
+          console.info(`ipld-database/schema/save: saving table ${name}`);
+          const tableCID = await this.tables[name].save();
           if (tableCID) {
-            console.info(`Saved table "${name}" to ${tableCID}`);
             tables[name] = tableCID?.toString();
           } else {
             console.info(
-              `Table "${name}" failed to save (empty or invalid table)`
+              `ipld-database/schema/save: skipping empty table ${name}`
             );
           }
         })
       ).catch((err) => {
-        console.error("Failed to save tables", err);
+        console.info(`ipld-database/schema/save: table save error: ${err}`);
       });
     } catch (err) {
-      console.error("Failed to save tables", err);
+      console.info(`ipld-database/schema/save: table save error: ${err}`);
     }
-    console.info(`Tables saved: ${JSON.stringify(tables)}`);
+    if (!Object.keys(tables).length) return undefined;
+
     const savedSchema = {
       schemaId: this.schemaId,
       defs: this.defs,
       tables,
     };
+
+    console.info(
+      `ipld-database/schema/save: saving ${this.schemaId}`,
+      savedSchema
+    );
+
     return this.encrypted
       ? this.dag.storeEncrypted(savedSchema)
       : this.dag.store(savedSchema);
@@ -101,7 +105,7 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
     data: SavedSchema,
     dag: DIDDagInterface,
     encrypted = true
-  ) {
+  ): Promise<SchemaInterface> {
     if (!data) throw new Error("Invalid schema data");
     const schema = new Schema(data.schemaId, data.defs, dag, encrypted);
     console.info(`Loading schema "${data.schemaId}"`, data);
@@ -114,6 +118,6 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
       })
     );
     schema.emit("/schema/loaded");
-    return schema;
+    return schema as SchemaInterface;
   }
 }

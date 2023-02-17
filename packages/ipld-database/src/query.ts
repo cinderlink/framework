@@ -1,6 +1,8 @@
 import {
+  BlockAggregates,
   BlockFilters,
   BlockHeaders,
+  BlockIndexes,
   InstructionType,
   QueryBuilderInterface,
   TableDefinition,
@@ -24,17 +26,18 @@ import {
   ReturningInstruction,
 } from "@candor/core-types/src/database/query";
 import { TableBlock } from "./block";
+import { cache } from "./cache";
 
 export type QueryUnwindState<
   Row extends TableRow = TableRow,
-  Def extends TableDefinition = TableDefinition
+  Def extends TableDefinition<Row> = TableDefinition<Row>
 > = { cid: string; block: TableBlockInterface<Row, Def>; changed: boolean };
 
 export class QueryBuilder<Row extends TableRow = TableRow>
   implements QueryBuilderInterface<Row>
 {
   terminator: string | undefined = undefined;
-  constructor(public instructions: QueryInstruction[] = []) {}
+  constructor(public instructions: QueryInstruction<Row>[] = []) {}
   where<Key extends keyof Row = keyof Row>(
     this: QueryBuilderInterface<Row>,
     field: Key,
@@ -46,18 +49,18 @@ export class QueryBuilder<Row extends TableRow = TableRow>
       field,
       operation,
       value,
-    } as WhereInstruction);
+    } as WhereInstruction<Row>);
     return this;
   }
 
-  orderBy<Key extends keyof Row = keyof Row>(
+  orderBy(
     this: QueryBuilderInterface<Row>,
-    field: Key,
+    field: keyof Row,
     direction: "asc" | "desc"
   ) {
     this.instructions.push({
       instruction: "orderBy",
-      field: field as string,
+      field,
       direction,
     });
     return this;
@@ -83,7 +86,7 @@ export class QueryBuilder<Row extends TableRow = TableRow>
     this: QueryBuilderInterface<Row>,
     fn: (qb: QueryBuilderInterface<Row>) => void
   ) {
-    const instructions: QueryInstruction[] = [];
+    const instructions: QueryInstruction<Row>[] = [];
     const qb = new QueryBuilder<Row>(instructions);
     fn(qb as QueryBuilderInterface<Row>);
 
@@ -99,7 +102,7 @@ export class QueryBuilder<Row extends TableRow = TableRow>
     this: QueryBuilderInterface<Row>,
     fn: (qb: QueryBuilderInterface<Row>) => void
   ) {
-    const instructions: QueryInstruction[] = [];
+    const instructions: QueryInstruction<Row>[] = [];
     const qb = new QueryBuilder<Row>(instructions);
     fn(qb as QueryBuilderInterface<Row>);
 
@@ -111,16 +114,22 @@ export class QueryBuilder<Row extends TableRow = TableRow>
     return this;
   }
 
-  update(this: QueryBuilderInterface<Row>, values: Partial<Row>) {
+  update(
+    this: QueryBuilderInterface<Row>,
+    values:
+      | Partial<Row>
+      | ((row: Row) => Promise<Exclude<Row, "id">> | Exclude<Row, "id">)
+  ) {
     if (this.terminator)
       throw new Error(
         `Cannot execute ${this.terminator} after ${this.terminator}`
       );
+
     this.terminator = "update";
     this.instructions.push({
       instruction: "update",
-      values,
-    } as UpdateInstruction);
+      ...(typeof values === "function" ? { fn: values } : { values }),
+    } as UpdateInstruction<Row>);
     return this;
   }
 
@@ -145,7 +154,7 @@ export class QueryBuilder<Row extends TableRow = TableRow>
     this.instructions.push({
       instruction: "select",
       fields: (fields || []) as (keyof Row)[],
-    } as SelectInstruction);
+    } as SelectInstruction<Row>);
     return this;
   }
 
@@ -153,7 +162,14 @@ export class QueryBuilder<Row extends TableRow = TableRow>
     this.instructions.push({
       instruction: "returning",
       fields: (fields || []) as (keyof Row)[],
-    } as ReturningInstruction);
+    } as ReturningInstruction<Row>);
+    return this;
+  }
+
+  nocache() {
+    this.instructions.push({
+      instruction: "nocache",
+    });
     return this;
   }
 
@@ -166,14 +182,14 @@ export class QueryBuilder<Row extends TableRow = TableRow>
 
 export class TableQuery<
     Row extends TableRow = TableRow,
-    Def extends TableDefinition = TableDefinition
+    Def extends TableDefinition<Row> = TableDefinition<Row>
   >
   extends QueryBuilder<Row>
   implements TableQueryInterface<Row, Def>
 {
   constructor(
     public table: TableInterface<Row, Def>,
-    instructions: QueryInstruction[] = []
+    instructions: QueryInstruction<Row>[] = []
   ) {
     super(instructions);
   }
@@ -198,13 +214,22 @@ export class TableQuery<
     );
   }
 
-  async execute() {
+  async execute(): Promise<TableQueryResult<Row>> {
     if (!this.terminator) {
       throw new Error("No terminator method called (update, delete, select)");
     }
 
+    if (cache.hasQuery<Row, Def>(this)) {
+      return cache.getQuery<Row, Def>(this) as TableQueryResult<Row>;
+    }
+
     if (this.table.writing) {
       await this.table.awaitUnlock();
+    }
+
+    const nocache = this.instructions.some((i) => i.instruction === "nocache");
+    if (nocache) {
+      cache.clear();
     }
 
     let terminator = this.terminator;
@@ -215,7 +240,6 @@ export class TableQuery<
     const unwound: TableBlockInterface<Row, Def>[] = [];
     let returning: Row[] = [];
     await this.table.unwind(async (event) => {
-      console.info("unwinding", event.block.cid, event.block.records);
       await event.block.headers();
       // we need to make sure the block is aggregated before we can use it
       if (!event.block.cache?.filters?.aggregates || !event.block.cid) {
@@ -242,17 +266,31 @@ export class TableQuery<
       if (this.terminator === "update") {
         const updateInstruction = this.instructions.find(
           (i) => i.instruction === "update"
-        ) as UpdateInstruction;
+        ) as UpdateInstruction<Row>;
         for (const match of matches) {
-          for (const [key, value] of Object.entries(updateInstruction.values)) {
-            match[key as keyof Row] = value;
+          if (updateInstruction.fn) {
+            const updated = updateInstruction.fn(match);
+            await event.block.updateRecord(match.id, updated).catch(() => {
+              console.error(
+                "Failed to update record (unique key constraint violation)",
+                match
+              );
+            });
+          } else if (updateInstruction.values) {
+            for (const [key, value] of Object.entries(
+              updateInstruction.values
+            )) {
+              match[key as keyof Row] = value;
+            }
+            await event.block.updateRecord(match.id, match).catch(() => {
+              console.error(
+                "Failed to update record (unique key constraint violation)",
+                match
+              );
+            });
+          } else {
+            console.warn(`No update function or values provided to update`);
           }
-          await event.block.updateRecord(match.id, match).catch(() => {
-            console.error(
-              "Failed to update record (unique key constraint violation)",
-              match
-            );
-          });
         }
       } else if (this.terminator === "delete") {
         for (const match of matches) {
@@ -262,7 +300,7 @@ export class TableQuery<
       } else if (this.terminator === "select") {
         const selectInstruction = this.instructions.find(
           (i) => i.instruction === "select"
-        ) as SelectInstruction;
+        ) as SelectInstruction<Row>;
         returning = returning.concat(
           selectInstruction.fields?.length
             ? matches.map(
@@ -278,7 +316,7 @@ export class TableQuery<
 
       const returningInstruction = this.instructions.find(
         (i) => i.instruction === "returning"
-      ) as ReturningInstruction;
+      ) as ReturningInstruction<Row>;
       if (returningInstruction) {
         returning = returningInstruction.fields?.length
           ? returning.concat(
@@ -317,8 +355,8 @@ export class TableQuery<
             prevCID,
             headers,
             filters: {
-              indexes: {},
-              aggregates: {},
+              indexes: {} as BlockIndexes<Row, Def>,
+              aggregates: {} as BlockAggregates<Row>,
             },
           });
         }
@@ -346,53 +384,54 @@ export class TableQuery<
                 recordsTo: headers.recordsTo + 1,
               },
               filters: {
-                indexes: {},
-                aggregates: {},
+                indexes: {} as BlockIndexes<Row, Def>,
+                aggregates: {} as BlockAggregates<Row>,
               },
             });
           }
         }
       }
       if (rewriteBlock) {
-        console.info(
-          `ipld-database/table-query: saving rewritten block`,
-          rewriteBlock
-        );
         this.table.setBlock(rewriteBlock);
       }
       this.table.unlock();
     }
 
-    return new TableQueryResult<Row>(returning);
+    const result = new TableQueryResult<Row>(returning);
+    cache.cacheQuery(this as any, result as any);
+    return result;
   }
 
-  instructionsMatchBlock(filters: BlockFilters) {
-    const whereInstructions: WhereInstruction[] = this.instructions
+  instructionsMatchBlock(filters: BlockFilters<Row, Def>) {
+    const whereInstructions: WhereInstruction<Row>[] = this.instructions
       .filter((i) => i.instruction === "where")
       .concat(
         this.instructions
           .filter((i) => i.instruction === "and" || i.instruction === "or")
           .map((i) =>
-            (i as AndInstruction | OrInstruction).queries.filter(
+            (i as AndInstruction<Row> | OrInstruction<Row>).queries.filter(
               (q) => q.instruction === "where"
             )
           )
           .flat()
-      ) as WhereInstruction[];
+      ) as WhereInstruction<Row>[];
 
     for (const query of whereInstructions) {
       const { field, operation, value } = query;
 
       // Check if this block can be skipped due to conditional exceptions for aggregates
-      const aggregate = this.table.def.aggregate?.[field];
-      const aggregation = filters.aggregates?.[field];
+      const aggregate = this.table.def.aggregate?.[field as keyof Row];
+      const aggregation = filters.aggregates?.[field as keyof Row];
       if (aggregate === "min") {
         if (
           (operation === ">=" && aggregation < value) ||
           (operation === ">" && aggregation <= value) ||
           (operation === "=" && aggregation > value) ||
-          (operation === "in" && Math.max(...value) < aggregation) ||
-          (operation === "between" && value?.[1] < aggregation)
+          (operation === "in" &&
+            Math.max(...(value as Row[keyof Row][]).map(Number)) <
+              aggregation) ||
+          (operation === "between" &&
+            (value as [Row[keyof Row], Row[keyof Row]])?.[1] < aggregation)
         ) {
           return false;
         }
@@ -401,8 +440,11 @@ export class TableQuery<
           (operation === "<=" && aggregation > value) ||
           (operation === "<" && aggregation >= value) ||
           (operation === "=" && aggregation < value) ||
-          (operation === "in" && Math.min(...value) > aggregation) ||
-          (operation === "between" && value?.[0] > aggregation)
+          (operation === "in" &&
+            Math.min(...(value as Row[keyof Row][]).map(Number)) >
+              aggregation) ||
+          (operation === "between" &&
+            (value as [Row[keyof Row]])?.[0] > aggregation)
         ) {
           return false;
         }
@@ -415,8 +457,11 @@ export class TableQuery<
           (operation === ">" && min <= value) ||
           (operation === "=" && (min > value || max < value)) ||
           (operation === "in" &&
-            (Math.min(...value) > max || Math.max(...value) < min)) ||
-          (operation === "between" && (value?.[1] < min || value?.[0] > max))
+            (Math.min(...(value as Row[keyof Row][]).map(Number)) > max ||
+              Math.max(...(value as Row[keyof Row][]).map(Number)) < min)) ||
+          (operation === "between" &&
+            ((value as [Row[keyof Row], Row[keyof Row]])?.[1] < min ||
+              (value as [Row[keyof Row]])?.[0] > max))
         ) {
           return false;
         }
@@ -447,44 +492,44 @@ export class TableQuery<
   }
 
   instructionsMatchRecord(record: Row) {
-    const whereInstructions: WhereInstruction[] = this.instructions
+    const whereInstructions: WhereInstruction<Row>[] = this.instructions
       .filter((i) => i.instruction === "where")
       .concat(
         this.instructions
           .filter((i) => i.instruction === "and")
           .map((i) =>
-            (i as AndInstruction | OrInstruction).queries.filter(
+            (i as AndInstruction<Row> | OrInstruction<Row>).queries.filter(
               (q) => q.instruction === "where"
             )
           )
           .flat()
-      ) as WhereInstruction[];
+      ) as WhereInstruction<Row>[];
 
-    const orInstructions: OrInstruction[] = this.instructions.filter(
+    const orInstructions: OrInstruction<Row>[] = this.instructions.filter(
       (i) => i.instruction === "or"
-    ) as OrInstruction[];
+    ) as OrInstruction<Row>[];
 
     return (
       this.whereInstructionsMatchRecord(whereInstructions, record) ||
       orInstructions.some((orInstruction) => {
-        const whereInstructions: WhereInstruction[] = orInstruction.queries
+        const whereInstructions: WhereInstruction<Row>[] = orInstruction.queries
           .filter((q) => q.instruction === "where")
           .concat(
             orInstruction.queries
               .filter((i) => i.instruction === "and")
               .map((i) =>
-                (i as AndInstruction | OrInstruction).queries.filter(
+                (i as AndInstruction<Row> | OrInstruction<Row>).queries.filter(
                   (q) => q.instruction === "where"
                 )
               )
               .flat()
-          ) as WhereInstruction[];
+          ) as WhereInstruction<Row>[];
         return this.whereInstructionsMatchRecord(whereInstructions, record);
       })
     );
   }
 
-  whereInstructionsMatchRecord(where: WhereInstruction[], record: Row) {
+  whereInstructionsMatchRecord(where: WhereInstruction<Row>[], record: Row) {
     let match = true;
     for (const query of where) {
       const { field, operation, value } = query;
@@ -520,14 +565,16 @@ export class TableQuery<
           break;
         }
       } else if (operation === "in") {
-        if (!value.includes(record[field])) {
+        if (!(value as Row[keyof Row][]).includes(record[field])) {
           match = false;
           break;
         }
       } else if (operation === "between") {
         if (
-          Number(record[field]) < value?.[0] ||
-          Number(record[field]) > value?.[1]
+          Number(record[field]) <
+            (value as [Row[keyof Row], Row[keyof Row]])?.[0] ||
+          Number(record[field]) >
+            (value as [Row[keyof Row], Row[keyof Row]])?.[1]
         ) {
           match = false;
           break;

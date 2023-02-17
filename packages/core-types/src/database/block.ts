@@ -1,38 +1,43 @@
 import { AsPlainObject } from "minisearch";
+import { TableDefinition, TableRow } from "./table";
 
-export type BlockHeaders = {
+export interface BlockHeaders {
   schema: string;
   table: string;
   encrypted: boolean;
   index: number;
   recordsFrom: number;
   recordsTo: number;
-};
+}
 
-export type BlockFilters = {
-  aggregates: BlockAggregates;
-  indexes: BlockIndexes;
+export interface BlockFilters<
+  Row extends TableRow = TableRow,
+  Def extends TableDefinition<Row> = TableDefinition<Row>
+> {
+  aggregates: BlockAggregates<Row>;
+  indexes: BlockIndexes<Row, Def>;
   search?: AsPlainObject;
-};
+}
 
 export interface BlockData<
-  Row extends Record<string, any> = Record<string, any>
+  Row extends TableRow = TableRow,
+  Def extends TableDefinition<Row> = TableDefinition<Row>
 > {
   prevCID?: string;
   headers: BlockHeaders;
-  filters: BlockFilters;
+  filters: BlockFilters<Row, Def>;
   records: Record<number, Row>;
 }
 
-export type BlockIndex = {
-  values: (string | undefined)[];
+export interface BlockIndex<Row extends TableRow = TableRow> {
+  values: Row[keyof Row][];
   ids: number[];
-};
+}
 
-export type BlockIndexDef = {
+export interface BlockIndexDef<Row extends TableRow = TableRow> {
   unique?: boolean;
-  fields: string[];
-};
+  fields: (keyof Row)[];
+}
 
 export type BlockAggregator =
   | "sum"
@@ -43,9 +48,12 @@ export type BlockAggregator =
   | "distinct"
   | "range";
 
-export type BlockAggregateDef = Record<string, BlockAggregator>;
+export type BlockAggregateDef<Row extends TableRow = TableRow> = Record<
+  keyof Row,
+  BlockAggregator
+>;
 
-export type BlockAggregateTypes = {
+export interface BlockAggregateTypes {
   sum: number;
   count: number;
   avg: number;
@@ -53,11 +61,14 @@ export type BlockAggregateTypes = {
   max: number;
   distinct: string[] | number[];
   range: [number, number];
-};
+}
 
-export type BlockAggregates = Record<
-  string,
+export type BlockAggregates<Row extends TableRow = TableRow> = Record<
+  keyof Row,
   BlockAggregateTypes[keyof BlockAggregateTypes]
 >;
 
-export type BlockIndexes = Record<string, Record<string, BlockIndex>>;
+export type BlockIndexes<
+  Row extends TableRow = TableRow,
+  Def extends TableDefinition<Row> = TableDefinition<Row>
+> = Record<keyof Def["indexes"], Record<string, BlockIndex<Row>>>;

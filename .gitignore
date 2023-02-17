@@ -6,3 +6,7 @@ docker/data/**
 **/.turbo
 **/.svelte-kit
 **/vite.config.js.timestamp.*
+node_modules/
+dist/
+.turbo/
+.pnpm/

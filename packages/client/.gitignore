@@ -1,2 +1,4 @@
 candor/
 .turbo/
+dist/
+node_modules/

@@ -27,7 +27,6 @@ export class ClientDag<Plugins extends PluginEventDef = PluginEventDef>
   }
 
   async load<T>(cid: CID | string, path?: string): Promise<T> {
-    console.info("dag load", { cid: cid.toString(), path });
     const stored = await this.client.ipfs.dag.get(
       typeof cid === "string" ? CID.parse(cid) : cid,
       { path }

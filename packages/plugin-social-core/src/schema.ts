@@ -1,7 +1,15 @@
+import { SocialChatMessageRecord } from "./types";
 import { Schema } from "@candor/ipld-database";
 import { CandorClientInterface, TableDefinition } from "@candor/core-types";
+import {
+  SocialConnectionRecord,
+  SocialPost,
+  SocialProfile,
+  SocialUser,
+  SocialUserPin,
+} from "types";
 
-export const SocialSchemaDef: Record<string, TableDefinition> = {
+export const SocialSchemaDef = {
   users: {
     schemaId: "social",
     encrypted: false,
@@ -27,7 +35,7 @@ export const SocialSchemaDef: Record<string, TableDefinition> = {
         updatedAt: { type: "number" },
       },
     },
-  },
+  } as TableDefinition<SocialUser>,
   user_pins: {
     schemaId: "social",
     encrypted: true,
@@ -56,31 +64,7 @@ export const SocialSchemaDef: Record<string, TableDefinition> = {
         updatedAt: { type: "number" },
       },
     },
-  },
-  user_sync: {
-    schemaId: "social",
-    encrypted: true,
-    aggregate: {},
-    indexes: {
-      userCid: {
-        unique: true,
-        fields: ["userId", "cid"],
-      },
-    },
-    rollup: 1000,
-    searchOptions: {
-      fields: ["id", "userId", "cid"],
-    },
-    schema: {
-      type: "object",
-      properties: {
-        userId: { type: "number" },
-        cid: { type: "string" },
-        createdAt: { type: "number" },
-        syncedAt: { type: "number" },
-      },
-    },
-  },
+  } as TableDefinition<SocialUserPin>,
   profiles: {
     schemaId: "social",
     encrypted: false,
@@ -121,7 +105,7 @@ export const SocialSchemaDef: Record<string, TableDefinition> = {
         updatedAt: { type: "number" },
       },
     },
-  },
+  } as TableDefinition<SocialProfile>,
   connections: {
     schemaId: "social",
     encrypted: true,
@@ -144,7 +128,7 @@ export const SocialSchemaDef: Record<string, TableDefinition> = {
         follow: { type: "boolean" },
       },
     },
-  },
+  } as TableDefinition<SocialConnectionRecord>,
   posts: {
     schemaId: "social",
     encrypted: true,
@@ -161,22 +145,17 @@ export const SocialSchemaDef: Record<string, TableDefinition> = {
     },
     rollup: 1000,
     searchOptions: {
-      fields: ["authorId", "cid", "content", "tags", "comments"],
+      fields: ["cid", "authorId", "content", "attachments", "tags", "comments"],
     },
     schema: {
       type: "object",
       properties: {
-        cid: { type: "string" },
+        cid: {
+          type: "string",
+        },
         authorId: { type: "number" },
         content: { type: "string" },
-        coverMedia: {
-          type: "object",
-          properties: {
-            type: { type: "string" },
-            url: { type: "string" },
-          },
-        },
-        tags: { type: "array", items: { type: "string" } },
+        attachments: { type: "array", items: { type: "string" } },
         reactions: {
           type: "array",
           items: {
@@ -189,10 +168,11 @@ export const SocialSchemaDef: Record<string, TableDefinition> = {
             type: "string",
           },
         },
+        tags: { type: "array", items: { type: "string" } },
         createdAt: { type: "number" },
       },
     },
-  },
+  } as TableDefinition<SocialPost>,
   chat_messages: {
     schemaId: "social",
     encrypted: true,
@@ -216,7 +196,7 @@ export const SocialSchemaDef: Record<string, TableDefinition> = {
     schema: {
       type: "object",
       properties: {
-        remoteId: { type: "string" },
+        requestId: { type: "string" },
         cid: { type: "string" },
         from: { type: "string" },
         to: { type: "string" },
@@ -231,7 +211,7 @@ export const SocialSchemaDef: Record<string, TableDefinition> = {
         receivedAt: { type: "number" },
       },
     },
-  },
+  } as TableDefinition<SocialChatMessageRecord>,
 };
 
 export default SocialSchemaDef;
@@ -239,9 +219,9 @@ export default SocialSchemaDef;
 export async function loadSocialSchema(client: CandorClientInterface<any>) {
   console.info(`plugin/social > preparing schema`);
   if (!client.schemas["social"]) {
-    const schema = new Schema("social", SocialSchemaDef, client.dag);
-    await client.addSchema("social", schema);
+    const schema = new Schema("social", SocialSchemaDef as any, client.dag);
+    await client.addSchema("social", schema as any);
   } else {
-    client.schemas["social"].setDefs(SocialSchemaDef);
+    client.schemas["social"].setDefs(SocialSchemaDef as any);
   }
 }

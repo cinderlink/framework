@@ -74,8 +74,16 @@ export class Peerstore implements PeerStoreInterface {
     return this.peers[peerId.toString()]?.connected;
   }
 
+  isDIDConnected(did: string) {
+    return this.peers[this.peerIds[did]]?.connected;
+  }
+
   isAuthenticated(peerId: string) {
     return this.peers[peerId.toString()]?.authenticated || false;
+  }
+
+  isDIDAuthenticated(did: string) {
+    return this.peers[this.peerIds[did]]?.authenticated || false;
   }
 
   hasPeerByDID(did: string) {

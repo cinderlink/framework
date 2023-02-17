@@ -120,6 +120,7 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
   async save({ cid, document }: { cid: string; document: any }) {
     this.cid = cid;
     this.document = document;
+    console.info(`client/identity/save`, { cid, document });
     await localforage.setItem("rootCID", cid).catch(() => {});
     await this.client.ipfs.name.publish(cid);
     await Promise.all(

@@ -1,34 +1,41 @@
-export type SocialConnectionRecord = {
-  id: number;
-  from: string;
-  to: string;
-  follow: boolean;
-};
+import { TableRow } from "@candor/core-types";
 
 export type SocialUserStatus = "online" | "offline" | "away";
 
-export type SocialUser = {
-  id: number;
+export interface SocialConnectionRecord extends TableRow {
+  from: string;
+  to: string;
+  follow: boolean;
+}
+
+export interface SocialUser extends TableRow {
   name: string;
   bio: string;
   status: SocialUserStatus;
   avatar: string;
   did: string;
   updatedAt: number;
-};
+}
 
-export type SocialProfile = {
-  id: number;
+export interface SocialUserPin extends TableRow {
+  userId: number;
+  cid: string;
+  textId: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface SocialProfile extends TableRow {
   userId: number;
   banner: string;
   albums: string[];
   favoritePosts: string[];
   favoriteConnections: string[];
   updatedAt: number;
-};
+}
 
-export type SocialPost = {
-  id: number;
+export interface SocialPost extends TableRow {
+  cid?: string;
   authorId: number;
   content: string;
   attachments: string[];
@@ -36,22 +43,21 @@ export type SocialPost = {
   reactions: string[];
   tags: string[];
   createdAt: number;
-};
+}
 
-export type SocialReaction = {
-  id: number;
+export interface SocialReaction extends TableRow {
   postId: number;
   reaction: "like" | "love" | "haha" | "wow" | "sad" | "angry";
   from: string;
   createdAt: number;
-};
+}
 
-export type SocialComment = {
+export interface SocialComment extends TableRow {
   postId: number;
   body: string;
   authorId: number;
   createdAt: number;
-};
+}
 
 export type SocialClientPluginEvents = {
   ready: void;
@@ -86,23 +92,24 @@ export type SocialChatMessageOutgoing = {
 };
 
 export type SocialChatMessageRequest = SocialChatMessageOutgoing & {
-  remoteId: string;
+  requestId: string;
   cid: string;
   from: string;
 };
 
 export type SocialChatMessageResponse = {
-  remoteId: string;
+  requestId: string;
   accepted: boolean;
   cid: string;
 };
 
-export type SocialChatMessageRecord = SocialChatMessageRequest & {
-  id: number;
+export interface SocialChatMessageRecord
+  extends SocialChatMessageRequest,
+    TableRow {
   createdAt: number;
   acceptedAt: number;
   rejectedAt?: number;
-};
+}
 
 export type SocialUpdateMessage = {
   requestId: string;

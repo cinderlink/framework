@@ -6,16 +6,17 @@
     "antfu.smart-clicks",
     "antfu.unocss",
     "antfu.vite",
-    "ZixuanChen.vitest-explorer",
+    "zixuanchen.vitest-explorer",
     "esbenp.prettier-vscode",
     "mikestead.dotenv",
-    "GitHub.copilot",
-    "GitHub.copilot-labs",
-    "Box-Of-Hats.bemhelper",
+    "github.copilot",
+    "github.copilot-labs",
+    "box-of-hats.bemhelper",
     "stylelint.vscode-stylelint",
     "dbaeumer.vscode-eslint",
     "christian-kohler.npm-intellisense",
     "christian-kohler.path-intellisense",
-    "steoates.autoimport"
+    "steoates.autoimport",
+    "folke.vscode-monorepo-workspace"
   ]
 }
