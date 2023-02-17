@@ -26,16 +26,16 @@
     "test": "vitest"
   },
   "dependencies": {
-    "@candor/server": "0.1.1",
+    "@candor/server": "0.1.2",
     "ipfs-http-gateway": "^0.13.0",
     "ipfs-http-server": "^0.15.0",
     "minimist": "^1.2.8"
   },
   "peerDependencies": {
-    "@candor/client": "0.1.1"
+    "@candor/client": "0.1.2"
   },
   "devDependencies": {
-    "@candor/client": "0.1.1",
+    "@candor/client": "0.1.2",
     "@types/minimist": "^1.2.2",
     "chalk": "^5.2.0",
     "ts-node": "^10.9.1",
