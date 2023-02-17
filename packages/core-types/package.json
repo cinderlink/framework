@@ -3,7 +3,7 @@
   "private": true,
   "description": "Core types for @candor/client",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "type": "module",
   "main": "src/index.ts",
   "types": "dist/index.d.ts",
