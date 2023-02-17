@@ -19,9 +19,9 @@
     "watch": "pnpm build --watch"
   },
   "devDependencies": {
-    "@candor/core-types": "@candor/core-types",
-    "@candor/plugin-social-client": "@candor/plugin-social-client",
-    "@candor/plugin-social-core": "@candor/plugin-social-core",
+    "@candor/core-types": "0.1.0",
+    "@candor/plugin-social-client": "0.1.0",
+    "@candor/plugin-social-core": "0.1.0",
     "did-jwt": "^6.11.1",
     "dids": "^3.4.0",
     "tsup": "^6.6.3",

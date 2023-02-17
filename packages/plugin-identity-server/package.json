@@ -19,9 +19,9 @@
     "watch": "pnpm build --watch"
   },
   "dependencies": {
-    "@candor/client": "@candor/client",
-    "@candor/core-types": "@candor/core-types",
-    "@candor/ipld-database": "@candor/ipld-database"
+    "@candor/client": "0.1.0",
+    "@candor/core-types": "0.1.0",
+    "@candor/ipld-database": "0.1.0"
   },
   "devDependencies": {
     "tsup": "^6.6.3",

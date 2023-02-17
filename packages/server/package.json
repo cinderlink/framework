@@ -19,8 +19,8 @@
     "watch": "pnpm build --watch"
   },
   "devDependencies": {
-    "@candor/client": "@candor/client",
-    "@candor/core-types": "@candor/core-types",
+    "@candor/client": "0.1.0",
+    "@candor/core-types": "0.1.0",
     "ipfs-core": "^0.18.0",
     "ipfs-core-types": "^0.14.0",
     "ipfs-http-gateway": "^0.13.0",

@@ -11,7 +11,7 @@
     "test": "vitest"
   },
   "devDependencies": {
-    "@candor/core-types": "@candor/core-types",
+    "@candor/core-types": "0.1.0",
     "did-jwt": "^6.11.1",
     "dids": "^3.4.0",
     "multiformats": "^11.0.1",

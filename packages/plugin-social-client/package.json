@@ -19,10 +19,10 @@
     "watch": "pnpm build --watch"
   },
   "devDependencies": {
-    "@candor/core-types": "@candor/core-types",
-    "@candor/ipld-database": "@candor/ipld-database",
-    "@candor/plugin-offline-sync-core": "@candor/plugin-offline-sync-core",
-    "@candor/plugin-social-core": "@candor/plugin-social-core",
+    "@candor/core-types": "0.1.0",
+    "@candor/ipld-database": "0.1.0",
+    "@candor/plugin-offline-sync-core": "0.1.0",
+    "@candor/plugin-social-core": "0.1.0",
     "@multiformats/multiaddr": "^11.4.0",
     "@types/uuid": "^9.0.0",
     "did-jwt": "^6.11.1",
