@@ -311,6 +311,20 @@ importers:
       typescript: 4.9.5
       vitest: 0.28.5
 
+  packages/plugin-notification-client:
+    specifiers:
+      '@candor/core-types': workspace:../core-types
+      '@candor/ipld-database': workspace:../ipld-database
+      '@candor/plugin-social-client': workspace:../plugin-social-client
+      tsup: ^6.6.2
+      typescript: ^4.9.5
+    devDependencies:
+      '@candor/core-types': link:../core-types
+      '@candor/ipld-database': link:../ipld-database
+      '@candor/plugin-social-client': link:../plugin-social-client
+      tsup: 6.6.3_typescript@4.9.5
+      typescript: 4.9.5
+
   packages/plugin-offline-sync-client:
     specifiers:
       '@candor/core-types': workspace:../core-types
@@ -4620,7 +4634,7 @@ packages:
   /@types/connect/3.4.35:
     resolution: {integrity: sha512-cdeYyv4KWoEgpBISTxWvqYsVy444DOqehiF3fM3ne10AmJ62RSyNkUnxMJXHQWRQQX2eR94m5y1IZyDwBjV9FQ==}
     dependencies:
-      '@types/node': 12.20.55
+      '@types/node': 18.13.0
 
   /@types/cookie/0.5.1:
     resolution: {integrity: sha512-COUnqfB2+ckwXXSFInsFdOAWQzCCx+a5hq2ruyj+Vjund94RJQd4LG2u9hnvJrTgunKAaax7ancBYlDrNYxA0g==}
@@ -4745,7 +4759,7 @@ packages:
   /@types/ws/7.4.7:
     resolution: {integrity: sha512-JQbbmxZTZehdc2iszGKs5oC3NFnjeay7mtAWrdt7qNtAVK0g19muApzAy4bm9byz79xa2ZnO/BOBC2R8RC5Lww==}
     dependencies:
-      '@types/node': 12.20.55
+      '@types/node': 18.13.0
 
   /@typescript-eslint/eslint-plugin/5.52.0_6cfvjsbua5ptj65675bqcn6oza:
     resolution: {integrity: sha512-lHazYdvYVsBokwCdKOppvYJKaJ4S41CgKBcPvyd0xjZNbvQdhn/pnJlGtQksQ/NhInzdaeaSarlBjDXHuclEbg==}
