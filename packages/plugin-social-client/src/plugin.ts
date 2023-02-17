@@ -996,8 +996,16 @@ export class SocialClientPlugin<
   ) {
     const { requestId } = message.data;
     console.info(
-      `plugin/social/client > server response received (requestId: ${requestId})`
+      `plugin/social/client > server response received (requestId: ${requestId})`,
+      message
     );
+    if (message.topic === "/social/users/search/response") {
+      const users = (message.data as SocialUserSearchResponseMessage).results;
+      if (!users) return;
+      for (const { id, ...user } of users) {
+        await this.table<SocialUser>("users").upsert("did", user.did, user);
+      }
+    }
     this.emit(
       `/response/${requestId}` as keyof SocialClientPluginEvents,
       message.data

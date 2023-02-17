@@ -10,7 +10,3 @@
 	path = ui-kit
 	url = git@github.com:candorsocial/ui-kit.git
 	branch = main
-[submodule "frontend"]
-	path = frontend
-	url = git@github.com:candorsocial/frontend.git
-	branch = main
