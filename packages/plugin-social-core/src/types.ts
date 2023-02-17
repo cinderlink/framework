@@ -118,6 +118,7 @@ export type SocialUpdateMessage = {
 
 export type SocialUpdatesRequestMessage = {
   requestId: string;
+  author: string;
   since: number;
 };
 

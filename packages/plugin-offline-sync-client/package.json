@@ -24,11 +24,11 @@
     "@candor/plugin-offline-sync-core": "workspace:../plugin-offline-sync-core",
     "@multiformats/multiaddr": "^11.4.0",
     "@types/uuid": "^9.0.0",
-    "did-jwt": "^6.11.0",
+    "did-jwt": "^6.11.1",
     "dids": "^3.4.0",
     "emittery": "^1.0.1",
     "multiformats": "^11.0.1",
-    "tsup": "^6.6.2",
+    "tsup": "^6.6.3",
     "typescript": "^4.9.5",
     "vitest": "^0.28.5"
   },

@@ -203,9 +203,14 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
       this.peers.addPeer(peerId, role);
     }
     console.info(`peer/connect > dialing ${peerId.toString()}`);
-    const stream = await this.ipfs.libp2p.dialProtocol(peerId, "/candor/1.0.0");
-    const connection = this.ipfs.libp2p.getConnections(peerId)[0];
-    await this.handleCandorProtocol({ stream, connection });
+    if (!this.protocol[peerId.toString()]) {
+      const stream = await this.ipfs.libp2p.dialProtocol(
+        peerId,
+        "/candor/1.0.0"
+      );
+      const connection = this.ipfs.libp2p.getConnections(peerId)[0];
+      await this.handleCandorProtocol({ stream, connection });
+    }
   }
 
   async onConnect(peerId: PeerId) {
@@ -915,21 +920,25 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
       throw new Error(`peer does not exist: ${peerId}`);
     }
 
-    const requestId = (message.data as any).requestId || uuid();
+    const requestId =
+      (message.data as any).requestId !== undefined
+        ? (message.data as any).requestId
+        : uuid();
+    (message.data as any).requestId = requestId;
     const request = {
-      requestId,
       ...message,
     };
 
+    console.info(`request > sending request to ${peerId}`, request);
     await this.send(peerId, request, options);
     return new Promise((resolve) => {
       let _timeout: any;
-      const wait = this.once(`/request/${requestId}/response`);
       _timeout = setTimeout(() => {
         console.info(`request response timed out: ${requestId}`);
         wait.off();
         resolve(undefined);
       }, 3000);
+      const wait = this.once(`/request/${requestId}/response`);
       wait.then((value) => {
         console.info(`request response: ${requestId}`, value);
         clearTimeout(_timeout);
