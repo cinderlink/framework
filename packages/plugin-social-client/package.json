@@ -2,7 +2,7 @@
   "name": "@candor/plugin-social-client",
   "description": "Social client plugin for candor enabling following and unfollowing of other users & posting of messages to the social network",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
