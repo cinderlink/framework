@@ -1,5 +1,6 @@
 {
   "name": "@candor/core-types",
+  "private": true,
   "description": "Core types for @candor/client",
   "authors": "Drew <drew@cinderlink.com>",
   "version": "1.0.0",
