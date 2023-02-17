@@ -1,5 +1,6 @@
 {
   "name": "@candor/core",
+  "private": true,
   "version": "1.0.0",
   "description": "",
   "type": "module",

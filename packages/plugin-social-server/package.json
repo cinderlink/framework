@@ -1,5 +1,6 @@
 {
   "name": "@candor/plugin-social-server",
+  "private": true,
   "description": "Social network server plugin for Candor",
   "authors": "Drew <drew@cinderlink.com>",
   "version": "1.0.0-rc.1",

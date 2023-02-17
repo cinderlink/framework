@@ -1,5 +1,6 @@
 {
   "name": "@candor/test-adapters",
+  "private": true,
   "description": "Test adapters for Candor",
   "authors": "Drew <drew@cinderlink.com>",
   "version": "1.0.0-rc.1",

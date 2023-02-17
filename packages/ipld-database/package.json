@@ -1,5 +1,6 @@
 {
   "name": "@candor/ipld-database",
+  "private": true,
   "description": "IPLD database for @candor/client",
   "authors": "Drew <drew@cinderlink.com>",
   "version": "1.0.0-rc.1",

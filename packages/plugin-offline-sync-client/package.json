@@ -1,5 +1,6 @@
 {
   "name": "@candor/plugin-offline-sync-client",
+  "private": true,
   "description": "Offline sync client plugin for candor enabling users to send encrypted messages to offline users and have them delivered when they come online.",
   "authors": "Drew <drew@cinderlink.com>",
   "version": "1.0.0-rc.1",

@@ -1,5 +1,6 @@
 {
   "name": "@candor/server-bin",
+  "private": true,
   "description": "Candor server binary",
   "authors": "Drew <drew@cinderlink.com>",
   "version": "1.0.0-rc.1",
