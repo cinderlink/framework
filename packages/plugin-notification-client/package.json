@@ -12,9 +12,9 @@
     "watch": "pnpm build --watch"
   },
   "devDependencies": {
-    "@candor/core-types": "workspace:../core-types",
-    "@candor/ipld-database": "workspace:../ipld-database",
-    "@candor/plugin-social-client": "workspace:../plugin-social-client",
+    "@candor/core-types": "@candor/core-types",
+    "@candor/ipld-database": "@candor/ipld-database",
+    "@candor/plugin-social-client": "@candor/plugin-social-client",
     "tsup": "^6.6.2",
     "typescript": "^4.9.5"
   }

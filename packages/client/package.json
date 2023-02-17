@@ -32,7 +32,7 @@
     "test": "vitest"
   },
   "devDependencies": {
-    "@candor/plugin-offline-sync-core": "workspace:../plugin-offline-sync-core",
+    "@candor/plugin-offline-sync-core": "@candor/plugin-offline-sync-core",
     "@chainsafe/libp2p-gossipsub": "^6.1.0",
     "@chainsafe/libp2p-noise": "^11.0.0",
     "@libp2p/crypto": "^1.0.12",
@@ -70,8 +70,8 @@
     "libp2p": "^0.41.0"
   },
   "dependencies": {
-    "@candor/core-types": "workspace:../core-types",
-    "@candor/ipld-database": "workspace:../ipld-database",
+    "@candor/core-types": "@candor/core-types",
+    "@candor/ipld-database": "@candor/ipld-database",
     "@libp2p/mplex": "^7.1.1",
     "ajv": "^8.12.0",
     "did-jwt": "^6.11.1",

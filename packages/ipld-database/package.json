@@ -20,8 +20,8 @@
     "test": "vitest"
   },
   "devDependencies": {
-    "@candor/core-types": "workspace:../core-types",
-    "@candor/test-adapters": "workspace:../test-adapters",
+    "@candor/core-types": "@candor/core-types",
+    "@candor/test-adapters": "@candor/test-adapters",
     "@types/ajv": "^1.0.0",
     "@types/node": "^18.13.0",
     "dids": "^3.4.0",

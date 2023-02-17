@@ -19,8 +19,8 @@
     "watch": "pnpm build --watch"
   },
   "devDependencies": {
-    "@candor/client": "workspace:../client",
-    "@candor/core-types": "workspace:../core-types",
+    "@candor/client": "@candor/client",
+    "@candor/core-types": "@candor/core-types",
     "ipfs-core": "^0.18.0",
     "ipfs-core-types": "^0.14.0",
     "ipfs-http-gateway": "^0.13.0",
@@ -30,7 +30,7 @@
     "vitest": "^0.28.5"
   },
   "peerDependencies": {
-    "@candor/client": "workspace:../client",
+    "@candor/client": "@candor/client",
     "ipfs-core": "^0.17.0"
   }
 }

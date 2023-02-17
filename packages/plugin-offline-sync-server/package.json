@@ -19,9 +19,9 @@
     "watch": "pnpm build --watch"
   },
   "devDependencies": {
-    "@candor/core-types": "workspace:../core-types",
-    "@candor/plugin-offline-sync-client": "workspace:../plugin-offline-sync-client",
-    "@candor/plugin-offline-sync-core": "workspace:../plugin-offline-sync-core",
+    "@candor/core-types": "@candor/core-types",
+    "@candor/plugin-offline-sync-client": "@candor/plugin-offline-sync-client",
+    "@candor/plugin-offline-sync-core": "@candor/plugin-offline-sync-core",
     "did-jwt": "^6.11.1",
     "dids": "^3.4.0",
     "tsup": "^6.6.3",

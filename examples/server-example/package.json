@@ -8,13 +8,13 @@
     "example": "pnpm candor"
   },
   "dependencies": {
-    "@candor/plugin-identity-server": "workspace:../../packages/plugin-identity-server",
-    "@candor/plugin-social-server": "workspace:../../packages/plugin-social-server",
-    "@candor/plugin-offline-sync-server": "workspace:../../packages/plugin-offline-sync-server",
-    "@candor/client": "workspace:../../packages/client",
-    "@candor/server": "workspace:../../packages/server",
-    "@candor/core-types": "workspace:../../packages/core-types",
-    "@candor/server-bin": "workspace:../../packages/server-bin",
+    "@candor/plugin-identity-server": "@candor/plugin-identity-server",
+    "@candor/plugin-social-server": "@candor/plugin-social-server",
+    "@candor/plugin-offline-sync-server": "@candor/plugin-offline-sync-server",
+    "@candor/client": "@candor/client",
+    "@candor/server": "@candor/server",
+    "@candor/core-types": "@candor/core-types",
+    "@candor/server-bin": "@candor/server-bin",
     "ts-node": "^10.9.1"
   },
   "keywords": [],

@@ -12,35 +12,35 @@ importers:
 
   examples/server-example:
     specifiers:
-      '@candor/client': workspace:../../packages/client
-      '@candor/core-types': workspace:../../packages/core-types
-      '@candor/plugin-identity-server': workspace:../../packages/plugin-identity-server
-      '@candor/plugin-offline-sync-server': workspace:../../packages/plugin-offline-sync-server
-      '@candor/plugin-social-server': workspace:../../packages/plugin-social-server
-      '@candor/server': workspace:../../packages/server
-      '@candor/server-bin': workspace:../../packages/server-bin
+      '@candor/client': '@candor/client'
+      '@candor/core-types': '@candor/core-types'
+      '@candor/plugin-identity-server': '@candor/plugin-identity-server'
+      '@candor/plugin-offline-sync-server': '@candor/plugin-offline-sync-server'
+      '@candor/plugin-social-server': '@candor/plugin-social-server'
+      '@candor/server': '@candor/server'
+      '@candor/server-bin': '@candor/server-bin'
       ts-node: ^10.9.1
     dependencies:
-      '@candor/client': link:../../packages/client
-      '@candor/core-types': link:../../packages/core-types
-      '@candor/plugin-identity-server': link:../../packages/plugin-identity-server
-      '@candor/plugin-offline-sync-server': link:../../packages/plugin-offline-sync-server
-      '@candor/plugin-social-server': link:../../packages/plugin-social-server
-      '@candor/server': link:../../packages/server
-      '@candor/server-bin': link:../../packages/server-bin
+      '@candor/client': link:@candor/client
+      '@candor/core-types': link:@candor/core-types
+      '@candor/plugin-identity-server': link:@candor/plugin-identity-server
+      '@candor/plugin-offline-sync-server': link:@candor/plugin-offline-sync-server
+      '@candor/plugin-social-server': link:@candor/plugin-social-server
+      '@candor/server': link:@candor/server
+      '@candor/server-bin': link:@candor/server-bin
       ts-node: 10.9.1
 
   frontend:
     specifiers:
-      '@candor/client': workspace:../packages/client
-      '@candor/core-types': workspace:../packages/core-types
-      '@candor/ipld-database': workspace:../packages/ipld-database
-      '@candor/plugin-notification-client': workspace:../packages/plugin-notification-client
-      '@candor/plugin-offline-sync-client': workspace:../packages/plugin-offline-sync-client
-      '@candor/plugin-offline-sync-core': workspace:../packages/plugin-offline-sync-core
-      '@candor/plugin-social-client': workspace:../packages/plugin-social-client
-      '@candor/plugin-social-core': workspace:../packages/plugin-social-core
-      '@candor/ui-kit': workspace:../ui-kit
+      '@candor/client': '@candor/client'
+      '@candor/core-types': '@candor/core-types'
+      '@candor/ipld-database': '@candor/ipld-database'
+      '@candor/plugin-notification-client': '@candor/plugin-notification-client'
+      '@candor/plugin-offline-sync-client': '@candor/plugin-offline-sync-client'
+      '@candor/plugin-offline-sync-core': '@candor/plugin-offline-sync-core'
+      '@candor/plugin-social-client': '@candor/plugin-social-client'
+      '@candor/plugin-social-core': '@candor/plugin-social-core'
+      '@candor/ui-kit': '@candor/ui-kit'
       '@esbuild-plugins/node-globals-polyfill': ^0.2.3
       '@esbuild-plugins/node-modules-polyfill': ^0.2.2
       '@iconify-json/logos': ^1.1.23
@@ -80,15 +80,15 @@ importers:
       vite: ^4.1.1
       vitest: ^0.28.5
     devDependencies:
-      '@candor/client': link:../packages/client
-      '@candor/core-types': link:../packages/core-types
-      '@candor/ipld-database': link:../packages/ipld-database
-      '@candor/plugin-notification-client': link:../packages/plugin-notification-client
-      '@candor/plugin-offline-sync-client': link:../packages/plugin-offline-sync-client
-      '@candor/plugin-offline-sync-core': link:../packages/plugin-offline-sync-core
-      '@candor/plugin-social-client': link:../packages/plugin-social-client
-      '@candor/plugin-social-core': link:../packages/plugin-social-core
-      '@candor/ui-kit': link:../ui-kit
+      '@candor/client': link:@candor/client
+      '@candor/core-types': link:@candor/core-types
+      '@candor/ipld-database': link:@candor/ipld-database
+      '@candor/plugin-notification-client': link:@candor/plugin-notification-client
+      '@candor/plugin-offline-sync-client': link:@candor/plugin-offline-sync-client
+      '@candor/plugin-offline-sync-core': link:@candor/plugin-offline-sync-core
+      '@candor/plugin-social-client': link:@candor/plugin-social-client
+      '@candor/plugin-social-core': link:@candor/plugin-social-core
+      '@candor/ui-kit': link:@candor/ui-kit
       '@esbuild-plugins/node-globals-polyfill': 0.2.3
       '@esbuild-plugins/node-modules-polyfill': 0.2.2
       '@iconify-json/logos': 1.1.23
@@ -130,9 +130,9 @@ importers:
 
   packages/client:
     specifiers:
-      '@candor/core-types': workspace:../core-types
-      '@candor/ipld-database': workspace:../ipld-database
-      '@candor/plugin-offline-sync-core': workspace:../plugin-offline-sync-core
+      '@candor/core-types': '@candor/core-types'
+      '@candor/ipld-database': '@candor/ipld-database'
+      '@candor/plugin-offline-sync-core': '@candor/plugin-offline-sync-core'
       '@chainsafe/libp2p-gossipsub': ^6.1.0
       '@chainsafe/libp2p-noise': ^11.0.0
       '@libp2p/crypto': ^1.0.12
@@ -175,8 +175,8 @@ importers:
       vite-plugin-dts: ^1.7.3
       vitest: ^0.28.5
     dependencies:
-      '@candor/core-types': link:../core-types
-      '@candor/ipld-database': link:../ipld-database
+      '@candor/core-types': link:@candor/core-types
+      '@candor/ipld-database': link:@candor/ipld-database
       '@libp2p/mplex': 7.1.1
       ajv: 8.12.0
       did-jwt: 6.11.1
@@ -195,7 +195,7 @@ importers:
       uint8arrays: 4.0.3
       uuid: 9.0.0
     devDependencies:
-      '@candor/plugin-offline-sync-core': link:../plugin-offline-sync-core
+      '@candor/plugin-offline-sync-core': link:@candor/plugin-offline-sync-core
       '@chainsafe/libp2p-gossipsub': 6.1.0
       '@chainsafe/libp2p-noise': 11.0.0
       '@libp2p/crypto': 1.0.12
@@ -255,8 +255,8 @@ importers:
 
   packages/ipld-database:
     specifiers:
-      '@candor/core-types': workspace:../core-types
-      '@candor/test-adapters': workspace:../test-adapters
+      '@candor/core-types': '@candor/core-types'
+      '@candor/test-adapters': '@candor/test-adapters'
       '@types/ajv': ^1.0.0
       '@types/node': ^18.13.0
       ajv: ^8.12.0
@@ -279,8 +279,8 @@ importers:
       minisearch: 6.0.1
       object-sizeof: 2.6.1
     devDependencies:
-      '@candor/core-types': link:../core-types
-      '@candor/test-adapters': link:../test-adapters
+      '@candor/core-types': link:@candor/core-types
+      '@candor/test-adapters': link:@candor/test-adapters
       '@types/ajv': 1.0.0
       '@types/node': 18.13.0
       dids: 3.4.0
@@ -296,16 +296,16 @@ importers:
 
   packages/plugin-identity-server:
     specifiers:
-      '@candor/client': workspace:../client
-      '@candor/core-types': workspace:../core-types
-      '@candor/ipld-database': workspace:../ipld-database
+      '@candor/client': '@candor/client'
+      '@candor/core-types': '@candor/core-types'
+      '@candor/ipld-database': '@candor/ipld-database'
       tsup: ^6.6.3
       typescript: ^4.9.5
       vitest: ^0.28.5
     dependencies:
-      '@candor/client': link:../client
-      '@candor/core-types': link:../core-types
-      '@candor/ipld-database': link:../ipld-database
+      '@candor/client': link:@candor/client
+      '@candor/core-types': link:@candor/core-types
+      '@candor/ipld-database': link:@candor/ipld-database
     devDependencies:
       tsup: 6.6.3_typescript@4.9.5
       typescript: 4.9.5
@@ -313,23 +313,23 @@ importers:
 
   packages/plugin-notification-client:
     specifiers:
-      '@candor/core-types': workspace:../core-types
-      '@candor/ipld-database': workspace:../ipld-database
-      '@candor/plugin-social-client': workspace:../plugin-social-client
+      '@candor/core-types': '@candor/core-types'
+      '@candor/ipld-database': '@candor/ipld-database'
+      '@candor/plugin-social-client': '@candor/plugin-social-client'
       tsup: ^6.6.2
       typescript: ^4.9.5
     devDependencies:
-      '@candor/core-types': link:../core-types
-      '@candor/ipld-database': link:../ipld-database
-      '@candor/plugin-social-client': link:../plugin-social-client
+      '@candor/core-types': link:@candor/core-types
+      '@candor/ipld-database': link:@candor/ipld-database
+      '@candor/plugin-social-client': link:@candor/plugin-social-client
       tsup: 6.6.3_typescript@4.9.5
       typescript: 4.9.5
 
   packages/plugin-offline-sync-client:
     specifiers:
-      '@candor/core-types': workspace:../core-types
-      '@candor/ipld-database': workspace:../ipld-database
-      '@candor/plugin-offline-sync-core': workspace:../plugin-offline-sync-core
+      '@candor/core-types': '@candor/core-types'
+      '@candor/ipld-database': '@candor/ipld-database'
+      '@candor/plugin-offline-sync-core': '@candor/plugin-offline-sync-core'
       '@multiformats/multiaddr': ^11.4.0
       '@types/uuid': ^9.0.0
       date-fns: ^2.29.3
@@ -345,9 +345,9 @@ importers:
       date-fns: 2.29.3
       uuid: 9.0.0
     devDependencies:
-      '@candor/core-types': link:../core-types
-      '@candor/ipld-database': link:../ipld-database
-      '@candor/plugin-offline-sync-core': link:../plugin-offline-sync-core
+      '@candor/core-types': link:@candor/core-types
+      '@candor/ipld-database': link:@candor/ipld-database
+      '@candor/plugin-offline-sync-core': link:@candor/plugin-offline-sync-core
       '@multiformats/multiaddr': 11.4.0
       '@types/uuid': 9.0.0
       did-jwt: 6.11.1
@@ -360,32 +360,32 @@ importers:
 
   packages/plugin-offline-sync-core:
     specifiers:
-      '@candor/core-types': workspace:../core-types
-      '@candor/ipld-database': workspace:../ipld-database
+      '@candor/core-types': '@candor/core-types'
+      '@candor/ipld-database': '@candor/ipld-database'
       tsup: ^6.6.3
       typescript: ^4.9.5
       vitest: ^0.28.5
     devDependencies:
-      '@candor/core-types': link:../core-types
-      '@candor/ipld-database': link:../ipld-database
+      '@candor/core-types': link:@candor/core-types
+      '@candor/ipld-database': link:@candor/ipld-database
       tsup: 6.6.3_typescript@4.9.5
       typescript: 4.9.5
       vitest: 0.28.5
 
   packages/plugin-offline-sync-server:
     specifiers:
-      '@candor/core-types': workspace:../core-types
-      '@candor/plugin-offline-sync-client': workspace:../plugin-offline-sync-client
-      '@candor/plugin-offline-sync-core': workspace:../plugin-offline-sync-core
+      '@candor/core-types': '@candor/core-types'
+      '@candor/plugin-offline-sync-client': '@candor/plugin-offline-sync-client'
+      '@candor/plugin-offline-sync-core': '@candor/plugin-offline-sync-core'
       did-jwt: ^6.11.1
       dids: ^3.4.0
       tsup: ^6.6.3
       typescript: ^4.9.5
       vitest: ^0.28.5
     devDependencies:
-      '@candor/core-types': link:../core-types
-      '@candor/plugin-offline-sync-client': link:../plugin-offline-sync-client
-      '@candor/plugin-offline-sync-core': link:../plugin-offline-sync-core
+      '@candor/core-types': link:@candor/core-types
+      '@candor/plugin-offline-sync-client': link:@candor/plugin-offline-sync-client
+      '@candor/plugin-offline-sync-core': link:@candor/plugin-offline-sync-core
       did-jwt: 6.11.1
       dids: 3.4.0
       tsup: 6.6.3_typescript@4.9.5
@@ -394,10 +394,10 @@ importers:
 
   packages/plugin-social-client:
     specifiers:
-      '@candor/core-types': workspace:../core-types
-      '@candor/ipld-database': workspace:../ipld-database
-      '@candor/plugin-offline-sync-core': workspace:../plugin-offline-sync-core
-      '@candor/plugin-social-core': workspace:../plugin-social-core
+      '@candor/core-types': '@candor/core-types'
+      '@candor/ipld-database': '@candor/ipld-database'
+      '@candor/plugin-offline-sync-core': '@candor/plugin-offline-sync-core'
+      '@candor/plugin-social-core': '@candor/plugin-social-core'
       '@multiformats/multiaddr': ^11.4.0
       '@types/uuid': ^9.0.0
       did-jwt: ^6.11.1
@@ -411,10 +411,10 @@ importers:
     dependencies:
       uuid: 9.0.0
     devDependencies:
-      '@candor/core-types': link:../core-types
-      '@candor/ipld-database': link:../ipld-database
-      '@candor/plugin-offline-sync-core': link:../plugin-offline-sync-core
-      '@candor/plugin-social-core': link:../plugin-social-core
+      '@candor/core-types': link:@candor/core-types
+      '@candor/ipld-database': link:@candor/ipld-database
+      '@candor/plugin-offline-sync-core': link:@candor/plugin-offline-sync-core
+      '@candor/plugin-social-core': link:@candor/plugin-social-core
       '@multiformats/multiaddr': 11.4.0
       '@types/uuid': 9.0.0
       did-jwt: 6.11.1
@@ -427,32 +427,32 @@ importers:
 
   packages/plugin-social-core:
     specifiers:
-      '@candor/core-types': workspace:../core-types
-      '@candor/ipld-database': workspace:../ipld-database
+      '@candor/core-types': '@candor/core-types'
+      '@candor/ipld-database': '@candor/ipld-database'
       tsup: ^6.6.3
       typescript: ^4.9.5
       vitest: ^0.28.5
     devDependencies:
-      '@candor/core-types': link:../core-types
-      '@candor/ipld-database': link:../ipld-database
+      '@candor/core-types': link:@candor/core-types
+      '@candor/ipld-database': link:@candor/ipld-database
       tsup: 6.6.3_typescript@4.9.5
       typescript: 4.9.5
       vitest: 0.28.5
 
   packages/plugin-social-server:
     specifiers:
-      '@candor/core-types': workspace:../core-types
-      '@candor/plugin-social-client': workspace:../plugin-social-client
-      '@candor/plugin-social-core': workspace:../plugin-social-core
+      '@candor/core-types': '@candor/core-types'
+      '@candor/plugin-social-client': '@candor/plugin-social-client'
+      '@candor/plugin-social-core': '@candor/plugin-social-core'
       did-jwt: ^6.11.1
       dids: ^3.4.0
       tsup: ^6.6.3
       typescript: ^4.9.5
       vitest: ^0.28.5
     devDependencies:
-      '@candor/core-types': link:../core-types
-      '@candor/plugin-social-client': link:../plugin-social-client
-      '@candor/plugin-social-core': link:../plugin-social-core
+      '@candor/core-types': link:@candor/core-types
+      '@candor/plugin-social-client': link:@candor/plugin-social-client
+      '@candor/plugin-social-core': link:@candor/plugin-social-core
       did-jwt: 6.11.1
       dids: 3.4.0
       tsup: 6.6.3_typescript@4.9.5
@@ -461,8 +461,8 @@ importers:
 
   packages/server:
     specifiers:
-      '@candor/client': workspace:../client
-      '@candor/core-types': workspace:../core-types
+      '@candor/client': '@candor/client'
+      '@candor/core-types': '@candor/core-types'
       ipfs-core: ^0.18.0
       ipfs-core-types: ^0.14.0
       ipfs-http-gateway: ^0.13.0
@@ -471,8 +471,8 @@ importers:
       typescript: ^4.9.5
       vitest: ^0.28.5
     devDependencies:
-      '@candor/client': link:../client
-      '@candor/core-types': link:../core-types
+      '@candor/client': link:@candor/client
+      '@candor/core-types': link:@candor/core-types
       ipfs-core: 0.18.0
       ipfs-core-types: 0.14.0
       ipfs-http-gateway: 0.13.0
@@ -483,8 +483,8 @@ importers:
 
   packages/server-bin:
     specifiers:
-      '@candor/client': workspace:../client
-      '@candor/server': workspace:../server
+      '@candor/client': '@candor/client'
+      '@candor/server': '@candor/server'
       '@types/minimist': ^1.2.2
       chalk: ^5.2.0
       ipfs-http-gateway: ^0.13.0
@@ -495,12 +495,12 @@ importers:
       typescript: ^4.9.5
       vitest: ^0.28.5
     dependencies:
-      '@candor/server': link:../server
+      '@candor/server': link:@candor/server
       ipfs-http-gateway: 0.13.0
       ipfs-http-server: 0.15.0
       minimist: 1.2.8
     devDependencies:
-      '@candor/client': link:../client
+      '@candor/client': link:@candor/client
       '@types/minimist': 1.2.2
       chalk: 5.2.0
       ts-node: 10.9.1_typescript@4.9.5
@@ -510,7 +510,7 @@ importers:
 
   packages/test-adapters:
     specifiers:
-      '@candor/core-types': workspace:../core-types
+      '@candor/core-types': '@candor/core-types'
       did-jwt: ^6.11.1
       dids: ^3.4.0
       multiformats: ^11.0.1
@@ -518,7 +518,7 @@ importers:
       typescript: ^4.9.5
       vitest: ^0.28.5
     devDependencies:
-      '@candor/core-types': link:../core-types
+      '@candor/core-types': link:@candor/core-types
       did-jwt: 6.11.1
       dids: 3.4.0
       multiformats: 11.0.1
@@ -538,7 +538,7 @@ importers:
 
   registry-frontend:
     specifiers:
-      '@candor/ui-kit': workspace:../ui-kit
+      '@candor/ui-kit': '@candor/ui-kit'
       '@iconify-json/tabler': ^1.1.60
       '@playwright/test': ^1.30.0
       '@sveltejs/adapter-auto': ^1.0.3
@@ -559,7 +559,7 @@ importers:
       vite: ^4.1.1
       vitest: ^0.28.5
     dependencies:
-      '@candor/ui-kit': link:../ui-kit
+      '@candor/ui-kit': link:@candor/ui-kit
     devDependencies:
       '@iconify-json/tabler': 1.1.60
       '@playwright/test': 1.30.0
