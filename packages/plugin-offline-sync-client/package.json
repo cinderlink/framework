@@ -2,7 +2,7 @@
   "name": "@candor/plugin-offline-sync-client",
   "description": "Offline sync client plugin for candor enabling users to send encrypted messages to offline users and have them delivered when they come online.",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -18,6 +18,9 @@
     "build": "tsup src/index.ts --dts --format cjs,esm ",
     "watch": "pnpm build --watch"
   },
+  "files": [
+    "dist"
+  ],
   "devDependencies": {
     "@candor/core-types": "0.1.1",
     "@candor/ipld-database": "0.1.1",

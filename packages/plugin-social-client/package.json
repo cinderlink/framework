@@ -2,7 +2,7 @@
   "name": "@candor/plugin-social-client",
   "description": "Social client plugin for candor enabling following and unfollowing of other users & posting of messages to the social network",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -14,6 +14,9 @@
       "types": "./dist/index.d.ts"
     }
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup src/index.ts --dts --format cjs,esm ",
     "watch": "pnpm build --watch"

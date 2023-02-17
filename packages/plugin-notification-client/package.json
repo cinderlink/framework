@@ -1,12 +1,15 @@
 {
   "name": "@candor/plugin-notification-client",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "authors": "Muhammad <mu@cinderlink.com>",
   "description": "Notification plugin for candor to emit user interface notifications",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "type": "module",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup src/index.ts --dts --format cjs,esm ",
     "watch": "pnpm build --watch"

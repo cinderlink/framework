@@ -3,10 +3,7 @@
   "repository": "https://github.com/candorsocial/core",
   "description": "Typescript client for the Cinderlink development toolkit",
   "authors": "Drew Ewing <drew@cinderlink.com>",
-  "version": "0.1.1",
-  "files": [
-    "dist"
-  ],
+  "version": "0.1.2",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -23,6 +20,9 @@
       "types": "./dist/*.d.ts"
     }
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup",
     "watch": "pnpm build --watch --",

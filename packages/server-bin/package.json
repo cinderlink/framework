@@ -2,7 +2,7 @@
   "name": "@candor/server-bin",
   "description": "Candor server binary",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "main": "dist/bin.js",
   "type": "module",
   "module": "./dist/bin.js",
@@ -17,6 +17,9 @@
   "bin": {
     "candor": "dist/bin.js"
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup src/bin.ts --format cjs,esm --dts ",
     "watch": "pnpm build --watch",

@@ -2,11 +2,14 @@
   "name": "@candor/plugin-identity-server",
   "description": "Identity server plugin for Candor",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "exports": {
     ".": {
       "import": "./dist/index.js",

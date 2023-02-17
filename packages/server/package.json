@@ -2,7 +2,7 @@
   "name": "@candor/server",
   "description": "Federated pinning & messaging server for Candor networks",
   "authors": "Drew Ewing <drew@cinderlink.com>",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -18,6 +18,9 @@
     "build": "tsup --format cjs,esm src/index.ts --dts ",
     "watch": "pnpm build --watch"
   },
+  "files": [
+    "dist"
+  ],
   "devDependencies": {
     "@candor/client": "0.1.1",
     "@candor/core-types": "0.1.1",
