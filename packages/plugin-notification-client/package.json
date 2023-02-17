@@ -1,7 +1,6 @@
 {
   "name": "@candor/plugin-notification-client",
-  "private": true,
-  "version": "1.0.0-rc.0",
+  "version": "0.1.0",
   "authors": "Muhammad <mu@cinderlink.com>",
   "description": "Notification plugin for candor to emit user interface notifications",
   "main": "./dist/index.js",

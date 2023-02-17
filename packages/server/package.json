@@ -1,9 +1,8 @@
 {
   "name": "@candor/server",
-  "private": true,
   "description": "Federated pinning & messaging server for Candor networks",
   "authors": "Drew Ewing <drew@cinderlink.com>",
-  "version": "1.0.0-rc.1",
+  "version": "0.1.0",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",

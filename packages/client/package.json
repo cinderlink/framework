@@ -1,10 +1,9 @@
 {
   "name": "@candor/client",
-  "private": true,
   "repository": "https://github.com/candorsocial/core",
   "description": "Typescript client for the Cinderlink development toolkit",
   "authors": "Drew Ewing <drew@cinderlink.com>",
-  "version": "0.0.1-rc.1",
+  "version": "0.1.0",
   "files": [
     "dist"
   ],

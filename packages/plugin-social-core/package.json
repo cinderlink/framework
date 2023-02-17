@@ -1,9 +1,8 @@
 {
   "name": "@candor/plugin-social-core",
-  "private": true,
   "description": "Core types and utilities for the Candor social client plugin",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "1.0.0-rc.1",
+  "version": "0.1.0",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",

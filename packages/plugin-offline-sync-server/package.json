@@ -1,9 +1,8 @@
 {
   "name": "@candor/plugin-offline-sync-server",
-  "private": true,
   "description": "Offline messaging sync server plugin for Candor",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "1.0.0-rc.1",
+  "version": "0.1.0",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
