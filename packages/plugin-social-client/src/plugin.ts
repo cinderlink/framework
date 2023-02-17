@@ -230,6 +230,17 @@ export class SocialClientPlugin<
       throw new Error("failed to upsert post");
     }
 
+    // publish the post
+    console.info(`plugin/social/client > publishing post`, { post: saved });
+    await this.client.publish(
+      "/social/update",
+      {
+        requestId: uuid(),
+        post: saved,
+      },
+      { sign: true }
+    );
+
     return saved as SocialPost;
   }
 
@@ -743,10 +754,14 @@ export class SocialClientPlugin<
       | PubsubMessage<SocialUpdateMessage>
       | P2PMessage<string, SocialUpdateMessage>
   ) {
+    console.info(
+      `plugin/social/client > received social update message`,
+      message
+    );
     const { post } = message.data;
-    if (!post?.id) return;
+    const { id, ...postData } = post;
 
-    const cid = await this.client.dag.store(post);
+    const cid = await this.client.dag.store(postData);
     // TODO: pin & add to user_pins
     if (!cid) {
       console.warn(
@@ -769,11 +784,15 @@ export class SocialClientPlugin<
       );
       return;
     }
-    await this.table<SocialPost>("posts").upsert("id", post.id, {
-      ...post,
-      cid: cid.toString(),
-      authorId,
-    });
+    const saved = await this.table<SocialPost>("posts").upsert(
+      "cid",
+      cid.toString(),
+      {
+        ...postData,
+        authorId,
+      }
+    );
+    console.info(`plugin/social/client > saved post`, saved);
   }
 
   async onUpdatesRequest(
@@ -802,6 +821,7 @@ export class SocialClientPlugin<
       .select()
       .execute()
       .then((result) => result.all());
+    console.info(`plugin/social/client > sending updates response`, myPosts);
     await this.client.send(message.peer.peerId.toString(), {
       topic: "/social/updates/response",
       data: {
@@ -819,14 +839,6 @@ export class SocialClientPlugin<
     if (!message.peer.did) {
       console.warn(
         `plugin/social/client > received social updates response message from unauthorized peer`
-      );
-      return;
-    }
-
-    const fromUserId = (await this.getUserByDID(message.peer.did))?.id;
-    if (!fromUserId) {
-      console.warn(
-        `plugin/social/client > received social updates response message from unknown user`
       );
       return;
     }

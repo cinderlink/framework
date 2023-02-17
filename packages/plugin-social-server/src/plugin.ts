@@ -1,5 +1,9 @@
 import {
   loadSocialSchema,
+  SocialPost,
+  SocialUpdateMessage,
+  SocialUpdatesRequestMessage,
+  SocialUpdatesResponseMessage,
   SocialUser,
   SocialUserGetRequestMessage,
   SocialUserGetResponseMessage,
@@ -9,6 +13,8 @@ import type {
   CandorClientInterface,
   PubsubMessage,
   P2PMessage,
+  TableRow,
+  TableDefinition,
 } from "@candor/core-types";
 import type {
   SocialConnectionMessage,
@@ -26,8 +32,10 @@ export type SocialServerEvents = {
   send: {
     "/social/users/search/response": SocialUserSearchResponseMessage;
     "/social/user/get/response": SocialUserGetResponseMessage;
+    "/social/updates/response": SocialUpdatesResponseMessage;
   };
   receive: {
+    "/social/updates/request": SocialUpdatesRequestMessage;
     "/social/users/search/request": SocialUserSearchRequestMessage;
     "/social/user/get/request": SocialUserGetRequestMessage;
   };
@@ -52,14 +60,53 @@ export class SocialServerPlugin implements PluginInterface<SocialServerEvents> {
     "/social/connection": this.onPeerConnection,
     "/social/users/search/request": this.onUserSearchRequest,
     "/social/user/get/request": this.onUserGetRequest,
+    "/social/updates/request": this.onUpdatesRequest,
   };
   pubsub = {
-    "/social/announce": this.onSocialAnnounce,
-    "/social/connection": this.onSocialConnection,
+    "/social/update": this.onUpdate,
+    "/social/announce": this.onAnnounce,
+    "/social/connection": this.onConnection,
   };
   events = {};
 
-  onSocialAnnounce(message: PubsubMessage<SocialAnnounceMessage>) {
+  get db() {
+    const schema = this.client.getSchema("social");
+    if (!schema) {
+      throw new Error(`plugin/social/server > failed to get schema`);
+    }
+    return schema;
+  }
+
+  table<
+    Row extends TableRow = TableRow,
+    Def extends TableDefinition<Row> = TableDefinition<Row>
+  >(name: string) {
+    const table = this.db.getTable<Row, Def>(name);
+    if (!table) {
+      throw new Error(`plugin/social/server > failed to get table ${name}`);
+    }
+    return table;
+  }
+
+  async getUserByDID(did: string): Promise<SocialUser | undefined> {
+    return this.table<SocialUser>("users")
+      .query()
+      .where("did", "=", did)
+      .select()
+      .execute()
+      .then((result) => result.first() as SocialUser | undefined);
+  }
+
+  async getUser(userId: number): Promise<SocialUser | undefined> {
+    return this.table("users")
+      ?.query()
+      .where("id", "=", userId)
+      .select()
+      .execute()
+      .then((result) => result.first() as SocialUser | undefined);
+  }
+
+  onAnnounce(message: PubsubMessage<SocialAnnounceMessage>) {
     if (this.client.hasPlugin("socialClient")) return;
     console.info(
       `plugin/social/server > received pubsub announce message (did: ${message.peer.did})`,
@@ -75,7 +122,84 @@ export class SocialServerPlugin implements PluginInterface<SocialServerEvents> {
     });
   }
 
-  onSocialConnection(message: PubsubMessage<SocialConnectionMessage>) {
+  async onUpdate(
+    message:
+      | PubsubMessage<SocialUpdateMessage>
+      | P2PMessage<string, SocialUpdateMessage>
+  ) {
+    const { id, ...post } = message.data as any;
+    if (!post?.id) return;
+
+    const cid = await this.client.dag.store(post);
+    // TODO: pin & add to user_pins
+    if (!cid) {
+      console.warn(
+        `plugin/social/client > failed to store social update message (did: ${message.peer.did})`
+      );
+      return;
+    }
+
+    if (!message.peer.did) {
+      console.warn(
+        `plugin/social/client > received social update message from unauthorized peer`
+      );
+      return;
+    }
+
+    const authorId = (await this.getUserByDID(message.peer.did))?.id;
+    if (!authorId) {
+      console.warn(
+        `plugin/social/client > received social update message from unknown user`
+      );
+      return;
+    }
+
+    console.info(`plugin/social/client > storing social update message`, {
+      ...post,
+      authorId,
+    });
+    await this.table<SocialPost>("posts").upsert("cid", cid.toString(), {
+      ...post,
+      authorId,
+    });
+  }
+
+  async onUpdatesRequest(
+    message:
+      | PubsubMessage<SocialUpdatesRequestMessage>
+      | P2PMessage<string, SocialUpdatesRequestMessage>
+  ) {
+    if (!message.peer.did) {
+      console.warn(
+        `plugin/social/client > received social updates request message from unauthorized peer`
+      );
+      return;
+    }
+
+    const authorId = (await this.getUserByDID(message.data.author))?.id;
+    if (!authorId) {
+      console.warn(
+        `plugin/social/client > received social updates request message from unknown user`
+      );
+      return;
+    }
+    // TODO: make sure this user is allowed to see this data
+    const posts = await this.table<SocialPost>("posts")
+      .query()
+      .where("authorId", "=", authorId)
+      .select()
+      .execute()
+      .then((result) => result.all());
+    await this.client.send(message.peer.peerId.toString(), {
+      topic: "/social/updates/response",
+      data: {
+        requestId: message.data.requestId,
+        updates: posts,
+      },
+    });
+  }
+
+  onConnection(message: PubsubMessage<SocialConnectionMessage>) {
     console.log("social connection", message);
   }
 

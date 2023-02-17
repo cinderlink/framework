@@ -7,11 +7,13 @@
     },
     "watch": {
       "inputs": ["src/**"],
-      "outputs": ["dist/**"]
+      "outputs": ["dist/**"],
+      "persistent": true
     },
     "dev": {
       "inputs": ["src/**"],
-      "outputs": ["dist/**"]
+      "outputs": ["dist/**"],
+      "persistent": true
     },
     "lint": {}
   }

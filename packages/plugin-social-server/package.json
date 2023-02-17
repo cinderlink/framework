@@ -22,9 +22,9 @@
     "@candor/core-types": "workspace:../core-types",
     "@candor/plugin-social-client": "workspace:../plugin-social-client",
     "@candor/plugin-social-core": "workspace:../plugin-social-core",
-    "did-jwt": "^6.11.0",
+    "did-jwt": "^6.11.1",
     "dids": "^3.4.0",
-    "tsup": "^6.6.2",
+    "tsup": "^6.6.3",
     "typescript": "^4.9.5",
     "vitest": "^0.28.5"
   },
