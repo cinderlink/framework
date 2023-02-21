@@ -7,14 +7,14 @@ import { loadNotificationSchema } from "schema";
 import { NotificationClientEvents } from "types";
 import type { SocialClientEvents } from "@candor/plugin-social-client";
 export class NotificationClientPlugin
-  implements PluginInterface<NotificationClientEvents & SocialClientEvents>
+  implements PluginInterface<NotificationClientEvents>
 {
   id = "notificationClient";
   ready = false;
   loggerTag = "plugin/notification/client > ";
   constructor(
     public client: CandorClientInterface<
-      NotificationClientEvents & SocialClientEvents
+      NotificationClientEvents | SocialClientEvents
     >,
     public options: Record<string, unknown> = {}
   ) {}
@@ -30,7 +30,6 @@ export class NotificationClientPlugin
       .query()
       .select()
       .execute();
-    console.log("debug: | start | notifications", notifications);
     // -----
 
     console.info(this.loggerTag, "ready");
