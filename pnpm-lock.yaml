@@ -38,7 +38,7 @@ importers:
       '@candor/plugin-notification-client': 0.1.2
       '@candor/plugin-offline-sync-client': 0.1.2
       '@candor/plugin-offline-sync-core': 0.1.2
-      '@candor/plugin-social-client': 0.1.2
+      '@candor/plugin-social-client': 0.2.0
       '@candor/plugin-social-core': 0.1.2
       '@candor/ui-kit': 0.1.2
       '@iconify-json/logos': ^1.1.23
@@ -90,7 +90,7 @@ importers:
       '@candor/plugin-notification-client': link:../packages/plugin-notification-client
       '@candor/plugin-offline-sync-client': link:../packages/plugin-offline-sync-client
       '@candor/plugin-offline-sync-core': link:../packages/plugin-offline-sync-core
-      '@candor/plugin-social-client': link:../packages/plugin-social-client
+      '@candor/plugin-social-client': 0.2.0_npa7unhmfghnyq3uast3dbhbm4
       '@candor/plugin-social-core': link:../packages/plugin-social-core
       '@candor/ui-kit': link:../ui-kit
       '@iconify-json/logos': 1.1.23
@@ -546,7 +546,7 @@ importers:
 
   registry-frontend:
     specifiers:
-      '@candor/ui-kit': 0.1.2
+      '@candor/ui-kit': 0.1.1
       '@iconify-json/tabler': ^1.1.60
       '@playwright/test': ^1.30.0
       '@sveltejs/adapter-auto': ^1.0.3
@@ -567,7 +567,7 @@ importers:
       vite: ^4.1.1
       vitest: ^0.28.5
     dependencies:
-      '@candor/ui-kit': link:../ui-kit
+      '@candor/ui-kit': 0.1.1_ggo5j25brebqqko7hdmvawpmuy
     devDependencies:
       '@iconify-json/tabler': 1.1.60
       '@playwright/test': 1.30.0
@@ -607,6 +607,7 @@ importers:
       '@web3modal/ethereum': 2.1.1
       '@web3modal/html': 2.1.1
       ajv: ^8.12.0
+      copy-to-clipboard: ^3.3.3
       eslint: ^8.34.0
       eslint-config-prettier: ^8.6.0
       eslint-plugin-svelte3: ^4.0.0
@@ -645,6 +646,7 @@ importers:
       '@typescript-eslint/parser': 5.52.0_7kw3g6rralp5ps6mg3uyzz6azm
       '@unocss/reset': 0.49.6
       ajv: 8.12.0
+      copy-to-clipboard: 3.3.3
       eslint: 8.34.0
       eslint-config-prettier: 8.6.0_eslint@8.34.0
       eslint-plugin-svelte3: 4.0.0_dbthnr4b2bdkhyiebwn7su3hnq
@@ -2024,6 +2026,51 @@ packages:
       '@babel/helper-string-parser': 7.19.4
       '@babel/helper-validator-identifier': 7.19.1
       to-fast-properties: 2.0.0
+
+  /@candor/plugin-social-client/0.2.0_npa7unhmfghnyq3uast3dbhbm4:
+    resolution: {integrity: sha512-y92dtig42LJ4BrdO44/TneP0HkIlWlqmY5FgjD2C5G5cqvQAz4TSdAC+fUnhr2rhzrSYfnqcAUbo2e8DsepWdg==}
+    peerDependencies:
+      '@multiformats/multiaddr': ^11.4.0
+      did-jwt: ^6.11.0
+      dids: ^3.4.0
+      emittery: ^1.0.1
+      multiformats: ^11.0.1
+    dependencies:
+      '@multiformats/multiaddr': 11.4.0
+      did-jwt: 6.11.1
+      dids: 3.4.0
+      emittery: 1.0.1
+      multiformats: 11.0.1
+      uuid: 9.0.0
+    dev: true
+
+  /@candor/ui-kit/0.1.1_ggo5j25brebqqko7hdmvawpmuy:
+    resolution: {integrity: sha512-SHNzqDTci5cJYfrT+n7cgm/AG4gbDTJPRRkRZ97FZxzx9h55malwC6XX659JyxLzftpNYmv8qtJekOfcNUyhkw==}
+    dependencies:
+      '@sveltejs/kit': 1.7.1_svelte@3.55.1+vite@4.1.1
+      '@wagmi/core': 0.9.5_typescript@4.9.5
+      '@web3modal/ethereum': 2.1.1_@wagmi+core@0.9.5
+      '@web3modal/html': 2.1.1
+      svelte: 3.55.1
+    transitivePeerDependencies:
+      - '@babel/core'
+      - '@react-native-async-storage/async-storage'
+      - '@swc/core'
+      - '@swc/wasm'
+      - '@types/node'
+      - bufferutil
+      - debug
+      - encoding
+      - ethers
+      - immer
+      - lokijs
+      - react
+      - supports-color
+      - typescript
+      - utf-8-validate
+      - vite
+      - zod
+    dev: false
 
   /@chainsafe/is-ip/2.0.1:
     resolution: {integrity: sha512-nqSJ8u2a1Rv9FYbyI8qpDhTYujaKEyLknNrTejLYoSWmdeg+2WB7R6BZqPZYfrJzDxVi3rl6ZQuoaEvpKRZWgQ==}
@@ -5336,6 +5383,45 @@ packages:
       - utf-8-validate
       - zod
 
+  /@wagmi/connectors/0.2.5_snabcrg2nsap3egfuki2ounkke:
+    resolution: {integrity: sha512-saS5wps+R5SCs4ka9BG4vlaS4xDKn8GRt5y/f6v8RYBhat+H+3DGBowwGLN/OLtu744VKY8sIsm8/GRy2tXbsg==}
+    peerDependencies:
+      '@wagmi/core': '>=0.9.x'
+      ethers: '>=5.5.1 <6'
+      typescript: '>=4.9.4'
+    peerDependenciesMeta:
+      '@wagmi/core':
+        optional: true
+      typescript:
+        optional: true
+    dependencies:
+      '@coinbase/wallet-sdk': 3.6.4
+      '@ledgerhq/connect-kit-loader': 1.0.2
+      '@safe-global/safe-apps-provider': 0.15.2
+      '@safe-global/safe-apps-sdk': 7.10.0
+      '@wagmi/core': 0.9.5_typescript@4.9.5
+      '@walletconnect/ethereum-provider': 1.8.0
+      '@walletconnect/universal-provider': 2.3.3_typescript@4.9.5
+      '@web3modal/standalone': 2.1.1
+      abitype: 0.3.0_typescript@4.9.5
+      eventemitter3: 4.0.7
+      typescript: 4.9.5
+    transitivePeerDependencies:
+      - '@babel/core'
+      - '@react-native-async-storage/async-storage'
+      - '@swc/core'
+      - '@swc/wasm'
+      - '@types/node'
+      - bufferutil
+      - debug
+      - encoding
+      - lokijs
+      - react
+      - supports-color
+      - utf-8-validate
+      - zod
+    dev: false
+
   /@wagmi/core/0.9.5_6la3wgdurc2byppalgze7lq2hy:
     resolution: {integrity: sha512-Ff4ejQbeexH5pfcYbwYusvxcYUY1+AuKCqHyYLliOQChLvymK7QGth7Hh7lKEf1Js/g4ktHHI07EfLKHEiDYWw==}
     peerDependencies:
@@ -5367,6 +5453,38 @@ packages:
       - supports-color
       - utf-8-validate
       - zod
+
+  /@wagmi/core/0.9.5_typescript@4.9.5:
+    resolution: {integrity: sha512-Ff4ejQbeexH5pfcYbwYusvxcYUY1+AuKCqHyYLliOQChLvymK7QGth7Hh7lKEf1Js/g4ktHHI07EfLKHEiDYWw==}
+    peerDependencies:
+      ethers: '>=5.5.1 <6'
+      typescript: '>=4.9.4'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+    dependencies:
+      '@wagmi/chains': 0.2.7_typescript@4.9.5
+      '@wagmi/connectors': 0.2.5_snabcrg2nsap3egfuki2ounkke
+      abitype: 0.3.0_typescript@4.9.5
+      eventemitter3: 4.0.7
+      typescript: 4.9.5
+      zustand: 4.3.3
+    transitivePeerDependencies:
+      - '@babel/core'
+      - '@react-native-async-storage/async-storage'
+      - '@swc/core'
+      - '@swc/wasm'
+      - '@types/node'
+      - bufferutil
+      - debug
+      - encoding
+      - immer
+      - lokijs
+      - react
+      - supports-color
+      - utf-8-validate
+      - zod
+    dev: false
 
   /@walletconnect/browser-utils/1.8.0:
     resolution: {integrity: sha512-Wcqqx+wjxIo9fv6eBUFHPsW1y/bGWWRboni5dfD8PtOmrihrEpOCmvRJe4rfl7xgJW8Ea9UqKEaq0bIRLHlK4A==}
@@ -5765,6 +5883,15 @@ packages:
       valtio: 1.9.0
     transitivePeerDependencies:
       - react
+
+  /@web3modal/ethereum/2.1.1_@wagmi+core@0.9.5:
+    resolution: {integrity: sha512-F5kqPtqOgYt+1S7lZd8nfD59x1+YUkqvhbJrnSMg1uxDPSBtOGnSX33XVTQ7m3Z2/3yeoFkeLipx4i4WVLdAFA==}
+    peerDependencies:
+      '@wagmi/core': '>=0.9'
+      ethers: '>=5.7'
+    dependencies:
+      '@wagmi/core': 0.9.5_typescript@4.9.5
+    dev: false
 
   /@web3modal/ethereum/2.1.1_tiqxynk6oqozpghfblwvhemihu:
     resolution: {integrity: sha512-F5kqPtqOgYt+1S7lZd8nfD59x1+YUkqvhbJrnSMg1uxDPSBtOGnSX33XVTQ7m3Z2/3yeoFkeLipx4i4WVLdAFA==}
