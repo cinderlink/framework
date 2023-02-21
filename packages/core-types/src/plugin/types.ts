@@ -1,12 +1,17 @@
-import { CandorClientInterface } from "../client/interface";
-import { P2PMessage } from "../p2p";
-import { PubsubMessage } from "../pubsub";
-import { CandorClientEventDef } from "../client";
+import {
+  EncodingOptions,
+  ProtocolPayload,
+  ProtocolRequest,
+} from "./../protocol/types";
+import { ReceiveEventHandlers } from "./../p2p/types";
+import { SubscribeEventHandlers } from "../pubsub";
+import { CandorClientEvents, CandorClientInterface } from "../client";
 
-export type PluginEventPayloads = Record<string, unknown>;
-
+export type PluginEventPayloads = Record<
+  string,
+  ProtocolPayload<ProtocolRequest, EncodingOptions>
+>;
 export type PluginEventHandler<T = unknown> = (payload: T) => void;
-
 export type PluginEventHandlers<
   Events extends PluginEventPayloads = PluginEventPayloads
 > = {
@@ -22,30 +27,17 @@ export interface PluginEventDef {
 }
 
 export interface PluginInterface<
-  Events extends PluginEventDef = PluginEventDef
+  PluginEvents extends PluginEventDef = PluginEventDef,
+  ReferencedEvents extends PluginEventDef = PluginEvents
 > {
   id: string;
-  client: CandorClientInterface<Events>;
+  client: CandorClientInterface<ReferencedEvents>;
   start?(): Promise<void>;
   stop?(): Promise<void>;
-  pubsub: {
-    [key in keyof Events["publish"]]: PluginEventHandler<
-      PubsubMessage<Events["publish"][key]>
-    >;
-  };
-  p2p: {
-    [key in keyof Events["receive"]]: PluginEventHandler<
-      P2PMessage<string, any>
-    >;
-  };
-  coreEvents?: {
-    [key in keyof CandorClientEventDef["emit"]]?: PluginEventHandler<
-      CandorClientEventDef["emit"][key]
-    >;
-  };
-  pluginEvents?: {
-    [key in keyof Events["emit"]]?: PluginEventHandler<Events["emit"][key]>;
-  };
+  pubsub: SubscribeEventHandlers<PluginEvents>;
+  p2p: ReceiveEventHandlers<PluginEvents>;
+  coreEvents?: Partial<PluginEventHandlers<CandorClientEvents["emit"]>>;
+  pluginEvents?: Partial<PluginEventHandlers<PluginEvents["emit"]>>;
 }
 export default PluginInterface;
 

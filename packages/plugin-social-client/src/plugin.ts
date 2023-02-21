@@ -1,22 +1,18 @@
+import { IncomingP2PMessage } from "@candor/core-types/src/p2p";
 import type {
   PluginInterface,
   CandorClientInterface,
-  PubsubMessage,
   Peer,
-  P2PMessage,
   TableRow,
   TableDefinition,
-  CandorClientEventDef,
+  IncomingPubsubMessage,
+  EncodingOptions,
 } from "@candor/core-types";
 import Emittery from "emittery";
 import { v4 as uuid } from "uuid";
 import { SocialClientEvents } from "./types";
 import {
-  SocialAnnounceMessage,
-  SocialUpdatesRequestMessage,
-  SocialUpdatesResponseMessage,
   SocialConnectionMessage,
-  SocialUpdateMessage,
   SocialClientPluginEvents,
   SocialConnectionRecord,
   SocialPost,
@@ -27,7 +23,6 @@ import {
   SocialUserGetResponseMessage,
   SocialChatMessageOutgoing,
   SocialChatMessageRequest,
-  SocialChatMessageResponse,
   SocialChatMessageRecord,
   SocialConnectionFilter,
 } from "@candor/plugin-social-core";
@@ -53,7 +48,7 @@ export class SocialClientPlugin<
   interval: NodeJS.Timer | null = null;
   ready = false;
 
-  maxConnectionCount = 24;
+  maxConnectionCount = 256;
 
   pubsub = {
     "/social/announce": this.onAnnounce,
@@ -74,7 +69,7 @@ export class SocialClientPlugin<
   };
 
   constructor(
-    public client: CandorClientInterface<PluginEvents>,
+    public client: CandorClientInterface<SocialClientEvents>,
     public options: Record<string, unknown> = {}
   ) {
     super();
@@ -103,9 +98,9 @@ export class SocialClientPlugin<
           bio: this.bio,
           status: this.status,
         });
-        await this.client.send(peer.peerId.toString(), {
+        await this.client.send<SocialClientEvents>(peer.peerId.toString(), {
           topic: "/social/announce",
-          data: {
+          payload: {
             requestId: uuid(),
             name: this.name,
             bio: this.bio,
@@ -155,7 +150,7 @@ export class SocialClientPlugin<
         status: this.status,
         updatedAt: this.updatedAt,
       },
-      { sign: true }
+      { sign: true, encrypt: false }
     );
   }
 
@@ -238,7 +233,7 @@ export class SocialClientPlugin<
         requestId: uuid(),
         post: saved,
       },
-      { sign: true }
+      { sign: true, encrypt: false }
     );
 
     return saved as SocialPost;
@@ -325,7 +320,7 @@ export class SocialClientPlugin<
 
     await this.client.send(server.peerId.toString(), {
       topic: "/social/users/search/request",
-      data: {
+      payload: {
         requestId,
         query,
       },
@@ -357,7 +352,7 @@ export class SocialClientPlugin<
 
     await this.client.send(server.peerId.toString(), {
       topic: "/social/user/get/request",
-      data: {
+      payload: {
         requestId,
         did,
       },
@@ -592,8 +587,8 @@ export class SocialClientPlugin<
 
   async onConnection(
     message:
-      | PubsubMessage<SocialConnectionMessage>
-      | P2PMessage<string, SocialConnectionMessage>
+      | IncomingP2PMessage<PluginEvents, "/social/connection">
+      | IncomingPubsubMessage<PluginEvents, "/social/connection">
   ) {
     if (!message.peer?.did) {
       console.warn(
@@ -603,11 +598,11 @@ export class SocialClientPlugin<
       return;
     }
 
-    if (message.data.from !== message.peer.did) {
+    if (message.payload.from !== message.peer.did) {
       console.warn(
         `plugin/social/client > refusing to create connection for another user`,
         {
-          from: message.data.from,
+          from: message.payload.from,
           did: message.peer.did,
         }
       );
@@ -626,12 +621,12 @@ export class SocialClientPlugin<
       }
     }
 
-    let toUserId = (await this.getUserByDID(message.data.to))?.id;
+    let toUserId = (await this.getUserByDID(message.payload.to))?.id;
     if (!toUserId) {
       // we don't have the user, so we need to fetch it
-      const user = await this.getUserFromServer(message.data.to);
+      const user = await this.getUserFromServer(message.payload.to);
       if (user) {
-        const toUser = await users.upsert("did", message.data.to, user);
+        const toUser = await users.upsert("did", message.payload.to, user);
         toUserId = toUser?.id;
       }
     }
@@ -653,28 +648,28 @@ export class SocialClientPlugin<
 
     const connection = await connectionsTable
       ?.query()
-      .where("from", "=", message.data.from)
-      .where("to", "=", message.data.to)
+      .where("from", "=", message.payload.from)
+      .where("to", "=", message.payload.to)
       .select()
       .execute()
       .then((result) => result.first() as SocialConnectionRecord | undefined);
     if (connection?.id) {
       await connectionsTable?.update(connection.id, {
-        follow: message.data.follow,
+        follow: message.payload.follow,
       });
     } else {
       await connectionsTable?.insert({
-        from: message.data.from,
-        to: message.data.to,
-        follow: !!message.data.follow,
+        from: message.payload.from,
+        to: message.payload.to,
+        follow: !!message.payload.follow,
       });
     }
   }
 
   async onAnnounce(
     message:
-      | PubsubMessage<SocialAnnounceMessage>
-      | P2PMessage<string, SocialAnnounceMessage>
+      | IncomingP2PMessage<PluginEvents, "/social/announce", EncodingOptions>
+      | IncomingPubsubMessage<PluginEvents, "/social/announce", EncodingOptions>
   ) {
     if (!message.peer.did) {
       console.warn(
@@ -685,15 +680,15 @@ export class SocialClientPlugin<
 
     console.info(
       `plugin/social/client > received social announce message (did: ${message.peer.did})`,
-      message.data
+      message.payload
     );
     await this.table<SocialUser>("users")?.upsert("did", message.peer.did, {
-      name: message.data.name,
-      bio: message.data.bio,
-      status: message.data.status,
-      avatar: message.data.avatar,
+      name: message.payload.name,
+      bio: message.payload.bio,
+      status: message.payload.status,
+      avatar: message.payload.avatar,
       did: message.peer.did,
-      updatedAt: message.data.updatedAt,
+      updatedAt: message.payload.updatedAt,
     });
 
     try {
@@ -750,15 +745,13 @@ export class SocialClientPlugin<
   }
 
   async onUpdate(
-    message:
-      | PubsubMessage<SocialUpdateMessage>
-      | P2PMessage<string, SocialUpdateMessage>
+    message: IncomingPubsubMessage<PluginEvents, "/social/update">
   ) {
     console.info(
       `plugin/social/client > received social update message`,
       message
     );
-    const { post } = message.data;
+    const { post } = message.payload;
     const { id, ...postData } = post;
 
     const cid = await this.client.dag.store(postData);
@@ -796,9 +789,11 @@ export class SocialClientPlugin<
   }
 
   async onUpdatesRequest(
-    message:
-      | PubsubMessage<SocialUpdatesRequestMessage>
-      | P2PMessage<string, SocialUpdatesRequestMessage>
+    message: IncomingP2PMessage<
+      PluginEvents,
+      "/social/updates/request",
+      EncodingOptions
+    >
   ) {
     if (!message.peer.did) {
       console.warn(
@@ -824,17 +819,19 @@ export class SocialClientPlugin<
     console.info(`plugin/social/client > sending updates response`, myPosts);
     await this.client.send(message.peer.peerId.toString(), {
       topic: "/social/updates/response",
-      data: {
-        requestId: message.data.requestId,
+      payload: {
+        requestId: message.payload.requestId,
         updates: myPosts?.map((post) => post) || [],
       },
     });
   }
 
   async onUpdatesResponse(
-    message:
-      | PubsubMessage<SocialUpdatesResponseMessage>
-      | P2PMessage<string, SocialUpdatesResponseMessage>
+    message: IncomingP2PMessage<
+      PluginEvents,
+      "/social/updates/response",
+      EncodingOptions
+    >
   ) {
     if (!message.peer.did) {
       console.warn(
@@ -843,7 +840,7 @@ export class SocialClientPlugin<
       return;
     }
 
-    const updates = message.data.updates;
+    const updates = message.payload.updates;
     if (!updates) return;
   }
 
@@ -875,6 +872,7 @@ export class SocialClientPlugin<
     };
     await this.client.publish("/social/connection", message, {
       sign: true,
+      encrypt: false,
     });
   }
 
@@ -935,23 +933,21 @@ export class SocialClientPlugin<
 
     const peer = this.client.peers.getPeerByDID(message.to);
     // if the peer isn't online
-    if (
-      !peer ||
-      !peer.connected ||
-      !this.client.protocol[peer.peerId.toString()]
-    ) {
-      const encoded = await this.client.encodeMessage<
-        SocialClientEvents["send"] & CandorClientEventDef["send"],
-        "/social/chat/message/request"
-      >(
+    if (!peer || !peer.connected) {
+      const encoded = await (this.client.plugins.candor as any)?.encodeMessage(
         {
           topic: "/social/chat/message/request",
           data: savedMessage,
         },
         {
           encrypt: true,
+          did: this.client.did,
         }
       );
+
+      if (!encoded) {
+        throw new Error("failed to encode chat message");
+      }
 
       // it seems like giving another application cursor focus will cause the
       // application to stop sending messages
@@ -961,15 +957,15 @@ export class SocialClientPlugin<
         .getPlugin<OfflineSyncClientEvents, OfflineSyncClientPluginInterface>(
           "offlineSyncClient"
         )
-        ?.sendMessage<
-          SocialClientEvents["send"],
-          "/social/chat/message/request"
-        >(message.to, encoded);
+        ?.sendMessage<SocialClientEvents, "/social/chat/message/request">(
+          message.to,
+          encoded
+        );
       console.info("done sending chat message offline");
     } else {
       await this.client.request(peer.peerId.toString(), {
         topic: "/social/chat/message/request",
-        data: savedMessage,
+        payload: savedMessage,
       });
     }
 
@@ -989,18 +985,20 @@ export class SocialClientPlugin<
   }
 
   async onResponseMessage(
-    message: P2PMessage<
-      string,
-      SocialUserGetResponseMessage | SocialUserSearchResponseMessage
+    message: IncomingP2PMessage<
+      SocialClientEvents,
+      "/social/users/search/response" | "/social/user/get/response",
+      EncodingOptions
     >
   ) {
-    const { requestId } = message.data;
+    const { requestId } = message.payload;
     console.info(
       `plugin/social/client > server response received (requestId: ${requestId})`,
       message
     );
     if (message.topic === "/social/users/search/response") {
-      const users = (message.data as SocialUserSearchResponseMessage).results;
+      const users = (message.payload as SocialUserSearchResponseMessage)
+        .results;
       if (!users) return;
       for (const { id, ...user } of users) {
         await this.table<SocialUser>("users").upsert("did", user.did, user);
@@ -1008,16 +1006,20 @@ export class SocialClientPlugin<
     }
     this.emit(
       `/response/${requestId}` as keyof SocialClientPluginEvents,
-      message.data
+      message.payload
     );
   }
 
   async onChatMessageRequest(
-    message: P2PMessage<string, SocialChatMessageRequest>
+    message: IncomingP2PMessage<
+      SocialClientEvents,
+      "/social/chat/message/request",
+      EncodingOptions
+    >
   ) {
-    if (message.data.to !== this.client.id) {
+    if (message.payload.to !== this.client.id) {
       console.warn(
-        `plugin/social/client > received chat message request for another user (to: ${message.data.to})`
+        `plugin/social/client > received chat message request for another user (to: ${message.payload.to})`
       );
       return;
     }
@@ -1027,18 +1029,18 @@ export class SocialClientPlugin<
       );
       return;
     }
-    if (message.peer.did !== message.data.from) {
+    if (message.peer.did !== message.payload.from) {
       console.warn(
-        `plugin/social/client > received chat message request from a peer with a different did (from: ${message.data.from}, peer.did: ${message.peer.did})`
+        `plugin/social/client > received chat message request from a peer with a different did (from: ${message.payload.from}, peer.did: ${message.peer.did})`
       );
       return;
     }
 
     console.info(`plugin/social/client > received chat message request`, {
-      message: message.data,
+      message: message.payload,
     });
 
-    const request = message.data;
+    const request = message.payload;
     const { cid, ...msg } = request;
 
     // TODO: fix this, the order of the keys is different
@@ -1088,8 +1090,8 @@ export class SocialClientPlugin<
     );
     await this.client.send(message.peer.peerId.toString(), {
       topic: "/social/chat/message/response",
-      data: {
-        requestId: message.data.requestId,
+      payload: {
+        requestId: message.payload.requestId,
         accepted: true,
         cid,
       },
@@ -1097,7 +1099,11 @@ export class SocialClientPlugin<
   }
 
   async onChatMessageResponse(
-    message: P2PMessage<string, SocialChatMessageResponse>
+    message: IncomingP2PMessage<
+      PluginEvents,
+      "/social/chat/message/response",
+      EncodingOptions
+    >
   ) {
     if (!message.peer.did) {
       console.warn(
@@ -1106,7 +1112,7 @@ export class SocialClientPlugin<
       return;
     }
 
-    const { cid } = message.data;
+    const { cid } = message.payload;
     const stored = await this.table<SocialChatMessageRecord>("chat_messages")
       .query()
       .where("cid", "=", cid)

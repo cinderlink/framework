@@ -5,3 +5,4 @@ export * from "./plugin";
 export * from "./pubsub";
 export * from "./database";
 export * from "./identity";
+export * from "./protocol";

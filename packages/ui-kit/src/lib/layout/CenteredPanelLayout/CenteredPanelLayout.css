@@ -1,0 +1,12 @@
+.layout.layout--centered {
+	@apply flex-1 flex flex-col items-center justify-center;
+}
+
+.layout.layout--centered .panel h1 {
+	@apply text-2xl font-bold mb-4;
+	@apply text-green-600;
+}
+
+#theme.theme--dark .layout.layout--centered .panel h1 {
+	@apply text-green-400;
+}

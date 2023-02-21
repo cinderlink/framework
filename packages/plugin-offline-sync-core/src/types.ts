@@ -1,11 +1,12 @@
 import type {
-  EncodedP2PMessage,
+  ProtocolRequest,
   PluginEventDef,
   TableRow,
+  OutgoingP2PMessage,
 } from "@candor/core-types";
 
 export type OfflineSyncSendRequest<
-  Data extends EncodedP2PMessage = EncodedP2PMessage
+  Data extends OutgoingP2PMessage = OutgoingP2PMessage
 > = {
   requestId: string;
   recipient: string;
@@ -13,7 +14,7 @@ export type OfflineSyncSendRequest<
 };
 
 export type OfflineSyncRecord<
-  Data extends EncodedP2PMessage = EncodedP2PMessage
+  Data extends OutgoingP2PMessage = OutgoingP2PMessage
 > = OfflineSyncSendRequest<Data> &
   TableRow & {
     sender: string;
@@ -63,7 +64,7 @@ export interface OfflineSyncEvents extends PluginEventDef {
   "/offline/delete/confirmation": OfflineSyncDeleteConfirmation;
 }
 
-export type OfflineSyncClientEvents = {
+export interface OfflineSyncClientEvents extends PluginEventDef {
   send: {
     "/offline/send/request": OfflineSyncSendRequest;
     "/offline/get/request": OfflineSyncGetRequest;
@@ -75,9 +76,11 @@ export type OfflineSyncClientEvents = {
   };
   publish: {};
   subscribe: {};
+  pluginEvents: {};
+  coreEvents: {};
   emit: {
-    ready: void;
+    ready: ProtocolRequest;
   } & {
     [key in `/send/response/${string}`]: OfflineSyncSendResponse;
   };
-};
+}
