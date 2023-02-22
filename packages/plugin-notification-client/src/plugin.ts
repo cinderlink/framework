@@ -19,6 +19,9 @@ export class NotificationClientPlugin
     public options: Record<string, unknown> = {}
   ) {}
 
+  p2p = {};
+  pubsub = {};
+
   async start() {
     console.info(this.loggerTag, "started");
     await loadNotificationSchema(this.client);
@@ -55,10 +58,6 @@ export class NotificationClientPlugin
   async stop() {
     console.info(this.loggerTag, "stopped");
   }
-
-  p2p = {};
-
-  pubsub = {};
 }
 
 export default NotificationClientPlugin;

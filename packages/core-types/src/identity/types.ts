@@ -1,22 +1,23 @@
-export type IdentityResolveRequest = {
+import { ProtocolRequest } from "./../protocol/types";
+export interface IdentityResolveRequest extends ProtocolRequest {
   requestID: string;
   since: number;
-};
+}
 
-export type IdentityResolveResponse = {
+export interface IdentityResolveResponse extends ProtocolRequest {
   requestID: string;
   cid?: string;
   doc?: Record<string, unknown>;
   error?: string;
-};
+}
 
-export type IdentitySetRequest = {
+export interface IdentitySetRequest extends ProtocolRequest {
   requestID: string;
   cid: string;
-};
+}
 
-export type IdentitySetResponse = {
+export interface IdentitySetResponse extends ProtocolRequest {
   requestID: string;
   success: boolean;
   error?: string;
-};
+}

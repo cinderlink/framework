@@ -1,9 +1,9 @@
 import Emittery from "emittery";
 import { PluginEventDef } from "../plugin/types";
-import { PubsubMessageEvents } from "./types";
+import { SubscribeEvents } from "./types";
 
 export interface PubsubInterface<PluginEvents extends PluginEventDef>
-  extends Emittery<PubsubMessageEvents<PluginEvents["subscribe"]>> {
+  extends Emittery<SubscribeEvents<PluginEvents>> {
   subscriptions: string[];
   subscribe(topic: string): Promise<void>;
   unsubscribe(topic: string): Promise<void>;

@@ -26,14 +26,58 @@
       },
       // Try start the task on folder open
       "runOptions": {
-        "runOn": "folderOpen"
+        // "runOn": "folderOpen"
+      }
+    },
+    {
+      "label": "core build",
+      "type": "npm",
+      "script": "build",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "isBackground": false,
+      "icon": {
+        "color": "terminal.ansiGreen",
+        "id": "checklist"
+      },
+      "presentation": {
+        "group": "build",
+        "clear": true
+      },
+      "problemMatcher": {
+        "owner": "typescript",
+        "applyTo": "openDocuments",
+        "fileLocation": [
+          "search",
+          {
+            "include": [
+              "${workspaceFolder}/packages/",
+              "${workspaceFolder}/apps/"
+            ]
+          }
+        ],
+        "pattern": {
+          "regexp": "^@candor/(.+):(build|watch): (.+)\\((\\d+),(\\d+)\\): (.+) TS(\\w+): (.*)$",
+          "file": 3,
+          "line": 4,
+          "column": 5,
+          "severity": 6,
+          "code": 7,
+          "message": 8,
+          "loop": true
+        },
+        "background": {
+          "beginsPattern": "Build start",
+          "endsPattern": "Build success|Build failed"
+        }
       }
     },
     {
       // The name that shows up in terminal tab
       "label": "core watch",
-      "type": "shell",
-      "command": "pnpm watch",
+      "type": "npm",
+      "script": "watch",
       "options": {
         "cwd": "${workspaceFolder}"
       },
@@ -42,22 +86,15 @@
         "color": "terminal.ansiYellow",
         "id": "eye-watch"
       },
-      "problemMatcher": {
-        "owner": "external",
-        "fileLocation": ["relative", "${workspaceFolder}"],
-        "pattern": {
-          "regexp": "^(.*):(\\d+):(\\d+) - (.*)$",
-          "file": 1,
-          "line": 2,
-          "column": 3,
-          "message": 4
-        },
-        "background": {
-          "activeOnStart": true,
-          "beginsPattern": "Running watch in",
-          "endsPattern": "Successfully built '@candor/ui-kit' package."
+      "problemMatcher": [
+        {
+          "fileLocation": "autoDetect",
+          "background": {
+            "beginsPattern": "Build start",
+            "endsPattern": "Build success|Build failed"
+          }
         }
-      },
+      ],
       "presentation": {
         "group": "watchers"
       }

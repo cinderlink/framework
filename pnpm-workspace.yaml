@@ -1,8 +1,4 @@
 packages:
   - "packages/*"
-  - "frontend/"
-  - "registry-contracts/"
-  - "registry-frontend/"
-  - "ui-kit/"
-  - "!**/test/**"
+  - "apps/*"
   - "examples/*"

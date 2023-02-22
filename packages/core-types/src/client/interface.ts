@@ -1,52 +1,40 @@
-import { Stream } from "@libp2p/interface-connection";
-import { Pushable } from "it-pushable";
-import * as json from "multiformats/codecs/json";
 import type Emittery from "emittery";
 import type { PluginInterface, PluginEventDef } from "../plugin/types";
-import type { CandorClientEventDef } from "./types";
 import type {
-  EncodedP2PMessage,
-  EncodingOptions,
+  IncomingP2PMessage,
   OutgoingP2PMessage,
-  P2PMessageEvents,
-  Peer,
   PeerRole,
   PeerStoreInterface,
+  ReceiveEvents,
 } from "../p2p";
-import type { PubsubMessageEvents } from "../pubsub";
 import type { IPFSWithLibP2P } from "../ipfs";
 import type { DID } from "dids";
 import type { PeerId } from "@libp2p/interface-peer-id";
 import type { DIDDagInterface } from "../dag";
 import type { IdentityInterface } from "../identity";
 import { SchemaInterface } from "../database/schema";
+import { SubscribeEvents } from "../pubsub";
+import { EncodingOptions, ProtocolEvents } from "../protocol";
+import { CandorClientEvents } from "./types";
+
 export interface CandorClientInterface<
-  PluginEvents extends PluginEventDef = PluginEventDef
-> extends Emittery<CandorClientEventDef["emit"]> {
+  PluginEvents extends PluginEventDef = {
+    send: {};
+    receive: {};
+    emit: {};
+    publish: {};
+    subscribe: {};
+  }
+> extends Emittery<CandorClientEvents["emit"] & ProtocolEvents["emit"]> {
   plugins: Record<PluginInterface["id"], PluginInterface<any>>;
   started: boolean;
   hasServerConnection: boolean;
   peers: PeerStoreInterface;
   subscriptions: string[];
   relayAddresses: string[];
-  protocol: Record<
-    string,
-    {
-      push?: Pushable<json.ByteView<EncodedP2PMessage>>;
-      stream?: Stream;
-    }
-  >;
 
-  pubsub: Emittery<
-    PubsubMessageEvents<
-      PluginEvents["subscribe"] | CandorClientEventDef["subscribe"]
-    >
-  >;
-
-  p2p: Emittery<
-    P2PMessageEvents<PluginEvents["receive"]> &
-      P2PMessageEvents<CandorClientEventDef["receive"]>
-  >;
+  pubsub: Emittery<SubscribeEvents<PluginEvents>>;
+  p2p: Emittery<ReceiveEvents<PluginEvents>>;
 
   ipfs: IPFSWithLibP2P;
   did: DID;
@@ -57,8 +45,11 @@ export interface CandorClientInterface<
 
   get id(): string;
 
-  addPlugin<T extends PluginInterface<any> = PluginInterface<any>>(
-    plugin: T
+  addPlugin<
+    Events extends PluginEventDef = PluginEventDef,
+    Plugin extends PluginInterface<Events> = PluginInterface<Events>
+  >(
+    plugin: Plugin
   ): Promise<void>;
 
   getPlugin<
@@ -76,62 +67,37 @@ export interface CandorClientInterface<
   load(): Promise<void>;
   connect(peerId: PeerId, role?: PeerRole): Promise<void>;
 
-  encodeMessage<
-    E extends PluginEventDef["send"] &
-      CandorClientEventDef["send"] = PluginEventDef["send"] &
-      CandorClientEventDef["send"],
-    K extends keyof E = keyof E
-  >(
-    message: OutgoingP2PMessage<E, K>,
-    options: EncodingOptions
-  ): Promise<EncodedP2PMessage<E, K>>;
-
-  handleEncodedMessage(
-    message: EncodedP2PMessage<PluginEvents["receive"]>,
-    peer: Peer
-  ): Promise<void>;
-
   send<
-    E extends PluginEvents["send"] &
-      CandorClientEventDef["send"] = PluginEvents["send"] &
-      CandorClientEventDef["send"],
-    K extends keyof E = keyof E
+    Events extends PluginEventDef = PluginEvents,
+    Topic extends keyof Events["send"] = keyof Events["send"],
+    Encoding extends EncodingOptions = EncodingOptions
   >(
     peerId: string,
-    message: OutgoingP2PMessage<E, K>,
-    options?: EncodingOptions
+    message: OutgoingP2PMessage<Events, Topic, Encoding>,
+    options?: Encoding
   ): Promise<void>;
 
-  request<Data = any>(
+  request<
+    Encoding extends EncodingOptions = EncodingOptions,
+    Events extends PluginEventDef = PluginEvents,
+    OutTopic extends keyof Events["send"] = keyof Events["send"],
+    InTopic extends keyof Events["receive"] = keyof Events["receive"]
+  >(
     peerId: string,
-    message: OutgoingP2PMessage,
-    options?: EncodingOptions
-  ): Promise<Data | undefined>;
+    message: OutgoingP2PMessage<Events, OutTopic, Encoding>,
+    options?: Encoding
+  ): Promise<IncomingP2PMessage<Events, InTopic, Encoding> | undefined>;
 
-  subscribe(
-    topic:
-      | keyof PluginEvents["subscribe"]
-      | keyof CandorClientEventDef["subscribe"]
-  ): Promise<void>;
+  subscribe(topic: keyof PluginEvents["subscribe"]): Promise<void>;
 
-  unsubscribe(
-    topic:
-      | keyof PluginEvents["subscribe"]
-      | keyof CandorClientEventDef["subscribe"]
-  ): Promise<void>;
+  unsubscribe(topic: keyof PluginEvents["subscribe"]): Promise<void>;
 
   publish<
-    K extends keyof (PluginEvents | CandorClientEventDef)["subscribe"],
-    V extends (PluginEvents | CandorClientEventDef)["subscribe"][K]
+    Topic extends keyof PluginEvents["publish"] = keyof PluginEvents["publish"]
   >(
-    topic: K,
-    message: V,
-    options?: {
-      sign?: boolean;
-      encrypt?: boolean;
-      cid?: boolean;
-      recipients?: string[];
-    }
+    topic: Topic,
+    message: PluginEvents["publish"][Topic],
+    options?: EncodingOptions
   ): Promise<void>;
 
   hasSchema(name: string): boolean;

@@ -2,7 +2,7 @@ import { v4 as uuid } from "uuid";
 import localforage from "localforage";
 import { CID } from "multiformats";
 import type {
-  CandorClientEventDef,
+  CandorClientEvents,
   CandorClientInterface,
   PluginEventDef,
 } from "@candor/core-types";
@@ -86,9 +86,9 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
         resolve(undefined);
       }, timeout);
       this.client.p2p.on("/identity/resolve/response", (message) => {
-        if (message.data.requestID === requestID) {
+        if (message.payload.requestID === requestID) {
           clearTimeout(_timeout);
-          resolve(message.data.cid as string);
+          resolve(message.payload.cid as string);
         }
       });
       const servers = this.client.peers.getServers();
@@ -99,13 +99,10 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
       }
       servers.forEach((server) => {
         if (server.peerId) {
-          this.client.send<CandorClientEventDef["send"]>(
-            server.peerId.toString(),
-            {
-              topic: "/identity/resolve/request",
-              data: { requestID },
-            }
-          );
+          this.client.send<CandorClientEvents>(server.peerId.toString(), {
+            topic: "/identity/resolve/request",
+            payload: { requestID },
+          });
         }
       });
     });
@@ -126,13 +123,10 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
     await Promise.all(
       this.client.peers.getServers().map(async (server) => {
         if (server.did) {
-          await this.client.send<CandorClientEventDef["send"]>(
-            server.peerId.toString(),
-            {
-              topic: "/identity/set/request",
-              data: { requestID: uuid(), cid },
-            }
-          );
+          await this.client.send<CandorClientEvents>(server.peerId.toString(), {
+            topic: "/identity/set/request",
+            payload: { requestID: uuid(), cid },
+          });
         }
       })
     );
