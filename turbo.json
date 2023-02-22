@@ -8,7 +8,7 @@
     },
     "watch": {
       "inputs": ["src/**"],
-      "outputs": ["dist/**"],
+      "outputs": ["dist/**", ".svelte-kit/**", "package/**"],
       "persistent": true
     },
     "dev": {

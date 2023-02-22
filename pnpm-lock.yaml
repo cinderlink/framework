@@ -14,15 +14,15 @@ importers:
 
   apps/frontend:
     specifiers:
-      '@candor/client': 0.1.2
-      '@candor/core-types': 0.1.2
-      '@candor/ipld-database': 0.1.2
-      '@candor/plugin-notification-client': 0.1.2
-      '@candor/plugin-offline-sync-client': 0.1.2
-      '@candor/plugin-offline-sync-core': 0.1.2
-      '@candor/plugin-social-client': 0.2.0
-      '@candor/plugin-social-core': 0.1.2
-      '@candor/ui-kit': 0.1.2
+      '@candor/client': workspace:../../packages/client
+      '@candor/core-types': workspace:../../packages/core-types
+      '@candor/ipld-database': workspace:../../packages/ipld-database
+      '@candor/plugin-notification-client': workspace:../../packages/plugin-notification-client
+      '@candor/plugin-offline-sync-client': workspace:../../packages/plugin-offline-sync-client
+      '@candor/plugin-offline-sync-core': workspace:../../packages/plugin-offline-sync-core
+      '@candor/plugin-social-client': workspace:../../packages/plugin-social-client
+      '@candor/plugin-social-core': workspace:../../packages/plugin-social-core
+      '@candor/ui-kit': workspace:../../packages/ui-kit
       '@iconify-json/logos': ^1.1.23
       '@iconify-json/mdi': ^1.1.47
       '@iconify-json/tabler': ^1.1.61

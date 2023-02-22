@@ -1,13 +1,13 @@
 <script lang="ts">
-	import { base64 } from 'multiformats/bases/base64';
-	import { dapp } from '$lib/dapp/store';
-	import { Avatar, Typography } from '@candor/ui-kit';
-	import CreatePost from '$lib/posts/CreatePost.svelte';
 	import { onMount } from 'svelte';
 	import type { SocialClientEvents, SocialClientPlugin } from '@candor/plugin-social-client';
-	import Post from '$lib/posts/Post.svelte';
 	import type { SocialPost, SocialProfile, SocialUser } from '@candor/plugin-social-core';
+	import { Avatar, Typography } from '@candor/ui-kit';
+
+	import { dapp } from '$lib/dapp/store';
+	import Post from '$lib/posts/Post.svelte';
 	import CidImage from '$lib/dapp/CIDImage.svelte';
+	import CreatePost from '$lib/posts/CreatePost.svelte';
 
 	export let userId: number | undefined = undefined;
 	export let user: SocialUser | undefined = undefined;

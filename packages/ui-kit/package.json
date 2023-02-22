@@ -23,7 +23,8 @@
 	"svelte": "./dist/index.js",
 	"types": "./dist/index.d.ts",
 	"files": [
-		"dist"
+		"dist",
+		"package.json"
 	],
 	"devDependencies": {
 		"@iconify-json/logos": "^1.1.23",

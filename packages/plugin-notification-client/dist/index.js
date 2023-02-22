@@ -13510,7 +13510,6 @@ var NotificationClientPlugin = class {
     console.info(this.loggerTag, "started");
     await loadNotificationSchema(this.client);
     const notifications = this.table("notifications").query().select().execute();
-    console.log("debug: | start | notifications", notifications);
     console.info(this.loggerTag, "ready");
     this.ready = true;
   }
