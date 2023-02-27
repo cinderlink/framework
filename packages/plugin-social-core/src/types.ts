@@ -78,6 +78,8 @@ export type SocialConnectionMessage = {
 
 export type SocialAnnounceMessage = {
   requestId: string;
+  address?: string;
+  addressVerification?: string;
   name: string;
   bio: string;
   avatar: string;

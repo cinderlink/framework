@@ -3,6 +3,7 @@
 	import type { SocialClientPlugin } from '@candor/plugin-social-client';
 	import type { SocialPost, SocialProfile, SocialUser } from '@candor/plugin-social-core';
 	import { Avatar, Typography, ImageUpload } from '@candor/ui-kit';
+	import { AttestationMenu } from '@candor/ui-kit/web3';
 
 	import { dapp } from '$lib/dapp/store';
 	import Post from '$lib/posts/Post.svelte';
@@ -130,6 +131,31 @@
 				{user?.name || ''}
 			</div>
 		</section>
+		<AttestationMenu
+			label="Feedback"
+			size="sm"
+			align="right"
+			options={[
+				{
+					key: 'candor.user.spam',
+					entityTypeId: 0,
+					entityId: 0,
+					label: 'This user posts spam content'
+				},
+				{
+					key: 'candor.user.inappropriate',
+					entityTypeId: 0,
+					entityId: 0,
+					label: 'This user posts inappropriate content'
+				},
+				{
+					key: 'candor.user.impersonation',
+					entityTypeId: 0,
+					entityId: 0,
+					label: 'This user is impersonating another user'
+				}
+			]}
+		/>
 	</div>
 	<div class="profile__body">
 		<!-- <aside class="profile__sidebar">

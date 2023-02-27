@@ -27,6 +27,8 @@ export const SocialSchemaDef = {
     schema: {
       type: "object",
       properties: {
+        address: { type: "string" },
+        addressVerification: { type: " string" },
         name: { type: "string" },
         bio: { type: "string" },
         avatar: { type: "string" },

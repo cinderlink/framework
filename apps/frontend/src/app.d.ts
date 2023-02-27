@@ -1,4 +1,3 @@
-import { Keystore } from '@candor/ui-kit';
 /// <reference types="@sveltejs/kit" />
 
 // See https://kit.svelte.dev/docs/types#app
@@ -12,7 +11,5 @@ declare namespace App {
 }
 
 declare global {
-	interface Window {
-		keystore?: Keystore;
-	}
+	interface Window {}
 }

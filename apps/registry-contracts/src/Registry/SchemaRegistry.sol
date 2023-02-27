@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "forge-std/console.sol";
-import "../util/Strings.sol";
+import "../util/CandorStrings.sol";
 import "./PermissionedContract.sol";
 
 contract SchemaRegistry is PermissionedContract {
@@ -43,7 +43,7 @@ contract SchemaRegistry is PermissionedContract {
 
     function updateName(uint256 _id, string memory _name) public {
         requirePermission(_id, "update");
-        require(exists(_id), string.concat("schema not found: ", Strings.uint2str(_id)));
+        require(exists(_id), string.concat("schema not found: ", CandorStrings.uint2str(_id)));
         require(!exists(_name), "Schema already registered");
 
         schemas[_id].name = _name;
@@ -52,14 +52,14 @@ contract SchemaRegistry is PermissionedContract {
 
     function updateCid(uint256 _id, string memory _cid) public {
         requirePermission(_id, "update");
-        require(exists(_id), string.concat("schema not found: ", Strings.uint2str(_id)));
+        require(exists(_id), string.concat("schema not found: ", CandorStrings.uint2str(_id)));
 
         schemas[_id].cid = _cid;
     }
 
     function update(uint256 _id, string memory _name, string memory _cid) public {
         requirePermission(_id, "update");
-        require(exists(_id), string.concat("schema not found: ", Strings.uint2str(_id)));
+        require(exists(_id), string.concat("schema not found: ", CandorStrings.uint2str(_id)));
         require(!exists(_name), string.concat("schema exists: ", _name));
 
         schemas[_id].name = _name;
@@ -69,7 +69,7 @@ contract SchemaRegistry is PermissionedContract {
 
     function remove(uint256 _id) public {
         requirePermission(_id, "delete");
-        require(exists(_id), string.concat("schema not found: ", Strings.uint2str(_id)));
+        require(exists(_id), string.concat("schema not found: ", CandorStrings.uint2str(_id)));
 
         delete schemas[_id];
         delete schemaIds[schemas[_id].name];

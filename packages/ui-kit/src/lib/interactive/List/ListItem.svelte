@@ -5,7 +5,7 @@
 	export let href: string | undefined = undefined;
 	export let el = href ? 'a' : 'div';
 	export let interactive: boolean = el !== 'div';
-	export let style = 'flex flex-row gap-2 items-center justify-between w-full';
+	export let style = 'flex flex-row gap-2 items-center justify-between w-full whitespace-nowrap';
 	export let classes = '';
 
 	const dispatch = createEventDispatcher();
@@ -21,6 +21,7 @@
 	{interactive}
 	on:click={handleClick}
 	on:keypress={handleClick}
+	{...$$restProps}
 >
 	<div class="{style} {classes}">
 		<slot />

@@ -22,6 +22,7 @@
     "watch": "tsup --watch"
   },
   "devDependencies": {
+    "@candor/client": "workspace:^0.1.2",
     "@candor/core-types": "0.1.2",
     "@candor/ipld-database": "0.1.2",
     "@candor/plugin-offline-sync-core": "0.1.2",

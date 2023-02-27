@@ -1,2 +1,2 @@
-export * from './Onboard';
 export * from './store';
+export * from './AttestationMenu';

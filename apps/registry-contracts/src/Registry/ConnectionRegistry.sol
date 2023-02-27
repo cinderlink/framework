@@ -2,8 +2,8 @@
 pragma solidity ^0.8.0;
 
 import "forge-std/console.sol";
-import "../util/Strings.sol";
-import "../util/Arrays.sol";
+import "../util/CandorStrings.sol";
+import "../util/CandorArrays.sol";
 import "./PermissionedContract.sol";
 import "./EntityRegistry.sol";
 
@@ -75,7 +75,7 @@ contract ConnectionRegistry is PermissionedContract {
                 count++;
             }
         }
-        return Arrays.slice(filtered, 0, count);
+        return CandorArrays.slice(filtered, 0, count);
     }
 
     function getEntityConnections(uint256 _entityId) public view returns (Connection[] memory) {
@@ -109,7 +109,7 @@ contract ConnectionRegistry is PermissionedContract {
                 count++;
             }
         }
-        return Arrays.slice(filtered, 0, count);
+        return CandorArrays.slice(filtered, 0, count);
     }
 
     function getMutualConnectionIds(uint256 _fromId, uint256 _toId, uint8 _connectionType)
@@ -128,7 +128,7 @@ contract ConnectionRegistry is PermissionedContract {
                 count++;
             }
         }
-        return Arrays.slice(filtered, 0, count);
+        return CandorArrays.slice(filtered, 0, count);
     }
 
     function getMutualConnections(uint256 _fromId, uint256 _toId) public view returns (Connection[] memory) {
@@ -211,7 +211,7 @@ contract ConnectionRegistry is PermissionedContract {
         require(connectionId > 0, "Connection does not exist");
         uint256 contributorId = permissions.users().getId(msg.sender);
         delete connections[connectionId];
-        entityConnections[_fromEntity].connectionIds = Arrays.remove(entity.connectionIds, connectionId);
+        entityConnections[_fromEntity].connectionIds = CandorArrays.remove(entity.connectionIds, connectionId);
         emit ConnectionDeleted(connectionId, _fromEntity, _toEntity, _connectionType, contributorId);
 
         uint8 reverseConnectionType = _connectionType == CONNECTION_TYPE_PARENT
@@ -220,7 +220,7 @@ contract ConnectionRegistry is PermissionedContract {
         Connection memory reverseEntity = getEntityConnection(_toEntity, _fromEntity, reverseConnectionType);
         delete connections[reverseEntity.id];
         entityConnections[_toEntity].connectionIds =
-            Arrays.remove(entityConnections[_toEntity].connectionIds, reverseEntity.id);
+            CandorArrays.remove(entityConnections[_toEntity].connectionIds, reverseEntity.id);
         emit ConnectionDeleted(reverseEntity.id, _toEntity, _fromEntity, reverseConnectionType, contributorId);
     }
 
@@ -231,7 +231,7 @@ contract ConnectionRegistry is PermissionedContract {
             Connection memory connection = connections[matches[i]];
             if (connection.toId == _toEntity) {
                 delete connections[connection.id];
-                entityConnections[_fromEntity].connectionIds = Arrays.remove(entity.connectionIds, connection.id);
+                entityConnections[_fromEntity].connectionIds = CandorArrays.remove(entity.connectionIds, connection.id);
             }
         }
     }

@@ -22,6 +22,7 @@
     "watch": "tsup --watch"
   },
   "devDependencies": {
+    "@candor/client": "workspace:^0.1.2",
     "@candor/core-types": "0.1.2",
     "@candor/plugin-social-client": "0.2.0",
     "@candor/plugin-social-core": "0.1.2",

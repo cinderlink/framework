@@ -3,7 +3,7 @@ pragma solidity ^0.8.17;
 
 // ERC20 staking contract
 
-import "../util/Arrays.sol";
+import "../util/CandorArrays.sol";
 import "../Registry/PermissionedContract.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -55,7 +55,7 @@ contract CinderStaking {
     }
 
     function stake(uint256 _amount) public {
-        require(_amount >= minStakeAmount, string.concat("Cannot stake less than ", Strings.uint2str(minStakeAmount)));
+        require(_amount >= minStakeAmount, string.concat("Cannot stake less than ", CandorStrings.uint2str(minStakeAmount)));
         IERC20(tokenAddress).transferFrom(msg.sender, address(this), _amount);
 
         uint256 stakerId;
@@ -119,7 +119,7 @@ contract CinderStaking {
         uint256 delegateId = stakerIds[_delegate];
         require(stakers[delegateId].amountStaked > 0, "Cannot delegate to non-staker");
 
-        uint256 delegateIndex = Arrays.indexOf(delegations[delegateId], stakerId);
+        uint256 delegateIndex = CandorArrays.indexOf(delegations[delegateId], stakerId);
         require(delegateIndex == type(uint256).max, "Already delegated to this address");
 
         stakers[stakerId].delegate = _delegate;

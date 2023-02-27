@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.17;
 
-import "../util/Strings.sol";
+import "../util/CandorStrings.sol";
 
 contract UserRegistry {
     address owner;
@@ -32,7 +32,7 @@ contract UserRegistry {
             require(userAddresses[_user] == 0, "Address already registered");
         }
 
-        string memory slug = Strings.slugify(_name);
+        string memory slug = CandorStrings.slugify(_name);
         require(!exists(slug), "User already registered");
 
         uint256 id = ++counter;
@@ -48,7 +48,7 @@ contract UserRegistry {
     }
 
     function exists(string memory _name) public view returns (bool) {
-        string memory slug = Strings.slugify(_name);
+        string memory slug = CandorStrings.slugify(_name);
         return userIds[slug] > 0;
     }
 
@@ -65,7 +65,7 @@ contract UserRegistry {
     }
 
     function getId(string memory _name) public view returns (uint256) {
-        string memory slug = Strings.slugify(_name);
+        string memory slug = CandorStrings.slugify(_name);
         return userIds[slug];
     }
 
@@ -82,7 +82,7 @@ contract UserRegistry {
     }
 
     function getUser(string memory _name) public view returns (User memory) {
-        string memory slug = Strings.slugify(_name);
+        string memory slug = CandorStrings.slugify(_name);
         return users[userIds[slug]];
     }
 
@@ -95,7 +95,7 @@ contract UserRegistry {
     }
 
     function getdid(string memory _name) public view returns (string memory) {
-        string memory slug = Strings.slugify(_name);
+        string memory slug = CandorStrings.slugify(_name);
         return users[userIds[slug]].did;
     }
 
@@ -111,7 +111,7 @@ contract UserRegistry {
         require(
             users[_id].owner == msg.sender || msg.sender == owner, "Only the owner of a permission can update the name"
         );
-        string memory slug = Strings.slugify(_name);
+        string memory slug = CandorStrings.slugify(_name);
         users[_id].name = slug;
     }
 
@@ -138,7 +138,7 @@ contract UserRegistry {
 
         delete userIds[users[_id].name];
 
-        string memory slug = Strings.slugify(_name);
+        string memory slug = CandorStrings.slugify(_name);
         users[_id].name = slug;
         users[_id].did = _did;
         users[_id].owner = _owner;

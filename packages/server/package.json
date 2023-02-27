@@ -35,6 +35,6 @@
   },
   "peerDependencies": {
     "@candor/client": "@candor/client",
-    "ipfs-core": "^0.17.0"
+    "ipfs-core": "^0.18.0"
   }
 }

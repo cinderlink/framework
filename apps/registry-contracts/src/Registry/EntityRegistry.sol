@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "forge-std/console.sol";
-import "../util/Strings.sol";
+import "../util/CandorStrings.sol";
 import "./PermissionedContract.sol";
 import "./EntityTypeRegistry.sol";
 

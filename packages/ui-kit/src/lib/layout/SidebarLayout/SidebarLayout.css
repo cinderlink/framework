@@ -1,5 +1,6 @@
 .panel.layout__panel {
 	@apply m-0 md-(m-4) lg-(m-10 mb-4) xl-(m-12 mb-4) flex-1 h-full overflow-hidden relative p-0;
+	@apply w-full md-(w-7/8) xl-(w-3/4);
 }
 
 .layout.layout--sidebar {

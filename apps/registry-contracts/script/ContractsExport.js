@@ -9,9 +9,7 @@ if (["json", "ts"].indexOf(format) === -1) {
   throw new Error("Unknown format");
 }
 
-const artifact = JSON.parse(
-  fs.readFileSync("./broadcast/Deploy.s.sol/31337/run-latest.json", "utf8")
-);
+const contracts = {};
 
 if (fs.existsSync("export/")) {
   fs.rmSync("export/", { recursive: true });
@@ -19,32 +17,37 @@ if (fs.existsSync("export/")) {
 
 fs.mkdirSync(`export/contracts`, { recursive: true });
 
-const contracts = {};
-if (artifact && artifact.transactions) {
-  for (let tx of artifact.transactions) {
-    if (tx.contractName && tx.contractAddress) {
-      const { abi } = JSON.parse(
-        fs.readFileSync(
-          `./out/${tx.contractName}.sol/${tx.contractName}.json`,
-          "utf8"
-        )
-      );
-      contracts[tx.contractName] = tx.contractAddress;
+["Deploy.s.sol", "DeployNFT.s.sol"].forEach((script) => {
+  const artifact = JSON.parse(
+    fs.readFileSync("./broadcast/" + script + "/31337/run-latest.json", "utf8")
+  );
 
-      fs.writeFileSync(
-        `export/contracts/${tx.contractName}.${format}`,
-        format === "json"
-          ? JSON.stringify({ abi, address: tx.contractAddress }, null, 2)
-          : `export const ${tx.contractName} = {
+  if (artifact && artifact.transactions) {
+    for (let tx of artifact.transactions) {
+      if (tx.contractName && tx.contractAddress) {
+        const { abi } = JSON.parse(
+          fs.readFileSync(
+            `./out/${tx.contractName}.sol/${tx.contractName}.json`,
+            "utf8"
+          )
+        );
+        contracts[tx.contractName] = tx.contractAddress;
+
+        fs.writeFileSync(
+          `export/contracts/${tx.contractName}.${format}`,
+          format === "json"
+            ? JSON.stringify({ abi, address: tx.contractAddress }, null, 2)
+            : `export const ${tx.contractName} = {
   abi: ${JSON.stringify(abi)}, 
   address: "${tx.contractAddress}" 
 };
 export default ${tx.contractName};
 `
-      );
+        );
+      }
     }
   }
-}
+});
 
 fs.writeFileSync(
   `export/contracts.${format}`,

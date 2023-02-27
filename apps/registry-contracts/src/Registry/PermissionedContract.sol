@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import "../util/Strings.sol";
+import "../util/CandorStrings.sol";
 import "./PermissionRegistry.sol";
 
 contract PermissionedContract {
@@ -22,7 +22,7 @@ contract PermissionedContract {
     }
 
     function permissionKey(uint256 _entityId, string memory _permission) internal view returns (string memory) {
-        return permissionKey(string.concat(Strings.uint2str(_entityId), ".", _permission));
+        return permissionKey(string.concat(CandorStrings.uint2str(_entityId), ".", _permission));
     }
 
     function userHasPermission(string memory _permission, address _address) public view returns (bool) {

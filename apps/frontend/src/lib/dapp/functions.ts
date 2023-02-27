@@ -1,26 +1,37 @@
-import { CandorProtocolPlugin } from '@candor/protocol';
-import { multiaddr } from '@multiformats/multiaddr';
+import type { DID } from 'dids';
 import type { Contract } from 'ethers';
+import type { Options } from 'ipfs-core';
+import { multiaddr } from '@multiformats/multiaddr';
+import { get } from 'svelte/store';
 import { PUBLIC_IPFS_SWARM_ADDRESSES } from '$env/static/public';
 import { peerIdFromString } from '@libp2p/peer-id';
+
+import { CandorProtocolPlugin } from '@candor/protocol';
 import { createSeed, createHash, createClient } from '@candor/client';
 import { SocialClientPlugin, type SocialClientEvents } from '@candor/plugin-social-client';
 import { OfflineSyncClientPlugin } from '@candor/plugin-offline-sync-client';
 import { NotificationClientPlugin } from '@candor/plugin-notification-client';
 import { web3, getContract, signMessage } from '@candor/ui-kit';
-import { get } from 'svelte/store';
+
 import { UserRegistry } from './contracts';
 import dapp from './store';
 import type { CandorClientInterface, ProtocolEvents } from '@candor/core-types';
 import type { OfflineSyncClientEvents } from '@candor/plugin-offline-sync-core';
+import { createDID, createSignerDID, signAddressVerification } from '@candor/client';
 
-export async function initializeDapp(secret: string) {
-	console.info('initializing dapp-kit', PUBLIC_IPFS_SWARM_ADDRESSES.split(','));
-	const seed = await createSeed(secret);
-	const client: CandorClientInterface<any> = await createClient(
-		seed,
-		PUBLIC_IPFS_SWARM_ADDRESSES.split(',')
-	);
+export async function initializeDapp(
+	did: DID,
+	address: string,
+	addressVerification: string,
+	options?: Partial<Options>
+) {
+	const client: CandorClientInterface<any> = await createClient({
+		did,
+		address,
+		addressVerification,
+		nodes: PUBLIC_IPFS_SWARM_ADDRESSES.split(','),
+		options
+	});
 
 	const protocol = new CandorProtocolPlugin(client);
 	client.addPlugin<ProtocolEvents>(protocol);
@@ -33,7 +44,7 @@ export async function initializeDapp(secret: string) {
 	client.addPlugin<OfflineSyncClientEvents>(offlineSync);
 
 	await client.start();
-	await Promise.all(
+	Promise.all(
 		PUBLIC_IPFS_SWARM_ADDRESSES.split(',').map(async (addr) => {
 			const peerIdStr = addr.split('/').pop();
 			console.info('connecting to peer', peerIdStr);
@@ -73,23 +84,39 @@ export function getUserRegistry() {
 	return userRegistry;
 }
 
-export async function connect() {
-	const { connected: web3connected, address } = get(web3);
+export async function connect(nonce = 0) {
+	const { connected: web3connected, signer } = get(web3);
 	const { connected } = get(dapp);
 	if (!web3connected || connected) {
 		return;
 	}
 
-	let signature: string | undefined = sessionStorage.getItem('candor:signature') || undefined;
-	if (address && !signature) {
-		signature = await signAccountIdentifier(address);
+	if (!signer) {
+		throw new Error('No signer found');
 	}
-	if (signature) {
-		sessionStorage.setItem('candor:signature', signature);
+
+	let did: DID | undefined = undefined;
+	let addressVerification: string | undefined =
+		sessionStorage.getItem('candor:addressVerification') || undefined;
+	const entropy: string | undefined = sessionStorage.getItem('candor:entropy') || undefined;
+
+	if (entropy) {
+		const seed = await createSeed(entropy);
+		did = await createDID(seed);
 	} else {
-		throw new Error('Could not sign account identifier');
+		did = await createSignerDID('candor.social', signer, nonce);
 	}
-	await initializeDapp(signature);
+
+	if (!did) {
+		throw new Error('Could not create or restore DID');
+	}
+
+	const address = await signer.getAddress();
+	if (!addressVerification) {
+		addressVerification = await signAddressVerification('candor.social', did.id, signer);
+	}
+
+	await initializeDapp(did, address, addressVerification);
 }
 
 export async function destroy() {

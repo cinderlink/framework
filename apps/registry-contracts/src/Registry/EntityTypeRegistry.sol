@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.17;
 
-import "../util/Strings.sol";
+import "../util/CandorStrings.sol";
 import "./PermissionRegistry.sol";
 import "./PermissionedContract.sol";
 

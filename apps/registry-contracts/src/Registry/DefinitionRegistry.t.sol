@@ -63,7 +63,7 @@ contract DefinitionRegistryTest is Test {
         require(definitionSchemaId == schemaId, "schemaId mismatch [getSchemaId(uint256)]");
 
         string memory definitionCid = definitions.getCid(id);
-        require(Strings.isEqual(definitionCid, "test"), "cid mismatch [getCid(uint256)]");
+        require(CandorStrings.isEqual(definitionCid, "test"), "cid mismatch [getCid(uint256)]");
 
         uint256 definitionVersion = definitions.getVersion(id);
         require(definitionVersion == 1, "version mismatch [getVersion(uint256)]");
@@ -94,7 +94,7 @@ contract DefinitionRegistryTest is Test {
 
         definitions.update(id, "test2");
         string memory definitionCid = definitions.getCid(id);
-        require(Strings.isEqual(definitionCid, "test2"), "cid mismatch [getCid(uint256)]");
+        require(CandorStrings.isEqual(definitionCid, "test2"), "cid mismatch [getCid(uint256)]");
 
         uint256 definitionVersion = definitions.getVersion(id);
         require(definitionVersion == 2, "version mismatch [getVersion(uint256)]");

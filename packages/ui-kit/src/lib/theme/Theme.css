@@ -1,6 +1,9 @@
+@import url('https://use.typekit.net/crk7mse.css');
 html,
 body {
-	@apply w-full h-full;
+	@apply w-full h-full overflow-hidden font-sans;
+	font-family: 'proxima-nova', sans-serif;
+	font-size: 18px;
 }
 
 #app {
@@ -10,7 +13,7 @@ body {
 }
 
 #theme {
-	@apply w-full h-full flex flex-col overflow-hidden;
+	@apply w-full h-full flex flex-col overflow-hidden items-center justify-center;
 	background-color: #35169d;
 	background-image: linear-gradient(63.34deg, #35169d 0.24%, #73526a 50.12%, #d9a23c 100%);
 }

@@ -1,4 +1,4 @@
-import { IncomingP2PMessage } from "@candor/core-types/src/p2p";
+import { IncomingP2PMessage } from "@candor/core-types";
 import type {
   PluginInterface,
   CandorClientInterface,
@@ -28,6 +28,7 @@ import {
 } from "@candor/plugin-social-core";
 import { loadSocialSchema } from "@candor/plugin-social-core";
 import { multiaddr } from "@multiformats/multiaddr";
+import { checkAddressVerification } from "@candor/client";
 import type { OfflineSyncClientPluginInterface } from "@candor/plugin-offline-sync-core";
 
 export class SocialClientPlugin<
@@ -70,7 +71,38 @@ export class SocialClientPlugin<
     public options: Record<string, unknown> = {}
   ) {
     super();
-    // this.client.publish();
+  }
+
+  async sendSocialAnnounce(to: string | undefined = undefined) {
+    if (!this.client.address) {
+      throw new Error("client address not set");
+    }
+    if (!this.client.addressVerification) {
+      throw new Error("client address verification not set");
+    }
+    if (!this.client.did) {
+      throw new Error("client did not set");
+    }
+    const payload = {
+      requestId: uuid(),
+      address: this.client.address,
+      addressVerification: this.client.addressVerification,
+      name: this.name,
+      bio: this.bio,
+      status: this.status,
+      avatar: this.avatar,
+      updatedAt: this.updatedAt,
+    };
+    if (to) {
+      console.info(`plugin/social/client > announcing (p2p)`, payload);
+      await this.client.send<SocialClientEvents>(to, {
+        topic: "/social/announce",
+        payload,
+      });
+    } else {
+      console.info(`plugin/social/client > announcing (pubsub)`, payload);
+      await this.client.publish("/social/announce", payload);
+    }
   }
 
   async start() {
@@ -93,24 +125,12 @@ export class SocialClientPlugin<
       "/candor/handshake/success",
       async (peer: Peer) => {
         console.info("handshake success, getting updates");
-        if (this.name && this.name !== "guest") {
-          console.info(`plugin/social/client > announcing (pubsub)`, {
-            name: this.name,
-            avatar: this.avatar,
-            bio: this.bio,
-            status: this.status,
-          });
-          await this.client.send<SocialClientEvents>(peer.peerId.toString(), {
-            topic: "/social/announce",
-            payload: {
-              requestId: uuid(),
-              name: this.name,
-              bio: this.bio,
-              status: this.status,
-              avatar: this.avatar,
-              updatedAt: this.updatedAt,
-            },
-          });
+        if (
+          this.name &&
+          this.name !== "guest" &&
+          this.client.addressVerification
+        ) {
+          await this.sendSocialAnnounce(peer.peerId.toString());
         }
 
         // ask servers for updates
@@ -144,7 +164,7 @@ export class SocialClientPlugin<
     this.interval = setInterval(async () => {
       if (!hasConnected || !this.name || this.name === "guest") return;
       console.info(`plugin/social/client > announcing (pubsub, interval)`);
-      await this.publishAnnounceMessage();
+      await this.sendSocialAnnounce();
     }, Number(this.options.interval || 1000 * 60));
 
     await this.loadLocalUser();
@@ -184,28 +204,6 @@ export class SocialClientPlugin<
     this.ready = true;
     console.info(`plugin/social/client > ready`);
     this.emit("ready", undefined);
-  }
-
-  async publishAnnounceMessage() {
-    if (!this.name || this.name === "guest") return;
-    console.info(`plugin/social/client > announcing (pubsub)`, {
-      name: this.name,
-      avatar: this.avatar,
-      bio: this.bio,
-      status: this.status,
-    });
-    await this.client.publish(
-      "/social/announce",
-      {
-        requestId: uuid(),
-        name: this.name,
-        avatar: this.avatar,
-        bio: this.bio,
-        status: this.status,
-        updatedAt: this.updatedAt,
-      },
-      { sign: true, encrypt: false }
-    );
   }
 
   get db() {
@@ -728,6 +726,36 @@ export class SocialClientPlugin<
     if (!message?.peer?.did) {
       console.warn(
         `plugin/social/client > received social announce message from unauthenticated peer (peerId: ${message?.peer?.peerId})`,
+        message
+      );
+      return;
+    }
+
+    if (!message.payload.address) {
+      console.warn(
+        `plugin/social/client > received social announce message from peer without address (did: ${message.peer.did})`,
+        message
+      );
+      return;
+    }
+
+    if (!message.payload.addressVerification) {
+      console.warn(
+        `plugin/social/client > received social announce message from peer without address verification (did: ${message.peer.did})`,
+        message
+      );
+      return;
+    }
+
+    const verified = await checkAddressVerification(
+      "candor.social",
+      message.peer.did,
+      message.payload.address,
+      message.payload.addressVerification
+    );
+    if (!verified) {
+      console.warn(
+        `plugin/social/client > received social announce message from peer with invalid address verification (did: ${message.peer.did})`,
         message
       );
       return;

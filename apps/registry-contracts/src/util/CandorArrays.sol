@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-library Arrays {
+library CandorArrays {
     function indexOf(uint256[] memory self, uint256 value) internal pure returns (uint256) {
         for (uint256 i = 0; i < self.length; i++) {
             if (self[i] == value) {

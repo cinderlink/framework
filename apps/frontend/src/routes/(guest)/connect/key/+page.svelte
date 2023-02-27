@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Button } from "@candor/ui-kit";
+	import { Button } from "@candor/ui-kit/interactive";
 </script>
 
 	<Button href="/connect/key/create" variant="yellow" size="md" width="w-full">

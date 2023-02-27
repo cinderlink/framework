@@ -18,6 +18,56 @@
 			"types": "./dist/index.d.ts",
 			"svelte": "./dist/index.js",
 			"import": "./dist/index.js"
+		},
+		"./theme": {
+			"types": "./dist/theme/index.d.ts",
+			"svelte": "./dist/theme/index.js",
+			"import": "./dist/theme/index.js"
+		},
+		"./actions": {
+			"types": "./dist/actions/index.d.ts",
+			"svelte": "./dist/actions/index.js",
+			"import": "./dist/actions/index.js"
+		},
+		"./content": {
+			"types": "./dist/content/index.d.ts",
+			"svelte": "./dist/content/index.js",
+			"import": "./dist/content/index.js"
+		},
+		"./indicator": {
+			"types": "./dist/indicator/index.d.ts",
+			"svelte": "./dist/indicator/index.js",
+			"import": "./dist/indicator/index.js"
+		},
+		"./layout": {
+			"types": "./dist/layout/index.d.ts",
+			"svelte": "./dist/layout/index.js",
+			"import": "./dist/layout/index.js"
+		},
+		"./interactive": {
+			"types": "./dist/interactive/index.d.ts",
+			"svelte": "./dist/interactive/index.js",
+			"import": "./dist/interactive/index.js"
+		},
+		"./unocss": {
+			"types": "./dist/unocss/index.d.ts",
+			"svelte": "./dist/unocss/index.js",
+			"import": "./dist/unocss/index.js"
+		},
+		"./navigation": {
+			"types": "./dist/navigation/index.d.ts",
+			"svelte": "./dist/navigation/index.js",
+			"import": "./dist/navigation/index.js"
+		},
+		"./web3": {
+			"types": "./dist/web3/index.d.ts",
+			"svelte": "./dist/web3/index.js",
+			"import": "./dist/web3/index.js"
+		},
+		"./onboard": {
+			"types": "./dist/onboard/index.d.ts",
+			"svelte": "./dist/onboard/index.js",
+			"import": "./dist/onboard/index.js"
 		}
 	},
 	"svelte": "./dist/index.js",
@@ -31,20 +81,20 @@
 		"@candor/protocol": "workspace:^0.1.0",
 		"@esbuild-plugins/node-globals-polyfill": "^0.2.3",
 		"@iconify-json/logos": "^1.1.23",
-		"@iconify-json/tabler": "^1.1.61",
-		"@playwright/test": "^1.30.0",
+		"@iconify-json/tabler": "^1.1.62",
+		"@playwright/test": "^1.31.1",
 		"@sveltejs/adapter-auto": "^1.0.3",
-		"@sveltejs/package": "^2.0.1",
+		"@sveltejs/package": "^2.0.2",
 		"@types/highlight.js": "^10.1.0",
 		"@types/markdown-it": "^12.2.3",
 		"@types/markdown-it-emoji": "^2.0.2",
-		"@typescript-eslint/eslint-plugin": "^5.52.0",
-		"@typescript-eslint/parser": "^5.52.0",
-		"@unocss/reset": "^0.49.6",
+		"@typescript-eslint/eslint-plugin": "^5.53.0",
+		"@typescript-eslint/parser": "^5.53.0",
+		"@unocss/reset": "^0.49.8",
 		"ajv": "^8.12.0",
 		"copy-to-clipboard": "^3.3.3",
 		"emittery": "^1.0.1",
-		"eslint": "^8.34.0",
+		"eslint": "^8.35.0",
 		"eslint-config-prettier": "^8.6.0",
 		"eslint-plugin-svelte3": "^4.0.0",
 		"ethers": "^5.7.2",
@@ -54,17 +104,17 @@
 		"markdown-it-emoji": "^2.0.2",
 		"prettier": "^2.8.4",
 		"prettier-plugin-svelte": "^2.9.0",
-		"sanitize-html": "^2.9.0",
-		"svelte-check": "^3.0.3",
+		"sanitize-html": "^2.10.0",
+		"svelte-check": "^3.0.4",
 		"svelte-highlight": "^7.2.0",
 		"tslib": "^2.5.0",
 		"typescript": "^4.9.5",
-		"unocss": "^0.49.6",
-		"vite": "^4.1.1",
+		"unocss": "^0.49.8",
+		"vite": "^4.1.4",
 		"vitest": "^0.28.5"
 	},
 	"dependencies": {
-		"@sveltejs/kit": "^1.7.1",
+		"@sveltejs/kit": "^1.8.5",
 		"@web3-onboard/coinbase": "^2.2.0",
 		"@web3-onboard/core": "^2.15.2",
 		"@web3-onboard/gnosis": "^2.1.6",

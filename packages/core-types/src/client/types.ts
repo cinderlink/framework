@@ -14,6 +14,8 @@ import { ProtocolRequest } from "../protocol";
 export type CandorConstructorOptions = {
   ipfs: IPFSWithLibP2P;
   did: DID;
+  address: string;
+  addressVerification: string;
 };
 
 export interface CandorClientEvents<

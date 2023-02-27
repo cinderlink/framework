@@ -39,6 +39,8 @@ export interface CandorClientInterface<
 
   ipfs: IPFSWithLibP2P;
   did: DID;
+  address: string;
+  addressVerification: string;
   peerId?: PeerId;
   dag: DIDDagInterface;
   schemas: Record<string, SchemaInterface>;

@@ -2,11 +2,11 @@
 	import { dapp } from '$lib/dapp/store';
 	import type { SocialUser } from '@candor/plugin-social-core';
 	import type { SocialClientPlugin, SocialClientEvents } from '@candor/plugin-social-client';
-	import { Typography } from '@candor/ui-kit';
-	import { Input, List } from '@candor/ui-kit';
+	import { Typography } from '@candor/ui-kit/content';
+	import { Input, List } from '@candor/ui-kit/interactive';
+	import { clickoutside } from '@candor/ui-kit/actions';
 	import { slide } from 'svelte/transition';
 	import { v4 as uuid } from 'uuid';
-	import { clickoutside } from '@candor/ui-kit';
 	import UserListItem from '$lib/users/UserListItem.svelte';
 
 	let query = '';

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import "../util/Arrays.sol";
+import "../util/CandorArrays.sol";
 import "./EntityRegistry.sol";
 import "./SchemaRegistry.sol";
 import "./PermissionedContract.sol";
@@ -106,7 +106,7 @@ contract DefinitionRegistry is PermissionedContract {
         );
 
         uint256 entityId = definitions[_id].entityId;
-        entityDefs[entityId].definitionIds = Arrays.remove(entityDefs[entityId].definitionIds, _id);
+        entityDefs[entityId].definitionIds = CandorArrays.remove(entityDefs[entityId].definitionIds, _id);
 
         delete definitions[_id];
     }

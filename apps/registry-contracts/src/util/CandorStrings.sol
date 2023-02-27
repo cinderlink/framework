@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-library Strings {
+library CandorStrings {
     function toLowerCase(string memory _name) public pure returns (string memory) {
         bytes memory b = bytes(_name);
         for (uint256 i = 0; i < b.length; i++) {

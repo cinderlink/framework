@@ -59,16 +59,25 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
 
   public ipfs: IPFSWithLibP2P;
   public did: DID;
+  public address: string;
+  public addressVerification: string;
   public peerId?: PeerId;
   public dag: ClientDIDDag;
   public schemas: Record<string, SchemaInterface> = {};
   public identity: Identity<PluginEvents>;
   public relayAddresses: string[] = [];
 
-  constructor({ ipfs, did }: CandorConstructorOptions) {
+  constructor({
+    ipfs,
+    did,
+    address,
+    addressVerification,
+  }: CandorConstructorOptions) {
     super();
     this.ipfs = ipfs;
     this.did = did;
+    this.address = address;
+    this.addressVerification = addressVerification;
     this.dag = new ClientDIDDag<PluginEvents>(this);
     this.identity = new Identity<PluginEvents>(this);
     this.plugins = {};

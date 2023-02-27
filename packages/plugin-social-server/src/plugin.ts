@@ -17,6 +17,7 @@ import type {
   EncodingOptions,
 } from "@candor/core-types";
 import { SocialClientEvents } from "@candor/plugin-social-client";
+import { checkAddressVerification } from "@candor/client";
 import {
   SocialUserSearchRequestMessage,
   SocialUserSearchResponseMessage,
@@ -259,6 +260,32 @@ export class SocialServerPlugin<
       );
       return;
     }
+    if (!message.payload.address) {
+      console.warn(
+        `plugin/social/server > received social announce message without peer address`
+      );
+      return;
+    }
+    if (!message.payload.addressVerification) {
+      console.warn(
+        `plugin/social/server > received social announce message without peer address verification`
+      );
+      return;
+    }
+
+    const verified = await checkAddressVerification(
+      "candor.social",
+      message.peer.did,
+      message.payload.address,
+      message.payload.addressVerification
+    );
+    if (!verified) {
+      console.warn(
+        `plugin/social/server > received social announce message with invalid peer address verification`
+      );
+      return;
+    }
+
     console.info(
       `plugin/social/server > received peer announce message (did: ${message.peer.did})`,
       message?.payload

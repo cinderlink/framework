@@ -31,14 +31,7 @@ export const web3: Writable<Web3Store> = writable({
 		connect: false
 	}
 } as Web3Store);
-
-web3.subscribe((store) => {
-	if (store.address && !store.displayName) {
-		// TODO: fetch ens, lens, etc...
-	} else {
-		setDisplayName(undefined);
-	}
-});
+export default web3;
 
 export function setDisplayName(name: string | undefined) {
 	web3.update((store) => {
@@ -52,8 +45,6 @@ export function addressDisplayName(address: string | undefined) {
 		? `${address.slice(0, 6)}...${address.slice(-4)}`
 		: `0x${'0'.repeat(4)}...${'0'.repeat(4)}`;
 }
-
-export default web3;
 
 export function disconnect() {
 	web3.update((store) => {
