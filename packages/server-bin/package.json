@@ -21,8 +21,8 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup src/bin.ts --format cjs,esm --dts ",
-    "watch": "pnpm build --watch",
+    "build": "tsup",
+    "watch": "tsup --watch",
     "test": "vitest"
   },
   "dependencies": {
@@ -32,10 +32,15 @@
     "minimist": "^1.2.8"
   },
   "peerDependencies": {
-    "@candor/client": "0.1.2"
+    "@candor/client": "workspace:^0.1.2"
   },
   "devDependencies": {
-    "@candor/client": "0.1.2",
+    "@candor/client": "workspace:^0.1.2",
+    "@candor/plugin-identity-server": "workspace:^0.1.2",
+    "@candor/plugin-offline-sync-server": "workspace:^0.1.2",
+    "@candor/plugin-social-server": "workspace:^0.1.2",
+    "@candor/protocol": "workspace:^0.1.0",
+    "@candor/tsconfig": "workspace:^1.0.0",
     "@types/minimist": "^1.2.2",
     "chalk": "^5.2.0",
     "ts-node": "^10.9.1",

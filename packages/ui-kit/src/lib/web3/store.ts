@@ -1,45 +1,32 @@
-import {
-	fetchEnsName,
-	getContract as getWagmiContract,
-	getProvider,
-	fetchSigner,
-	mainnet,
-	type Client,
-	type Connector,
-	type FetchEnsNameResult,
-	type Provider
-} from '@wagmi/core';
-import type { ChainType } from './types';
-import { writable, type Writable } from 'svelte/store';
+import { writable, get, type Writable } from 'svelte/store';
+import type { ContractInterface, Signer, Wallet } from 'ethers';
+import { Contract } from 'ethers';
 
 export interface Web3Store {
-	address: `0x${string}` | undefined;
+	address: string | `0x${string}`;
 	displayName: string | undefined;
+	avatar: string | undefined;
+	chainId: number;
 	balance: number;
 	network: string;
 	connected: boolean;
-	type: ChainType | undefined;
-	walletId: string | undefined;
-	evm?: {
-		client: Client | undefined;
-		connector: Connector | undefined;
-		provider: Provider | undefined;
-		chainId: number;
-	};
+	walletId?: string;
+	wallet?: Wallet;
+	signer?: Signer;
 	modals: {
 		connect: boolean;
 	};
 }
 
 export const web3: Writable<Web3Store> = writable({
-	address: undefined,
+	address: '',
 	displayName: undefined,
+	avatar: undefined,
+	chainId: 0,
 	balance: 0,
 	network: 'none',
 	connected: false,
 	type: undefined,
-	walletId: undefined,
-	evm: undefined,
 	modals: {
 		connect: false
 	}
@@ -47,13 +34,9 @@ export const web3: Writable<Web3Store> = writable({
 
 web3.subscribe((store) => {
 	if (store.address && !store.displayName) {
-		if (store.evm?.connector) {
-			fetchEnsName({ address: store.address, chainId: mainnet.id }).then(
-				(name: FetchEnsNameResult) => setDisplayName(name || undefined)
-			);
-		} else {
-			setDisplayName(undefined);
-		}
+		// TODO: fetch ens, lens, etc...
+	} else {
+		setDisplayName(undefined);
 	}
 });
 
@@ -74,32 +57,35 @@ export default web3;
 
 export function disconnect() {
 	web3.update((store) => {
-		store.evm?.connector?.disconnect();
-		store.evm?.client?.destroy();
 		return store;
 	});
 	reset();
 }
 
-export function getContract(address: string, abi: Record<string, unknown>) {
-	return getWagmiContract({ address, abi: abi as any, signerOrProvider: getProvider() });
+export function getContract(address: string, abi: ContractInterface) {
+	const { wallet } = get(web3);
+	if (!wallet?.provider) {
+		throw new Error('No provider');
+	}
+	return new Contract(address, abi, wallet.provider);
 }
 
 export async function signMessage(message: string) {
-	const signer = await fetchSigner();
+	const { signer } = get(web3);
 	return signer?.signMessage(message);
 }
 
 export function reset() {
 	web3.update((store) => {
-		store.address = undefined;
+		store.address = '0x0000';
 		store.displayName = undefined;
+		store.avatar = undefined;
 		store.balance = 0;
 		store.network = 'none';
 		store.connected = false;
-		store.type = undefined;
 		store.walletId = undefined;
-		store.evm = undefined;
+		store.wallet = undefined;
+		store.signer = undefined;
 
 		return store;
 	});

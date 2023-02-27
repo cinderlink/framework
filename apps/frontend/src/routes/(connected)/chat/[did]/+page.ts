@@ -8,7 +8,9 @@ import { goto } from '$app/navigation';
 export async function load({ params }: PageLoadEvent) {
 	const { did } = params;
 	const { client } = get(dapp);
-	const plugin: SocialClientPlugin | undefined = client?.getPlugin('socialClient');
+	const plugin: SocialClientPlugin | undefined = client?.getPlugin('socialClient') as
+		| SocialClientPlugin
+		| undefined;
 	let messages: SocialChatMessageRecord[] = [];
 	let user: SocialUser | undefined;
 	if (client?.id && plugin) {

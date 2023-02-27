@@ -6,6 +6,7 @@ import type {
 import { DIDDag } from "./did/dag";
 import * as json from "multiformats/codecs/json";
 import { CID } from "multiformats";
+import { GetOptions } from "ipfs-core-types/src/root";
 
 export class ClientDag<Plugins extends PluginEventDef = PluginEventDef>
   implements DAGInterface
@@ -26,10 +27,14 @@ export class ClientDag<Plugins extends PluginEventDef = PluginEventDef>
     return cid;
   }
 
-  async load<T>(cid: CID | string, path?: string): Promise<T> {
+  async load<T>(
+    cid: CID | string,
+    path?: string,
+    options: GetOptions = {}
+  ): Promise<T> {
     const stored = await this.client.ipfs.dag.get(
       typeof cid === "string" ? CID.parse(cid) : cid,
-      { path }
+      { path, ...options }
     );
     return stored.value as T;
   }

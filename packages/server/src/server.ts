@@ -9,6 +9,11 @@ export class CandorServer {
 
   async start() {
     await this.client.start();
+
+    process.on("SIGINT", async () => {
+      await this.stop();
+      process.exit(0);
+    });
   }
 
   async stop() {

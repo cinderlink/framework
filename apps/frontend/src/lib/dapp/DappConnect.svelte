@@ -35,3 +35,9 @@
 		{/if}
 	{/await}
 </div>
+
+<style>
+	.dapp__connect {
+		@apply flex-1 overflow-auto;
+	}
+</style>

@@ -1,6 +1,6 @@
 import { Schema } from "@candor/ipld-database";
 import { CandorClientInterface, TableDefinition } from "@candor/core-types";
-import { OfflineSyncRecord } from "types";
+import { OfflineSyncRecord } from "./types";
 
 export const OfflineSyncSchemaDef: Record<string, TableDefinition<any>> = {
   messages: {

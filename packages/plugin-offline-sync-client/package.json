@@ -15,8 +15,8 @@
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts --dts --format cjs,esm ",
-    "watch": "pnpm build --watch"
+    "build": "tsup",
+    "watch": "tsup --watch"
   },
   "files": [
     "dist"
@@ -25,6 +25,7 @@
     "@candor/core-types": "0.1.2",
     "@candor/ipld-database": "0.1.2",
     "@candor/plugin-offline-sync-core": "0.1.2",
+    "@candor/tsconfig": "workspace:^1.0.0",
     "@multiformats/multiaddr": "^11.4.0",
     "@types/uuid": "^9.0.0",
     "did-jwt": "^6.11.1",
@@ -43,6 +44,7 @@
     "multiformats": "^11.0.1"
   },
   "dependencies": {
+    "@candor/protocol": "workspace:^0.1.0",
     "date-fns": "^2.29.3",
     "uuid": "^9.0.0"
   }

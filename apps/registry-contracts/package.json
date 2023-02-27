@@ -10,8 +10,9 @@
   "scripts": {
     "watch": "forge test --watch -vv",
     "anvil:start": "anvil",
-    "anvil:deploy": "source .env && forge script script/Deploy.s.sol --fork-url $(TESTNET_RPC_URL) --broadcast",
-    "anvil:mint": "source .env && forge script script/Mint.s.sol --fork-url $(TESTNET_RPC_URL) --broadcast",
+    "anvil:deploy": "source .env && forge script script/Deploy.s.sol --fork-url $TESTNET_RPC_URL --broadcast",
+    "base:deploy": "source .env && forge script script/Deploy.s.sol --fork-url https://goerli.base.org/ --broadcast",
+    "anvil:mint": "source .env && forge script script/Mint.s.sol --fork-url $TESTNET_RPC_URL --broadcast",
     "contracts:export": "node script/ContractsExport.js"
   }
 }

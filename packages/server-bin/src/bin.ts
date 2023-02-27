@@ -38,6 +38,7 @@ if (command === "init") {
       {
         seed: crypto.randomBytes(32).toString("hex"),
         plugins: [
+          ["@candor/protocol"],
           ["@candor/plugin-social-server"],
           ["@candor/plugin-identity-server"],
         ],

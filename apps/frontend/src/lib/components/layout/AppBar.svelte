@@ -4,7 +4,6 @@
 	import type { SocialClientPlugin, SocialClientEvents } from '@candor/plugin-social-client';
 	import { Typography } from '@candor/ui-kit';
 	import { Input, List } from '@candor/ui-kit';
-	import { WalletMenu } from '@candor/ui-kit';
 	import { slide } from 'svelte/transition';
 	import { v4 as uuid } from 'uuid';
 	import { clickoutside } from '@candor/ui-kit';
@@ -16,10 +15,9 @@
 	let loading = false;
 	let error: string | false = false;
 
-	const plugin: SocialClientPlugin | undefined = $dapp.client?.getPlugin<
-		SocialClientEvents,
-		SocialClientPlugin
-	>('socialClient');
+	const plugin: SocialClientPlugin | undefined = $dapp.client?.getPlugin(
+		'socialClient'
+	) as SocialClientPlugin;
 
 	async function searchForUsers() {
 		error = false;
@@ -104,9 +102,7 @@
 		{/if}
 	</div>
 
-	<div id="app-account">
-		<WalletMenu />
-	</div>
+	<div id="app-account" />
 </div>
 
 <style>

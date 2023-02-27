@@ -1,3 +1,4 @@
+import { rmSync } from "fs";
 import { CandorClientInterface } from "@candor/core-types";
 import { describe, beforeAll, it, expect, afterAll } from "vitest";
 import { createClient } from "./create";
@@ -6,9 +7,17 @@ import { createSeed } from "./hash";
 let client: CandorClientInterface;
 describe("@candor/client/dag", () => {
   beforeAll(async () => {
+    rmSync("./dag-test", { recursive: true, force: true });
     const seed = await createSeed("test seed");
-    client = await createClient(seed);
+    client = await createClient(seed, [], {
+      repo: "dag-test",
+    });
     await client.start();
+  });
+
+  afterAll(async () => {
+    await client?.stop();
+    rmSync("./dag-test", { recursive: true, force: true });
   });
 
   it("should store and load a document", async () => {

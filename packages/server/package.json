@@ -15,8 +15,8 @@
     }
   },
   "scripts": {
-    "build": "tsup --format cjs,esm src/index.ts --dts ",
-    "watch": "pnpm build --watch"
+    "build": "tsup",
+    "watch": "tsup --watch"
   },
   "files": [
     "dist"
@@ -24,6 +24,7 @@
   "devDependencies": {
     "@candor/client": "0.1.2",
     "@candor/core-types": "0.1.2",
+    "@candor/tsconfig": "workspace:^1.0.0",
     "ipfs-core": "^0.18.0",
     "ipfs-core-types": "^0.14.0",
     "ipfs-http-gateway": "^0.13.0",

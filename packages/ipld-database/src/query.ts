@@ -4,6 +4,7 @@ import {
   BlockHeaders,
   BlockIndexes,
   InstructionType,
+  OrderByInstruction,
   QueryBuilderInterface,
   TableDefinition,
 } from "@candor/core-types";
@@ -392,9 +393,28 @@ export class TableQuery<
         }
       }
       if (rewriteBlock) {
+        rewriteBlock.changed = true;
         this.table.setBlock(rewriteBlock);
+        cache.invalidateTable(this.table.tableId);
       }
       this.table.unlock();
+    }
+
+    // orderBy
+    const orderByInstruction = this.instructions.find(
+      (i) => i.instruction === "orderBy"
+    ) as OrderByInstruction<Row>;
+    if (orderByInstruction) {
+      const { field, direction } = orderByInstruction;
+      returning = returning.sort((a, b) => {
+        if (a[field] < b[field]) {
+          return direction === "asc" ? -1 : 1;
+        }
+        if (a[field] > b[field]) {
+          return direction === "asc" ? 1 : -1;
+        }
+        return 0;
+      });
     }
 
     const result = new TableQueryResult<Row>(returning);

@@ -28,10 +28,10 @@ export interface PluginEventDef {
 
 export interface PluginInterface<
   PluginEvents extends PluginEventDef = PluginEventDef,
-  ReferencedEvents extends PluginEventDef = PluginEvents
+  Client extends CandorClientInterface<any> = CandorClientInterface
 > {
   id: string;
-  client: CandorClientInterface<ReferencedEvents>;
+  client: Client;
   start?(): Promise<void>;
   stop?(): Promise<void>;
   pubsub: SubscribeEventHandlers<PluginEvents>;
@@ -42,9 +42,6 @@ export interface PluginInterface<
 export default PluginInterface;
 
 export type PluginConstructor<
-  PluginEvents extends PluginEventDef = PluginEventDef,
+  Client extends CandorClientInterface = CandorClientInterface,
   Options extends Record<string, unknown> = {}
-> = new (
-  client: CandorClientInterface<PluginEvents>,
-  options?: Options
-) => PluginInterface;
+> = new (client: Client, options?: Options) => PluginInterface;

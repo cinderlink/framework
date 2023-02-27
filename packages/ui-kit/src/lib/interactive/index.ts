@@ -5,3 +5,4 @@ export * from './List';
 export * from './Modal';
 export * from './Select';
 export * from './Toggle';
+export * from './ImageUpload';

@@ -18,8 +18,8 @@
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts --format cjs,esm --dts ",
-    "watch": "pnpm build --watch"
+    "build": "tsup",
+    "watch": "tsup --watch"
   },
   "dependencies": {
     "@candor/client": "0.1.2",
@@ -27,6 +27,7 @@
     "@candor/ipld-database": "0.1.2"
   },
   "devDependencies": {
+    "@candor/tsconfig": "workspace:^1.0.0",
     "tsup": "^6.6.3",
     "typescript": "^4.9.5",
     "vitest": "^0.28.5"

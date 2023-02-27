@@ -15,6 +15,7 @@ export async function decodePayload<
   Encoded extends EncodedProtocolPayload<Payload, Encoding>
 >(encoded: Encoded, did?: DID): Promise<DecodedProtocolPayload<Payload>> {
   let payload: DecodedProtocolPayload<Encoded>["payload"];
+  let senderDid: string | undefined;
   if (encoded.signed) {
     if (!did) {
       throw new Error("did required to verify JWS");
@@ -26,6 +27,7 @@ export async function decodePayload<
     if (verification && verification.payload) {
       console.info("verified JWS", verification.payload);
       payload = verification.payload as Encoded;
+      senderDid = verification.didResolutionResult.didDocument?.id;
     } else {
       throw new Error("failed to verify JWS");
     }
@@ -52,6 +54,7 @@ export async function decodePayload<
     signed: encoded.signed,
     encrypted: encoded.encrypted,
     recipients: encoded.recipients,
+    ...((senderDid && { sender: senderDid }) || {}),
   } as DecodedProtocolPayload<Payload>;
 }
 

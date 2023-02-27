@@ -7,7 +7,7 @@ import {
   SocialProfile,
   SocialUser,
   SocialUserPin,
-} from "types";
+} from "./types";
 
 export const SocialSchemaDef = {
   users: {
@@ -138,14 +138,14 @@ export const SocialSchemaDef = {
         unique: true,
         fields: ["cid"],
       },
-      authorId: {
+      did: {
         unique: false,
-        fields: ["authorId"],
+        fields: ["did"],
       },
     },
     rollup: 1000,
     searchOptions: {
-      fields: ["cid", "authorId", "content", "attachments", "tags", "comments"],
+      fields: ["cid", "did", "content", "attachments", "tags", "comments"],
     },
     schema: {
       type: "object",
@@ -153,7 +153,7 @@ export const SocialSchemaDef = {
         cid: {
           type: "string",
         },
-        authorId: { type: "number" },
+        did: { type: "string" },
         content: { type: "string" },
         attachments: { type: "array", items: { type: "string" } },
         reactions: {
@@ -191,7 +191,7 @@ export const SocialSchemaDef = {
     },
     rollup: 1000,
     searchOptions: {
-      fields: ["authorId", "cid", "content", "tags", "comments"],
+      fields: ["from", "to", "cid", "content", "tags", "comments"],
     },
     schema: {
       type: "object",

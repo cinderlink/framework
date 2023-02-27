@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { dapp } from '$lib/dapp/store';
-	import type { SocialClientPlugin, SocialClientEvents } from '@candor/plugin-social-client';
+	import type { SocialClientPlugin } from '@candor/plugin-social-client';
 	import { Button, Input } from '@candor/ui-kit';
 	import { createEventDispatcher } from 'svelte';
 
@@ -11,16 +11,13 @@
 
 	async function onSubmit() {
 		saving = true;
-		const post = await $dapp.client
-			?.getPlugin<SocialClientEvents, SocialClientPlugin>('socialClient')
-			?.createPost({
-				content,
-				attachments: [],
-				comments: [],
-				reactions: [],
-				tags: [],
-				createdAt: Date.now()
-			});
+		const post = (
+			(await $dapp.client?.getPlugin('socialClient')) as SocialClientPlugin
+		)?.createPost({
+			content,
+			createdAt: Date.now()
+		});
+		content = '';
 		dispatch('post', post);
 		saving = false;
 	}
@@ -44,7 +41,6 @@
 				p="x-4 y-2"
 				rounded="lg"
 				flex="~ row gap-2"
-				justify="center"
 				items="center"
 				type="submit"
 			>

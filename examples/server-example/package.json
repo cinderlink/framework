@@ -3,21 +3,26 @@
   "private": true,
   "version": "0.1.2",
   "description": "",
-  "main": "index.js",
+  "main": "src/start.ts",
+  "type": "module",
   "scripts": {
-    "example": "pnpm candor"
+    "example": "pnpm candor",
+    "ts": "ts-node src/start.ts"
   },
   "dependencies": {
-    "@candor/plugin-identity-server": "0.1.2",
-    "@candor/plugin-social-server": "0.1.2",
-    "@candor/plugin-offline-sync-server": "0.1.2",
     "@candor/client": "0.1.2",
-    "@candor/server": "0.1.2",
     "@candor/core-types": "0.1.2",
+    "@candor/plugin-identity-server": "0.1.2",
+    "@candor/plugin-offline-sync-server": "0.1.2",
+    "@candor/plugin-social-server": "0.1.2",
+    "@candor/server": "0.1.2",
     "@candor/server-bin": "0.1.2",
     "ts-node": "^10.9.1"
   },
   "keywords": [],
   "author": "Drew Ewing",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "@candor/protocol": "workspace:^0.1.0"
+  }
 }

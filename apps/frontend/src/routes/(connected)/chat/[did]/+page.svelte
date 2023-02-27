@@ -26,10 +26,9 @@
 	let value: string = '';
 	let error: string | undefined = undefined;
 	let sending = false;
-	let plugin: SocialClientPlugin | undefined = $dapp.client?.getPlugin<
-		SocialClientEvents,
-		SocialClientPlugin
-	>('socialClient');
+	let plugin: SocialClientPlugin | undefined = $dapp.client?.getPlugin(
+		'socialClient'
+	) as SocialClientPlugin;
 	$: connected = data.user ? $dapp.client?.peers.hasPeerByDID(data.user.did) : false;
 
 	$dapp.client?.on('/peer/connect', (peer) => {
@@ -45,21 +44,6 @@
 		}
 	});
 
-	plugin?.table<SocialChatMessageRecord>('chat_messages').on('/record/inserted', async (record) => {
-		if (data.user?.did && $dapp.client?.id) {
-			messages =
-				(await plugin
-					?.table<SocialChatMessageRecord>('chat_messages')
-					.query()
-					.where('to', 'in', [$dapp.client?.id, data.user.did])
-					.where('from', 'in', [data.user.did, $dapp.client?.id])
-					.select()
-					.orderBy('createdAt', 'desc')
-					.limit(1000)
-					.execute()
-					.then((res) => res.all())) || [];
-		}
-	});
 	let localUser: SocialUser | undefined = undefined;
 	onMount(async () => {
 		if (!connected) {
@@ -67,6 +51,42 @@
 		}
 
 		localUser = await plugin?.getLocalUser();
+
+		plugin?.table<SocialUser>('users').on('/record/inserted', async (record) => {
+			if (record.did === data.user?.did) {
+				data.user = record;
+			}
+		});
+
+		plugin?.table<SocialUser>('users').on('/record/updated', async (record) => {
+			if (record.did === data.user?.did) {
+				data.user = record;
+			}
+		});
+
+		plugin?.table<SocialUser>('users').on('/record/deleted', async (record) => {
+			if (record.did === data.user?.did) {
+				data.user = undefined;
+			}
+		});
+
+		plugin
+			?.table<SocialChatMessageRecord>('chat_messages')
+			.on('/record/inserted', async (record) => {
+				if (data.user?.did && $dapp.client?.id) {
+					messages =
+						(await plugin
+							?.table<SocialChatMessageRecord>('chat_messages')
+							.query()
+							.where('to', 'in', [$dapp.client?.id, data.user.did])
+							.where('from', 'in', [data.user.did, $dapp.client?.id])
+							.select()
+							.orderBy('createdAt', 'desc')
+							.limit(1000)
+							.execute()
+							.then((res) => res.all())) || [];
+				}
+			});
 	});
 
 	async function onSend() {
@@ -84,12 +104,6 @@
 		value = '';
 
 		const message = await plugin?.sendChatMessage(tmpMessage);
-		messages = messages.map((m) => {
-			if (m.requestId === requestId) {
-				return message;
-			}
-			return m;
-		}) as SocialChatMessageRecord[];
 		sending = false;
 	}
 </script>

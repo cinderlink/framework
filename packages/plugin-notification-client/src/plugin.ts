@@ -3,19 +3,17 @@ import type {
   CandorClientInterface,
   TableRow,
 } from "@candor/core-types";
-import { loadNotificationSchema } from "schema";
-import { NotificationClientEvents } from "types";
-import type { SocialClientEvents } from "@candor/plugin-social-client";
-export class NotificationClientPlugin
-  implements PluginInterface<NotificationClientEvents>
+import { loadNotificationSchema } from "./schema";
+import { NotificationClientEvents } from "./types";
+export class NotificationClientPlugin<
+  Client extends CandorClientInterface<NotificationClientEvents> = CandorClientInterface<NotificationClientEvents>
+> implements PluginInterface<NotificationClientEvents, Client>
 {
   id = "notificationClient";
   ready = false;
   loggerTag = "plugin/notification/client > ";
   constructor(
-    public client: CandorClientInterface<
-      NotificationClientEvents | SocialClientEvents
-    >,
+    public client: Client,
     public options: Record<string, unknown> = {}
   ) {}
 
@@ -29,10 +27,10 @@ export class NotificationClientPlugin
     // listen for incoming events...
     // const socialPlugin =
     //   this.client.getPlugin<SocialClientPlugin>("socialClient");
-    const notifications = this.table("notifications")
-      .query()
-      .select()
-      .execute();
+    // const notifications = this.table("notifications")
+    //   .query()
+    //   .select()
+    //   .execute();
     // -----
 
     console.info(this.loggerTag, "ready");

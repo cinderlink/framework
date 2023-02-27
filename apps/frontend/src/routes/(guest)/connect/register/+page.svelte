@@ -2,9 +2,16 @@
 	import { dapp } from '$lib/dapp/store';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import type { SocialClientEvents, SocialClientPlugin } from '@candor/plugin-social-client';
-	import { LoadingIndicator, Logo, Button, Input, Avatar, Typography, web3 } from '@candor/ui-kit';
-	import ThemeToggle from '$lib/components/theme/ThemeToggle.svelte';
+	import type { SocialClientPlugin } from '@candor/plugin-social-client';
+	import {
+		LoadingIndicator,
+		Logo,
+		Button,
+		Input,
+		ImageUpload,
+		Typography,
+		web3
+	} from '@candor/ui-kit';
 
 	let loading = true;
 
@@ -21,7 +28,7 @@
 			return goto('/connect');
 		}
 
-		social = $dapp.client?.getPlugin<SocialClientEvents, SocialClientPlugin>('socialClient');
+		social = $dapp.client?.getPlugin('socialClient') as SocialClientPlugin;
 		if (social?.ready) {
 			await onSocialReady();
 		} else {
@@ -35,7 +42,7 @@
 		socialReady = true;
 		if (social && social.name && social.name !== 'guest') {
 			await social.publishAnnounceMessage();
-			return goto('/profile');
+			return goto('/feed');
 		}
 		loading = false;
 	}
@@ -43,19 +50,14 @@
 	let canSubmit = false;
 	$: canSubmit = username.length && image?.length ? true : false;
 
-	async function updateImagePreview() {
-		const files = inputRef?.files;
-		if (!files || !files.length) return;
-		const reader = new FileReader();
-		reader.onload = (e) => {
-			image = e.target?.result as string;
-		};
-		reader.readAsDataURL(files[0]);
-		const addResult = await $dapp.client?.ipfs.add(files[0] as Blob, { pin: true });
-		if (addResult && addResult.cid) imageCid = addResult.cid.toString();
-	}
-
 	async function onSubmit() {
+		if (inputRef?.files) {
+			const addResult = await $dapp.client?.ipfs.add(inputRef.files[0] as Blob, { pin: true });
+			if (addResult && addResult.cid) {
+				imageCid = addResult.cid.toString();
+				await $dapp.client?.ipfs.pin.add(addResult.cid.toString());
+			}
+		}
 		console.info('submit', social, username, bio);
 		if (!social) return;
 		if (username === 'demo') return;
@@ -68,57 +70,16 @@
 		await onSocialReady();
 		await social?.publishAnnounceMessage();
 		localStorage.setItem('candor:hasAccount', 'true');
-		goto('/profile');
+		goto('/feed');
 	}
 </script>
 
 {#if loading}
 	<LoadingIndicator>Loading profile details...</LoadingIndicator>
 {:else}
-	<div class="flex justify-end">
-		<ThemeToggle />
-	</div>
-	<div class="logo">
-		<Logo />
-	</div>
 	<Typography el="h1" classes="font-black text-center">Configure Profile</Typography>
-
 	<form class="flex flex-col gap-2" on:submit|preventDefault={onSubmit}>
-		<Input
-			size="sm"
-			id="avatar"
-			label="Avatar"
-			placeholder="Avatar"
-			type="file"
-			inputClasses="justify-center items-center"
-			bind:inputRef
-			on:change={updateImagePreview}
-		>
-			<div slot="preview">
-				<Avatar image={image || undefined} size="lg" classes="bg-gray-400 dark-bg-blue-100" />
-			</div>
-			<div
-				slot="button"
-				class="input--file__button"
-				on:click={() => {
-					if (inputRef) inputRef.click();
-				}}
-				on:keypress={() => {
-					if (inputRef) inputRef.click();
-				}}
-			>
-				<div class="input--file__text">
-					{#if imageCid}
-						Change
-					{:else}
-						Upload
-					{/if}
-				</div>
-				<div class="input--file__icon">
-					<div class="i-tabler-pencil" />
-				</div>
-			</div>
-		</Input>
+		<ImageUpload bind:inputRef bind:image />
 		<Input
 			size="sm"
 			id="username"

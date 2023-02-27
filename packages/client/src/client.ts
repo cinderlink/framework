@@ -3,6 +3,7 @@ import {
   decodePayload,
   encodePayload,
 } from "@candor/protocol";
+import { CID } from "multiformats";
 import type {
   Peer,
   PluginInterface,
@@ -97,10 +98,8 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
     await this.load();
 
     console.info(`client > registering libp2p listeners`);
-    this.ipfs.libp2p.pubsub.addEventListener(
-      "message",
-      this.onPubsubMessage.bind(this)
-    );
+    const message = this.onPubsubMessage.bind(this);
+    this.ipfs.libp2p.pubsub.addEventListener("message", message);
 
     this.ipfs.libp2p.addEventListener("peer:connect", async (connection) => {
       if (!this.peerId) {
@@ -134,7 +133,9 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
     });
 
     console.info(
-      `plugins > ${Object.keys(this.plugins).length} plugins found}`
+      `plugins > ${
+        Object.keys(this.plugins).length
+      } plugins found: ${Object.keys(this.plugins).join(", ")}`
     );
     console.info(`plugins > initializing message handlers`);
     await Promise.all(
@@ -207,7 +208,15 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
     const peerId = message.detail.from;
     if (peerId === this.ipfs.libp2p.peerId) return;
 
-    const peer = this.peers.getPeer(peerId.toString());
+    let peer = this.peers.getPeer(peerId.toString());
+    if (!peer) {
+      peer = this.peers.addPeer(peerId, "peer");
+    }
+
+    const encodedPayload: EncodedProtocolPayload<
+      PluginEvents["subscribe"][keyof PluginEvents["subscribe"]],
+      Encoding
+    > = json.decode(message.detail.data);
 
     const decoded = await decodePayload<
       PluginEvents["subscribe"][keyof PluginEvents["subscribe"]],
@@ -216,7 +225,7 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
         PluginEvents["subscribe"][keyof PluginEvents["subscribe"]],
         Encoding
       >
-    >(message.detail.data, this.did);
+    >(encodedPayload, this.did);
 
     const incoming: IncomingPubsubMessage<
       PluginEvents,
@@ -227,6 +236,13 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
       topic: message.detail.topic as keyof PluginEvents["subscribe"],
       ...decoded,
     };
+
+    if (decoded.signed && decoded.sender) {
+      const sender = await this.did.resolve(decoded.sender);
+      if (sender) {
+        peer.did = decoded.sender;
+      }
+    }
 
     console.info(`p2p/in > ${incoming.topic as string}`, incoming.payload);
     this.pubsub.emit(incoming.topic, incoming);
@@ -368,7 +384,9 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
       await Promise.all(
         Object.entries(document.schemas).map(async ([name, schemaCID]) => {
           if (schemaCID) {
-            const schema = await this.dag.loadDecrypted<SavedSchema>(schemaCID);
+            const schema = await this.dag.loadDecrypted<SavedSchema>(
+              CID.parse(schemaCID as string)
+            );
             if (schema) {
               console.info(
                 `load > loaded schema ${name} with CID ${schemaCID}`
@@ -385,10 +403,10 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
   }
 
   async request<
-    Encoding extends EncodingOptions = EncodingOptions,
     Events extends PluginEventDef = PluginEvents,
     OutTopic extends keyof Events["send"] = keyof Events["send"],
-    InTopic extends keyof Events["receive"] = keyof Events["receive"]
+    InTopic extends keyof Events["receive"] = keyof Events["receive"],
+    Encoding extends EncodingOptions = EncodingOptions
   >(
     peerId: string,
     message: OutgoingP2PMessage<Events, OutTopic, Encoding>,
@@ -409,12 +427,8 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
     };
 
     console.info(`request > sending request to ${peerId}`, request);
-    await this.send<Events, keyof Events["send"], Encoding>(
-      peerId,
-      request,
-      options
-    );
-    return new Promise((resolve) => {
+
+    const result = new Promise((resolve) => {
       let _timeout: any;
       _timeout = setTimeout(() => {
         console.info(`request response timed out: ${requestId}`);
@@ -430,6 +444,12 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
         );
       });
     }) as Promise<IncomingP2PMessage<Events, InTopic, Encoding> | undefined>;
+    await this.send<Events, keyof Events["send"], Encoding>(
+      peerId,
+      request,
+      options
+    );
+    return result;
   }
 
   hasSchema(name: string) {

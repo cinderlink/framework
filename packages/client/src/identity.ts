@@ -56,14 +56,15 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
 
     try {
       for await (const link of this.client.ipfs.name.resolve(
-        this.client.peerId
+        this.client.peerId,
+        { recursive: true, timeout: 1000 }
       )) {
         const cid = link.split("/").pop();
         console.info("IPNS resolve", { link, cid });
         if (cid) {
           const document = await this.client.dag.loadDecrypted<
             { updatedAt: number } & Record<string, unknown>
-          >(CID.parse(cid));
+          >(CID.parse(cid), undefined, { timeout: 3000 });
           if (document) {
             return { cid, document };
           }
@@ -81,12 +82,12 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
 
   async resolveServer(timeout = 5000) {
     const cid: string | undefined = await new Promise((resolve) => {
-      let requestID = uuid();
+      let requestId = uuid();
       let _timeout = setTimeout(() => {
         resolve(undefined);
       }, timeout);
       this.client.p2p.on("/identity/resolve/response", (message) => {
-        if (message.payload.requestID === requestID) {
+        if (message.payload.requestId === requestId) {
           clearTimeout(_timeout);
           resolve(message.payload.cid as string);
         }
@@ -101,7 +102,7 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
         if (server.peerId) {
           this.client.send<CandorClientEvents>(server.peerId.toString(), {
             topic: "/identity/resolve/request",
-            payload: { requestID },
+            payload: { requestId },
           });
         }
       });
@@ -119,13 +120,14 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
     this.document = document;
     console.info(`client/identity/save`, { cid, document });
     await localforage.setItem("rootCID", cid).catch(() => {});
-    await this.client.ipfs.name.publish(cid);
+    await this.client.ipfs.name.publish(cid, { timeout: 1000 }).catch(() => {});
+    await this.client.ipfs.pin.add(cid).catch(() => {});
     await Promise.all(
       this.client.peers.getServers().map(async (server) => {
         if (server.did) {
           await this.client.send<CandorClientEvents>(server.peerId.toString(), {
             topic: "/identity/set/request",
-            payload: { requestID: uuid(), cid },
+            payload: { requestId: uuid(), cid },
           });
         }
       })

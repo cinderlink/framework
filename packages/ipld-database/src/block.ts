@@ -22,7 +22,7 @@ export class TableBlock<
 > implements TableBlockInterface<Row, Def>
 {
   public index?: Minisearch;
-  private _changed: boolean = false;
+  public changed: boolean = false;
 
   constructor(
     public table: TableInterface<Row, Def>,
@@ -51,10 +51,6 @@ export class TableBlock<
     }
     this.index = new Minisearch(this.table.def.searchOptions);
     this.index.addAll(Object.values(this.cache.records || {}));
-  }
-
-  get changed() {
-    return this._changed;
   }
 
   async loadData<Data = Row>(cid: CID, path?: string) {
@@ -239,7 +235,7 @@ export class TableBlock<
     }
 
     this.cache.filters = filters;
-    this._changed = true;
+    this.changed = true;
   }
 
   /**
@@ -287,7 +283,7 @@ export class TableBlock<
     }
 
     this.cache.filters = filters;
-    this._changed = true;
+    this.changed = true;
   }
 
   /**
@@ -306,7 +302,7 @@ export class TableBlock<
   }
 
   async aggregate() {
-    if (this.cache.filters?.aggregates && !this._changed) {
+    if (this.cache.filters?.aggregates && !this.changed) {
       return this.cache.filters.aggregates;
     }
     const filters = await this.filters();
@@ -428,7 +424,7 @@ export class TableBlock<
       );
     }
 
-    this._changed = true;
+    this.changed = true;
   }
 
   async updateRecord(id: number, update: Partial<Row>) {
@@ -437,7 +433,7 @@ export class TableBlock<
     const records = await this.records();
     records[id] = { ...records[id], ...update };
     this.cache.records = records;
-    this._changed = true;
+    this.changed = true;
   }
 
   async deleteRecord(id: number) {
@@ -456,7 +452,7 @@ export class TableBlock<
       `ipld-database/block: deleted record ${id}`,
       this.cache.records
     );
-    this._changed = true;
+    this.changed = true;
   }
 
   async search(query: string): Promise<Row[]> {
@@ -474,7 +470,7 @@ export class TableBlock<
   }
 
   async load(force = false) {
-    if (this._changed && !force) {
+    if (this.changed && !force) {
       throw new Error(
         "Block has unsaved changes, refusing to load without [force=true]"
       );
@@ -498,7 +494,7 @@ export class TableBlock<
   }
 
   async save() {
-    if (!this._changed) {
+    if (!this.changed) {
       return this.cid;
     }
 
@@ -559,7 +555,6 @@ export class TableBlock<
       `ipld-database/block: saving block (${this.cid}) for table ${this.table.tableId}`,
       data.filters
     );
-    this._changed = false;
 
     // this.cid = await (this.table.encrypted
     //   ? this.table.dag.storeEncrypted(data as Record<string, any>)
@@ -578,6 +573,7 @@ export class TableBlock<
     );
 
     cache.invalidateTable(this.table.tableId);
+    this.changed = false;
 
     return this.cid;
   }

@@ -1,10 +1,9 @@
+import { IncomingP2PMessage } from "@candor/core-types/src/p2p";
 import {
   PluginInterface,
   CandorClientInterface,
-  P2PMessage,
-  IdentityResolveRequest,
-  IdentitySetRequest,
-  CandorClientEventDef,
+  CandorClientEvents,
+  EncodingOptions,
 } from "@candor/core-types";
 import { Schema } from "@candor/ipld-database";
 import { IdentityServerEvents } from "./types";
@@ -18,7 +17,11 @@ export type IdentityPinsRecord = {
 };
 
 export class IdentityServerPlugin
-  implements PluginInterface<IdentityServerEvents>
+  implements
+    PluginInterface<
+      IdentityServerEvents,
+      CandorClientInterface<IdentityServerEvents>
+    >
 {
   id = "identityServer";
   constructor(
@@ -72,37 +75,52 @@ export class IdentityServerPlugin
   pubsub = {};
   events = {};
 
-  async onSetRequest(message: P2PMessage<string, IdentitySetRequest>) {
+  async onSetRequest(
+    message: IncomingP2PMessage<
+      IdentityServerEvents,
+      "/identity/set/request",
+      EncodingOptions
+    >
+  ) {
     if (!message.peer.did) {
-      return this.client.send(message.peer.peerId.toString(), {
-        topic: "/identity/set/response",
-        data: {
-          requestID: message.data.requestID,
-          success: false,
-          error: "did not found, peer not authenticated",
-        },
-      });
+      return this.client.send<IdentityServerEvents, "/identity/set/response">(
+        message.peer.peerId.toString(),
+        {
+          topic: "/identity/set/response",
+          payload: {
+            requestId: message.payload.requestId,
+            success: false,
+            error: "did not found, peer not authenticated",
+          },
+        }
+      );
     }
     await this.client
       .getSchema("identity")
       ?.getTable<IdentityPinsRecord>("pins")
-      .upsert("did", message.peer.did, message.data);
+      .upsert("did", message.peer.did, message.payload);
 
     return this.client.send(message.peer.peerId.toString(), {
       topic: "/identity/set/response",
-      data: {
-        requestID: message.data.requestID,
+      payload: {
+        requestId: message.payload.requestId,
         success: true,
       },
     });
   }
 
-  async onResolveRequest(message: P2PMessage<string, IdentityResolveRequest>) {
+  async onResolveRequest(
+    message: IncomingP2PMessage<
+      IdentityServerEvents,
+      "/identity/resolve/request",
+      EncodingOptions
+    >
+  ) {
     if (!message.peer.did) {
       return this.client.send(message.peer.peerId.toString(), {
         topic: "/identity/resolve/response",
-        data: {
-          requestID: message.data.requestID,
+        payload: {
+          requestId: message.payload.requestId,
           cid: undefined,
         },
       });
@@ -117,12 +135,13 @@ export class IdentityServerPlugin
       .execute()
       .then((r) => r.first());
 
-    return this.client.send<CandorClientEventDef["send"]>(
+    return this.client.send<CandorClientEvents>(
       message.peer.peerId.toString(),
       {
         topic: "/identity/resolve/response",
-        data: {
-          requestID: message.data.requestID,
+        payload: {
+          requestId: message.payload.requestId,
+          since: message.payload.since,
           cid: identity?.cid,
         },
       }

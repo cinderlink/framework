@@ -12,6 +12,7 @@ import {
 } from "@candor/core-types/src/database/table";
 import { TableBlock } from "./block";
 import { TableQuery } from "./query";
+import { cache } from "./cache";
 
 const ajv = new Ajv();
 
@@ -67,6 +68,7 @@ export class Table<
     const id = ++this.currentIndex;
     console.info(`table/${this.tableId} > inserting record ${id}`, data);
     await this.currentBlock.addRecord({ ...data, id } as Row);
+    cache.invalidateTable(this.tableId);
     if (
       Object.values(this.currentBlock.cache?.records || {}).length >=
       this.def.rollup
@@ -153,6 +155,7 @@ export class Table<
   async save() {
     if (this.currentBlock.changed) {
       console.info(`table/${this.tableId} > saving`, this.currentBlock.cid);
+      cache.invalidateTable(this.tableId);
       await this.currentBlock.save();
     }
 

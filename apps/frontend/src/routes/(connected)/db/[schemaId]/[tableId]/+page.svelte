@@ -45,6 +45,11 @@
 
 	onMount(async () => {
 		await getData();
+
+		table.on('/record/inserted', getData);
+		table.on('/record/updated', getData);
+		table.on('/record/deleted', getData);
+		table.on('/block/saved', getData);
 	});
 </script>
 

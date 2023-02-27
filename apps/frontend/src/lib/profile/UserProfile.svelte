@@ -1,112 +1,100 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import type { SocialClientEvents, SocialClientPlugin } from '@candor/plugin-social-client';
+	import type { SocialClientPlugin } from '@candor/plugin-social-client';
 	import type { SocialPost, SocialProfile, SocialUser } from '@candor/plugin-social-core';
-	import { Avatar, Typography } from '@candor/ui-kit';
+	import { Avatar, Typography, ImageUpload } from '@candor/ui-kit';
 
 	import { dapp } from '$lib/dapp/store';
 	import Post from '$lib/posts/Post.svelte';
 	import CidImage from '$lib/dapp/CIDImage.svelte';
 	import CreatePost from '$lib/posts/CreatePost.svelte';
 
-	export let userId: number | undefined = undefined;
 	export let user: SocialUser | undefined = undefined;
+	export let did: string | undefined = undefined;
+
 	let profile: SocialProfile | undefined = undefined;
 	let posts: SocialPost[] = [];
 	let plugin: SocialClientPlugin | undefined = undefined;
 	let loading = true;
-
+	$: localUserProfile = user?.did === $dapp.client?.id;
 	$: posts = posts ? posts.sort((a, b) => b.createdAt - a.createdAt) : [];
+
+	let avatar: string | undefined = user?.avatar;
+	let avatarRef: HTMLInputElement | undefined = undefined;
 
 	onMount(async () => {
 		if (!$dapp.client) {
 			return;
 		}
 
-		plugin = $dapp.client.getPlugin<SocialClientEvents, SocialClientPlugin>('socialClient');
-		if (userId !== undefined || user !== undefined) {
-			updateUserData();
-		}
+		plugin = $dapp.client.getPlugin('socialClient') as SocialClientPlugin;
+		await updatePosts();
+		await updateUser();
+
+		let table = plugin.table('posts');
+		table.on('/record/inserted', () => {
+			updatePosts();
+		});
+		table.on('/record/updated', () => {
+			updatePosts();
+		});
+		table.on('/record/deleted', () => {
+			updatePosts();
+		});
+
+		table = plugin.table('users');
+		table.on('/record/updated', () => {
+			updateUser();
+		});
+		table.on('/record/deleted', () => {
+			updateUser();
+		});
+		table.on('/record/inserted', () => {
+			updateUser();
+		});
 	});
 
-	async function updateUserData() {
-		if (plugin) {
-			loading = true;
-			if (!user && userId !== undefined) {
-				user = await plugin?.getUser(userId);
-			}
-			if (user && user.did !== $dapp.client?.id) {
-				const peer = $dapp.client?.peers.getPeerByDID(user.did);
-				if (peer) {
-					// ask the peer for posts
-					console.info('asking peer for posts', peer);
-					const received = await $dapp.client?.request(peer.peerId.toString(), {
-						topic: '/social/updates/request',
-						data: {
-							author: user.did,
-							since: 0
-						}
-					});
-					console.info(
-						`received ${received?.data.updates.length} posts from peer ${peer.peerId.toString()}`,
-						received
-					);
-					for (const postData of received?.data.updates || []) {
-						const { id, ...post } = postData;
-						const authorId = (await plugin?.getUserByDID(post.author))?.id;
-						if (authorId) {
-							console.info(`saving post ${id} by ${authorId}`, post);
-							await plugin?.table<SocialPost>('posts').insert({
-								...post,
-								authorId
-							});
-						} else {
-							console.warn(`could not find author ${post.author} for post ${id}`);
-						}
-					}
-				}
+	async function updateUser() {
+		if (!did && !user?.did) {
+			return;
+		}
+		user = await plugin
+			?.table<SocialUser>('users')
+			.query()
+			.where('did', '=', (user?.did || did) as string)
+			.select()
+			.execute()
+			.then((res) => res.first());
+		avatar = user?.avatar;
+	}
 
-				// let's ask the server for posts
-				const server = $dapp.client?.peers.getServers()[0];
-				if (server) {
-					console.info('asking server for posts', server);
-					const received = await $dapp.client?.request(server.peerId.toString(), {
-						topic: '/social/updates/request',
-						data: {
-							author: user.did,
-							since: 0
-						}
-					});
-					console.info(
-						`received ${
-							received?.data.updates.length
-						} posts from server ${server.peerId.toString()}`,
-						received
-					);
-					if (received?.data.updates.length) {
-						// we have 'new' posts, let's save them
-						for (const postData of received.data.updates) {
-							const { id, ...post } = postData;
-							const authorId = (await plugin?.getUserByDID(post.author))?.id;
-							if (authorId) {
-								console.info(`saving post ${id} by ${authorId}`, post);
-								await plugin?.table<SocialPost>('posts').insert({
-									...post,
-									authorId
-								});
-							} else {
-								console.warn(`could not find author ${post.author} for post ${id}`);
-							}
-						}
-					}
-				}
+	async function updatePosts() {
+		loading = true;
+		if (!did && !user?.did) {
+			return [];
+		}
+		posts =
+			(await plugin
+				?.table<SocialPost>('posts')
+				.query()
+				.where('did', '=', (did || user?.did) as string)
+				.orderBy('createdAt', 'desc')
+				.limit(1000)
+				.select()
+				.execute()
+				.then((res) => res.all())) || [];
+		loading = false;
+	}
+
+	async function onImageChange(e: CustomEvent<{ files: File[] }>) {
+		if (e.detail.files) {
+			const addResult = await $dapp.client?.ipfs.add(e.detail.files[0] as Blob, { pin: true });
+			if (user && addResult && addResult.cid) {
+				await $dapp.client?.ipfs.pin.add(addResult.cid.toString());
+				user.avatar = addResult.cid.toString();
+				await plugin?.table('users').update(user.id, user);
+				// TODO: ask the server to pin
 			}
-			const uid = userId || user?.id;
-			if (uid) {
-				profile = await plugin?.getUserProfile(uid);
-				posts = await plugin?.getUserPosts(uid);
-			}
-			loading = false;
 		}
 	}
 </script>
@@ -120,7 +108,17 @@
 		</div>
 		<section class="flex flex-row gap-8 items-center">
 			<div class="profile__avatar">
-				{#if user?.avatar}
+				{#if localUserProfile}
+					<ImageUpload bind:image={avatar} bind:inputRef={avatarRef} on:change={onImageChange}>
+						<svelte:fragment slot="preview">
+							<Avatar size="xl">
+								<svelte:fragment slot="image">
+									<CidImage cid={avatar} />
+								</svelte:fragment>
+							</Avatar>
+						</svelte:fragment>
+					</ImageUpload>
+				{:else if user?.avatar}
 					<Avatar>
 						<svelte:fragment slot="image">
 							<CidImage cid={user.avatar} />
@@ -147,15 +145,15 @@
 				{/if}
 			</div>
 		</aside> -->
-		<section class="profile__main">
-			{#if user?.did === $dapp.client?.did.id}
-				<CreatePost on:post={updateUserData} />
+		<section class="profile__main" class:animate-pulse={loading}>
+			{#if localUserProfile}
+				<CreatePost />
 			{/if}
-			<Typography el="h2" classes="color-purple-500 dark-(color-purple-50)">
+			<Typography el="h2" classes="color-purple-500 dark-(color-purple-50) flex items-center gap-2">
+				Posts
 				{#if loading}
 					<div class="i-tabler-loader animate-spin" />
 				{/if}
-				Posts
 			</Typography>
 			{#if profile?.favoritePosts}
 				<div class="profile__posts profile__posts--favorited">Favorite posts</div>

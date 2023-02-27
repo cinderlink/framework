@@ -1,7 +1,6 @@
 import {
   loadSocialSchema,
   SocialPost,
-  SocialUpdateMessage,
   SocialUpdatesRequestMessage,
   SocialUpdatesResponseMessage,
   SocialUser,
@@ -11,20 +10,18 @@ import {
 import type {
   PluginInterface,
   CandorClientInterface,
-  PubsubMessage,
-  P2PMessage,
   TableRow,
   TableDefinition,
+  IncomingPubsubMessage,
+  IncomingP2PMessage,
+  EncodingOptions,
 } from "@candor/core-types";
-import type {
-  SocialConnectionMessage,
-  SocialAnnounceMessage,
-} from "@candor/plugin-social-core";
 import { SocialClientEvents } from "@candor/plugin-social-client";
 import {
   SocialUserSearchRequestMessage,
   SocialUserSearchResponseMessage,
-} from "@candor/plugin-social-core/src";
+  SocialConnectionRecord,
+} from "@candor/plugin-social-core";
 
 export type SocialServerEvents = {
   publish: {};
@@ -42,10 +39,13 @@ export type SocialServerEvents = {
   emit: {};
 };
 
-export class SocialServerPlugin implements PluginInterface<SocialServerEvents> {
+export class SocialServerPlugin<
+  Client extends CandorClientInterface<SocialClientEvents> = CandorClientInterface<SocialClientEvents>
+> implements PluginInterface<SocialServerEvents, Client>
+{
   id = "socialServer";
   constructor(
-    public client: CandorClientInterface<SocialServerEvents>,
+    public client: Client,
     public options: Record<string, unknown> = {}
   ) {}
   async start() {
@@ -62,11 +62,13 @@ export class SocialServerPlugin implements PluginInterface<SocialServerEvents> {
     "/social/user/get/request": this.onUserGetRequest,
     "/social/updates/request": this.onUpdatesRequest,
   };
+
   pubsub = {
     "/social/update": this.onUpdate,
     "/social/announce": this.onAnnounce,
     "/social/connection": this.onConnection,
   };
+
   events = {};
 
   get db() {
@@ -106,39 +108,43 @@ export class SocialServerPlugin implements PluginInterface<SocialServerEvents> {
       .then((result) => result.first() as SocialUser | undefined);
   }
 
-  onAnnounce(message: PubsubMessage<SocialAnnounceMessage>) {
-    if (this.client.hasPlugin("socialClient")) return;
-    console.info(
-      `plugin/social/server > received pubsub announce message (did: ${message.peer.did})`,
-      message?.data
-    );
-    return this.saveUser(message.peer.did, {
-      name: message.data.name,
-      bio: message.data.bio,
-      status: message.data.status,
-      avatar: message.data.avatar,
-      did: message.peer.did,
-      updatedAt: message.data.updatedAt,
-    });
-  }
-
-  async onUpdate(
-    message:
-      | PubsubMessage<SocialUpdateMessage>
-      | P2PMessage<string, SocialUpdateMessage>
+  onAnnounce(
+    message: IncomingPubsubMessage<
+      SocialServerEvents,
+      "/social/announce",
+      EncodingOptions
+    >
   ) {
-    const { id, ...post } = message.data as any;
-    if (!post?.id) return;
-
-    const cid = await this.client.dag.store(post);
-    // TODO: pin & add to user_pins
-    if (!cid) {
+    if (this.client.hasPlugin("socialClient")) return;
+    if (!message.peer.did) {
       console.warn(
-        `plugin/social/client > failed to store social update message (did: ${message.peer.did})`
+        `plugin/social/server > received announce message from unauthorized peer`
       );
       return;
     }
 
+    console.info(
+      `plugin/social/server > received pubsub announce message (did: ${message.peer.did})`,
+      message
+    );
+    return this.saveUser(message.peer.did, {
+      name: message.payload.name,
+      bio: message.payload.bio,
+      status: message.payload.status,
+      avatar: message.payload.avatar,
+      did: message.peer.did,
+      updatedAt: message.payload.updatedAt,
+    });
+  }
+
+  async onUpdate(
+    message: IncomingPubsubMessage<
+      SocialServerEvents,
+      "/social/update",
+      EncodingOptions
+    >
+  ) {
+    const { id, did, cid, ...post } = message.payload.post;
     if (!message.peer.did) {
       console.warn(
         `plugin/social/client > received social update message from unauthorized peer`
@@ -146,28 +152,30 @@ export class SocialServerPlugin implements PluginInterface<SocialServerEvents> {
       return;
     }
 
-    const authorId = (await this.getUserByDID(message.peer.did))?.id;
-    if (!authorId) {
+    const user = await this.getUserByDID(did);
+    if (!user) {
       console.warn(
-        `plugin/social/client > received social update message from unknown user`
+        `plugin/social/client > received social update message for unknown user: ${did}`
       );
       return;
     }
 
     console.info(`plugin/social/client > storing social update message`, {
       ...post,
-      authorId,
+      did,
     });
-    await this.table<SocialPost>("posts").upsert("cid", cid.toString(), {
+    await this.table<SocialPost>("posts").upsert("cid", cid, {
       ...post,
-      authorId,
+      did,
     });
   }
 
   async onUpdatesRequest(
-    message:
-      | PubsubMessage<SocialUpdatesRequestMessage>
-      | P2PMessage<string, SocialUpdatesRequestMessage>
+    message: IncomingP2PMessage<
+      SocialServerEvents,
+      "/social/updates/request",
+      EncodingOptions
+    >
   ) {
     if (!message.peer.did) {
       console.warn(
@@ -176,34 +184,74 @@ export class SocialServerPlugin implements PluginInterface<SocialServerEvents> {
       return;
     }
 
-    const authorId = (await this.getUserByDID(message.data.author))?.id;
-    if (!authorId) {
-      console.warn(
-        `plugin/social/client > received social updates request message from unknown user`
-      );
-      return;
-    }
     // TODO: make sure this user is allowed to see this data
-    const posts = await this.table<SocialPost>("posts")
-      .query()
-      .where("authorId", "=", authorId)
+    const query = this.table<SocialPost>("posts").query();
+    // let peerDid = message.peer.did;
+    if (message.payload.did) {
+      query.where("did", "=", message.payload.did);
+    } else {
+      const peerDid = message.peer.did;
+      const connections = await this.table<SocialConnectionRecord>(
+        "connections"
+      )
+        .query()
+        .where("to", "=", peerDid)
+        .or((qb) => qb.where("from", "=", peerDid))
+        .nocache()
+        .select()
+        .execute()
+        .then((result) => result.all());
+      console.info(
+        `plugin/social/client > connections for ${peerDid}`,
+        connections
+      );
+      const connectionDids = [
+        ...new Set(
+          ...connections.map((c) => (c.from === peerDid ? c.to : c.from))
+        ),
+      ];
+      query.where("did", "in", connectionDids);
+    }
+    if (message.payload.since) {
+      query.where("createdAt", ">=", message.payload.since);
+    }
+    const posts = await query
       .select()
       .execute()
       .then((result) => result.all());
+
+    console.info(
+      `plugin/social/client > sending social updates response message`,
+      posts,
+      query.instructions
+    );
+
     await this.client.send(message.peer.peerId.toString(), {
       topic: "/social/updates/response",
-      data: {
-        requestId: message.data.requestId,
+      payload: {
+        requestId: message.payload.requestId,
         updates: posts,
       },
     });
   }
 
-  onConnection(message: PubsubMessage<SocialConnectionMessage>) {
+  onConnection(
+    message: IncomingPubsubMessage<
+      SocialServerEvents,
+      "/social/connection",
+      EncodingOptions
+    >
+  ) {
     console.log("social connection", message);
   }
 
-  onPeerAnnounce(message: P2PMessage<string, SocialAnnounceMessage>) {
+  async onPeerAnnounce(
+    message: IncomingP2PMessage<
+      SocialClientEvents,
+      "/social/announce",
+      EncodingOptions
+    >
+  ) {
     if (this.client.hasPlugin("socialClient")) return;
     if (!message.peer.did) {
       console.warn(
@@ -213,27 +261,49 @@ export class SocialServerPlugin implements PluginInterface<SocialServerEvents> {
     }
     console.info(
       `plugin/social/server > received peer announce message (did: ${message.peer.did})`,
-      message?.data
+      message?.payload
     );
+    // get the existing user
+    const existing = await this.getUserByDID(message.peer.did);
+    if (
+      existing &&
+      existing.avatar &&
+      existing.avatar !== message.payload.avatar
+    ) {
+      // unpin
+      await this.client.ipfs.pin.rm(existing.avatar).catch(() => {});
+    }
+
+    // pin the new one
+    if (message.payload.avatar) {
+      await this.client.ipfs.pin.add(message.payload.avatar);
+    }
+
     return this.saveUser(message.peer.did, {
-      name: message.data.name,
-      bio: message.data.bio,
-      status: message.data.status,
-      avatar: message.data.avatar,
+      name: message.payload.name,
+      bio: message.payload.bio,
+      status: message.payload.status,
+      avatar: message.payload.avatar,
       did: message.peer.did,
-      updatedAt: message.data.updatedAt,
+      updatedAt: message.payload.updatedAt,
     });
   }
 
-  onPeerConnection(message: P2PMessage<string, SocialConnectionMessage>) {
+  onPeerConnection(
+    message: IncomingP2PMessage<SocialClientEvents, "/social/connection">
+  ) {
     console.log("peer connection", message);
   }
 
   async onUserSearchRequest(
-    message: P2PMessage<string, SocialUserSearchRequestMessage>
+    message: IncomingP2PMessage<
+      SocialServerEvents,
+      "/social/users/search/request",
+      EncodingOptions
+    >
   ) {
     console.info(
-      `plugin/social/server > received user search request: ${message.data.query}`
+      `plugin/social/server > received user search request: ${message.payload.query}`
     );
     const table = this.client
       .getSchema("social")
@@ -244,7 +314,7 @@ export class SocialServerPlugin implements PluginInterface<SocialServerEvents> {
       return;
     }
 
-    const results = ((await table.search(message.data.query, 20)) ||
+    const results = ((await table.search(message.payload.query, 20)) ||
       []) as SocialUser[];
     console.info(
       `plugin/social/server > found ${results.length} matches (index: ${table.currentIndex})`
@@ -252,18 +322,22 @@ export class SocialServerPlugin implements PluginInterface<SocialServerEvents> {
 
     await this.client.send(message.peer.peerId.toString(), {
       topic: "/social/users/search/response",
-      data: {
-        requestId: message.data.requestId,
+      payload: {
+        requestId: message.payload.requestId,
         results,
       },
     });
   }
 
   async onUserGetRequest(
-    message: P2PMessage<string, SocialUserGetRequestMessage>
+    message: IncomingP2PMessage<
+      SocialServerEvents,
+      "/social/user/get/request",
+      EncodingOptions
+    >
   ) {
     console.info(
-      `plugin/social/server > received user get request: ${message.data.did}`
+      `plugin/social/server > received user get request: ${message.payload.did}`
     );
     const table = this.client
       .getSchema("social")
@@ -276,15 +350,15 @@ export class SocialServerPlugin implements PluginInterface<SocialServerEvents> {
 
     const user = await table
       .query()
-      .where("did", "=", message.data.did)
+      .where("did", "=", message.payload.did)
       .select()
       .execute()
       .then((r) => r.first());
 
     await this.client.send(message.peer.peerId.toString(), {
       topic: "/social/user/get/response",
-      data: {
-        requestId: message.data.requestId,
+      payload: {
+        requestId: message.payload.requestId,
         user,
       },
     });

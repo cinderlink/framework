@@ -17,11 +17,12 @@
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts --dts",
-    "watch": "tsup src/index.ts --dts --watch",
+    "build": "tsup",
+    "watch": "pnpm build --watch",
     "test": "vitest"
   },
   "devDependencies": {
+    "@candor/tsconfig": "workspace:^1.0.0",
     "@libp2p/interface-connection": "^3.0.8",
     "@libp2p/interface-peer-id": "^2.0.1",
     "ajv": "^8.12.0",

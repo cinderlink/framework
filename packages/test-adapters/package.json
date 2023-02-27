@@ -6,12 +6,13 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsup src/index.ts --format cjs,esm --dts",
-    "watch": "pnpm build --watch",
+    "build": "tsup",
+    "watch": "tsup --watch",
     "test": "vitest"
   },
   "devDependencies": {
     "@candor/core-types": "0.1.2",
+    "@candor/tsconfig": "workspace:^1.0.0",
     "did-jwt": "^6.11.1",
     "dids": "^3.4.0",
     "multiformats": "^11.0.1",

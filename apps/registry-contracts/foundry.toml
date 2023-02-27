@@ -5,8 +5,16 @@ libs = ['lib']
 solc = "0.8.17"
 mnemonic_paths = './mnemonic'
 
+[profile.local]
+eth_rpc_url = 'http://localhost:8545'
+chain_id=31337
+
 [profile.testnet]
 eth_rpc_url = 'https://testnet.candor.social'
 chain_id=4242
+
+[profile.base]
+eth_rpc_url = 'https://goerli.base.org'
+chain_id=84531
 
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config

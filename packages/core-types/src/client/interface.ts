@@ -21,9 +21,9 @@ export interface CandorClientInterface<
   PluginEvents extends PluginEventDef = {
     send: {};
     receive: {};
-    emit: {};
     publish: {};
     subscribe: {};
+    emit: {};
   }
 > extends Emittery<CandorClientEvents["emit"] & ProtocolEvents["emit"]> {
   plugins: Record<PluginInterface["id"], PluginInterface<any>>;
@@ -32,6 +32,7 @@ export interface CandorClientInterface<
   peers: PeerStoreInterface;
   subscriptions: string[];
   relayAddresses: string[];
+  pluginEvents: Emittery<PluginEvents["emit"]>;
 
   pubsub: Emittery<SubscribeEvents<PluginEvents>>;
   p2p: Emittery<ReceiveEvents<PluginEvents>>;
@@ -52,10 +53,7 @@ export interface CandorClientInterface<
     plugin: Plugin
   ): Promise<void>;
 
-  getPlugin<
-    E extends PluginEventDef = PluginEventDef,
-    T extends PluginInterface<E> = PluginInterface<E>
-  >(
+  getPlugin<T extends PluginInterface<any, any> = PluginInterface<any, any>>(
     id: string
   ): T;
 
@@ -78,10 +76,10 @@ export interface CandorClientInterface<
   ): Promise<void>;
 
   request<
-    Encoding extends EncodingOptions = EncodingOptions,
     Events extends PluginEventDef = PluginEvents,
     OutTopic extends keyof Events["send"] = keyof Events["send"],
-    InTopic extends keyof Events["receive"] = keyof Events["receive"]
+    InTopic extends keyof Events["receive"] = keyof Events["receive"],
+    Encoding extends EncodingOptions = EncodingOptions
   >(
     peerId: string,
     message: OutgoingP2PMessage<Events, OutTopic, Encoding>,

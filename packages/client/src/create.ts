@@ -1,4 +1,5 @@
 import type { CandorClientInterface, PluginEventDef } from "@candor/core-types";
+import { peerIdFromString } from "@libp2p/peer-id";
 import { Options } from "ipfs-core";
 import { CandorClient } from "./client";
 import { createDID } from "./did/create";
@@ -11,5 +12,11 @@ export async function createClient<
   const did = await createDID(seed);
   const client: CandorClientInterface<PluginEvents> =
     new CandorClient<PluginEvents>({ ipfs, did });
+
+  nodes.forEach((node) => {
+    const peerId = peerIdFromString(node.split("/p2p/")[1]);
+    client.peers.addPeer(peerId, "server");
+  });
+
   return client;
 }

@@ -18,13 +18,15 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup src/index.ts --dts --format cjs,esm ",
-    "watch": "pnpm build --watch"
+    "build": "tsup",
+    "watch": "tsup --watch"
   },
   "devDependencies": {
     "@candor/core-types": "0.1.2",
     "@candor/plugin-offline-sync-client": "0.1.2",
     "@candor/plugin-offline-sync-core": "0.1.2",
+    "@candor/protocol": "workspace:^0.1.0",
+    "@candor/tsconfig": "workspace:^1.0.0",
     "did-jwt": "^6.11.1",
     "dids": "^3.4.0",
     "tsup": "^6.6.3",

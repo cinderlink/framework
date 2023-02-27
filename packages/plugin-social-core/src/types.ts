@@ -36,12 +36,12 @@ export interface SocialProfile extends TableRow {
 
 export interface SocialPost extends TableRow {
   cid?: string;
-  authorId: number;
+  did: string;
   content: string;
-  attachments: string[];
-  comments: string[];
-  reactions: string[];
-  tags: string[];
+  attachments?: string[];
+  comments?: string[];
+  reactions?: string[];
+  tags?: string[];
   createdAt: number;
 }
 
@@ -55,7 +55,7 @@ export interface SocialReaction extends TableRow {
 export interface SocialComment extends TableRow {
   postId: number;
   body: string;
-  authorId: number;
+  did: string;
   createdAt: number;
 }
 
@@ -116,10 +116,15 @@ export type SocialUpdateMessage = {
   post: SocialPost;
 };
 
+export type SocialUpdateRecord = SocialUpdateMessage & {
+  id: number;
+  createdAt: number;
+};
+
 export type SocialUpdatesRequestMessage = {
   requestId: string;
-  author: string;
-  since: number;
+  did?: string;
+  since?: number;
 };
 
 export type SocialUpdatesResponseMessage = {

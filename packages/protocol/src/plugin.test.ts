@@ -39,8 +39,8 @@ describe("handleProtocol", () => {
   });
 
   it("can send and receive messages", async () => {
-    client.on("/candor/handshake/success", fn);
-    server.on("/candor/handshake/success", fn);
+    client.pluginEvents.on("/candor/handshake/success", fn);
+    server.pluginEvents.on("/candor/handshake/success", fn);
 
     await server.start();
     await client.start();

@@ -1,3 +1,4 @@
+import { GetOptions } from "ipfs-core-types/src/root";
 import type { CID } from "multiformats";
 import type { DID } from "dids";
 import type { JWE } from "did-jwt";
@@ -10,7 +11,8 @@ export interface DAGInterface {
   ): Promise<CID | undefined>;
   load<Data = unknown>(
     cid: CID | string,
-    path?: string
+    path?: string,
+    options?: GetOptions
   ): Promise<Data | undefined>;
 }
 
@@ -22,10 +24,15 @@ export interface DIDDagInterface extends DAGInterface {
     data: Data,
     recipients?: string[]
   ): Promise<CID | undefined>;
-  loadEncrypted(cid: CID | string, path?: string): Promise<JWE | undefined>;
+  loadEncrypted(
+    cid: CID | string,
+    path?: string,
+    options?: GetOptions
+  ): Promise<JWE | undefined>;
   loadDecrypted<Data = Record<string, unknown>>(
     cid: CID | string,
-    path?: string
+    path?: string,
+    options?: GetOptions
   ): Promise<Data | undefined>;
 }
 
@@ -37,5 +44,5 @@ export interface DagKeyval {
   delete(key: string): Promise<void>;
   has(key: string): Promise<boolean>;
   save(): Promise<CID>;
-  load(cid: CID, path?: string): Promise<void>;
+  load(cid: CID, path?: string, options?: GetOptions): Promise<void>;
 }

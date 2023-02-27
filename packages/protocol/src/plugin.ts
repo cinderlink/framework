@@ -11,6 +11,7 @@ import {
   Peer,
   ReceiveEvents,
   HandshakeRequest,
+  PluginEventDef,
 } from "@candor/core-types";
 import { v4 as uuid } from "uuid";
 import { Connection, Stream } from "@libp2p/interface-connection";
@@ -32,12 +33,21 @@ export interface ProtocolHandler {
 }
 
 export class CandorProtocolPlugin<
-  Events extends ProtocolEvents = ProtocolEvents
-> implements PluginInterface<ProtocolEvents, Events>
+  PluginEvents extends PluginEventDef = {
+    send: {};
+    receive: {};
+    publish: {};
+    subscribe: {};
+    emit: {};
+  },
+  Client extends CandorClientInterface<
+    PluginEvents & ProtocolEvents<PluginEvents>
+  > = CandorClientInterface<PluginEvents & ProtocolEvents<PluginEvents>>
+> implements PluginInterface<ProtocolEvents, Client>
 {
   id = "candor";
 
-  constructor(public client: CandorClientInterface<Events>) {}
+  constructor(public client: Client) {}
 
   p2p = {
     "/candor/handshake/request": this.onHandshakeRequest,
@@ -66,6 +76,10 @@ export class CandorProtocolPlugin<
         connection: Connection;
       }) => {
         await this.initializeProtocol(stream, connection);
+      },
+      {
+        maxInboundStreams: 128,
+        maxOutboundStreams: 128,
       }
     );
   }
@@ -81,7 +95,6 @@ export class CandorProtocolPlugin<
       console.info(
         `protocol > already initialized protocol with ${readablePeer(peer)}`
       );
-      return;
     }
 
     const self = this;
@@ -97,8 +110,9 @@ export class CandorProtocolPlugin<
           return map(source, (buf) => {
             return json.decode<
               ProtocolMessage<
-                Events["receive"][keyof Events["receive"]] & ProtocolRequest,
-                keyof Events["receive"]
+                PluginEvents["receive"][keyof PluginEvents["receive"]] &
+                  ProtocolRequest,
+                keyof PluginEvents["receive"]
               >
             >(buf.subarray());
           });
@@ -140,6 +154,7 @@ export class CandorProtocolPlugin<
   }
 
   async handleProtocolMessage<
+    Events extends PluginEventDef = PluginEvents,
     Topic extends keyof Events["receive"] = keyof Events["receive"],
     Encoding extends EncodingOptions = EncodingOptions
   >(
@@ -150,6 +165,13 @@ export class CandorProtocolPlugin<
       Encoding
     >
   ) {
+    if (!encoded?.topic) {
+      console.warn(
+        `p2p/in: ERROR: invalid topic > from ${connection.remotePeer}`,
+        encoded
+      );
+      return;
+    }
     console.info(
       `p2p/in:${encoded.topic as string} > from ${connection.remotePeer}`
     );
@@ -177,7 +199,7 @@ export class CandorProtocolPlugin<
     }
 
     const event: DecodedProtocolMessage<Events, "receive", Topic, Encoding> = {
-      topic,
+      topic: topic as keyof Events["receive"],
       peer,
       ...decoded,
     } as DecodedProtocolMessage<Events, "receive", Topic, Encoding>;
@@ -194,22 +216,25 @@ export class CandorProtocolPlugin<
       event.payload
     );
     await this.client.p2p.emit(
-      topic as keyof Events["receive"],
-      event as ReceiveEvents<Events, EncodingOptions>[Topic]
+      topic as keyof PluginEvents["receive"],
+      event as ReceiveEvents<
+        PluginEvents & ProtocolEvents<PluginEvents>,
+        EncodingOptions
+      >[Topic]
     );
   }
 
   async encodeMessage<
     Topic extends keyof (
-      | ProtocolEvents<Events>["send"]
-      | ProtocolEvents<Events>["publish"]
+      | ProtocolEvents<PluginEvents>["send"]
+      | ProtocolEvents<PluginEvents>["publish"]
     ) = keyof (
-      | ProtocolEvents<Events>["send"]
-      | ProtocolEvents<Events>["publish"]
+      | ProtocolEvents<PluginEvents>["send"]
+      | ProtocolEvents<PluginEvents>["publish"]
     ),
     Encoding extends EncodingOptions = EncodingOptions
   >(
-    message: OutgoingP2PMessage<Events, Topic>,
+    message: OutgoingP2PMessage<PluginEvents, Topic>,
     { sign, encrypt, recipients }: Encoding = {} as Encoding
   ) {
     return encodePayload(message, {
@@ -404,7 +429,7 @@ export class CandorProtocolPlugin<
     peer.connected = true;
     this.client.peers.updatePeer(peer.peerId.toString(), peer);
     console.info(`p2p/handshake/success > authenticated ${logId}`);
-    this.client.emit("/candor/handshake/success", peer);
+    this.client.pluginEvents.emit("/candor/handshake/success", peer as any);
   }
 
   async sendHandshakeError(peerId: string, error: string) {

@@ -4,8 +4,8 @@
   "description": "",
   "scripts": {
     "test": "vitest",
-    "build": "tsup src/index.ts --dts --format cjs,esm --external @candor/core-types,@libp2p/interface-connection,did-jwt,dids,emittery,it-length-prefixed,it-map,it-pipe,it-pushable,libp2p,multiformats,uuid",
-    "watch": "tsup src/index.ts --dts --format cjs,esm --external @candor/core-types,@libp2p/interface-connection,did-jwt,dids,emittery,it-length-prefixed,it-map,it-pipe,it-pushable,libp2p,multiformats,uuid --watch"
+    "build": "tsup",
+    "watch": "tsup --watch"
   },
   "type": "module",
   "main": "./dist/index.js",
@@ -31,6 +31,7 @@
   "license": "ISC",
   "devDependencies": {
     "@candor/core-types": "workspace:../core-types",
+    "@candor/tsconfig": "workspace:^1.0.0",
     "@libp2p/interface-connection": "^3.0.8",
     "@types/uuid": "^9.0.0",
     "did-jwt": "^6.11.1",

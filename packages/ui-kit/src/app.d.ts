@@ -1,5 +1,6 @@
 /// <reference types="@sveltejs/kit" />
 
+import type { Keystore } from '$lib/web3/Onboard/Keystore';
 import type { AttributifyAttributes } from '@unocss/preset-attributify';
 declare namespace App {
 	// interface Locals {}
@@ -19,5 +20,6 @@ declare global {
 	interface Window {
 		__TAURI_METADATA__?: Record<string, unknown>;
 		ethereum?: unknown;
+		keystore?: Keystore;
 	}
 }

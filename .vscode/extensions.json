@@ -17,7 +17,6 @@
     "christian-kohler.npm-intellisense",
     "christian-kohler.path-intellisense",
     "steoates.autoimport",
-    "folke.vscode-monorepo-workspace",
-    "segevfiner.tsup-problem-matcher"
+    "folke.vscode-monorepo-workspace"
   ]
 }

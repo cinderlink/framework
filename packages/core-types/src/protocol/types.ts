@@ -75,6 +75,7 @@ export type DecodedProtocolPayload<
   signed?: Encoding["sign"];
   encrypted?: Encoding["encrypt"];
   recipients?: Encoding["recipients"];
+  sender?: string;
 };
 
 export type EncodedProtocolPayload<
@@ -112,13 +113,7 @@ export type DecodedProtocolMessage<
 };
 
 export interface ProtocolEvents<
-  PluginEvents extends PluginEventDef = {
-    send: {};
-    receive: {};
-    publish: {};
-    subscribe: {};
-    emit: {};
-  }
+  PluginEvents extends PluginEventDef = PluginEventDef
 > extends PluginEventDef {
   send: {
     "/candor/handshake/request": HandshakeRequest;

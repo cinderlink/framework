@@ -1,3 +1,4 @@
+import { CandorProtocolPlugin } from '@candor/protocol';
 import { multiaddr } from '@multiformats/multiaddr';
 import type { Contract } from 'ethers';
 import { PUBLIC_IPFS_SWARM_ADDRESSES } from '$env/static/public';
@@ -5,31 +6,31 @@ import { peerIdFromString } from '@libp2p/peer-id';
 import { createSeed, createHash, createClient } from '@candor/client';
 import { SocialClientPlugin, type SocialClientEvents } from '@candor/plugin-social-client';
 import { OfflineSyncClientPlugin } from '@candor/plugin-offline-sync-client';
-import type { OfflineSyncClientEvents } from '@candor/plugin-offline-sync-core';
+import { NotificationClientPlugin } from '@candor/plugin-notification-client';
 import { web3, getContract, signMessage } from '@candor/ui-kit';
+import { get } from 'svelte/store';
 import { UserRegistry } from './contracts';
 import dapp from './store';
-import { get } from 'svelte/store';
-import {
-	NotificationClientPlugin,
-	type NotificationClientEvents
-} from '@candor/plugin-notification-client';
+import type { CandorClientInterface, ProtocolEvents } from '@candor/core-types';
+import type { OfflineSyncClientEvents } from '@candor/plugin-offline-sync-core';
 
 export async function initializeDapp(secret: string) {
 	console.info('initializing dapp-kit', PUBLIC_IPFS_SWARM_ADDRESSES.split(','));
 	const seed = await createSeed(secret);
-	const client = await createClient<SocialClientEvents & NotificationClientEvents & OfflineSyncClientEvents>(
+	const client: CandorClientInterface<any> = await createClient(
 		seed,
 		PUBLIC_IPFS_SWARM_ADDRESSES.split(',')
 	);
 
+	const protocol = new CandorProtocolPlugin(client);
+	client.addPlugin<ProtocolEvents>(protocol);
 	const social = new SocialClientPlugin(client);
+	client.addPlugin<SocialClientEvents>(social);
 	const notification = new NotificationClientPlugin(client);
-	client.addPlugin(social);
 	client.addPlugin(notification);
 
 	const offlineSync = new OfflineSyncClientPlugin(client);
-	client.addPlugin(offlineSync);
+	client.addPlugin<OfflineSyncClientEvents>(offlineSync);
 
 	await client.start();
 	await Promise.all(
@@ -89,4 +90,15 @@ export async function connect() {
 		throw new Error('Could not sign account identifier');
 	}
 	await initializeDapp(signature);
+}
+
+export async function destroy() {
+	localStorage.clear();
+	// reset indexeddb
+	window.indexedDB.deleteDatabase('candor');
+	window.indexedDB.deleteDatabase('candor/datastore');
+	window.indexedDB.deleteDatabase('candor/blocks');
+	window.indexedDB.deleteDatabase('candor/keys');
+	window.indexedDB.deleteDatabase('candor/pins');
+	window.indexedDB.deleteDatabase('localforage');
 }

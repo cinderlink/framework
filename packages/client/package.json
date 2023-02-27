@@ -25,15 +25,16 @@
   ],
   "scripts": {
     "build": "tsup",
-    "watch": "pnpm build --watch --",
+    "watch": "tsup --watch",
     "watch:browser": "vite build --watch",
     "build:browser": "vite build",
     "preview": "vite preview",
     "test": "vitest"
   },
   "devDependencies": {
-    "@candor/protocol": "workspace:../protocol",
     "@candor/plugin-offline-sync-core": "0.1.2",
+    "@candor/protocol": "workspace:../protocol",
+    "@candor/tsconfig": "workspace:^1.0.0",
     "@chainsafe/libp2p-gossipsub": "^6.1.0",
     "@chainsafe/libp2p-noise": "^11.0.0",
     "@libp2p/crypto": "^1.0.12",

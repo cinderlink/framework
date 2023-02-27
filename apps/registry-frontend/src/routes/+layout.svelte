@@ -3,7 +3,6 @@
 	import { Input } from '@candor/ui-kit';
 	import { Theme } from '@candor/ui-kit';
 	import { Panel } from '@candor/ui-kit';
-	import { WalletMenu } from '@candor/ui-kit';
 </script>
 
 <Theme>
@@ -26,9 +25,7 @@
 				<Panel>Search results</Panel>
 			</div>
 		</div>
-		<div class="profile">
-			<WalletMenu />
-		</div>
+		<div class="profile" />
 	</header>
 	<slot />
 </Theme>

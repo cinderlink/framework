@@ -10,5 +10,9 @@
     "**/vite.config.js.timestamp.*",
     "node_modules/**",
     "**/dist/**"
-  ]
+  ],
+  "compileOnSave": false,
+  "compilerOptions": {
+    "sourceMap": true
+  }
 }

@@ -11,44 +11,48 @@
 	let plugin: SocialClientPlugin | undefined = undefined;
 	let user: SocialUser | undefined = undefined;
 
+	$: if (plugin && post.did) {
+		plugin.getUserByDID(post.did).then((usr) => {
+			user = usr;
+		});
+	}
+
 	onMount(async () => {
 		if (!user) {
-			plugin = $dapp.client?.getPlugin<SocialClientEvents, SocialClientPlugin>('socialClient');
-			if (plugin) {
-				user = await plugin.getUser(post.authorId);
-			}
+			plugin = $dapp.client?.getPlugin('socialClient') as SocialClientPlugin;
 		}
 	});
 </script>
 
-<Panel size="sm" classes="post">
+<Panel size="sm" classes="post" variant="offset">
 	<div class="post__header">
 		<div class="post__user">
-			<Avatar size="sm">
-				<svelte:fragment slot="image">
-					{#if user?.avatar}
-						<CidImage cid={user.avatar} />
-					{/if}
-				</svelte:fragment>
-			</Avatar>
-			<Typography el="h3">{user?.name || '(loading)'}</Typography>
+			{#key user}
+				<Avatar size="sm">
+					<svelte:fragment slot="image">
+						{#if user?.avatar}
+							<CidImage cid={user.avatar} />
+						{/if}
+					</svelte:fragment>
+				</Avatar>
+				<Typography el="h3">{user?.name || '(loading)'}</Typography>
+			{/key}
 		</div>
-		<caption>{formatRelative(post.createdAt, Date.now())}</caption>
+		<caption class="px-2 text-purple-200">{formatRelative(post.createdAt, Date.now())}</caption>
 	</div>
 	<div class="post__body">
-		<Panel variant="offset" size="sm" classes="post__content">
+		<Panel size="sm" classes="post__content">
 			<p>{post.content}</p>
 		</Panel>
 	</div>
-	<div class="post__footer" />
 </Panel>
 
 <style>
 	:global(.panel.post) {
-		@apply flex flex-col gap-2 items-center justify-start w-full;
+		@apply flex flex-col gap-2 items-center justify-start w-full px-2 py-4;
 	}
 	.post__header {
-		@apply flex flex-row items-start justify-between p-4 text-sm w-full;
+		@apply flex flex-row items-start justify-between p-2 text-sm w-full;
 	}
 	.post__header :global(h3.typography) {
 		@apply text-lg my-0 p-0 text-purple-600 dark-(text-blue-100) font-700;
@@ -57,7 +61,7 @@
 		@apply flex flex-row gap-4 items-center;
 	}
 	.post__body {
-		@apply flex flex-col gap-4 items-center justify-start h-full w-full flex-1 px-8;
+		@apply flex flex-col gap-4 items-center justify-start h-full w-full flex-1 px-2;
 	}
 	.post__body :global(.panel.post__content) {
 		@apply flex flex-col gap-2 items-start justify-start h-full w-full flex-1 p-4;

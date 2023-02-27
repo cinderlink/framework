@@ -18,12 +18,13 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup src/index.ts --dts --format cjs,esm ",
-    "watch": "pnpm build --watch"
+    "build": "tsup",
+    "watch": "tsup --watch"
   },
   "devDependencies": {
     "@candor/core-types": "0.1.2",
     "@candor/ipld-database": "0.1.2",
+    "@candor/tsconfig": "workspace:^1.0.0",
     "tsup": "^6.6.3",
     "typescript": "^4.9.5",
     "vitest": "^0.28.5"
