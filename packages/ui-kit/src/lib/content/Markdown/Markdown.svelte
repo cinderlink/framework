@@ -3,6 +3,12 @@
 	import type MarkdownIt from 'markdown-it';
 	import md from 'markdown-it';
 	import emoji from 'markdown-it-emoji';
+
+	import hljsSvelte from 'highlightjs-svelte';
+	import hljsSolidity from 'highlightjs-solidity';
+	hljsSvelte(hljs);
+	hljsSolidity(hljs);
+
 	import darkTheme from 'highlight.js/styles/atom-one-dark.css?inline';
 	import lightTheme from 'highlight.js/styles/atom-one-light.css?inline';
 	import theme from '$lib/theme/store';
@@ -10,16 +16,15 @@
 	export let value = '';
 
 	$: style = `<style>${$theme.darkMode ? darkTheme : lightTheme}</style>`;
-	const classes =
-		'p-4 my-2 bg-neutral-100 dark:bg-gray-900 rounded-md overflow-auto w-full border-1px border-gray-300/10';
+	const classes = 'h-auto w-full overflow-auto border-1px border-gray-300/10';
 	const markdown: MarkdownIt = md({
 		highlight: function (str, lang) {
 			if (lang && hljs.getLanguage(lang)) {
 				try {
 					return (
-						`<pre class="${classes}"><code>` +
+						`<div class="p-4 my-2 bg-neutral-100 dark:bg-gray-900 rounded-md"><pre class="${classes}"><code>` +
 						hljs.highlight(str, { language: lang }).value +
-						'</code></pre>'
+						'</code></pre><div>'
 					);
 				} catch (__) {}
 			}

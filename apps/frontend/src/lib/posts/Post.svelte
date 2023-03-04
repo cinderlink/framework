@@ -12,7 +12,7 @@
 	let user: SocialUser | undefined = undefined;
 
 	$: if (plugin && post.did) {
-		plugin.getUserByDID(post.did).then((usr) => {
+		plugin.users.getUserByDID(post.did).then((usr) => {
 			user = usr;
 		});
 	}

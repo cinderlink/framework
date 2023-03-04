@@ -4,6 +4,7 @@ body {
 	@apply w-full h-full overflow-hidden font-sans;
 	font-family: 'proxima-nova', sans-serif;
 	font-size: 18px;
+	color: red;
 }
 #candor {
 	@apply w-full h-full;

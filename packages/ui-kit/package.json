@@ -99,6 +99,7 @@
 		"eslint-plugin-svelte3": "^4.0.0",
 		"ethers": "^5.7.2",
 		"highlight.js": "^11.7.0",
+		"highlightjs-solidity": "^2.0.6",
 		"highlightjs-svelte": "^1.0.6",
 		"markdown-it": "^13.0.1",
 		"markdown-it-emoji": "^2.0.2",

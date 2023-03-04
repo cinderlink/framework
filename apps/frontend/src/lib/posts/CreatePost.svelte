@@ -13,7 +13,7 @@
 		saving = true;
 		const post = (
 			(await $dapp.client?.getPlugin('socialClient')) as SocialClientPlugin
-		)?.createPost({
+		)?.posts.createPost({
 			content,
 			createdAt: Date.now()
 		});

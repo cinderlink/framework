@@ -19,8 +19,8 @@
 
 	async function onDataChange() {
 		if (plugin && $dapp.client?.id) {
-			followerCount = await plugin.getConnectionsCount($dapp.client.id, 'in');
-			followingCount = await plugin.getConnectionsCount($dapp.client.id, 'out');
+			followerCount = await plugin.connections.getConnectionsCount($dapp.client.id, 'in');
+			followingCount = await plugin.connections.getConnectionsCount($dapp.client.id, 'out');
 		}
 	}
 

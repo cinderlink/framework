@@ -1,14 +1,16 @@
-import { TableRow } from "@candor/core-types";
+import { PluginEventDef, TableRow } from "@candor/core-types";
 
 export type SocialUserStatus = "online" | "offline" | "away";
 
-export interface SocialConnectionRecord extends TableRow {
+export interface SocialConnection extends TableRow {
   from: string;
   to: string;
   follow: boolean;
 }
 
 export interface SocialUser extends TableRow {
+  address?: string;
+  addressVerification?: string;
   name: string;
   bio: string;
   status: SocialUserStatus;
@@ -59,99 +61,104 @@ export interface SocialComment extends TableRow {
   createdAt: number;
 }
 
-export type SocialClientPluginEvents = {
-  ready: void;
-  "/response/${string}":
-    | SocialUserSearchResponseMessage
-    | SocialUserGetResponseMessage;
-  "/chat/message/sent": SocialChatMessageRequest;
-  "/chat/message/received": SocialChatMessageRecord;
-  "/chat/message/response": SocialChatMessageRecord;
-};
-
-export type SocialConnectionMessage = {
+export interface SocialChatMessage extends TableRow {
+  cid?: string;
   from: string;
-  to: string;
-  requestId: string;
-  follow: boolean;
-};
-
-export type SocialAnnounceMessage = {
-  requestId: string;
-  address?: string;
-  addressVerification?: string;
-  name: string;
-  bio: string;
-  avatar: string;
-  status: "online" | "offline" | "away";
-  updatedAt: number;
-};
-
-export type SocialChatMessageOutgoing = {
   to: string;
   message: string;
   attachments?: string[];
-};
-
-export type SocialChatMessageRequest = SocialChatMessageOutgoing & {
-  requestId: string;
-  cid: string;
-  from: string;
-};
-
-export type SocialChatMessageResponse = {
-  requestId: string;
-  accepted: boolean;
-  cid: string;
-};
-
-export interface SocialChatMessageRecord
-  extends SocialChatMessageRequest,
-    TableRow {
   createdAt: number;
   acceptedAt: number;
   rejectedAt?: number;
 }
 
-export type SocialUpdateMessage = {
-  requestId: string;
-  post: SocialPost;
-};
+export interface SocialClientPluginEvents {
+  ready: void;
+  "/chat/message/sent": SocialChatMessage;
+  "/chat/message/received": SocialChatMessage;
+  "/chat/message/confirmed": SyncResponse;
+}
 
-export type SocialUpdateRecord = SocialUpdateMessage & {
-  id: number;
-  createdAt: number;
-};
-
-export type SocialUpdatesRequestMessage = {
+export interface SocialPostsFetchRequest {
   requestId: string;
   did?: string;
   since?: number;
-};
+}
 
-export type SocialUpdatesResponseMessage = {
+export interface SocialPostsFetchResponse {
   requestId: string;
   updates: SocialPost[];
-};
+}
 
-export type SocialUserSearchRequestMessage = {
+export interface SocialUsersSearchRequest {
   requestId: string;
   query: string;
-};
+}
 
-export type SocialUserSearchResponseMessage = {
+export interface SocialUsersSearchResponse {
   requestId: string;
   results: SocialUser[];
-};
+}
 
-export type SocialUserGetRequestMessage = {
+export interface SocialUsersGetRequest {
   requestId: string;
   did: string;
-};
+}
 
-export type SocialUserGetResponseMessage = {
+export interface SocialUsersGetResponse {
   requestId: string;
   user: SocialUser;
-};
+}
+
+export interface SyncResponse {
+  cid?: string;
+  requestId?: string;
+  success?: boolean;
+  error?: string;
+}
 
 export type SocialConnectionFilter = "in" | "out" | "mutual" | "all";
+
+export interface SocialClientEvents extends PluginEventDef {
+  send: {
+    "/social/connections/create": SocialConnection;
+    "/social/users/announce": SocialUser;
+    "/social/users/search/request": SocialUsersSearchRequest;
+    "/social/users/search/response": SocialUsersSearchResponse;
+    "/social/users/get/request": SocialUsersGetRequest;
+    "/social/users/get/response": SocialUsersGetResponse;
+    "/social/chat/message/send": SocialChatMessage;
+    "/social/chat/message/confirm": SyncResponse;
+    "/social/posts/create": SocialPost;
+    "/social/posts/confirm": SyncResponse;
+    "/social/posts/fetch/request": SocialPostsFetchRequest;
+    "/social/posts/fetch/response": SocialPostsFetchResponse;
+  };
+  receive: {
+    "/social/posts/create": SocialPost;
+    "/social/posts/fetch/request": SocialPostsFetchRequest;
+    "/social/posts/fetch/response": SocialPostsFetchResponse;
+    "/social/connections/create": SocialConnection;
+    "/social/connections/confirm": SocialConnection;
+    "/social/users/announce": SocialUser;
+    "/social/users/search/response": SocialUsersSearchResponse;
+    "/social/users/get/response": SocialUsersGetResponse;
+    "/social/chat/message/send": SocialChatMessage;
+    "/social/chat/message/confirm": SyncResponse;
+  };
+  publish: {
+    "/social/connections/create": SocialConnection;
+    "/social/users/announce": SocialUser;
+    "/social/posts/create": SocialPost;
+  };
+  subscribe: {
+    "/social/connections/create": SocialConnection;
+    "/social/users/announce": SocialUser;
+    "/social/posts/create": SocialPost;
+  };
+  emit: {
+    "/chat/message/sent": SocialChatMessage;
+    "/chat/message/received": SocialChatMessage;
+    "/chat/message/confirmed": SyncResponse;
+  };
+}

@@ -50,7 +50,7 @@
 			console.info('not connected to user', data.user, $dapp.client?.peers.getPeers());
 		}
 
-		localUser = await plugin?.getLocalUser();
+		localUser = await plugin?.users.getLocalUser();
 
 		plugin?.table<SocialUser>('users').on('/record/inserted', async (record) => {
 			if (record.did === data.user?.did) {
@@ -103,7 +103,7 @@
 		messages = [...messages, tmpMessage];
 		value = '';
 
-		const message = await plugin?.sendChatMessage(tmpMessage);
+		const message = await plugin?.chat.sendChatMessage(tmpMessage);
 		sending = false;
 	}
 </script>

@@ -35,9 +35,9 @@ export interface CandorClientEvents<
   };
   emit: {
     "/client/ready": ProtocolRequest;
-    "/peer/connect": Peer & ProtocolRequest;
-    "/peer/disconnect": Peer & ProtocolRequest;
-    "/peer/handshake": Peer & ProtocolRequest;
+    "/peer/connect": Peer;
+    "/peer/disconnect": Peer;
+    "/peer/handshake": Peer;
     "/peer/message": IncomingP2PMessage<PluginEvents>;
     "/pubsub/message": IncomingPubsubMessage<PluginEvents>;
   };

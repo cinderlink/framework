@@ -1,0 +1,38 @@
+{
+  "name": "@candor/identifiers",
+  "description": "Account verification and derivation tools for Candor Protocol",
+  "authors": "Drew <drew@cinderlink.com>",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "watch": "pnpm build --watch",
+    "test": "vitest"
+  },
+  "devDependencies": {
+    "@candor/tsconfig": "workspace:../tsconfig",
+    "did": "^0.5.0",
+    "did-jwt": "^6.11.1",
+    "did-resolver": "^4.0.1",
+    "dids": "^3.4.0",
+    "ethers": "^5.7.2",
+    "key-did-provider-ed25519": "^2.0.1",
+    "key-did-resolver": "^2.3.0",
+    "multiformats": "^11.0.1",
+    "tsup": "^6.6.3",
+    "typescript": "^4.9.5",
+    "vitest": "^0.29.1"
+  }
+}

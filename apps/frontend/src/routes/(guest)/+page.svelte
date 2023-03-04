@@ -1,6 +1,5 @@
 <script lang="ts">
 	import type { Web3Store } from '@candor/ui-kit/web3';
-	import { goto } from '$app/navigation';
 	import { theme } from '@candor/ui-kit/theme';
 	import { CenteredPanelLayout } from '@candor/ui-kit/layout';
 	import { Typography } from '@candor/ui-kit/content';
@@ -8,7 +7,7 @@
 	import { LoadingIndicator } from '@candor/ui-kit/indicator';
 	import { onboard } from '@candor/ui-kit/onboard';
 	import { web3 } from '@candor/ui-kit/web3';
-	import { ethers } from 'ethers';
+	import { ethers, type BigNumberish } from 'ethers';
 
 	import EarlyAccessContract from '$lib/dapp/contracts/CandorEarlyAccess';
 
@@ -16,13 +15,11 @@
 	let nftContract: ethers.Contract | undefined = undefined;
 	let current = 0;
 	let max = 0;
-	let balance = 0;
+	let balance: BigNumberish = 0;
 	let paused: boolean = false;
-	let owned: number | false = false;
 	let minting = false;
 	let error: string | undefined = undefined;
 	let tokenId: number | undefined = undefined;
-	let contractBalance: number = 0;
 	let success = false;
 
 	const wallets = onboard.state.select('wallets');
@@ -44,6 +41,7 @@
 			...state,
 			connected: true,
 			address,
+			balance,
 			provider,
 			signer
 		}));
@@ -55,8 +53,7 @@
 		paused = await nftContract.paused();
 		current = await nftContract.totalSupply();
 		max = await nftContract.maxSupply();
-		contractBalance = await nftContract.treasuryBalance();
-		hasNFT = Number(ethers.utils.formatUnits(await nftContract.balanceOf(address)));
+		hasNFT = Number(ethers.utils.formatUnits(await nftContract.balanceOf(address))) !== 0;
 		console.info('hasNFT', hasNFT);
 	}
 

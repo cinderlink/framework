@@ -159,11 +159,7 @@ export class CandorProtocolPlugin<
     Encoding extends EncodingOptions = EncodingOptions
   >(
     connection: Connection,
-    encoded: ProtocolMessage<
-      Events["receive"][Topic] & ProtocolRequest,
-      Topic,
-      Encoding
-    >
+    encoded: ProtocolMessage<Events["receive"][Topic], Topic, Encoding>
   ) {
     if (!encoded?.topic) {
       console.warn(
@@ -186,12 +182,9 @@ export class CandorProtocolPlugin<
     }
 
     const decoded = await decodePayload<
-      Events["receive"][Topic] & ProtocolRequest,
+      Events["receive"][Topic],
       Encoding,
-      EncodedProtocolPayload<
-        Events["receive"][Topic] & ProtocolRequest,
-        Encoding
-      >
+      EncodedProtocolPayload<Events["receive"][Topic], Encoding>
     >(encoded, this.client.did);
     if (!decoded) {
       throw new Error("failed to decode message (no data)");
@@ -204,9 +197,9 @@ export class CandorProtocolPlugin<
       ...decoded,
     } as DecodedProtocolMessage<Events, "receive", Topic, Encoding>;
 
-    if (event.payload?.requestId) {
+    if ((event.payload as any)?.requestId) {
       this.client.emit(
-        `/candor/request/${event.payload.requestId}`,
+        `/candor/request/${(event.payload as any).requestId}`,
         event as any
       );
     }

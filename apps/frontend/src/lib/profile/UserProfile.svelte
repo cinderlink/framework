@@ -1,14 +1,16 @@
 <script lang="ts">
+	import { ethers } from 'ethers';
 	import { onMount } from 'svelte';
 	import type { SocialClientPlugin } from '@candor/plugin-social-client';
 	import type { SocialPost, SocialProfile, SocialUser } from '@candor/plugin-social-core';
-	import { Avatar, Typography, ImageUpload } from '@candor/ui-kit';
-	import { AttestationMenu } from '@candor/ui-kit/web3';
+	import { Avatar, Typography, ImageUpload, LoadingIndicator } from '@candor/ui-kit';
+	import { AttestationMenu, AttestationList, web3 } from '@candor/ui-kit/web3';
 
 	import { dapp } from '$lib/dapp/store';
 	import Post from '$lib/posts/Post.svelte';
 	import CidImage from '$lib/dapp/CIDImage.svelte';
 	import CreatePost from '$lib/posts/CreatePost.svelte';
+	import { AttestationStation } from '$lib/dapp/contracts';
 
 	export let user: SocialUser | undefined = undefined;
 	export let did: string | undefined = undefined;
@@ -17,6 +19,15 @@
 	let posts: SocialPost[] = [];
 	let plugin: SocialClientPlugin | undefined = undefined;
 	let loading = true;
+	let contract: ethers.Contract;
+	$: if ($web3.signer) {
+		contract = new ethers.Contract(
+			AttestationStation.address,
+			AttestationStation.abi,
+			$web3.signer
+		);
+		console.info('contract', contract, $web3);
+	}
 	$: localUserProfile = user?.did === $dapp.client?.id;
 	$: posts = posts ? posts.sort((a, b) => b.createdAt - a.createdAt) : [];
 
@@ -131,31 +142,40 @@
 				{user?.name || ''}
 			</div>
 		</section>
-		<AttestationMenu
-			label="Feedback"
-			size="sm"
-			align="right"
-			options={[
-				{
-					key: 'candor.user.spam',
-					entityTypeId: 0,
-					entityId: 0,
-					label: 'This user posts spam content'
-				},
-				{
-					key: 'candor.user.inappropriate',
-					entityTypeId: 0,
-					entityId: 0,
-					label: 'This user posts inappropriate content'
-				},
-				{
-					key: 'candor.user.impersonation',
-					entityTypeId: 0,
-					entityId: 0,
-					label: 'This user is impersonating another user'
-				}
-			]}
-		/>
+		{#if user?.address}
+			{#if !contract}
+				<LoadingIndicator>Loading...</LoadingIndicator>
+			{:else}
+				<AttestationList
+					{contract}
+					address={user.address}
+				/>
+				<AttestationMenu
+					label="Feedback"
+					size="sm"
+					align="right"
+					{contract}
+					address={user.address}
+					options={[
+						{
+							key: 'candor.user.spam',
+							value: 1,
+							label: 'This user posts spam content'
+						},
+						{
+							key: 'candor.user.inappropriate',
+							value: 1,
+							label: 'This user posts inappropriate content'
+						},
+						{
+							key: 'candor.user.impersonation',
+							value: 1,
+							label: 'This user is impersonating another user'
+						}
+					]}
+				/>
+			{/if}
+		{/if}
 	</div>
 	<div class="profile__body">
 		<!-- <aside class="profile__sidebar">

@@ -98,7 +98,7 @@ export class IdentityServerPlugin
     await this.client
       .getSchema("identity")
       ?.getTable<IdentityPinsRecord>("pins")
-      .upsert("did", message.peer.did, message.payload);
+      .upsert({ did: message.peer.did }, message.payload);
 
     return this.client.send(message.peer.peerId.toString(), {
       topic: "/identity/set/response",

@@ -1,5 +1,5 @@
 import type { SocialClientPlugin } from '@candor/plugin-social-client';
-import type { SocialUser, SocialChatMessageRecord } from '@candor/plugin-social-core';
+import type { SocialUser, SocialChatMessage } from '@candor/plugin-social-core';
 import type { PageLoadEvent } from './$types';
 import { dapp } from '$lib/dapp/store';
 import { get } from 'svelte/store';
@@ -11,12 +11,12 @@ export async function load({ params }: PageLoadEvent) {
 	const plugin: SocialClientPlugin | undefined = client?.getPlugin('socialClient') as
 		| SocialClientPlugin
 		| undefined;
-	let messages: SocialChatMessageRecord[] = [];
+	let messages: SocialChatMessage[] = [];
 	let user: SocialUser | undefined;
 	if (client?.id && plugin) {
-		user = await plugin.getUserByDID(did);
+		user = await plugin.users.getUserByDID(did);
 		messages = await plugin
-			.table<SocialChatMessageRecord>('chat_messages')
+			.table<SocialChatMessage>('chat_messages')
 			.query()
 			.where('to', 'in', [client?.id, did])
 			.where('from', 'in', [did, client?.id])

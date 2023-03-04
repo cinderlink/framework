@@ -96,22 +96,30 @@ export class OfflineSyncServerPlugin
       return;
     }
 
+    // pin the CID for the user
+    if (message.payload.message.cid) {
+      await this.client.ipfs.pin.add(message.payload.message.cid, {
+        recursive: true,
+      });
+    }
+
     console.info(`plugin/offlineSync/server > onSendRequest`, message.payload);
     // if the recipient is online, just send the message
     if (this.client.peers.isDIDConnected(message.payload.recipient)) {
       const peer = this.client.peers.getPeerByDID(message.payload.recipient);
-      console.info(
-        `plugin/offlineSync/server > onSendRequest > received offline message for online peer, relaying`,
-        {
-          peer,
-          message: message.payload,
-        }
-      );
+
       if (
         peer &&
         (this.client.getPlugin("candor") as CandorProtocolPlugin)
           ?.protocolHandlers[peer.peerId.toString()]
       ) {
+        console.info(
+          `plugin/offlineSync/server > onSendRequest > received offline message for online peer, relaying`,
+          {
+            peer,
+            message: message.payload,
+          }
+        );
         this.client.send(peer.peerId.toString(), {
           topic: "/offline/get/response",
           payload: {
@@ -127,6 +135,14 @@ export class OfflineSyncServerPlugin
           },
         });
         return;
+      } else {
+        console.warn(
+          `plugin/offlineSync/server > onSendRequest > received offline message for online peer, but no protocol handler found`,
+          {
+            peer,
+            message: message.payload,
+          }
+        );
       }
     }
 

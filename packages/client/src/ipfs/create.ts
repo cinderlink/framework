@@ -46,8 +46,8 @@ export async function createIPFS(
       },
     },
 
+    ...overrides,
     config: {
-      Bootstrap: nodes,
       Pubsub: {
         Enabled: true,
         PubSubRouter: "gossipsub",
@@ -55,8 +55,9 @@ export async function createIPFS(
       Addresses: {
         Swarm: [],
       },
+      ...overrides.config,
+      Bootstrap: nodes,
     },
-    ...overrides,
   };
   console.info(options);
   const ipfs = await create(options);

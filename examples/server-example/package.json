@@ -10,19 +10,21 @@
     "ts": "ts-node src/start.ts"
   },
   "dependencies": {
-    "@candor/client": "0.1.2",
-    "@candor/core-types": "0.1.2",
-    "@candor/plugin-identity-server": "0.1.2",
-    "@candor/plugin-offline-sync-server": "0.1.2",
-    "@candor/plugin-social-server": "0.1.2",
-    "@candor/server": "0.1.2",
-    "@candor/server-bin": "0.1.2",
+    "@candor/client": "workspace:^0.1.2",
+    "@candor/core-types": "workspace:^0.1.2",
+    "@candor/plugin-identity-server": "workspace:^0.1.2",
+    "@candor/plugin-offline-sync-server": "workspace:^0.1.2",
+    "@candor/plugin-social-core": "workspace:^0.1.2",
+    "@candor/plugin-social-server": "workspace:^0.1.2",
+    "@candor/server": "workspace:^0.1.2",
+    "@candor/server-bin": "workspace:^0.1.2",
     "ts-node": "^10.9.1"
   },
   "keywords": [],
   "author": "Drew Ewing",
   "license": "ISC",
   "devDependencies": {
+    "@candor/plugin-sync-db": "workspace:^0.0.1",
     "@candor/protocol": "workspace:^0.1.0"
   }
 }

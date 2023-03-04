@@ -1,5 +1,5 @@
 import { writable, get, type Writable } from 'svelte/store';
-import type { ContractInterface, Signer, Wallet } from 'ethers';
+import type { ContractInterface, Signer, providers, Wallet, ethers } from 'ethers';
 import { Contract } from 'ethers';
 
 export interface Web3Store {
@@ -11,7 +11,7 @@ export interface Web3Store {
 	network: string;
 	connected: boolean;
 	walletId?: string;
-	wallet?: Wallet;
+	provider?: providers.Web3Provider;
 	signer?: Signer;
 	modals: {
 		connect: boolean;
@@ -32,6 +32,42 @@ export const web3: Writable<Web3Store> = writable({
 	}
 } as Web3Store);
 export default web3;
+
+web3.subscribe((store) => {
+	if (store.signer && !store.chainId) {
+		store.signer.getChainId().then((chainId) => {
+			web3.update((store) => {
+				store.chainId = chainId;
+				store.connected = true;
+				return store;
+			});
+		});
+	}
+});
+
+export function setWallet(wallet: Wallet) {
+	web3.update((store) => {
+		store.address = wallet.address;
+		store.displayName = addressDisplayName(store.address);
+		store.avatar = undefined;
+		store.balance = 0;
+		store.provider = (wallet.provider as ethers.providers.Web3Provider) || undefined;
+		store.signer = wallet;
+		return store;
+	});
+}
+
+export function setProvider(address: string, provider: providers.Web3Provider) {
+	web3.update((store) => {
+		store.address = address;
+		store.displayName = addressDisplayName(store.address);
+		store.avatar = undefined;
+		store.balance = 0;
+		store.provider = provider;
+		store.signer = provider.getSigner();
+		return store;
+	});
+}
 
 export function setDisplayName(name: string | undefined) {
 	web3.update((store) => {
@@ -54,11 +90,11 @@ export function disconnect() {
 }
 
 export function getContract(address: string, abi: ContractInterface) {
-	const { wallet } = get(web3);
-	if (!wallet?.provider) {
+	const { provider } = get(web3);
+	if (!provider) {
 		throw new Error('No provider');
 	}
-	return new Contract(address, abi, wallet.provider);
+	return new Contract(address, abi, provider);
 }
 
 export async function signMessage(message: string) {
@@ -75,7 +111,7 @@ export function reset() {
 		store.network = 'none';
 		store.connected = false;
 		store.walletId = undefined;
-		store.wallet = undefined;
+		store.provider = undefined;
 		store.signer = undefined;
 
 		return store;

@@ -39,11 +39,13 @@ export class QueryBuilder<Row extends TableRow = TableRow>
 {
   terminator: string | undefined = undefined;
   constructor(public instructions: QueryInstruction<Row>[] = []) {}
-  where<Key extends keyof Row = keyof Row>(
+  where<Key extends keyof Row = keyof Row, Op extends Operation = Operation>(
     this: QueryBuilderInterface<Row>,
     field: Key,
-    operation: Operation,
-    value: Row[Key]
+    operation: Op,
+    value: Op extends "in" | "!in" | "bwtween" | "!between"
+      ? Row[Key][]
+      : Row[Key]
   ) {
     this.instructions.push({
       instruction: "where",

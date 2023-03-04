@@ -32,7 +32,7 @@
 	});
 
 	async function onDataChange() {
-		connections = await data.plugin?.getConnections(
+		connections = await data.plugin?.connections.getConnections(
 			data.plugin.client.id,
 			data.filter === 'followers' ? 'in' : 'out'
 		);

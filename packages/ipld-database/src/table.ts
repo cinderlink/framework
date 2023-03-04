@@ -84,16 +84,38 @@ export class Table<
     return id;
   }
 
+  async bulkInsert(data: Row[]) {
+    await this.awaitLock();
+    const saved: number[] = [];
+    const errors: Record<number, string> = {};
+    for (const index in data) {
+      const row = data[index];
+      await this.insert(row)
+        .then((id) => {
+          saved.push(id);
+        })
+        .catch((err) => {
+          const identifier = row.id || index;
+          errors[identifier as number] = err;
+        });
+    }
+    this.unlock();
+    return { saved, errors };
+  }
+
   async upsert<Index extends keyof Row = keyof Row>(
-    index: Index,
-    value: Row[Index],
+    check: Record<Index, Row[Index]>,
     data: Partial<Row>
   ) {
     this.assertValid(data);
-    const existing = data.id
-      ? await this.getById(data.id)
+    const existing = check["id" as Index]
+      ? await this.getById(check["id" as Index] as number)
       : await this.query()
-          .where(index, "=", value)
+          .and((qb) => {
+            for (const index in check) {
+              qb.where(index, "=", check[index] as Row[Index]);
+            }
+          })
           .select()
           .nocache()
           .execute()
@@ -105,8 +127,8 @@ export class Table<
       throw new Error(`Failed upsert with id ${data.id}, record not found`);
     }
     this.unlock();
-    return this.insert({ ...data, [index]: value } as Omit<Row, "id">).then(
-      (id) => this.getById(id)
+    return this.insert({ ...check, ...data } as Omit<Row, "id">).then((id) =>
+      this.getById(id)
     );
   }
 
@@ -130,6 +152,17 @@ export class Table<
       .nocache()
       .execute();
     return results.first();
+  }
+
+  async getAllById(ids: number[]) {
+    await this.awaitUnlock();
+    const results = await this.query()
+      .where("id", "in", ids)
+      .select()
+      .nocache()
+      .execute()
+      .then((r) => r.all());
+    return results;
   }
 
   async search(query: string, limit = 10): Promise<Row[]> {
@@ -157,9 +190,8 @@ export class Table<
       console.info(`table/${this.tableId} > saving`, this.currentBlock.cid);
       cache.invalidateTable(this.tableId);
       await this.currentBlock.save();
+      console.info(`table/${this.tableId} > saved`, this.currentBlock.cid);
     }
-
-    console.info(`table/${this.tableId} > saved`, this.currentBlock.cid);
 
     return this.currentBlock.cid;
   }

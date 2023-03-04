@@ -1,14 +1,14 @@
-import { IncomingP2PMessage } from "@candor/core-types/src/p2p";
 import { rmSync } from "fs";
-import { createSeed } from "./hash";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { createClient } from "./create";
+import { createSeed } from "@candor/identifiers";
 import {
   CandorClientInterface,
   PluginInterface,
   PluginEventDef,
   ProtocolEvents,
   EncodingOptions,
+  IncomingP2PMessage,
 } from "@candor/core-types";
 import { CandorProtocolPlugin } from "@candor/protocol";
 

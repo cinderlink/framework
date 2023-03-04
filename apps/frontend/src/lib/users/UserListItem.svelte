@@ -23,12 +23,12 @@
 			>('socialClient');
 			if (plugin) {
 				if (!user) {
-					user = await plugin.getUserByDID(did);
+					user = await plugin.users.getUserByDID(did);
 					console.info('user', user);
 				}
 				if (!connectionState) {
 					console.info('fetching connection state', did);
-					connectionState = await plugin.getConnectionDirection(did);
+					connectionState = await plugin.connections.getConnectionDirection(did);
 					console.info('connection state', connectionState);
 				}
 			} else {
@@ -44,8 +44,8 @@
 			SocialClientPlugin
 		>('socialClient');
 		if (plugin && did) {
-			await plugin.createConnection(did);
-			connectionState = await plugin.getConnectionDirection(did);
+			await plugin.connections.createConnection(did);
+			connectionState = await plugin.connections.getConnectionDirection(did);
 		}
 	}
 
@@ -55,8 +55,8 @@
 			SocialClientPlugin
 		>('socialClient');
 		if (plugin && did && $dapp.client?.id) {
-			await plugin.deleteConnection($dapp.client.id, did);
-			connectionState = await plugin.getConnectionDirection(did);
+			await plugin.connections.deleteConnection($dapp.client.id, did);
+			connectionState = await plugin.connections.getConnectionDirection(did);
 		}
 	}
 </script>

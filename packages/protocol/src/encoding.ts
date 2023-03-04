@@ -10,7 +10,7 @@ import { DagJWS, DID, VerifyJWSResult } from "dids";
 import { JWE } from "did-jwt";
 
 export async function decodePayload<
-  Payload extends ProtocolRequest,
+  Payload,
   Encoding extends EncodingOptions,
   Encoded extends EncodedProtocolPayload<Payload, Encoding>
 >(encoded: Encoded, did?: DID): Promise<DecodedProtocolPayload<Payload>> {
@@ -59,7 +59,7 @@ export async function decodePayload<
 }
 
 export async function encodePayload<
-  Data extends ProtocolRequest = ProtocolRequest,
+  Data extends string | Record<string, unknown> = ProtocolRequest,
   Encoding extends EncodingOptions = EncodingOptions
 >(
   payload: Data,

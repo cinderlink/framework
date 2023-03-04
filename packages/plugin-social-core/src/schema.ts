@@ -1,8 +1,8 @@
-import { SocialChatMessageRecord } from "./types";
 import { Schema } from "@candor/ipld-database";
 import { CandorClientInterface, TableDefinition } from "@candor/core-types";
 import {
-  SocialConnectionRecord,
+  SocialConnection,
+  SocialChatMessage,
   SocialPost,
   SocialProfile,
   SocialUser,
@@ -28,7 +28,7 @@ export const SocialSchemaDef = {
       type: "object",
       properties: {
         address: { type: "string" },
-        addressVerification: { type: " string" },
+        addressVerification: { type: "string" },
         name: { type: "string" },
         bio: { type: "string" },
         avatar: { type: "string" },
@@ -125,12 +125,15 @@ export const SocialSchemaDef = {
     schema: {
       type: "object",
       properties: {
+        cid: { type: "string" },
         from: { type: "string" },
         to: { type: "string" },
         follow: { type: "boolean" },
+        confirmations: { type: "number" },
+        createdAt: { type: "number" },
       },
     },
-  } as TableDefinition<SocialConnectionRecord>,
+  } as TableDefinition<SocialConnection>,
   posts: {
     schemaId: "social",
     encrypted: true,
@@ -171,6 +174,7 @@ export const SocialSchemaDef = {
           },
         },
         tags: { type: "array", items: { type: "string" } },
+        confirmations: { type: "number" },
         createdAt: { type: "number" },
       },
     },
@@ -209,11 +213,12 @@ export const SocialSchemaDef = {
             type: "string",
           },
         },
+        confirmations: { type: "number" },
         createdAt: { type: "number" },
         receivedAt: { type: "number" },
       },
     },
-  } as TableDefinition<SocialChatMessageRecord>,
+  } as TableDefinition<SocialChatMessage>,
 };
 
 export default SocialSchemaDef;

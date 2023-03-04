@@ -10,7 +10,8 @@ export const contracts = {
   "EntityRegistry": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
   "DefinitionRegistry": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6",
   "CinderDAO": "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
-  "CandorEarlyAccess": "0x9A676e781A523b5d0C0e43731313A708CB607508"
+  "CandorEarlyAccess": "0x9A676e781A523b5d0C0e43731313A708CB607508",
+  "AttestationStation": "0x0B306BF915C4d645ff596e518fAf3F9669b97016"
 };
 export default contracts;
 
@@ -25,3 +26,4 @@ export { default as EntityRegistry } from "./contracts/EntityRegistry";
 export { default as DefinitionRegistry } from "./contracts/DefinitionRegistry";
 export { default as CinderDAO } from "./contracts/CinderDAO";
 export { default as CandorEarlyAccess } from "./contracts/CandorEarlyAccess";
+export { default as AttestationStation } from "./contracts/AttestationStation";

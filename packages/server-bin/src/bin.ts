@@ -1,16 +1,16 @@
 import minimist from "minimist";
 import fs from "fs";
 import path from "path";
-import crypto from "crypto";
 import chalk from "chalk";
+import { ethers } from "ethers";
 import { createServer } from "@candor/server";
-import { createSeed } from "@candor/client";
+import { createSignerDID, signAddressVerification } from "@candor/identifiers";
 import { HttpApi } from "ipfs-http-server";
 import { HttpGateway } from "ipfs-http-gateway";
 
 const argv = minimist(process.argv.slice(2));
 const [command] = argv._;
-const configPath = argv.config || "./candor.config.json";
+const configPath = argv.config || "candor.config.js";
 
 if (command === "help" || argv.help) {
   console.log(`${chalk.yellow("usage")}: candor [command] [options]
@@ -22,7 +22,7 @@ ${chalk.yellow("commands")}:
 
 ${chalk.yellow("options")}:
   ${chalk.cyan("--config")} ${chalk.gray(
-    "path to config file (default: ./candor.config.json)"
+    "path to config file (default: candor.config.js)"
   )}
 `);
   process.exit(0);
@@ -32,11 +32,13 @@ if (command === "init") {
   console.log(
     `initializing ${chalk.cyan("candor")} at ${chalk.yellow(configPath)}`
   );
+  const wallet = ethers.Wallet.createRandom();
   fs.writeFileSync(
     configPath,
-    JSON.stringify(
-      {
-        seed: crypto.randomBytes(32).toString("hex"),
+    `export default {
+        app: "candor.social",
+        mnemonic: "${wallet.mnemonic.phrase}",
+        accountNonce: 0,
         plugins: [
           ["@candor/protocol"],
           ["@candor/plugin-social-server"],
@@ -52,10 +54,7 @@ if (command === "init") {
             Bootstrap: [],
           },
         },
-      },
-      null,
-      2
-    )
+      };`
   );
   process.exit(0);
 }
@@ -64,48 +63,72 @@ if (command !== "start") {
   console.error(`unknown command ${chalk.yellow(command)}`);
   process.exit(1);
 }
-
-if (!fs.existsSync(configPath)) {
-  console.error(`no config found at ${chalk.yellow(configPath)}`);
-  process.exit(1);
-}
-
-const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
-if (!config.seed) {
-  console.error(`no seed found in ${chalk.yellow(configPath)}`);
-  process.exit(1);
-}
-
 (async () => {
+  const resolvedConfigPath = path.resolve(process.cwd(), configPath);
+
+  if (!fs.existsSync(resolvedConfigPath)) {
+    console.error(`no config found at ${chalk.yellow(configPath)}`);
+    process.exit(1);
+  }
+
+  console.info("resolved config", resolvedConfigPath);
+  const { default: config } = await import(resolvedConfigPath);
+  if (!config.mnemonic) {
+    console.error(`no mnemonic found in ${chalk.yellow(configPath)}`);
+    process.exit(1);
+  }
+
+  const wallet = ethers.Wallet.fromMnemonic(config.mnemonic);
+  if (!wallet) {
+    console.error(`invalid mnemonic in ${chalk.yellow(configPath)}`);
+    process.exit(1);
+  }
+
   console.log(`loading ${chalk.cyan("plugins")}...`);
-  const plugins = await Promise.all(
-    (config.plugins || []).map(
-      async ([pathname, options]: [string, Record<string, unknown>]) => {
-        // resolve the plugin relative to the config file
-        const dirname = path.resolve(
-          path.dirname(configPath),
-          "node_modules",
-          pathname
-        );
-        if (fs.existsSync(dirname)) {
-          const pkg = path.resolve(dirname, "package.json");
-          if (fs.existsSync(pkg)) {
-            const { main } = JSON.parse(fs.readFileSync(pkg, "utf8"));
-            pathname = path.resolve(dirname, main);
-          } else {
-            pathname = path.resolve(dirname, "index.js");
+  const plugins = (
+    await Promise.all(
+      (config.plugins || []).map(
+        async ([pathname, options]: [string, Record<string, unknown>]) => {
+          // resolve the plugin relative to the config file
+          const dirname = path.resolve(
+            path.dirname(configPath),
+            "node_modules",
+            pathname
+          );
+          if (fs.existsSync(dirname)) {
+            const pkg = path.resolve(dirname, "package.json");
+            if (fs.existsSync(pkg)) {
+              const { main } = JSON.parse(fs.readFileSync(pkg, "utf8"));
+              pathname = path.resolve(dirname, main);
+            } else {
+              pathname = path.resolve(dirname, "index.js");
+            }
+            console.info(`importing plugin from ${chalk.yellow(pathname)}`);
+            const Plugin = await import(pathname);
+            return [Plugin.default, options];
           }
+          return undefined;
         }
-        const Plugin = await import(pathname);
-        return [Plugin.default, options];
-      }
+      )
     )
-  );
+  ).filter((p) => !!p);
 
   console.log(`starting ${chalk.cyan("candor")}...`);
-  console.info(config.plugins);
-  const seed = await createSeed(config.seed);
-  const server = await createServer(seed, plugins, config.nodes, config.ipfs);
+  console.info(config);
+  const did = await createSignerDID(config.app, wallet, config.accountNonce);
+  const addressVerification = await signAddressVerification(
+    config.app,
+    did.id,
+    wallet
+  );
+  const server = await createServer({
+    did,
+    address: wallet.address,
+    addressVerification,
+    plugins,
+    nodes: config.nodes,
+    options: config.ipfs,
+  });
   await server.start();
 
   console.log(`starting ${chalk.cyan("http api")}...`);

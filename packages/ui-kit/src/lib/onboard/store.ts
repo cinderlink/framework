@@ -1,10 +1,12 @@
 import { PUBLIC_LOCAL_CHAIN } from '$env/static/public';
+import { setProvider } from '$lib/web3';
 import Onboard from '@web3-onboard/core';
 import coinbaseWallet from '@web3-onboard/coinbase';
 import injectedWallet from '@web3-onboard/injected-wallets';
 import walletConnect from '@web3-onboard/walletconnect';
 import ledger from '@web3-onboard/ledger';
 import gnosis from '@web3-onboard/gnosis';
+import { ethers } from 'ethers';
 
 const chains = PUBLIC_LOCAL_CHAIN
 	? [
@@ -41,5 +43,14 @@ export const onboard = Onboard({
 	chains,
 	connect: {
 		autoConnectLastWallet: true
+	}
+});
+export default onboard;
+
+const wallets = onboard.state.select('wallets');
+wallets.subscribe(($wallets) => {
+	if ($wallets[0]) {
+		const web3Provider = new ethers.providers.Web3Provider($wallets[0].provider);
+		setProvider($wallets[0].accounts[0].address, web3Provider);
 	}
 });

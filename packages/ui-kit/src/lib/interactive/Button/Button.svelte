@@ -46,7 +46,7 @@
 <style>
 	.button {
 		@apply border-4 border-transparent;
-		@apply flex flex-row gap-2 items-center justify-center;
+		@apply flex flex-row gap-2;
 		@apply font-900 transition-colors duration-200 ease-in-out;
 		@apply rounded-lg;
 	}

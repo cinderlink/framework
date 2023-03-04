@@ -7,29 +7,36 @@ import type {
   PluginEventDef,
 } from "@candor/core-types";
 export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
-  cid?: string;
-  document?: Record<string, unknown>;
+  cid: string | undefined = undefined;
+  document: Record<string, unknown> | undefined = undefined;
   constructor(public client: CandorClientInterface<PluginEvents>) {}
 
   async resolve() {
-    let resolved = await this.resolveLocal();
-    const ipns = await this.resolveIPNS();
+    console.info(`client/identity/resolve > resolving local identity`);
+    let resolved = await this.resolveLocal().catch(() => undefined);
+    console.info(`client/identity/resolve > resolving ipns identity`);
+    const ipns = await this.resolveIPNS().catch(() => undefined);
     if (
       !resolved?.document?.updatedAt ||
       (ipns?.cid && ipns.document?.updatedAt > resolved?.document?.updatedAt)
     ) {
       resolved = ipns;
     }
-    const server = await this.resolveServer();
+    console.info(`client/identity/resolve > resolving server identity`);
+    const server = await this.resolveServer().catch(() => undefined);
     if (
-      server.cid !== undefined &&
+      server?.cid !== undefined &&
       server.document?.updatedAt &&
       server.document.updatedAt > (resolved?.document?.updatedAt || 0)
     ) {
-      resolved = server as { cid: string; document: any };
+      resolved = server as { cid: string | undefined; document: any };
     }
     this.cid = resolved?.cid;
     this.document = resolved?.document;
+    console.info(`client/identity/resolve > identity resolved`, {
+      cid: this.cid,
+      document: this.document,
+    });
     return resolved;
   }
 
@@ -42,7 +49,7 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
     }
     const document = await this.client.dag.loadDecrypted<
       { updatedAt: number } & Record<string, unknown>
-    >(CID.parse(cid));
+    >(CID.parse(cid), undefined, { timeout: 1000 });
     return { cid, document };
   }
 
@@ -62,9 +69,13 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
         const cid = link.split("/").pop();
         console.info("IPNS resolve", { link, cid });
         if (cid) {
-          const document = await this.client.dag.loadDecrypted<
-            { updatedAt: number } & Record<string, unknown>
-          >(CID.parse(cid), undefined, { timeout: 3000 });
+          const document = await this.client.dag
+            .loadDecrypted<{ updatedAt: number } & Record<string, unknown>>(
+              CID.parse(cid),
+              undefined,
+              { timeout: 3000 }
+            )
+            .catch(() => undefined);
           if (document) {
             return { cid, document };
           }
@@ -80,37 +91,32 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
     };
   }
 
-  async resolveServer(timeout = 5000) {
-    const cid: string | undefined = await new Promise((resolve) => {
-      let requestId = uuid();
-      let _timeout = setTimeout(() => {
-        resolve(undefined);
-      }, timeout);
-      this.client.p2p.on("/identity/resolve/response", (message) => {
-        if (message.payload.requestId === requestId) {
-          clearTimeout(_timeout);
-          resolve(message.payload.cid as string);
+  async resolveServer() {
+    const servers = this.client.peers.getServers();
+    if (!servers.length) {
+      return { cid: undefined, document: undefined };
+    }
+
+    let requestId = uuid();
+    let cid: string | undefined = undefined;
+
+    for (const server of servers.filter((s) => !!s.peerId)) {
+      const resolved = await this.client.request<CandorClientEvents>(
+        server.peerId.toString(),
+        {
+          topic: "/identity/resolve/request",
+          payload: { requestId },
         }
-      });
-      const servers = this.client.peers.getServers();
-      if (!servers.length) {
-        clearTimeout(_timeout);
-        resolve(undefined);
-        return;
-      }
-      servers.forEach((server) => {
-        if (server.peerId) {
-          this.client.send<CandorClientEvents>(server.peerId.toString(), {
-            topic: "/identity/resolve/request",
-            payload: { requestId },
-          });
-        }
-      });
-    });
+      );
+      console.info("server identity resolved", resolved);
+    }
+
     const document = cid
-      ? await this.client.dag.loadDecrypted<
-          { updatedAt: number } & Record<string, unknown>
-        >(CID.parse(cid))
+      ? await this.client.dag
+          .loadDecrypted<{ updatedAt: number } & Record<string, unknown>>(
+            CID.parse(cid)
+          )
+          .catch(() => undefined)
       : undefined;
     return { cid, document };
   }

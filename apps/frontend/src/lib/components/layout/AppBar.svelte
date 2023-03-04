@@ -23,7 +23,7 @@
 		error = false;
 		loading = true;
 		const requestId: string = uuid();
-		const userId = await plugin?.getLocalUserId();
+		const userId = await plugin?.users.getLocalUserId();
 
 		if (!$dapp.client) {
 			error = 'Candor network not initialized';
@@ -35,7 +35,7 @@
 			return;
 		}
 
-		searchResults = (await plugin.searchUsers(query)).filter(
+		searchResults = (await plugin.users.searchUsers(query)).filter(
 			(user) => user.did !== $dapp.client?.id
 		);
 		console.info('search results', searchResults);
@@ -46,7 +46,7 @@
 	}
 
 	export async function connectWithUser(did: string) {
-		await plugin?.createConnection(did);
+		await plugin?.connections.createConnection(did);
 	}
 
 	let resultsVisible = false;

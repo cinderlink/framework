@@ -1,19 +1,14 @@
-import {
-  EncodingOptions,
-  ProtocolPayload,
-  ProtocolRequest,
-} from "./../protocol/types";
+import { EncodingOptions, ProtocolPayload } from "./../protocol/types";
 import { ReceiveEventHandlers } from "./../p2p/types";
 import { SubscribeEventHandlers } from "../pubsub";
 import { CandorClientEvents, CandorClientInterface } from "../client";
 
-export type PluginEventPayloads = Record<
-  string,
-  ProtocolPayload<ProtocolRequest, EncodingOptions>
->;
+export type PluginEventPayloads<
+  T extends Record<string, unknown> = Record<string, unknown>
+> = Record<keyof T, ProtocolPayload<T[keyof T], EncodingOptions>>;
 export type PluginEventHandler<T = unknown> = (payload: T) => void;
 export type PluginEventHandlers<
-  Events extends PluginEventPayloads = PluginEventPayloads
+  Events extends PluginEventDef[keyof PluginEventDef]
 > = {
   [key in keyof Events]: PluginEventHandler<Events[key]>;
 };

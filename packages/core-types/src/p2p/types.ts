@@ -1,10 +1,6 @@
 import { PeerId } from "@libp2p/interface-peer-id";
 import { PluginEventDef, PluginEventHandlers } from "../plugin/types";
-import {
-  EncodingOptions,
-  ProtocolMessage,
-  ProtocolRequest,
-} from "../protocol/types";
+import { EncodingOptions, ProtocolMessage } from "../protocol/types";
 
 export type Peer = {
   did?: string;
@@ -47,13 +43,7 @@ export type OutgoingP2PMessage<
   PluginEvents extends PluginEventDef = PluginEventDef,
   Topic extends keyof PluginEvents["send"] = keyof PluginEvents["send"],
   Encoding extends EncodingOptions = { sign: false; encrypt: false }
-> = ProtocolMessage<
-  PluginEvents["send"][Topic] extends ProtocolRequest
-    ? PluginEvents["send"][Topic]
-    : never,
-  Topic,
-  Encoding
->;
+> = ProtocolMessage<PluginEvents["send"][Topic], Topic, Encoding>;
 
 export type IncomingP2PMessage<
   PluginEvents extends PluginEventDef = PluginEventDef,

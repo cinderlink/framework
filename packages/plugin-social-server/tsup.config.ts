@@ -5,8 +5,8 @@ export default defineConfig({
   format: ["esm", "cjs"],
   dts: true,
   sourcemap: true,
-  clean: true,
   external: [
+    "@candor/identifiers",
     "@candor/core-types",
     "@candor/plugin-social-client",
     "@candor/plugin-social-core",

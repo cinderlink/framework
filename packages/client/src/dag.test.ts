@@ -1,8 +1,8 @@
 import { rmSync } from "fs";
-import { CandorClientInterface } from "@candor/core-types";
 import { describe, beforeAll, it, expect, afterAll } from "vitest";
+import { CandorClientInterface } from "@candor/core-types";
+import { createSeed } from "@candor/identifiers";
 import { createClient } from "./create";
-import { createSeed } from "./hash";
 
 let client: CandorClientInterface;
 describe("@candor/client/dag", () => {

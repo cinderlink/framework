@@ -40,8 +40,8 @@
 
 	async function onSocialReady() {
 		socialReady = true;
-		if (social && social.name && social.name !== 'guest') {
-			await social.publishAnnounceMessage();
+		if (social && social.users.localUser && social.users.localUser.name !== 'guest') {
+			await social.users.announce();
 			return goto('/feed');
 		}
 		loading = false;
@@ -62,13 +62,13 @@
 		if (!social) return;
 		if (username === 'demo') return;
 		console.info(`social profile updated, publishing`);
-		await social.setState({
+		await social.users.setState({
 			name: username,
 			bio,
 			avatar: imageCid || image || ''
 		});
 		await onSocialReady();
-		await social?.publishAnnounceMessage();
+		await social?.users.announce();
 		localStorage.setItem('candor:hasAccount', 'true');
 		goto('/feed');
 	}

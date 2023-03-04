@@ -35,7 +35,7 @@
     "@candor/client": "workspace:^0.1.2"
   },
   "devDependencies": {
-    "@candor/client": "workspace:^0.1.2",
+    "@candor/identifiers": "workspace:^0.0.1",
     "@candor/plugin-identity-server": "workspace:^0.1.2",
     "@candor/plugin-offline-sync-server": "workspace:^0.1.2",
     "@candor/plugin-social-server": "workspace:^0.1.2",
@@ -43,6 +43,7 @@
     "@candor/tsconfig": "workspace:^1.0.0",
     "@types/minimist": "^1.2.2",
     "chalk": "^5.2.0",
+    "ethers": "^5.7.2",
     "ts-node": "^10.9.1",
     "tsup": "^6.6.3",
     "typescript": "^4.9.5",

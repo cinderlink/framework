@@ -30,7 +30,7 @@ export class OfflineSyncClientPlugin<
 {
   id = "offlineSyncClient";
   updatedAt = Date.now();
-  interval: NodeJS.Timer | null = null;
+  interval: number | null = null;
   ready = false;
 
   p2p = {
@@ -55,7 +55,7 @@ export class OfflineSyncClientPlugin<
   }
 
   async start() {
-    console.info(`plugin/offlineSyncServer > loading schema`);
+    console.info(`plugin/offlineSyncClient > loading schema`);
     await loadOfflineSyncSchema(this.client);
 
     this.ready = true;
@@ -74,31 +74,36 @@ export class OfflineSyncClientPlugin<
   >(
     recipient: string,
     outgoing: OutgoingP2PMessage<Events, OutTopic, Encoding>
-  ): Promise<
-    IncomingP2PMessage<
-      OfflineSyncClientEvents,
-      "/offline/send/response",
-      Encoding
-    >
-  > {
+  ): Promise<boolean> {
     const requestId = uuid();
-    const server = this.client.peers.getServers()[0];
-    console.info(
-      `plugin/offlineSync/client > sending offline message to server ${server.did} for ${recipient}: ${requestId}`
-    );
-    return this.client.request<
-      OfflineSyncClientEvents,
-      "/offline/send/request",
-      "/offline/send/response",
-      Encoding
-    >(server.peerId.toString(), {
-      topic: "/offline/send/request",
-      payload: {
-        requestId,
-        recipient,
-        message: outgoing,
-      } as any,
-    }) as any;
+    const servers = this.client.peers.getServers();
+    let saved = false;
+    for (const server of servers) {
+      console.info(
+        `plugin/offlineSync/client > sending offline message to server ${server.did} for ${recipient}: ${requestId}`
+      );
+      const received = (await this.client.request<
+        OfflineSyncClientEvents,
+        "/offline/send/request",
+        "/offline/send/response",
+        Encoding
+      >(server.peerId.toString(), {
+        topic: "/offline/send/request",
+        payload: {
+          requestId,
+          recipient,
+          message: outgoing,
+        } as any,
+      })) as IncomingP2PMessage<
+        OfflineSyncClientEvents,
+        "/offline/send/response"
+      >;
+
+      if (received?.payload.saved) {
+        saved = true;
+      }
+    }
+    return saved;
   }
 
   async onPeerConnect(peer: Peer) {

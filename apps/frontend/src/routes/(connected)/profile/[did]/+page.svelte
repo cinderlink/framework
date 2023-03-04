@@ -17,7 +17,7 @@
 		}
 
 		const plugin = $dapp.client.getPlugin<SocialClientEvents, SocialClientPlugin>('socialClient');
-		user = await plugin.getUserByDID(did);
+		user = await plugin.users.getUserByDID(did);
 		console.info('user', user);
 	});
 </script>

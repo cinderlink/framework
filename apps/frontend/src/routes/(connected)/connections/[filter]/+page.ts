@@ -1,5 +1,5 @@
 import type { SocialClientPlugin } from '@candor/plugin-social-client';
-import type { SocialConnection, SocialConnectionFilter } from '@candor/plugin-social-core';
+import type { SocialConnection } from '@candor/plugin-social-core';
 import type { PageLoadEvent } from './$types';
 import { dapp } from '$lib/dapp/store';
 import { get } from 'svelte/store';
@@ -10,7 +10,7 @@ export async function load({ params }: PageLoadEvent) {
 	const plugin: SocialClientPlugin | undefined = client?.getPlugin('socialClient');
 	let connections: SocialConnection[] | undefined;
 	if (client?.id && plugin) {
-		connections = await plugin.getConnections(
+		connections = await plugin.connections.getConnections(
 			client.id,
 			params.filter === 'followers' ? 'in' : 'out'
 		);

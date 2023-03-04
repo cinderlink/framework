@@ -102,7 +102,7 @@ export interface QueryBuilderInterface<Row extends TableRow = TableRow> {
   where<Key extends keyof Row = keyof Row>(
     field: Key,
     operation: Operation,
-    value: Row[Key] | Row[Key][]
+    value: Row[Key][] | Row[Key]
   ): QueryBuilderInterface<Row>;
   orderBy(
     field: keyof Row,

@@ -1,62 +1,59 @@
+import { ethers } from "ethers";
+import {
+  createDID,
+  signAddressVerification,
+  createSeed,
+} from "@candor/identifiers";
 import { rmSync } from "fs";
-import { createSeed, createClient, CandorClient } from "../../client";
+import { createClient, CandorClient } from "../../client";
 import { describe, it, expect, beforeEach, afterEach, afterAll } from "vitest";
 import { Table } from "./table";
-import { BlockData, TableDefinition } from "@candor/core-types";
+import { BlockData, TableDefinition, TableRow } from "@candor/core-types";
 
-export const schema: Record<string, TableDefinition> = {
-  users: {
-    schemaId: "social",
-    encrypted: false,
-    aggregate: {},
-    indexes: {
-      did: {
-        unique: true,
-        fields: ["did"],
-      },
-    },
-    rollup: 1000,
-    searchOptions: {
-      fields: ["id", "name", "did"],
-    },
-    schema: {
-      type: "object",
-      properties: {
-        name: { type: "string" },
-        bio: { type: "string" },
-        avatar: { type: "string" },
-        did: { type: "string" },
-        status: { type: "string" },
-        updatedAt: { type: "number" },
-      },
+interface UsersRow extends TableRow {
+  id: number;
+  name: string;
+  bio?: string;
+  avatar?: string;
+  did?: string;
+  status?: string;
+  updatedAt: number;
+}
+
+export const usersDef = {
+  schemaId: "social",
+  encrypted: false,
+  aggregate: {},
+  indexes: {
+    did: {
+      unique: true,
+      fields: ["did"],
     },
   },
-  connections: {
-    schemaId: "social",
-    encrypted: true,
-    aggregate: {},
-    indexes: {
-      outgoing: {
-        unique: true,
-        fields: ["from", "to"],
-      },
-    },
-    rollup: 1000,
-    searchOptions: {
-      fields: ["from", "to"],
-    },
-    schema: {
-      type: "object",
-      properties: {
-        from: { type: "string" },
-        to: { type: "string" },
-        follow: { type: "boolean" },
-      },
+  rollup: 1000,
+  searchOptions: {
+    fields: ["id", "name", "did"],
+  },
+  schema: {
+    type: "object",
+    properties: {
+      name: { type: "string" },
+      bio: { type: "string" },
+      avatar: { type: "string" },
+      did: { type: "string" },
+      status: { type: "string" },
+      updatedAt: { type: "number" },
     },
   },
-};
+} as TableDefinition<UsersRow>;
 
-const validDefinition: TableDefinition = {
+interface TestRow extends TableRow {
+  id: number;
+  name: string;
+  count: number;
+}
+
+const validDefinition: TableDefinition<TestRow> = {
   schemaId: "test",
   encrypted: false,
   indexes: {
@@ -85,8 +82,21 @@ let client: CandorClient;
 describe("@candor/ipld-database/table", () => {
   beforeEach(async (tst) => {
     const seed = await createSeed("test seed");
-    client = (await createClient(seed, [], {
-      repo: "test-data/" + tst.meta.name,
+    const did = await createDID(seed);
+    const wallet = ethers.Wallet.createRandom();
+    const address = wallet.address;
+    const addressVerification = await signAddressVerification(
+      "test",
+      did,
+      wallet
+    );
+    client = (await createClient({
+      address,
+      addressVerification,
+      did,
+      options: {
+        repo: "test-data/" + tst.meta.name,
+      },
     })) as CandorClient;
     await client.start();
   });
@@ -100,19 +110,21 @@ describe("@candor/ipld-database/table", () => {
   });
 
   it("should create a current block", () => {
-    const table = new Table("test", validDefinition, client.dag);
+    const table = new Table<TestRow>("test", validDefinition, client.dag);
     expect(table.currentBlock).toMatchSnapshot();
   });
 
   it("should validate records", () => {
-    const table = new Table("test", validDefinition, client.dag);
+    const table = new Table<TestRow>("test", validDefinition, client.dag);
     expect(() => table.assertValid({ name: "foo", count: 1 })).not.toThrow();
+    // @ts-ignore
     expect(() => table.assertValid({ name: "foo", count: "1" })).toThrow();
+    // @ts-ignore
     expect(() => table.assertValid({ name: 1, count: 1 })).toThrow();
   });
 
   it("should insert records", async () => {
-    const table = new Table("test", validDefinition, client.dag);
+    const table = new Table<TestRow>("test", validDefinition, client.dag);
     const id = await table.insert({ name: "foo", count: 1 });
     expect(Object.values(table.currentBlock.cache?.records || {}).length).toBe(
       1
@@ -141,13 +153,13 @@ describe("@candor/ipld-database/table", () => {
   });
 
   it("should index records", async () => {
-    const table = new Table("test", validDefinition, client.dag);
+    const table = new Table<TestRow>("test", validDefinition, client.dag);
     await table.insert({ name: "foo", count: 1 });
     expect(table.currentBlock.cache?.filters?.indexes).toMatchSnapshot();
   });
 
   it("should search records", async () => {
-    const table = new Table("test", validDefinition, client.dag);
+    const table = new Table<TestRow>("test", validDefinition, client.dag);
     await table.insert({ name: "foo", count: 1 });
     await table.insert({ name: "bar", count: 1 });
     await table.insert({ name: "baz", count: 1 });
@@ -164,7 +176,7 @@ describe("@candor/ipld-database/table", () => {
   });
 
   it("should rollup records", async () => {
-    const table = new Table("test", validDefinition, client.dag);
+    const table = new Table<TestRow>("test", validDefinition, client.dag);
     for (let i = 0; i < 1000; i++) {
       await table.insert({ name: `test #${i}`, count: i });
     }
@@ -173,7 +185,7 @@ describe("@candor/ipld-database/table", () => {
   });
 
   it("should aggregate records", async () => {
-    const table = new Table("test", validDefinition, client.dag);
+    const table = new Table<TestRow>("test", validDefinition, client.dag);
     for (let i = 0; i < 11; i++) {
       await table.insert({ name: `test #${i}`, count: i });
     }
@@ -188,7 +200,7 @@ describe("@candor/ipld-database/table", () => {
   });
 
   it("should rollup records with indexes", async () => {
-    const table = new Table("test", validDefinition, client.dag);
+    const table = new Table<TestRow>("test", validDefinition, client.dag);
     for (let i = 0; i < 11; i++) {
       await table.insert({ name: `test #${i}`, count: i });
     }
@@ -199,7 +211,7 @@ describe("@candor/ipld-database/table", () => {
   });
 
   it("should rollup records with aggregates", async () => {
-    const table = new Table("test", validDefinition, client.dag);
+    const table = new Table<TestRow>("test", validDefinition, client.dag);
     for (let i = 0; i < 11; i++) {
       await table.insert({ name: `test #${i}`, count: i });
     }
@@ -214,7 +226,7 @@ describe("@candor/ipld-database/table", () => {
   });
 
   it("should rollup records with search", async () => {
-    const table = new Table("test", validDefinition, client.dag);
+    const table = new Table<TestRow>("test", validDefinition, client.dag);
     for (let i = 0; i < 11; i++) {
       await table.insert({ name: `test #${i}`, count: i });
     }
@@ -231,7 +243,7 @@ describe("@candor/ipld-database/table", () => {
   });
 
   it("should rewrite previous blocks to update", async () => {
-    const table = new Table("test", validDefinition, client.dag);
+    const table = new Table<TestRow>("test", validDefinition, client.dag);
     for (let i = 0; i < 100; i++) {
       await table.insert({ name: `test #${i}`, count: i });
     }
@@ -258,7 +270,7 @@ describe("@candor/ipld-database/table", () => {
 
   describe("upsert", () => {
     it("should update inserted records", async () => {
-      const table = new Table("test", validDefinition, client.dag);
+      const table = new Table<TestRow>("test", validDefinition, client.dag);
       for (let i = 0; i < 11; i++) {
         await table.insert({ name: `test #${i}`, count: i });
       }
@@ -269,10 +281,13 @@ describe("@candor/ipld-database/table", () => {
         name: "test #1",
         count: 1,
       });
-      await table.upsert("id", result?.id, {
-        name: "test three",
-        count: 1337,
-      });
+      await table.upsert(
+        { id: result?.id },
+        {
+          name: "test three",
+          count: 1337,
+        }
+      );
 
       const updated = await table.getById(result?.id as number);
       expect(updated).toMatchObject({
@@ -283,9 +298,9 @@ describe("@candor/ipld-database/table", () => {
     });
 
     it("should insert new records", async () => {
-      const table = new Table("test", validDefinition, client.dag);
+      const table = new Table<TestRow>("test", validDefinition, client.dag);
       for (let i = 0; i < 11; i++) {
-        await table.upsert("name", `test #${i}`, { count: i });
+        await table.upsert({ name: `test #${i}` }, { count: i });
       }
       const records = await table.query().select().execute();
       expect(records.all().length).toBe(11);
@@ -298,8 +313,8 @@ describe("@candor/ipld-database/table", () => {
     });
 
     it("should insert records with unique indexes", async () => {
-      const users = new Table("users", schema.users, client.dag);
-      const returned = await users.upsert("did", "foo:bar", { name: "bar" });
+      const users = new Table<UsersRow>("users", usersDef, client.dag);
+      const returned = await users.upsert({ did: "foo:bar" }, { name: "bar" });
       expect(returned).toMatchInlineSnapshot(`
         {
           "did": "foo:bar",
@@ -324,11 +339,15 @@ describe("@candor/ipld-database/table", () => {
     });
 
     it("should update records with unique indexes", async () => {
-      const users = new Table("users", schema.users, client.dag);
-      const inserted = await users.insert({ did: "foo:bar", name: "bar" });
+      const users = new Table<UsersRow>("users", usersDef, client.dag);
+      const inserted = await users.insert({
+        did: "foo:bar",
+        name: "bar",
+        updatedAt: 0,
+      });
       expect(inserted).toMatchInlineSnapshot("1");
 
-      const upserted = await users.upsert("did", "foo:bar", { name: "baz" });
+      const upserted = await users.upsert({ did: "foo:bar" }, { name: "baz" });
       expect(upserted).toMatchInlineSnapshot(`
         {
           "did": "foo:bar",

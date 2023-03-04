@@ -17,7 +17,7 @@
 
 	const onTableChange = async () => {
 		if (did && plugin) {
-			connections = await plugin.getConnections(did, direction, limit);
+			connections = await plugin.connections.getConnections(did, direction, limit);
 		}
 	};
 

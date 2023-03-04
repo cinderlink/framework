@@ -1,11 +1,14 @@
 import {
   loadSocialSchema,
+  SocialConnection,
   SocialPost,
-  SocialUpdatesRequestMessage,
-  SocialUpdatesResponseMessage,
+  SocialPostsFetchRequest,
+  SocialPostsFetchResponse,
   SocialUser,
-  SocialUserGetRequestMessage,
-  SocialUserGetResponseMessage,
+  SocialUsersGetRequest,
+  SocialUsersGetResponse,
+  SocialUsersSearchRequest,
+  SocialUsersSearchResponse,
 } from "@candor/plugin-social-core";
 import type {
   PluginInterface,
@@ -17,25 +20,21 @@ import type {
   EncodingOptions,
 } from "@candor/core-types";
 import { SocialClientEvents } from "@candor/plugin-social-client";
-import { checkAddressVerification } from "@candor/client";
-import {
-  SocialUserSearchRequestMessage,
-  SocialUserSearchResponseMessage,
-  SocialConnectionRecord,
-} from "@candor/plugin-social-core";
+import { checkAddressVerification } from "@candor/identifiers";
+import {} from "@candor/plugin-social-core";
 
 export type SocialServerEvents = {
   publish: {};
   subscribe: SocialClientEvents["subscribe"];
   send: {
-    "/social/users/search/response": SocialUserSearchResponseMessage;
-    "/social/user/get/response": SocialUserGetResponseMessage;
-    "/social/updates/response": SocialUpdatesResponseMessage;
+    "/social/users/search/response": SocialUsersSearchResponse;
+    "/social/users/get/response": SocialUsersGetResponse;
+    "/social/posts/fetch/response": SocialPostsFetchResponse;
   };
   receive: {
-    "/social/updates/request": SocialUpdatesRequestMessage;
-    "/social/users/search/request": SocialUserSearchRequestMessage;
-    "/social/user/get/request": SocialUserGetRequestMessage;
+    "/social/updates/request": SocialPostsFetchRequest;
+    "/social/users/search/request": SocialUsersSearchRequest;
+    "/social/user/get/request": SocialUsersGetRequest;
   };
   emit: {};
 };
@@ -56,18 +55,19 @@ export class SocialServerPlugin<
   async stop() {
     console.info("social server plugin stopped");
   }
+
   p2p = {
-    "/social/announce": this.onPeerAnnounce,
-    "/social/connection": this.onPeerConnection,
+    "/social/users/announce": this.onPeerAnnounce,
+    "/social/connections/create": this.onPeerConnection,
     "/social/users/search/request": this.onUserSearchRequest,
     "/social/user/get/request": this.onUserGetRequest,
     "/social/updates/request": this.onUpdatesRequest,
   };
 
   pubsub = {
-    "/social/update": this.onUpdate,
-    "/social/announce": this.onAnnounce,
-    "/social/connection": this.onConnection,
+    "/social/posts/create": this.onUpdate,
+    "/social/users/announce": this.onAnnounce,
+    "/social/connections/create": this.onConnection,
   };
 
   events = {};
@@ -112,7 +112,7 @@ export class SocialServerPlugin<
   onAnnounce(
     message: IncomingPubsubMessage<
       SocialServerEvents,
-      "/social/announce",
+      "/social/users/announce",
       EncodingOptions
     >
   ) {
@@ -129,6 +129,8 @@ export class SocialServerPlugin<
       message
     );
     return this.saveUser(message.peer.did, {
+      address: message.payload.address,
+      addressVerification: message.payload.addressVerification,
       name: message.payload.name,
       bio: message.payload.bio,
       status: message.payload.status,
@@ -141,11 +143,11 @@ export class SocialServerPlugin<
   async onUpdate(
     message: IncomingPubsubMessage<
       SocialServerEvents,
-      "/social/update",
+      "/social/posts/create",
       EncodingOptions
     >
   ) {
-    const { id, did, cid, ...post } = message.payload.post;
+    const { id, did, cid, ...post } = message.payload;
     if (!message.peer.did) {
       console.warn(
         `plugin/social/client > received social update message from unauthorized peer`
@@ -165,10 +167,13 @@ export class SocialServerPlugin<
       ...post,
       did,
     });
-    await this.table<SocialPost>("posts").upsert("cid", cid, {
-      ...post,
-      did,
-    });
+    await this.table<SocialPost>("posts").upsert(
+      { cid },
+      {
+        ...post,
+        did,
+      }
+    );
   }
 
   async onUpdatesRequest(
@@ -192,9 +197,7 @@ export class SocialServerPlugin<
       query.where("did", "=", message.payload.did);
     } else {
       const peerDid = message.peer.did;
-      const connections = await this.table<SocialConnectionRecord>(
-        "connections"
-      )
+      const connections = await this.table<SocialConnection>("connections")
         .query()
         .where("to", "=", peerDid)
         .or((qb) => qb.where("from", "=", peerDid))
@@ -206,11 +209,13 @@ export class SocialServerPlugin<
         `plugin/social/client > connections for ${peerDid}`,
         connections
       );
-      const connectionDids = [
+      const connectionDids: string[] = [
         ...new Set(
-          ...connections.map((c) => (c.from === peerDid ? c.to : c.from))
+          ...connections.map(
+            (c) => (c.from === peerDid ? c.to : c.from) as string
+          )
         ),
-      ];
+      ].filter((c) => !!c);
       query.where("did", "in", connectionDids);
     }
     if (message.payload.since) {
@@ -228,7 +233,7 @@ export class SocialServerPlugin<
     );
 
     await this.client.send(message.peer.peerId.toString(), {
-      topic: "/social/updates/response",
+      topic: "/social/posts/fetch/response",
       payload: {
         requestId: message.payload.requestId,
         updates: posts,
@@ -239,7 +244,7 @@ export class SocialServerPlugin<
   onConnection(
     message: IncomingPubsubMessage<
       SocialServerEvents,
-      "/social/connection",
+      "/social/connections/create",
       EncodingOptions
     >
   ) {
@@ -249,7 +254,7 @@ export class SocialServerPlugin<
   async onPeerAnnounce(
     message: IncomingP2PMessage<
       SocialClientEvents,
-      "/social/announce",
+      "/social/users/announce",
       EncodingOptions
     >
   ) {
@@ -307,6 +312,8 @@ export class SocialServerPlugin<
     }
 
     return this.saveUser(message.peer.did, {
+      address: message.payload.address,
+      addressVerification: message.payload.addressVerification,
       name: message.payload.name,
       bio: message.payload.bio,
       status: message.payload.status,
@@ -317,7 +324,10 @@ export class SocialServerPlugin<
   }
 
   onPeerConnection(
-    message: IncomingP2PMessage<SocialClientEvents, "/social/connection">
+    message: IncomingP2PMessage<
+      SocialClientEvents,
+      "/social/connections/create"
+    >
   ) {
     console.log("peer connection", message);
   }
@@ -383,7 +393,7 @@ export class SocialServerPlugin<
       .then((r) => r.first());
 
     await this.client.send(message.peer.peerId.toString(), {
-      topic: "/social/user/get/response",
+      topic: "/social/users/get/response",
       payload: {
         requestId: message.payload.requestId,
         user,
@@ -422,7 +432,7 @@ export class SocialServerPlugin<
       await this.client.ipfs.pin.add(user.avatar);
     }
 
-    await table?.upsert("did", did, user);
+    await table?.upsert({ did }, user);
   }
 }
 

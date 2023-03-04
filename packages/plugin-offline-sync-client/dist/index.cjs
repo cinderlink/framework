@@ -61,7 +61,7 @@ var OfflineSyncClientPlugin = class extends import_emittery.default {
     "/candor/handshake/success": this.onPeerConnect
   };
   async start() {
-    console.info(`plugin/offlineSyncServer > loading schema`);
+    console.info(`plugin/offlineSyncClient > loading schema`);
     await (0, import_plugin_offline_sync_core.loadOfflineSyncSchema)(this.client);
     this.ready = true;
     console.info(`plugin/offlineSync/client > ready`);
@@ -72,18 +72,25 @@ var OfflineSyncClientPlugin = class extends import_emittery.default {
   }
   async sendMessage(recipient, outgoing) {
     const requestId = (0, import_uuid.v4)();
-    const server = this.client.peers.getServers()[0];
-    console.info(
-      `plugin/offlineSync/client > sending offline message to server ${server.did} for ${recipient}: ${requestId}`
-    );
-    return this.client.request(server.peerId.toString(), {
-      topic: "/offline/send/request",
-      payload: {
-        requestId,
-        recipient,
-        message: outgoing
+    const servers = this.client.peers.getServers();
+    let saved = false;
+    for (const server of servers) {
+      console.info(
+        `plugin/offlineSync/client > sending offline message to server ${server.did} for ${recipient}: ${requestId}`
+      );
+      const received = await this.client.request(server.peerId.toString(), {
+        topic: "/offline/send/request",
+        payload: {
+          requestId,
+          recipient,
+          message: outgoing
+        }
+      });
+      if (received?.payload.saved) {
+        saved = true;
       }
-    });
+    }
+    return saved;
   }
   async onPeerConnect(peer) {
     console.info(

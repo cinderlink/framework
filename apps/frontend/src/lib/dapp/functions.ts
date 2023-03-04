@@ -6,18 +6,26 @@ import { get } from 'svelte/store';
 import { PUBLIC_IPFS_SWARM_ADDRESSES } from '$env/static/public';
 import { peerIdFromString } from '@libp2p/peer-id';
 
+import { SyncDBPlugin } from '@candor/plugin-sync-db';
 import { CandorProtocolPlugin } from '@candor/protocol';
-import { createSeed, createHash, createClient } from '@candor/client';
-import { SocialClientPlugin, type SocialClientEvents } from '@candor/plugin-social-client';
+import { createClient } from '@candor/client';
+import { SocialClientPlugin } from '@candor/plugin-social-client';
 import { OfflineSyncClientPlugin } from '@candor/plugin-offline-sync-client';
 import { NotificationClientPlugin } from '@candor/plugin-notification-client';
 import { web3, getContract, signMessage } from '@candor/ui-kit';
 
 import { UserRegistry } from './contracts';
 import dapp from './store';
-import type { CandorClientInterface, ProtocolEvents } from '@candor/core-types';
+import type { SyncPluginEvents, CandorClientInterface, ProtocolEvents } from '@candor/core-types';
 import type { OfflineSyncClientEvents } from '@candor/plugin-offline-sync-core';
-import { createDID, createSignerDID, signAddressVerification } from '@candor/client';
+import {
+	createDID,
+	createHash,
+	createSeed,
+	createSignerDID,
+	signAddressVerification
+} from '@candor/identifiers';
+import { SocialSyncConfig, type SocialClientEvents } from '@candor/plugin-social-core';
 
 export async function initializeDapp(
 	did: DID,
@@ -39,9 +47,17 @@ export async function initializeDapp(
 	client.addPlugin<SocialClientEvents>(social);
 	const notification = new NotificationClientPlugin(client);
 	client.addPlugin(notification);
-
 	const offlineSync = new OfflineSyncClientPlugin(client);
 	client.addPlugin<OfflineSyncClientEvents>(offlineSync);
+
+	console.info('creating sync db plugin');
+	const syncDb = new SyncDBPlugin(client, {
+		schemas: {
+			...SocialSyncConfig
+		}
+	});
+	console.info('sync db', syncDb);
+	client.addPlugin<SyncPluginEvents>(syncDb as any);
 
 	await client.start();
 	Promise.all(
@@ -114,6 +130,7 @@ export async function connect(nonce = 0) {
 	const address = await signer.getAddress();
 	if (!addressVerification) {
 		addressVerification = await signAddressVerification('candor.social', did.id, signer);
+		sessionStorage.setItem('candor:addressVerification', addressVerification);
 	}
 
 	await initializeDapp(did, address, addressVerification);

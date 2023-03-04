@@ -149,7 +149,9 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
     console.info(`plugins > initializing message handlers`);
     await Promise.all(
       Object.values(this.plugins).map(async (plugin) => {
+        console.info(`/plugin/${plugin.id} > starting...`, plugin);
         await plugin.start?.();
+        console.info(`/plugin/${plugin.id} > registering event handlers...`);
         Object.entries(plugin.pubsub).forEach(([topic, handler]) => {
           this.pubsub.on(topic, (handler as PluginEventHandler).bind(plugin));
           this.subscribe(topic);
@@ -344,10 +346,12 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
     message: PluginEvents["publish"][K],
     options: EncodingOptions = { sign: false, encrypt: false }
   ) {
-    const encoded = await encodePayload<typeof message, typeof options>(
-      message,
-      { ...options, did: this.did }
-    );
+    const encoded = await encodePayload<
+      PluginEvents["publish"][K] extends string | Record<string, unknown>
+        ? PluginEvents["publish"][K]
+        : never,
+      typeof options
+    >(message as any, { ...options, did: this.did });
 
     const bytes = json.encode(encoded);
 
@@ -430,9 +434,9 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
     const request: OutgoingP2PMessage<Events, OutTopic, Encoding> = {
       ...message,
       payload: {
-        ...message.payload,
+        ...(message.payload as Record<string, unknown>),
         requestId,
-      },
+      } as any,
     };
 
     console.info(`request > sending request to ${peerId}`, request);

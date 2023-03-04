@@ -10,9 +10,6 @@
 </svelte:element>
 
 <style>
-	.typography {
-		@apply font-sans;
-	}
 	h1.typography {
 		@apply text-4xl;
 	}
