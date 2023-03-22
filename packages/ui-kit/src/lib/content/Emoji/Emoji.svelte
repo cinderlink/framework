@@ -1,10 +1,7 @@
 <script lang="ts">
 	import { clickoutside } from '$lib/actions';
-	import Button from '$lib/interactive/Button/Button.svelte';
 	import type MarkdownIt from 'markdown-it';
-	import markdown from 'markdown-it';
-	import emoji from 'markdown-it-emoji';
-	import { createEventDispatcher } from 'svelte';
+	import { createEventDispatcher, onMount } from 'svelte';
 	import { scale } from 'svelte/transition';
 	import emojiList from '../../emoji';
 	import Panel from '../Panel/Panel.svelte';
@@ -12,13 +9,19 @@
 	let showEmojis = false;
 
 	const dispatch = createEventDispatcher();
+	let md: MarkdownIt;
 
-	const md: MarkdownIt = markdown();
-	md.use(emoji);
+	onMount(async () => {
+		const { default: markdown } = await import('markdown-it');
+		const { default: emoji } = await import('markdown-it-emoji');
 
-	md.renderer.rules.emoji = function (token, idx) {
-		return token[idx].content;
-	};
+		md = markdown();
+		md.use(emoji);
+
+		md.renderer.rules.emoji = function (token, idx) {
+			return token[idx].content;
+		};
+	});
 
 	function onClick(event: MouseEvent | KeyboardEvent) {
 		const target = event.target as HTMLElement;
@@ -33,7 +36,7 @@
 </script>
 
 <div use:clickoutside on:clickoutside={() => (showEmojis = false)} class="emojis__container">
-	{#if showEmojis}
+	{#if showEmojis && md}
 		<div transition:scale>
 			<Panel el="div" classes="emojis">
 				{#each Object.keys(emojiList) as key}

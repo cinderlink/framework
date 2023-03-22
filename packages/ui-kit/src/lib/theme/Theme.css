@@ -19,7 +19,7 @@ body {
 }
 
 #theme main {
-	@apply flex-1 w-full h-full;
+	@apply flex-1 w-full;
 }
 
 hr {

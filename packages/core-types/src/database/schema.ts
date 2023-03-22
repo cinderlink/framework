@@ -3,6 +3,11 @@ import type { CID } from "multiformats";
 import type { DIDDagInterface } from "../dag";
 import type { TableDefinition, TableInterface, TableRow } from "./table";
 
+export type SchemaDef = {
+  schemaId: string;
+  tables: Record<string, TableDefinition<any>>;
+};
+
 export type SchemaEvents = {
   "/schema/loaded": undefined;
 };

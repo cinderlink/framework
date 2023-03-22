@@ -15,63 +15,59 @@
 	},
 	"exports": {
 		".": {
-			"types": "./dist/index.d.ts",
 			"svelte": "./dist/index.js",
 			"import": "./dist/index.js"
 		},
 		"./theme": {
-			"types": "./dist/theme/index.d.ts",
 			"svelte": "./dist/theme/index.js",
 			"import": "./dist/theme/index.js"
 		},
 		"./actions": {
-			"types": "./dist/actions/index.d.ts",
 			"svelte": "./dist/actions/index.js",
 			"import": "./dist/actions/index.js"
 		},
 		"./content": {
-			"types": "./dist/content/index.d.ts",
 			"svelte": "./dist/content/index.js",
 			"import": "./dist/content/index.js"
 		},
 		"./indicator": {
-			"types": "./dist/indicator/index.d.ts",
 			"svelte": "./dist/indicator/index.js",
 			"import": "./dist/indicator/index.js"
 		},
 		"./layout": {
-			"types": "./dist/layout/index.d.ts",
 			"svelte": "./dist/layout/index.js",
 			"import": "./dist/layout/index.js"
 		},
 		"./interactive": {
-			"types": "./dist/interactive/index.d.ts",
 			"svelte": "./dist/interactive/index.js",
 			"import": "./dist/interactive/index.js"
 		},
 		"./unocss": {
-			"types": "./dist/unocss/index.d.ts",
 			"svelte": "./dist/unocss/index.js",
 			"import": "./dist/unocss/index.js"
 		},
 		"./navigation": {
-			"types": "./dist/navigation/index.d.ts",
 			"svelte": "./dist/navigation/index.js",
 			"import": "./dist/navigation/index.js"
 		},
 		"./web3": {
-			"types": "./dist/web3/index.d.ts",
 			"svelte": "./dist/web3/index.js",
 			"import": "./dist/web3/index.js"
 		},
 		"./onboard": {
-			"types": "./dist/onboard/index.d.ts",
 			"svelte": "./dist/onboard/index.js",
 			"import": "./dist/onboard/index.js"
+		},
+		"./data": {
+			"svelte": "./dist/data/index.js",
+			"import": "./dist/data/index.js"
+		},
+		"./markup": {
+			"svelte": "./dist/markup/index.js",
+			"import": "./dist/markup/index.js"
 		}
 	},
 	"svelte": "./dist/index.js",
-	"types": "./dist/index.d.ts",
 	"files": [
 		"dist",
 		"package.json"

@@ -4,10 +4,10 @@
 	import './Theme.css';
 	import theme from './store';
 
-	$: if ($theme.darkMode) {
-		document.body.classList.add('dark');
-	} else {
-		document.body.classList.remove('dark');
+	$: if ($theme.darkMode && typeof document !== 'undefined') {
+		document?.body.classList.add('dark');
+	} else if (typeof document !== 'undefined') {
+		document?.body.classList.remove('dark');
 	}
 </script>
 

@@ -90,11 +90,11 @@ export function disconnect() {
 }
 
 export function getContract(address: string, abi: ContractInterface) {
-	const { provider } = get(web3);
-	if (!provider) {
-		throw new Error('No provider');
+	const { signer } = get(web3);
+	if (!signer) {
+		throw new Error('No signer');
 	}
-	return new Contract(address, abi, provider);
+	return new Contract(address, abi, signer);
 }
 
 export async function signMessage(message: string) {

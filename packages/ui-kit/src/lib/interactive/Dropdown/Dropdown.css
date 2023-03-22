@@ -176,7 +176,7 @@
 
 /* ============= */
 .dropdown__menu {
-	@apply absolute top-16 z-20 user-select-none;
+	@apply absolute top-16 z-20 user-select-none w-full;
 }
 .dropdown__menu--left {
 	@apply left-0;

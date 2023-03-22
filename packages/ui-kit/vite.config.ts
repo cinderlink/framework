@@ -15,6 +15,12 @@ const config: UserConfig = {
 	build: {
 		minify: false,
 		target: 'esnext'
+	},
+	optimizeDeps: {
+		force: true,
+		esbuildOptions: {
+			target: 'esnext'
+		}
 	}
 };
 

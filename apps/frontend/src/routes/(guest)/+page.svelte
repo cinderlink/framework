@@ -59,7 +59,10 @@
 
 	async function mintNFT() {
 		minting = true;
-		tokenId = await nftContract
+		if (!nftContract) {
+			return;
+		}
+		const tx = await nftContract
 			.mint($web3.address, {
 				value: ethers.utils.parseEther('0.01')
 			})
@@ -67,6 +70,9 @@
 				error = err.message;
 				return undefined;
 			});
+		const receipt = await tx?.wait();
+		tokenId = receipt?.events?.[0]?.args?.tokenId?.toNumber();
+		success = !!tokenId;
 		if (!tokenId && !error) {
 			error = 'An unexpected error was encountered.';
 		} else if (tokenId) {
