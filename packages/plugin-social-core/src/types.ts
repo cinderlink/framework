@@ -20,7 +20,7 @@ export interface SocialUser extends TableRow {
 }
 
 export interface SocialUserPin extends TableRow {
-  userId: number;
+  did: string;
   cid: string;
   textId: string;
   createdAt: number;
@@ -48,15 +48,15 @@ export interface SocialPost extends TableRow {
 }
 
 export interface SocialReaction extends TableRow {
-  postId: number;
+  postCid: string;
   reaction: "like" | "love" | "haha" | "wow" | "sad" | "angry";
   from: string;
   createdAt: number;
 }
 
 export interface SocialComment extends TableRow {
-  postId: number;
-  body: string;
+  postCid: string;
+  content: string;
   did: string;
   createdAt: number;
 }
@@ -68,6 +68,7 @@ export interface SocialChatMessage extends TableRow {
   message: string;
   attachments?: string[];
   createdAt: number;
+  seenAt: number;
   acceptedAt: number;
   rejectedAt?: number;
 }
@@ -90,6 +91,17 @@ export interface SocialPostsFetchResponse {
   updates: SocialPost[];
 }
 
+export interface SocialPostsCommentsRequest {
+  requestId: string;
+  postCid: string;
+  since?: number;
+}
+
+export interface SocialPostsCommentsResponse {
+  requestId: string;
+  updates: SocialComment[];
+}
+
 export interface SocialUsersSearchRequest {
   requestId: string;
   query: string;
@@ -105,9 +117,21 @@ export interface SocialUsersGetRequest {
   did: string;
 }
 
+export interface SocialUsersPinRequest {
+  requestId: string;
+  did: string;
+  cid: string;
+  textId?: string;
+}
+
 export interface SocialUsersGetResponse {
   requestId: string;
   user: SocialUser;
+}
+
+export interface SocialUsersPinResponse {
+  requestId: string;
+  pin: SocialUserPin;
 }
 
 export interface SyncResponse {
@@ -127,22 +151,32 @@ export interface SocialClientEvents extends PluginEventDef {
     "/social/users/search/response": SocialUsersSearchResponse;
     "/social/users/get/request": SocialUsersGetRequest;
     "/social/users/get/response": SocialUsersGetResponse;
+    "/social/users/pin/request": SocialUsersPinRequest;
+    "/social/users/pin/response": SocialUsersPinResponse;
     "/social/chat/message/send": SocialChatMessage;
     "/social/chat/message/confirm": SyncResponse;
     "/social/posts/create": SocialPost;
     "/social/posts/confirm": SyncResponse;
     "/social/posts/fetch/request": SocialPostsFetchRequest;
     "/social/posts/fetch/response": SocialPostsFetchResponse;
+    "/social/posts/comments/create": SocialComment;
+    "/social/posts/comments/confirm": SyncResponse;
+    "/social/posts/comments/fetch/request": SocialPostsCommentsRequest;
+    "/social/posts/comments/fetch/response": SocialPostsCommentsResponse;
   };
   receive: {
     "/social/posts/create": SocialPost;
     "/social/posts/fetch/request": SocialPostsFetchRequest;
     "/social/posts/fetch/response": SocialPostsFetchResponse;
+    "/social/posts/comments/create": SocialComment;
+    "/social/posts/comments/fetch/request": SocialPostsCommentsRequest;
+    "/social/posts/comments/fetch/response": SocialPostsCommentsResponse;
     "/social/connections/create": SocialConnection;
     "/social/connections/confirm": SocialConnection;
     "/social/users/announce": SocialUser;
     "/social/users/search/response": SocialUsersSearchResponse;
     "/social/users/get/response": SocialUsersGetResponse;
+    "/social/users/pin/response": SocialUsersPinResponse;
     "/social/chat/message/send": SocialChatMessage;
     "/social/chat/message/confirm": SyncResponse;
   };

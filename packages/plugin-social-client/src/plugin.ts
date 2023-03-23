@@ -71,6 +71,7 @@ export class SocialClientPlugin<
       "/social/users/get/response": this.users.onResponseMessage.bind(
         this.users
       ),
+      "/social/users/pin/response": this.users.onPinResponse.bind(this.users),
       "/social/connections/create": this.connections.onCreate.bind(
         this.connections
       ),
@@ -82,6 +83,13 @@ export class SocialClientPlugin<
       "/social/posts/fetch/response": this.posts.onFetchResponse.bind(
         this.posts
       ),
+      "/social/posts/comments/create": this.posts.onCommentsCreate.bind(
+        this.posts
+      ),
+      "/social/posts/comments/fetch/request":
+        this.posts.onCommentsFetchRequest.bind(this.posts),
+      "/social/posts/comments/fetch/response":
+        this.posts.onCommentsFetchResponse.bind(this.posts),
       "/social/chat/message/send": this.chat.onMessageReceived.bind(this.chat),
       "/social/chat/message/confirm": this.chat.onMessageConfirm.bind(
         this.chat
@@ -93,15 +101,19 @@ export class SocialClientPlugin<
     console.info(`plugin/social/client > loading schema`);
     await loadSocialSchema(this.client);
 
+    console.info("starting social features");
     await this.chat.start();
     await this.connections.start();
     await this.posts.start();
     await this.profiles.start();
     await this.users.start();
 
-    this.ready = true;
-    console.info(`plugin/social/client > ready`);
-    this.emit("ready", undefined);
+    this.client.on("/identity/resolved", async () => {
+      await this.users.loadLocalUser();
+      this.ready = true;
+      console.info(`plugin/social/client > ready`);
+      this.emit("ready", undefined);
+    });
   }
 
   get db() {

@@ -1,5 +1,6 @@
 import type {
   CinderlinkClientInterface,
+  PeerRole,
   PluginEventDef,
 } from "@cinderlink/core-types";
 import { peerIdFromString } from "@libp2p/peer-id";
@@ -14,11 +15,19 @@ export interface CreateClientOptions {
   addressVerification: string;
   nodes?: string[];
   options?: Partial<Options>;
+  role: PeerRole;
 }
 
 export async function createClient<
   PluginEvents extends PluginEventDef = PluginEventDef
->({ did, address, addressVerification, nodes, options }: CreateClientOptions) {
+>({
+  did,
+  address,
+  addressVerification,
+  nodes,
+  options,
+  role,
+}: CreateClientOptions) {
   const ipfs = await createIPFS(nodes, options);
   const client: CinderlinkClientInterface<PluginEvents> =
     new CinderlinkClient<PluginEvents>({
@@ -26,6 +35,7 @@ export async function createClient<
       did,
       address,
       addressVerification,
+      role,
     });
 
   nodes?.forEach((node) => {

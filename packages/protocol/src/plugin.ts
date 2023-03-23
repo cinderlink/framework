@@ -423,6 +423,7 @@ export class CinderlinkProtocolPlugin<
     this.client.peers.updatePeer(peer.peerId.toString(), peer);
     console.info(`p2p/handshake/success > authenticated ${logId}`);
     this.client.pluginEvents.emit("/cinderlink/handshake/success", peer as any);
+    this.client.p2p.emit(`/${peer.role}/connect`, peer as any);
   }
 
   async sendHandshakeError(peerId: string, error: string) {

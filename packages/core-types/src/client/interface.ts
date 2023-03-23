@@ -61,7 +61,7 @@ export interface CinderlinkClientInterface<
 
   hasPlugin(id: string): boolean;
 
-  start(): Promise<void>;
+  start(connectTo: string[]): Promise<void>;
   stop(): Promise<void>;
   save(): Promise<void>;
   load(): Promise<void>;

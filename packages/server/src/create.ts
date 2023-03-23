@@ -27,6 +27,7 @@ export async function createServer({
     addressVerification,
     nodes,
     options,
+    role: "server",
   });
   plugins.forEach(([Plugin, pluginOptions]) => {
     console.info("adding plugin", Plugin);

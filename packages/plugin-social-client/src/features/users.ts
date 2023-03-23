@@ -36,8 +36,6 @@ export class SocialUsers {
     this.plugin.client.pluginEvents.on(
       "/cinderlink/handshake/success",
       async (peer: Peer) => {
-        console.info("handshake success, getting updates");
-
         if (peer.role === "server") {
           this.hasServerConnection = true;
         }
@@ -61,9 +59,7 @@ export class SocialUsers {
         return;
       console.info(`plugin/social/client > announcing (pubsub, interval)`);
       await this.announce();
-    }, Number(this.plugin.options.announceInterval || 10000));
-
-    await this.loadLocalUser();
+    }, Number(this.plugin.options.announceInterval || 180000));
   }
 
   async announce(to: string | undefined = undefined) {
@@ -173,9 +169,14 @@ export class SocialUsers {
 
   async saveLocalUser() {
     console.info(`plugin/social/client > saving local user`);
-    const user = await this.plugin
-      .table<SocialUser>("users")
-      .upsert({ did: this.plugin.client.id }, this.localUser);
+    const user = await this.plugin.table<SocialUser>("users").upsert(
+      { did: this.plugin.client.id },
+      {
+        ...this.localUser,
+        did: this.plugin.client.id,
+        updatedAt: Date.now(),
+      }
+    );
     // .findByIndex("did", this.plugin.client.id);
     if (!user?.id) {
       console.error(
@@ -186,14 +187,32 @@ export class SocialUsers {
   }
 
   async loadLocalUser() {
+    if (!this.plugin.client.identity.hasResolved) {
+      return;
+    }
+
     const user = (
       await this.plugin
         .table<SocialUser>("users")
         .query()
         .where("did", "=", this.plugin.client.id)
         .select()
+        .nocache()
         .execute()
     )?.first();
+
+    const users = (
+      await this.plugin
+        .table<SocialUser>("users")
+        .query()
+        .select()
+        .nocache()
+        .execute()
+    )?.all();
+
+    console.info("loaded local user", user, users, this.plugin.client.id);
+    if (!user) return;
+
     this.localUser = {
       ...user,
       status: "online",
@@ -257,7 +276,7 @@ export class SocialUsers {
     );
     if (!verified) {
       console.warn(
-        `plugin/social/client > received social announce message from peer with invalid address verification (did: ${message.peer.did})`,
+        `plugin/social/client > received secial announce message from peer with invalid address verification (did: ${message.peer.did})`,
         message
       );
       return;
@@ -345,6 +364,24 @@ export class SocialUsers {
       );
       this.plugin.client.ipfs.libp2p.peerStore.delete(message.peer.peerId);
     }
+  }
+
+  async onPinResponse(
+    message: IncomingP2PMessage<
+      SocialClientEvents,
+      "/social/users/pin/response",
+      EncodingOptions
+    >
+  ) {
+    console.info(
+      `plugin/social/client > received social pin response (did: ${message.peer.did})`,
+      message.payload
+    );
+    const { requestId } = message.payload;
+    this.plugin.emit(
+      `/response/${requestId}` as keyof SocialClientPluginEvents,
+      message.payload
+    );
   }
 
   async onResponseMessage(

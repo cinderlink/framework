@@ -5,6 +5,7 @@ export interface IdentityInterface<Document = any> {
   cid: string | undefined;
   document: Document | undefined;
   client: CinderlinkClientInterface<any>;
+  hasResolved: boolean;
 
   resolve(): Promise<IdentityResolved>;
   resolveLocal(): Promise<IdentityResolved>;

@@ -8,6 +8,8 @@ import {
 import { Schema } from "@cinderlink/ipld-database";
 import { IdentityServerEvents } from "./types";
 
+const logPrefix = `/plugin/identityServer`;
+
 export type IdentityPinsRecord = {
   id: number;
   name: string;
@@ -29,44 +31,48 @@ export class IdentityServerPlugin
     public options: Record<string, unknown> = {}
   ) {}
   async start() {
-    console.info("social server plugin started");
-    const schema = new Schema(
-      "identity",
-      {
-        pins: {
-          schemaId: "identity",
-          encrypted: true,
-          aggregate: {},
-          indexes: {
-            name: {
+    console.info(`${logPrefix}: social server plugin started`);
+    if (!this.client.hasSchema("identity")) {
+      const schema = new Schema(
+        "identity",
+        {
+          pins: {
+            schemaId: "identity",
+            encrypted: true,
+            aggregate: {},
+            indexes: {
+              name: {
+                fields: ["name"],
+              },
+              did: {
+                unique: true,
+                fields: ["did"],
+              },
+            },
+            rollup: 1000,
+            searchOptions: {
               fields: ["name"],
             },
-            did: {
-              unique: true,
-              fields: ["did"],
-            },
-          },
-          rollup: 1000,
-          searchOptions: {
-            fields: ["name"],
-          },
-          schema: {
-            type: "object",
-            properties: {
-              name: { type: "string" },
-              avatar: { type: "string" },
-              did: { type: "string" },
-              cid: { type: "string" },
+            schema: {
+              type: "object",
+              properties: {
+                name: { type: "string" },
+                avatar: { type: "string" },
+                did: { type: "string" },
+                cid: { type: "string" },
+              },
             },
           },
         },
-      },
-      this.client.dag
-    );
-    await this.client.addSchema("identity", schema);
+        this.client.dag
+      );
+      await this.client.addSchema("identity", schema);
+    } else {
+      console.info(`${logPrefix}: identity schema already exists`);
+    }
   }
   async stop() {
-    console.info("social server plugin stopped");
+    console.info(`${logPrefix}: social server plugin stopped`);
   }
   p2p = {
     "/identity/set/request": this.onSetRequest,
@@ -83,6 +89,7 @@ export class IdentityServerPlugin
     >
   ) {
     if (!message.peer.did) {
+      console.warn(`${logPrefix}/set: refusing unauthenticated peer`);
       return this.client.send<IdentityServerEvents, "/identity/set/response">(
         message.peer.peerId.toString(),
         {
@@ -95,10 +102,16 @@ export class IdentityServerPlugin
         }
       );
     }
+
+    console.info(
+      `${logPrefix}/set: setting identity for peer`,
+      message.payload
+    );
     await this.client
       .getSchema("identity")
       ?.getTable<IdentityPinsRecord>("pins")
       .upsert({ did: message.peer.did }, message.payload);
+    await this.client.ipfs.pin.add(message.payload.cid, { recursive: true });
 
     return this.client.send(message.peer.peerId.toString(), {
       topic: "/identity/set/response",
@@ -117,6 +130,7 @@ export class IdentityServerPlugin
     >
   ) {
     if (!message.peer.did) {
+      console.warn(`${logPrefix}/resolve: refusing unauthenticated peer`);
       return this.client.send(message.peer.peerId.toString(), {
         topic: "/identity/resolve/response",
         payload: {
@@ -135,6 +149,11 @@ export class IdentityServerPlugin
       .execute()
       .then((r) => r.first());
 
+    console.info(
+      `${logPrefix}/resolve: resolving identity for peer`,
+      message.payload,
+      identity
+    );
     return this.client.send<CinderlinkClientEvents>(
       message.peer.peerId.toString(),
       {

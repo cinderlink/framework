@@ -11,57 +11,29 @@ import {
 } from "@cinderlink/core-types";
 import { Schema } from "@cinderlink/ipld-database";
 
-export const SyncSchemaDef = {
-  tables: {
-    schemaId: "sync",
-    encrypted: false,
-    aggregate: {},
-    indexes: {
-      did: {
-        unique: true,
-        fields: ["did"],
-      },
-    },
-    rollup: 1000,
-    searchOptions: {
-      fields: ["id", "table", "table_id"],
-    },
-    schema: {
-      type: "object",
-      properties: {
-        schemaId: { type: "string" },
-        tableId: { type: "string" },
-        rowId: { type: "number" },
-        did: { type: "string" },
-        success: { type: "boolean" },
-        attempts: { type: "number" },
-        lastAttemptedat: { type: "number" },
-      },
-    },
-  },
-};
-
 export class TableSync {
   _interval: NodeJS.Timer;
   _logPrefix: string;
 
-  schema: Schema;
   syncTable: TableInterface<SyncTableRow>;
+  syncing = false;
 
   constructor(
     public table: TableInterface,
     public rules: SyncTableRules,
+    public schema: Schema,
     public client: CinderlinkClientInterface<SyncPluginEvents>
   ) {
     this._logPrefix = `/plugin/sync/${table.def.schemaId}/${table.tableId}`;
     this._interval = setInterval(this.syncOutgoing.bind(this), 30000);
-    this.schema = new Schema("sync", SyncSchemaDef, table.dag);
     this.syncTable = this.schema.getTable<SyncTableRow>("tables");
   }
 
   async syncOutgoing() {
-    let offset = 0;
+    if (this.syncing) return;
+    this.syncing = true;
 
+    let offset = 0;
     const toSync: Record<string, TableRow[]> = {};
 
     // filter to authenticated peers

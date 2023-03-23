@@ -1,3 +1,4 @@
+import { Schema } from "@cinderlink/ipld-database";
 import {
   CinderlinkClientInterface,
   EncodingOptions,
@@ -7,6 +8,7 @@ import {
   SyncPluginOptions,
 } from "@cinderlink/core-types";
 import { TableSync } from "./table-sync";
+import SyncSchemaDef from "./schema";
 
 const logPrefix = `plugin/sync`;
 
@@ -38,6 +40,14 @@ export class SyncDBPlugin
 
   async start() {
     console.info(`${logPrefix} > initializing table watchers`);
+    let syncSchema: Schema;
+    if (!this.client.hasSchema("sync")) {
+      syncSchema = new Schema("sync", SyncSchemaDef, this.client.dag);
+      this.client.addSchema("sync", syncSchema);
+    } else {
+      syncSchema = this.client.getSchema("sync") as Schema;
+    }
+
     Object.entries(this.options.schemas).forEach(([schemaId, tables]) => {
       const schema = this.client.getSchema(schemaId);
       if (!schema) throw new Error(`Schema: ${schemaId} not found`);
@@ -51,6 +61,7 @@ export class SyncDBPlugin
         this.schemas[schemaId][tableId] = new TableSync(
           table,
           rules,
+          syncSchema as Schema,
           this.client
         );
       });

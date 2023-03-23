@@ -1,8 +1,9 @@
 import type { IPFSWithLibP2P } from "../ipfs";
-import type { IncomingP2PMessage, Peer } from "../p2p";
+import type { IncomingP2PMessage, Peer, PeerRole } from "../p2p";
 import type { DID } from "dids";
 import { PluginEventDef } from "../plugin";
 import {
+  IdentityResolved,
   IdentityResolveRequest,
   IdentityResolveResponse,
   IdentitySetRequest,
@@ -16,6 +17,7 @@ export type CinderlinkConstructorOptions = {
   did: DID;
   address: string;
   addressVerification: string;
+  role: PeerRole;
 };
 
 export interface CinderlinkClientEvents<
@@ -40,5 +42,6 @@ export interface CinderlinkClientEvents<
     "/peer/handshake": Peer;
     "/peer/message": IncomingP2PMessage<PluginEvents>;
     "/pubsub/message": IncomingPubsubMessage<PluginEvents>;
+    "/identity/resolved": IdentityResolved;
   };
 }

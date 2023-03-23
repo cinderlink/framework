@@ -264,4 +264,16 @@ export class SocialChat {
 
     this.plugin.emit("/chat/message/confirmed", updated);
   }
+
+  async unseenMessagesCount(): Promise<number> {
+    const count = await this.plugin
+      .table<SocialChatMessage>("chat_messages")
+      .query()
+      .where("seenAt", "=", 0)
+      .select()
+      .execute()
+      .then((result) => result.count());
+
+    return count;
+  }
 }

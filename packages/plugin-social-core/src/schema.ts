@@ -10,6 +10,7 @@ import {
   SocialProfile,
   SocialUser,
   SocialUserPin,
+  SocialComment,
 } from "./types";
 
 export const SocialSchemaDef = {
@@ -62,7 +63,7 @@ export const SocialSchemaDef = {
     schema: {
       type: "object",
       properties: {
-        userId: { type: "number" },
+        did: { type: "string" },
         cid: { type: "string" },
         textId: { type: "string" },
         createdAt: { type: "number" },
@@ -133,6 +134,7 @@ export const SocialSchemaDef = {
         to: { type: "string" },
         follow: { type: "boolean" },
         confirmations: { type: "number" },
+        seenAt: { type: "number" },
         createdAt: { type: "number" },
       },
     },
@@ -178,10 +180,50 @@ export const SocialSchemaDef = {
         },
         tags: { type: "array", items: { type: "string" } },
         confirmations: { type: "number" },
+        seenAt: { type: "number" },
         createdAt: { type: "number" },
       },
     },
   } as TableDefinition<SocialPost>,
+  comments: {
+    schemaId: "social",
+    encrypted: true,
+    aggregate: {},
+    indexes: {
+      cid: {
+        unique: true,
+        fields: ["cid"],
+      },
+      did: {
+        unique: false,
+        fields: ["did"],
+      },
+    },
+    rollup: 1000,
+    searchOptions: {
+      fields: ["cid", "did", "content", "postCid"],
+    },
+    schema: {
+      type: "object",
+      properties: {
+        cid: {
+          type: "string",
+        },
+        did: { type: "string" },
+        content: { type: "string" },
+        postCid: { type: "string" },
+        reactions: {
+          type: "array",
+          items: {
+            type: "string",
+          },
+        },
+        confirmations: { type: "number" },
+        seenAt: { type: "number" },
+        createdAt: { type: "number" },
+      },
+    },
+  } as TableDefinition<SocialComment>,
   chat_messages: {
     schemaId: "social",
     encrypted: true,
@@ -217,6 +259,7 @@ export const SocialSchemaDef = {
           },
         },
         confirmations: { type: "number" },
+        seenAt: { type: "number" },
         createdAt: { type: "number" },
         receivedAt: { type: "number" },
       },

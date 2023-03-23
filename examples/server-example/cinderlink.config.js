@@ -9,14 +9,6 @@ export default {
     ["@cinderlink/plugin-social-server"],
     ["@cinderlink/plugin-identity-server"],
     ["@cinderlink/plugin-offline-sync-server"],
-    [
-      "@cinderlink/plugin-sync-db",
-      {
-        schemas: {
-          ...SocialSyncConfig,
-        },
-      },
-    ],
   ],
   ipfs: {
     config: {

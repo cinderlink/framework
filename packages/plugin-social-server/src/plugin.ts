@@ -10,6 +10,9 @@ import {
   SocialUsersSearchRequest,
   SocialUsersSearchResponse,
   SocialClientEvents,
+  SocialUserPin,
+  SocialUsersPinResponse,
+  SocialUsersPinRequest,
 } from "@cinderlink/plugin-social-core";
 import type {
   PluginInterface,
@@ -29,12 +32,14 @@ export type SocialServerEvents = {
   send: {
     "/social/users/search/response": SocialUsersSearchResponse;
     "/social/users/get/response": SocialUsersGetResponse;
+    "/social/users/pin/response": SocialUsersPinResponse;
     "/social/posts/fetch/response": SocialPostsFetchResponse;
   };
   receive: {
     "/social/updates/request": SocialPostsFetchRequest;
     "/social/users/search/request": SocialUsersSearchRequest;
-    "/social/user/get/request": SocialUsersGetRequest;
+    "/social/users/get/request": SocialUsersGetRequest;
+    "/social/users/pin/request": SocialUsersPinRequest;
   };
   emit: {};
 };
@@ -60,8 +65,9 @@ export class SocialServerPlugin<
     "/social/users/announce": this.onPeerAnnounce,
     "/social/connections/create": this.onPeerConnection,
     "/social/users/search/request": this.onUserSearchRequest,
-    "/social/user/get/request": this.onUserGetRequest,
+    "/social/users/get/request": this.onUserGetRequest,
     "/social/updates/request": this.onUpdatesRequest,
+    "/social/users/pin/request": this.onUserPinRequest,
   };
 
   pubsub = {
@@ -369,7 +375,7 @@ export class SocialServerPlugin<
   async onUserGetRequest(
     message: IncomingP2PMessage<
       SocialServerEvents,
-      "/social/user/get/request",
+      "/social/users/get/request",
       EncodingOptions
     >
   ) {
@@ -399,6 +405,64 @@ export class SocialServerPlugin<
         user,
       },
     });
+  }
+
+  async onUserPinRequest(
+    message: IncomingP2PMessage<
+      SocialServerEvents,
+      "/social/users/pin/request",
+      EncodingOptions
+    >
+  ) {
+    const table = await this.table<SocialUserPin>("user_pins");
+    if (!table) {
+      console.warn(`plugin/social/server > user_pins table not found`);
+      return;
+    }
+
+    if (!message.peer.did) {
+      console.warn(
+        `plugin/social/server > received social pin request message without peer did`
+      );
+      return;
+    }
+
+    const existing = await table
+      .query()
+      .where("did", "=", message.peer.did)
+      .where("cid", "=", message.payload.cid)
+      .or((qb) =>
+        qb
+          .where("did", "=", message.peer.did as string)
+          .where("textId", "=", message.payload.textId as string)
+      )
+      .select()
+      .execute()
+      .then((r) => r.first());
+
+    if (existing) {
+      // upsert the existing pin
+      const pin = await table.upsert(
+        {
+          did: message.peer.did,
+          cid: message.payload.cid,
+          textId: message.payload.textId as string,
+        },
+        {
+          cid: message.payload.cid,
+          textId: message.payload.textId,
+          updatedAt: Date.now(),
+        }
+      );
+
+      return this.client.send(message.peer.peerId.toString(), {
+        topic: "/social/users/pin/response",
+        payload: {
+          requestId: message.payload.requestId,
+          pin,
+        },
+      });
+    }
   }
 
   async saveUser(did: string, user: Omit<SocialUser, "id">) {

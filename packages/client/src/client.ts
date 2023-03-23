@@ -1,3 +1,4 @@
+import { multiaddr } from "@multiformats/multiaddr";
 import {
   CinderlinkProtocolPlugin,
   decodePayload,
@@ -39,6 +40,7 @@ import { Identity } from "./identity";
 import { Schema } from "@cinderlink/ipld-database";
 import { v4 as uuid } from "uuid";
 import { DID } from "dids";
+import { peerIdFromString } from "@libp2p/peer-id";
 
 export class CinderlinkClient<
     PluginEvents extends PluginEventDef = PluginEventDef
@@ -68,12 +70,14 @@ export class CinderlinkClient<
   public schemas: Record<string, SchemaInterface> = {};
   public identity: Identity<PluginEvents>;
   public relayAddresses: string[] = [];
+  public role: PeerRole;
 
   constructor({
     ipfs,
     did,
     address,
     addressVerification,
+    role,
   }: CinderlinkConstructorOptions) {
     super();
     this.ipfs = ipfs;
@@ -82,6 +86,7 @@ export class CinderlinkClient<
     this.addressVerification = addressVerification;
     this.dag = new ClientDIDDag<PluginEvents>(this);
     this.identity = new Identity<PluginEvents>(this);
+    this.role = role;
     this.plugins = {};
   }
 
@@ -99,14 +104,12 @@ export class CinderlinkClient<
     return this.plugins[id] !== undefined;
   }
 
-  async start() {
+  async start(swarmAddresses: string[] = []) {
     const info = await this.ipfs.id();
     this.peerId = info.id;
 
     console.info(`client > starting ipfs`);
     await this.ipfs.start();
-
-    await this.load();
 
     console.info(`client > registering libp2p listeners`);
     const message = this.onPubsubMessage.bind(this);
@@ -142,6 +145,23 @@ export class CinderlinkClient<
     this.ipfs.libp2p.pubsub.addEventListener("subscription-change", () => {
       // console.info("subscription change", event);
     });
+
+    Promise.all(
+      swarmAddresses.map(async (addr) => {
+        const peerIdStr = addr.split("/").pop();
+        console.info("connecting to peer", peerIdStr);
+        if (peerIdStr) {
+          this.relayAddresses.push(addr);
+          const peerId = peerIdFromString(peerIdStr);
+          await this.ipfs.libp2p.peerStore.delete(peerId);
+          await this.ipfs.swarm.connect(multiaddr(addr));
+          await this.connect(peerId, "server").catch((err: Error) => {
+            console.warn(`peer ${peerIdStr} could not be dialed`);
+            console.error(err);
+          });
+        }
+      })
+    );
 
     console.info(
       `plugins > ${
@@ -181,8 +201,96 @@ export class CinderlinkClient<
       })
     );
 
+    console.info("loading");
+    await this.load();
+
     console.info(`client > ready`);
     this.emit("/client/ready", {});
+  }
+
+  async save() {
+    if (!this.identity.hasResolved) {
+      return;
+    }
+    const schemaCIDs: Record<string, string> = {};
+    console.debug(`save > saving schemas`);
+    await Promise.all(
+      Object.entries(this.schemas).map(async ([name, schema]) => {
+        const schemaCID = await schema.save();
+        console.info(`save > saved schema ${name}`);
+        if (schemaCID) {
+          schemaCIDs[name] = schemaCID.toString();
+        }
+      })
+    );
+    const rootDoc = {
+      schemas: schemaCIDs,
+      updatedAt: Date.now(),
+    };
+    console.info(`save > encrypting root document`, rootDoc);
+    const rootCID = await this.dag.storeEncrypted(rootDoc);
+    if (rootCID) {
+      console.log(`save > saved root document with CID ${rootCID.toString()}`);
+      await this.identity.save({ cid: rootCID.toString(), document: rootDoc });
+    }
+  }
+
+  async load() {
+    if (!this.hasServerConnection && this.role !== "server") {
+      console.info(`load > waiting for server connection`);
+      await this.p2p.once("/server/connect");
+    }
+    console.info(`load > resolving root document`);
+    const { cid, document } = await this.identity.resolve();
+    console.info(
+      `load > resolved root document with CID ${cid}. loading schemas...`,
+      { cid, document }
+    );
+    if (cid && document) {
+      if (document.schemas) {
+        await Promise.all(
+          Object.entries(document.schemas).map(async ([name, schemaCID]) => {
+            if (schemaCID) {
+              console.info("load > loading schema", name, schemaCID);
+              const schema = await this.dag
+                .loadDecrypted<SavedSchema>(
+                  CID.parse(schemaCID as string),
+                  undefined,
+                  { timeout: 1000 }
+                )
+                .catch(() => undefined);
+
+              // ask servers to pin schema
+              if (this.role !== "server") {
+                const servers = this.peers.getServers();
+                for (const server of servers) {
+                  await this.send(server.peerId.toString(), {
+                    topic: "/social/users/pin/request",
+                    payload: {
+                      requestId: self.crypto.randomUUID(),
+                      cid: schemaCID,
+                      textId: `schema.${name}`,
+                      did: this.id,
+                    } as PluginEvents["send"]["/social/users/pin/request"],
+                  });
+                }
+              }
+
+              if (schema) {
+                console.info(
+                  `load > loaded schema ${name} with CID ${schemaCID}`
+                );
+                this.schemas[name] = await Schema.fromSavedSchema(
+                  schema,
+                  this.dag
+                );
+              }
+            }
+          })
+        );
+      }
+    }
+    console.info("load > done");
   }
 
   async connect(peerId: PeerId, role: PeerRole = "peer") {
@@ -205,7 +313,7 @@ export class CinderlinkClient<
     const peer = this.peers.getPeer(peerId.toString());
     console.info(`peer/connect > connected to ${peerId.toString()}`, peer);
     this.peers.updatePeer(peerId.toString(), { connected: true });
-    this.emit("/peer/connect", peer);
+    this.emit(`/peer/connect`, peer);
   }
 
   async onPubsubMessage<Encoding extends EncodingOptions = EncodingOptions>(
@@ -278,7 +386,13 @@ export class CinderlinkClient<
       { ...options, did: this.did }
     );
 
+    if (!this.peers.hasPeer(peerId)) {
+      console.info(`p2p/out > connecting to peer ${peerId}`);
+      await this.connect(peerIdFromString(peerId));
+    }
+
     const peer = this.peers.getPeer(peerId);
+    if (!peer) return;
     if (peer.did && !peer.connected) {
       if (this.hasPlugin("offlineSync")) {
         console.info(`p2p/out > sending message to offline peer ${peerId}`);
@@ -364,60 +478,6 @@ export class CinderlinkClient<
     await this.ipfs.libp2p.pubsub.publish(topic as string, bytes);
   }
 
-  async save() {
-    const schemaCIDs: Record<string, string> = {};
-    console.debug(`save > saving schemas`);
-    await Promise.all(
-      Object.entries(this.schemas).map(async ([name, schema]) => {
-        const schemaCID = await schema.save();
-        console.info(`save > saved schema ${name}`);
-        if (schemaCID) {
-          schemaCIDs[name] = schemaCID.toString();
-        }
-      })
-    );
-    const rootDoc = {
-      schemas: schemaCIDs,
-      updatedAt: Date.now(),
-    };
-    console.info(`save > encrypting root document`, rootDoc);
-    const rootCID = await this.dag.storeEncrypted(rootDoc);
-    if (rootCID) {
-      console.log(`save > saved root document with CID ${rootCID.toString()}`);
-      await this.identity.save({ cid: rootCID.toString(), document: rootDoc });
-    }
-  }
-
-  async load() {
-    console.info(`load > resolving root document`);
-    const { cid, document } = await this.identity.resolve();
-    console.info(
-      `load > resolved root document with CID ${cid}. loading schemas...`
-    );
-    if (!cid || !document) return;
-    if (document.schemas) {
-      await Promise.all(
-        Object.entries(document.schemas).map(async ([name, schemaCID]) => {
-          if (schemaCID) {
-            console.info("load > loading schema", name, schemaCID);
-            const schema = await this.dag.loadDecrypted<SavedSchema>(
-              CID.parse(schemaCID as string)
-            );
-            if (schema) {
-              console.info(
-                `load > loaded schema ${name} with CID ${schemaCID}`
-              );
-              this.schemas[name] = await Schema.fromSavedSchema(
-                schema,
-                this.dag
-              );
-            }
-          }
-        })
-      );
-    }
-  }
-
   async request<
     Events extends PluginEventDef = PluginEvents,
     OutTopic extends keyof Events["send"] = keyof Events["send"],
@@ -446,12 +506,12 @@ export class CinderlinkClient<
 
     const result = new Promise((resolve) => {
       let _timeout: any;
+      const wait = this.once(`/cinderlink/request/${requestId}`);
       _timeout = setTimeout(() => {
         console.info(`request response timed out: ${requestId}`);
         wait.off();
         resolve(undefined);
       }, 3000);
-      const wait = this.once(`/cinderlink/request/${requestId}`);
       wait.then((value) => {
         console.info(`request response: ${requestId}`, value);
         clearTimeout(_timeout);

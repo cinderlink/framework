@@ -8,7 +8,7 @@ export class CinderlinkServer {
   }
 
   async start() {
-    await this.client.start();
+    await this.client.start([]);
 
     process.on("SIGINT", async () => {
       await this.stop();
