@@ -14,8 +14,8 @@
     "../registry/contracts/"
   ],
   "scripts": {
-    "watch": "turbo watch --filter='./packages/*' --continue --parallel",
-    "build": "turbo build --filter='./packages/*' --continue --parallel",
+    "watch": "turbo watch --filter='./packages/*' --parallel --concurrency 24",
+    "build": "turbo build --filter='./packages/*'",
     "dev": "turbo dev",
     "test": "pnpm --parallel --stream --filter=./packages/* -r test"
   },
@@ -23,7 +23,7 @@
   "author": "Drew Ewing",
   "license": "ISC",
   "devDependencies": {
-    "@changesets/cli": "^2.26.0",
+    "@changesets/cli": "^2.26.1",
     "chokidar": "^3.5.3",
     "minimist": "^1.2.8"
   }

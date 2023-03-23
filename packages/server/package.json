@@ -22,16 +22,17 @@
     "dist"
   ],
   "devDependencies": {
-    "@cinderlink/client": "0.0.1",
-    "@cinderlink/core-types": "0.0.1",
+    "@cinderlink/client": "workspace:0.0.1",
+    "@cinderlink/core-types": "workspace:0.0.1",
     "@cinderlink/tsconfig": "workspace:^1.0.0",
+    "@types/node": "^18.15.5",
     "dids": "^3.4.0",
     "ipfs-core": "^0.18.0",
     "ipfs-core-types": "^0.14.0",
     "ipfs-http-gateway": "^0.13.0",
     "ipfs-http-server": "^0.15.0",
-    "tsup": "^6.6.3",
-    "typescript": "^4.9.5",
+    "tsup": "^6.7.0",
+    "typescript": "^5.0.2",
     "vitest": "^0.28.5"
   },
   "peerDependencies": {

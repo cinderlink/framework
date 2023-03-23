@@ -28,7 +28,7 @@ __export(src_exports, {
 module.exports = __toCommonJS(src_exports);
 
 // src/schema.ts
-var import_ipld_database = require("@candor/ipld-database");
+var import_ipld_database = require("@cinderlink/ipld-database");
 var NotificationSchemaDef = {
   notifications: {
     schemaId: "notification",

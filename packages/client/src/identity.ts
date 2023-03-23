@@ -4,6 +4,7 @@ import { CID } from "multiformats";
 import type {
   CinderlinkClientEvents,
   CinderlinkClientInterface,
+  IdentityResolved,
   PluginEventDef,
 } from "@cinderlink/core-types";
 export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
@@ -11,25 +12,30 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
   document: Record<string, unknown> | undefined = undefined;
   constructor(public client: CinderlinkClientInterface<PluginEvents>) {}
 
-  async resolve() {
+  async resolve(): Promise<IdentityResolved> {
     console.info(`client/identity/resolve > resolving local identity`);
-    let resolved = await this.resolveLocal().catch(() => undefined);
+    const emptyResult = {
+      cid: undefined,
+      document: undefined,
+    };
+    let resolved = await this.resolveLocal().catch(() => emptyResult);
     console.info(`client/identity/resolve > resolving ipns identity`);
-    const ipns = await this.resolveIPNS().catch(() => undefined);
+    const ipns = await this.resolveIPNS().catch(() => emptyResult);
     if (
       !resolved?.document?.updatedAt ||
-      (ipns?.cid && ipns.document?.updatedAt > resolved?.document?.updatedAt)
+      (ipns?.cid &&
+        (ipns.document?.updatedAt ?? 0) > resolved?.document?.updatedAt)
     ) {
       resolved = ipns;
     }
     console.info(`client/identity/resolve > resolving server identity`);
-    const server = await this.resolveServer().catch(() => undefined);
+    const server = await this.resolveServer().catch(() => emptyResult);
     if (
       server?.cid !== undefined &&
       server.document?.updatedAt &&
       server.document.updatedAt > (resolved?.document?.updatedAt || 0)
     ) {
-      resolved = server as { cid: string | undefined; document: any };
+      resolved = server as IdentityResolved;
     }
     this.cid = resolved?.cid;
     this.document = resolved?.document;
@@ -40,7 +46,7 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
     return resolved;
   }
 
-  async resolveLocal() {
+  async resolveLocal(): Promise<IdentityResolved> {
     const cid = await localforage
       .getItem<string>("rootCID")
       .catch(() => undefined);
@@ -53,7 +59,7 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
     return { cid, document };
   }
 
-  async resolveIPNS() {
+  async resolveIPNS(): Promise<IdentityResolved> {
     if (!this.client.peerId) {
       return {
         cid: undefined,
@@ -91,7 +97,7 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
     };
   }
 
-  async resolveServer() {
+  async resolveServer(): Promise<IdentityResolved> {
     const servers = this.client.peers.getServers();
     if (!servers.length) {
       return { cid: undefined, document: undefined };
@@ -121,7 +127,13 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
     return { cid, document };
   }
 
-  async save({ cid, document }: { cid: string; document: any }) {
+  async save({
+    cid,
+    document,
+  }: {
+    cid: string;
+    document: Record<string, unknown>;
+  }) {
     this.cid = cid;
     this.document = document;
     console.info(`client/identity/save`, { cid, document });

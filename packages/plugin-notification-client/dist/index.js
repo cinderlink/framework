@@ -1,11 +1,11 @@
 import {
   NotificationClientPlugin,
   plugin_default
-} from "./chunk-OSO7ILL5.js";
+} from "./chunk-THQBK3HQ.js";
 import {
   NotificationSchemaDef,
   loadNotificationSchema
-} from "./chunk-YM6EFQYB.js";
+} from "./chunk-HMCPPDIR.js";
 import "./chunk-55J6XMHW.js";
 export {
   NotificationClientPlugin,

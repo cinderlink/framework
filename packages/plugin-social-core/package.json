@@ -22,12 +22,13 @@
     "watch": "tsup --watch"
   },
   "devDependencies": {
-    "@cinderlink/core-types": "0.0.1",
-    "@cinderlink/ipld-database": "0.0.1",
+    "@cinderlink/core-types": "workspace:0.0.1",
+    "@cinderlink/ipld-database": "workspace:0.0.1",
     "@cinderlink/tsconfig": "workspace:^1.0.0",
+    "@types/node": "^18.15.5",
     "emittery": "^1.0.1",
-    "tsup": "^6.6.3",
-    "typescript": "^4.9.5",
+    "tsup": "^6.7.0",
+    "typescript": "^5.0.2",
     "vitest": "^0.28.5"
   }
 }

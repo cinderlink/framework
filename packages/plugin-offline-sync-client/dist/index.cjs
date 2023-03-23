@@ -38,7 +38,7 @@ module.exports = __toCommonJS(src_exports);
 // src/plugin.ts
 var import_emittery = __toESM(require("emittery"), 1);
 var import_uuid = require("uuid");
-var import_plugin_offline_sync_core = require("@candor/plugin-offline-sync-core");
+var import_plugin_offline_sync_core = require("@cinderlink/plugin-offline-sync-core");
 var import_date_fns = require("date-fns");
 var OfflineSyncClientPlugin = class extends import_emittery.default {
   constructor(client, options = {}) {
@@ -58,7 +58,7 @@ var OfflineSyncClientPlugin = class extends import_emittery.default {
   };
   pubsub = {};
   pluginEvents = {
-    "/candor/handshake/success": this.onPeerConnect
+    "/cinderlink/handshake/success": this.onPeerConnect
   };
   async start() {
     console.info(`plugin/offlineSyncClient > loading schema`);
@@ -168,7 +168,7 @@ var OfflineSyncClientPlugin = class extends import_emittery.default {
       );
       const { message, sender, createdAt = 0 } = record;
       console.info(
-        `plugin/offlineSync/client > handling candor message from ${sender} (${(0, import_date_fns.formatRelative)(
+        `plugin/offlineSync/client > handling cinderlink message from ${sender} (${(0, import_date_fns.formatRelative)(
           createdAt,
           /* @__PURE__ */ new Date()
         )})`
@@ -186,7 +186,7 @@ var OfflineSyncClientPlugin = class extends import_emittery.default {
         };
       }
       const connection = this.client.ipfs.libp2p.getConnections(peer.peerId)[0];
-      await this.client.getPlugin("candor")?.handleProtocolMessage(
+      await this.client.getPlugin("cinderlink")?.handleProtocolMessage(
         connection,
         message.payload
       ).then(() => {

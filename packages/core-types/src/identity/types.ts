@@ -21,3 +21,13 @@ export interface IdentitySetResponse extends ProtocolRequest {
   success: boolean;
   error?: string;
 }
+
+export interface IdentityDocument {
+  updatedAt?: number;
+  [key: string]: unknown;
+}
+
+export interface IdentityResolved {
+  cid: string | undefined;
+  document: IdentityDocument | undefined;
+}

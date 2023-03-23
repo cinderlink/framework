@@ -9,6 +9,7 @@ import {
   SocialUsersGetResponse,
   SocialUsersSearchRequest,
   SocialUsersSearchResponse,
+  SocialClientEvents,
 } from "@cinderlink/plugin-social-core";
 import type {
   PluginInterface,
@@ -19,7 +20,6 @@ import type {
   IncomingP2PMessage,
   EncodingOptions,
 } from "@cinderlink/core-types";
-import { SocialClientEvents } from "@cinderlink/plugin-social-client";
 import { checkAddressVerification } from "@cinderlink/identifiers";
 import {} from "@cinderlink/plugin-social-core";
 
