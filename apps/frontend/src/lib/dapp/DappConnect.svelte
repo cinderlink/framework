@@ -1,5 +1,7 @@
 <script lang="ts">
-	import { web3, Typography, LoadingIndicator } from '@candor/ui-kit';
+	import { Typography } from '@candor/ui-kit/content';
+	import { LoadingIndicator } from '@candor/ui-kit/indicator';
+	import { web3 } from '@candor/ui-kit/web3';
 	import { connect, getUserRegistry } from '$lib/dapp/functions';
 	import { goto } from '$app/navigation';
 </script>

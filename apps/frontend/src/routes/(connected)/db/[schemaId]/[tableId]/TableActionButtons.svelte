@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { TableInterface, TableRow } from '@candor/core-types';
-	import { Button } from '@candor/ui-kit';
+	import { Button } from '@candor/ui-kit/interactive';
 	import { createEventDispatcher } from 'svelte';
 
 	export let record: TableRow;

@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { Typography } from '@candor/ui-kit';
-	import { Button } from '@candor/ui-kit';
-	import { SidebarLayout } from '@candor/ui-kit';
+	import { Typography } from '@candor/ui-kit/content';
+	import { Button } from '@candor/ui-kit/interactive';
+	import { SidebarLayout } from '@candor/ui-kit/layout';
 </script>
 
 <SidebarLayout>

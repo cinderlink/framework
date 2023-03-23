@@ -3,12 +3,9 @@
 	import { page } from '$app/stores';
 	import type { SchemaInterface } from '@candor/core-types';
 	import { Table } from '@candor/ipld-database';
-	import { Panel } from '@candor/ui-kit';
-	import { Typography } from '@candor/ui-kit';
-	import { Button } from '@candor/ui-kit';
-	import { List } from '@candor/ui-kit';
-	import { ListItem } from '@candor/ui-kit';
-	import { Breadcrumb } from '@candor/ui-kit';
+	import { Panel, Typography } from '@candor/ui-kit/content';
+	import { Button, List, ListItem } from '@candor/ui-kit/interactive';
+	import { Breadcrumb } from '@candor/ui-kit/navigation';
 	import { getContext } from 'svelte';
 
 	const schemaId = $page.params.schemaId;

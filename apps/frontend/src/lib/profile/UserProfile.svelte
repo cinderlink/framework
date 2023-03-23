@@ -3,7 +3,9 @@
 	import { onMount } from 'svelte';
 	import type { SocialClientPlugin } from '@candor/plugin-social-client';
 	import type { SocialPost, SocialProfile, SocialUser } from '@candor/plugin-social-core';
-	import { Avatar, Typography, ImageUpload, LoadingIndicator } from '@candor/ui-kit';
+	import { Avatar, Typography } from '@candor/ui-kit/content';
+	import { ImageUpload } from '@candor/ui-kit/interactive';
+	import { LoadingIndicator } from '@candor/ui-kit/indicator';
 	import { AttestationMenu, AttestationList, web3 } from '@candor/ui-kit/web3';
 
 	import { dapp } from '$lib/dapp/store';
@@ -146,10 +148,7 @@
 			{#if !contract}
 				<LoadingIndicator>Loading...</LoadingIndicator>
 			{:else}
-				<AttestationList
-					{contract}
-					address={user.address}
-				/>
+				<AttestationList {contract} address={user.address} />
 				<AttestationMenu
 					label="Feedback"
 					size="sm"

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { Typography } from '@candor/ui-kit';
-	import { Button } from '@candor/ui-kit';
+	import { Typography } from '@candor/ui-kit/content';
+	import { Button } from '@candor/ui-kit/interactive';
 </script>
 
 <div class="p-8 overflow-auto flex flex-col gap-4 relative">

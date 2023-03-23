@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Typography } from '@candor/ui-kit';
+	import { Typography } from '@candor/ui-kit/content';
 	import { ethers } from 'ethers';
 	import { PUBLIC_RPC_URL, PUBLIC_CHAIN_ID, PUBLIC_CHAIN_NAME } from '$env/static/public';
 

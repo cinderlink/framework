@@ -1,10 +1,7 @@
 <script lang="ts">
-	import { Typography } from '@candor/ui-kit';
 	import dapp from '$lib/dapp/store';
-	import { Panel } from '@candor/ui-kit';
-	import { List } from '@candor/ui-kit';
-	import { ListItem } from '@candor/ui-kit';
-	import { Button } from '@candor/ui-kit';
+	import { Panel, Typography } from '@candor/ui-kit/content';
+	import { Button, ListItem, List } from '@candor/ui-kit/interactive';
 </script>
 
 <div class="p-4">

@@ -1,6 +1,8 @@
 <script lang="ts">
 	import type { TableInterface, SchemaInterface } from '@candor/core-types';
-	import { Typography, Datatable, Breadcrumb } from '@candor/ui-kit';
+	import { Typography } from '@candor/ui-kit/content';
+	import { Datatable } from '@candor/ui-kit/data';
+	import { Breadcrumb } from '@candor/ui-kit/navigation';
 	import { getContext, onMount } from 'svelte';
 	import TableActionButtons from './TableActionButtons.svelte';
 

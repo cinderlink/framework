@@ -2,7 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import dapp from '$lib/dapp/store';
-	import { LoadingIndicator } from '@candor/ui-kit';
+	import { LoadingIndicator } from '@candor/ui-kit/indicator';
 	import { setContext } from 'svelte';
 
 	const schemaId = $page.params.schemaId;

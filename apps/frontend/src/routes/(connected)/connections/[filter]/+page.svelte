@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { Typography } from '@candor/ui-kit';
-	import { List } from '@candor/ui-kit';
+	import { Typography } from '@candor/ui-kit/content';
+	import { List } from '@candor/ui-kit/interactive';
 	import UserListItem from '$lib/users/UserListItem.svelte';
 	import type { PageData } from './$types';
 	import type { SocialConnectionRecord } from '@candor/plugin-social-core';

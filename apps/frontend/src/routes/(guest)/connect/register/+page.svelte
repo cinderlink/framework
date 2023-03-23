@@ -3,16 +3,11 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import type { SocialClientPlugin } from '@candor/plugin-social-client';
-	import {
-		LoadingIndicator,
-		Logo,
-		Button,
-		Input,
-		ImageUpload,
-		Typography,
-		web3
-	} from '@candor/ui-kit';
-
+	import { Logo } from '@candor/ui-kit';
+	import { LoadingIndicator } from '@candor/ui-kit/indicator';
+	import { Button, Input, ImageUpload } from '@candor/ui-kit/interactive';
+	import { Typography } from '@candor/ui-kit/content';
+	import { web3 } from '@candor/ui-kit/web3';
 	let loading = true;
 
 	let username = '';
@@ -78,12 +73,13 @@
 	<LoadingIndicator>Loading profile details...</LoadingIndicator>
 {:else}
 	<Typography el="h1" classes="font-black text-center">Configure Profile</Typography>
-	<form class="flex flex-col gap-2" on:submit|preventDefault={onSubmit}>
+	<form class="flex flex-col gap-2 w-full" on:submit|preventDefault={onSubmit}>
 		<ImageUpload bind:inputRef bind:image />
 		<Input
 			size="sm"
 			id="username"
 			label="Username"
+			width="w-full"
 			placeholder="Your cool username"
 			bind:value={username}
 		/>

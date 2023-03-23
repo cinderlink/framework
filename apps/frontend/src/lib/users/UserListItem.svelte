@@ -1,7 +1,9 @@
 <script lang="ts">
 	import type { SocialClientEvents, SocialClientPlugin } from '@candor/plugin-social-client';
 	import type { SocialUser } from '@candor/plugin-social-core';
-	import { Avatar, Panel, Button, OnlineStatusIndicator } from '@candor/ui-kit';
+	import { Panel, Avatar } from '@candor/ui-kit/content';
+	import { OnlineStatusIndicator } from '@candor/ui-kit/indicator';
+	import { Button } from '@candor/ui-kit/interactive';
 	import CidImage from '$lib/dapp/CIDImage.svelte';
 	import { onMount } from 'svelte';
 	import { dapp } from '$lib/dapp/store';

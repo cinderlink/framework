@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { SocialClientEvents, SocialClientPlugin } from '@candor/plugin-social-client';
 	import { dapp } from '$lib/dapp/store';
-	import { Avatar, Panel, Typography } from '@candor/ui-kit';
+	import { Avatar, Panel, Typography } from '@candor/ui-kit/content';
 	import { formatRelative } from 'date-fns';
 	import { onMount } from 'svelte';
 	import CidImage from '$lib/dapp/CIDImage.svelte';

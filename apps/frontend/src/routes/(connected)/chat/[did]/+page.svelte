@@ -1,13 +1,7 @@
 <script lang="ts">
-	import {
-		Avatar,
-		ListItem,
-		Button,
-		Input,
-		OnlineStatusIndicator,
-		LoadingIndicator,
-		Markdown
-	} from '@candor/ui-kit';
+	import { Avatar } from '@candor/ui-kit/content';
+	import { ListItem, Button, Input, Markdown } from '@candor/ui-kit/interactive';
+	import { LoadingIndicator, OnlineStatusIndicator } from '@candor/ui-kit/indicator';
 	import { goto } from '$app/navigation';
 	import CidImage from '$lib/dapp/CIDImage.svelte';
 	import { dapp } from '$lib/dapp/store';

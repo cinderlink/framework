@@ -115,7 +115,9 @@
 		</Typography>
 
 		{#if hasNFT}
-			<div class="bg-blue-300 px-8 py-4 text-xl rounded font-bold w-full flex flex-col gap-4">
+			<div
+				class="bg-blue-300 dark-bg-blue-900 px-8 py-4 text-xl rounded font-bold w-full flex flex-col gap-4"
+			>
 				You're good to go! Click the button below to proceed to the application
 				<Button href="/feed" width="w-full" size="lg">Proceed to application</Button>
 			</div>

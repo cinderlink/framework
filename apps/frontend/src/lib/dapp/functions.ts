@@ -12,7 +12,7 @@ import { createClient } from '@candor/client';
 import { SocialClientPlugin } from '@candor/plugin-social-client';
 import { OfflineSyncClientPlugin } from '@candor/plugin-offline-sync-client';
 import { NotificationClientPlugin } from '@candor/plugin-notification-client';
-import { web3, getContract, signMessage } from '@candor/ui-kit';
+import { web3, getContract, signMessage } from '@candor/ui-kit/web3';
 
 import { UserRegistry } from './contracts';
 import dapp from './store';

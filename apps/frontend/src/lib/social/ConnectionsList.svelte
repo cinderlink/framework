@@ -2,8 +2,8 @@
 	import { dapp } from '$lib/dapp/store';
 	import type { SocialClientPlugin, SocialClientEvents } from '@candor/plugin-social-client';
 	import type { SocialConnectionRecord } from '@candor/plugin-social-core';
-	import { LoadingIndicator } from '@candor/ui-kit';
-	import { List } from '@candor/ui-kit';
+	import { LoadingIndicator } from '@candor/ui-kit/indicator';
+	import { List } from '@candor/ui-kit/interactive';
 	import UserListItem from '$lib/users/UserListItem.svelte';
 	import { onMount } from 'svelte';
 

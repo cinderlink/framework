@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { dapp } from '$lib/dapp/store';
 	import type { SocialClientPlugin } from '@candor/plugin-social-client';
-	import { Button, Input } from '@candor/ui-kit';
+	import { Button, Input } from '@candor/ui-kit/interactive';
 	import { createEventDispatcher } from 'svelte';
 
 	export let content = '';
