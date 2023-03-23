@@ -1,33 +1,36 @@
 import {
-  CandorClientInterface,
+  CinderlinkClientInterface,
   EncodingOptions,
   IncomingP2PMessage,
   PluginInterface,
   SyncPluginEvents,
   SyncPluginOptions,
-} from "@candor/core-types";
+} from "@cinderlink/core-types";
 import { TableSync } from "./table-sync";
 
 const logPrefix = `plugin/sync`;
 
 export class SyncDBPlugin
   implements
-    PluginInterface<SyncPluginEvents, CandorClientInterface<SyncPluginEvents>>
+    PluginInterface<
+      SyncPluginEvents,
+      CinderlinkClientInterface<SyncPluginEvents>
+    >
 {
   id = "sync";
 
   schemas: Record<string, Record<string, TableSync>> = {};
 
   constructor(
-    public client: CandorClientInterface<SyncPluginEvents>,
+    public client: CinderlinkClientInterface<SyncPluginEvents>,
     public options: SyncPluginOptions
   ) {
     console.info(`${logPrefix} > initializing`, { options });
   }
 
   p2p = {
-    "/candor/sync/table/request": this.onSyncTableRequest,
-    "/candor/sync/table/response": this.onSyncTableResponse,
+    "/cinderlink/sync/table/request": this.onSyncTableRequest,
+    "/cinderlink/sync/table/response": this.onSyncTableResponse,
   };
   pubsub = {};
   coreEvents = {};
@@ -57,7 +60,7 @@ export class SyncDBPlugin
   async onSyncTableRequest(
     message: IncomingP2PMessage<
       SyncPluginEvents,
-      "/candor/sync/table/request",
+      "/cinderlink/sync/table/request",
       EncodingOptions
     >
   ) {
@@ -82,7 +85,7 @@ export class SyncDBPlugin
   async onSyncTableResponse(
     message: IncomingP2PMessage<
       SyncPluginEvents,
-      "/candor/sync/table/response",
+      "/cinderlink/sync/table/response",
       EncodingOptions
     >
   ) {

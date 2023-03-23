@@ -1,5 +1,8 @@
-import { Schema } from "@candor/ipld-database";
-import { CandorClientInterface, TableDefinition } from "@candor/core-types";
+import { Schema } from "@cinderlink/ipld-database";
+import {
+  CinderlinkClientInterface,
+  TableDefinition,
+} from "@cinderlink/core-types";
 import {
   SocialConnection,
   SocialChatMessage,
@@ -223,7 +226,7 @@ export const SocialSchemaDef = {
 
 export default SocialSchemaDef;
 
-export async function loadSocialSchema(client: CandorClientInterface<any>) {
+export async function loadSocialSchema(client: CinderlinkClientInterface<any>) {
   console.info(`plugin/social > preparing schema`);
   if (!client.schemas["social"]) {
     const schema = new Schema("social", SocialSchemaDef as any, client.dag);

@@ -1,6 +1,6 @@
 // Vitest Snapshot v1
 
-exports[`@candor/ipld-database/table > should create a current block 1`] = `
+exports[`@cinderlink/ipld-database/table > should create a current block 1`] = `
 {
   "filters": {
     "search": {
@@ -25,7 +25,7 @@ exports[`@candor/ipld-database/table > should create a current block 1`] = `
 }
 `;
 
-exports[`@candor/ipld-database/table > should index records 1`] = `
+exports[`@cinderlink/ipld-database/table > should index records 1`] = `
 {
   "name": {
     "z4TJrksEjp8": {
@@ -40,7 +40,7 @@ exports[`@candor/ipld-database/table > should index records 1`] = `
 }
 `;
 
-exports[`@candor/ipld-database/table > should rollup records with indexes 1`] = `
+exports[`@cinderlink/ipld-database/table > should rollup records with indexes 1`] = `
 {
   "name": {
     "zPbkLwYJQbRmZQwe": {

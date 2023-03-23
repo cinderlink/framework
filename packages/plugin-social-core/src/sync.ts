@@ -1,4 +1,4 @@
-import { SyncSchemaOptions } from "@candor/core-types";
+import { SyncSchemaOptions } from "@cinderlink/core-types";
 import SocialClientPluginInterface from "./interface/client-plugin";
 
 export const SocialSyncConfig: SyncSchemaOptions = {

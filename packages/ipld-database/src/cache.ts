@@ -1,11 +1,11 @@
-import { TableDefinition } from "@candor/core-types/src/database/table";
+import { TableDefinition } from "@cinderlink/core-types/src/database/table";
 import {
   BlockData,
   QueryResult,
   TableBlockInterface,
   TableQueryInterface,
   TableRow,
-} from "@candor/core-types";
+} from "@cinderlink/core-types";
 
 import sizeof from "object-sizeof";
 import * as json from "multiformats/codecs/json";

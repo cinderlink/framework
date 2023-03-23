@@ -6,9 +6,9 @@ export default defineConfig({
   dts: true,
   sourcemap: true,
   external: [
-    "@candor/client",
-    "@candor/core-types",
-    "@candor/tsconfig",
+    "@cinderlink/client",
+    "@cinderlink/core-types",
+    "@cinderlink/tsconfig",
     "ipfs-core",
     "ipfs-core-types",
     "ipfs-http-gateway",

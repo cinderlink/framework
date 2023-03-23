@@ -1,16 +1,16 @@
-import { SocialSyncConfig } from "@candor/plugin-social-core";
+import { SocialSyncConfig } from "@cinderlink/plugin-social-core";
 export default {
-  app: "candor.social",
+  app: "cinderlink-example",
   mnemonic:
     "vehicle canvas nerve wage orbit resist radio fresh scorpion manage loyal client",
   accountNonce: 0,
   plugins: [
-    ["@candor/protocol"],
-    ["@candor/plugin-social-server"],
-    ["@candor/plugin-identity-server"],
-    ["@candor/plugin-offline-sync-server"],
+    ["@cinderlink/protocol"],
+    ["@cinderlink/plugin-social-server"],
+    ["@cinderlink/plugin-identity-server"],
+    ["@cinderlink/plugin-offline-sync-server"],
     [
-      "@candor/plugin-sync-db",
+      "@cinderlink/plugin-sync-db",
       {
         schemas: {
           ...SocialSyncConfig,

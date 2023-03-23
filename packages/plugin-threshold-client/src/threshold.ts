@@ -1,11 +1,14 @@
-import { CandorClientInterface, TableInterface } from "@candor/core-types";
+import {
+  CinderlinkClientInterface,
+  TableInterface,
+} from "@cinderlink/core-types";
 import {
   ThresholdOwnedData,
   ThresholdPeerData,
-} from "@candor/plugin-threshold-common";
+} from "@cinderlink/plugin-threshold-common";
 
 export class ThresholdClient {
-  constructor(private client: CandorClientInterface) {}
+  constructor(private client: CinderlinkClientInterface) {}
 
   get schema() {
     const schema = this.client.getSchema("threshold");

@@ -1,4 +1,4 @@
-import { PluginEventDef, TableRow } from "@candor/core-types";
+import { PluginEventDef, TableRow } from "@cinderlink/core-types";
 
 export type SocialUserStatus = "online" | "offline" | "away";
 

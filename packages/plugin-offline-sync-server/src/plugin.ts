@@ -1,10 +1,10 @@
-import { CandorProtocolPlugin } from "@candor/protocol";
+import { CinderlinkProtocolPlugin } from "@cinderlink/protocol";
 import type {
   PluginInterface,
-  CandorClientInterface,
+  CinderlinkClientInterface,
   IncomingP2PMessage,
   EncodingOptions,
-} from "@candor/core-types";
+} from "@cinderlink/core-types";
 import {
   loadOfflineSyncSchema,
   OfflineSyncGetConfirmation,
@@ -13,7 +13,7 @@ import {
   OfflineSyncRecord,
   OfflineSyncSendRequest,
   OfflineSyncSendResponse,
-} from "@candor/plugin-offline-sync-core";
+} from "@cinderlink/plugin-offline-sync-core";
 
 export type OfflineSyncServerEvents = {
   publish: {};
@@ -34,12 +34,12 @@ export class OfflineSyncServerPlugin
   implements
     PluginInterface<
       OfflineSyncServerEvents,
-      CandorClientInterface<OfflineSyncServerEvents>
+      CinderlinkClientInterface<OfflineSyncServerEvents>
     >
 {
   id = "offlineSyncServer";
   constructor(
-    public client: CandorClientInterface<OfflineSyncServerEvents>,
+    public client: CinderlinkClientInterface<OfflineSyncServerEvents>,
     public options: Record<string, unknown> = {}
   ) {}
   async start() {
@@ -110,7 +110,7 @@ export class OfflineSyncServerPlugin
 
       if (
         peer &&
-        (this.client.getPlugin("candor") as CandorProtocolPlugin)
+        (this.client.getPlugin("cinderlink") as CinderlinkProtocolPlugin)
           ?.protocolHandlers[peer.peerId.toString()]
       ) {
         console.info(

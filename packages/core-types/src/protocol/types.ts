@@ -114,23 +114,23 @@ export interface ProtocolEvents<
   PluginEvents extends PluginEventDef = PluginEventDef
 > extends PluginEventDef {
   send: {
-    "/candor/handshake/request": HandshakeRequest;
-    "/candor/handshake/challenge": HandshakeChallenge;
-    "/candor/handshake/complete": HandshakeComplete;
-    "/candor/handshake/success": HandshakeSuccess;
-    "/candor/handshake/error": HandshakeError;
+    "/cinderlink/handshake/request": HandshakeRequest;
+    "/cinderlink/handshake/challenge": HandshakeChallenge;
+    "/cinderlink/handshake/complete": HandshakeComplete;
+    "/cinderlink/handshake/success": HandshakeSuccess;
+    "/cinderlink/handshake/error": HandshakeError;
   };
   receive: {
-    "/candor/handshake/request": HandshakeRequest;
-    "/candor/handshake/challenge": HandshakeChallenge;
-    "/candor/handshake/complete": HandshakeComplete;
-    "/candor/handshake/success": HandshakeSuccess;
-    "/candor/handshake/error": HandshakeError;
+    "/cinderlink/handshake/request": HandshakeRequest;
+    "/cinderlink/handshake/challenge": HandshakeChallenge;
+    "/cinderlink/handshake/complete": HandshakeComplete;
+    "/cinderlink/handshake/success": HandshakeSuccess;
+    "/cinderlink/handshake/error": HandshakeError;
   };
   emit: {
-    "/candor/handshake/success": Peer;
+    "/cinderlink/handshake/success": Peer;
   } & {
-    [key in `/candor/request/${string}`]:
+    [key in `/cinderlink/request/${string}`]:
       | DecodedProtocolMessage<PluginEvents>
       | DecodedProtocolMessage<PluginEvents>;
   };

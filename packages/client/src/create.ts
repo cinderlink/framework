@@ -1,7 +1,10 @@
-import type { CandorClientInterface, PluginEventDef } from "@candor/core-types";
+import type {
+  CinderlinkClientInterface,
+  PluginEventDef,
+} from "@cinderlink/core-types";
 import { peerIdFromString } from "@libp2p/peer-id";
 import { Options } from "ipfs-core";
-import { CandorClient } from "./client";
+import { CinderlinkClient } from "./client";
 import { createIPFS } from "./ipfs/create";
 import { DID } from "dids";
 
@@ -17,8 +20,13 @@ export async function createClient<
   PluginEvents extends PluginEventDef = PluginEventDef
 >({ did, address, addressVerification, nodes, options }: CreateClientOptions) {
   const ipfs = await createIPFS(nodes, options);
-  const client: CandorClientInterface<PluginEvents> =
-    new CandorClient<PluginEvents>({ ipfs, did, address, addressVerification });
+  const client: CinderlinkClientInterface<PluginEvents> =
+    new CinderlinkClient<PluginEvents>({
+      ipfs,
+      did,
+      address,
+      addressVerification,
+    });
 
   nodes?.forEach((node) => {
     const peerId = peerIdFromString(node.split("/p2p/")[1]);

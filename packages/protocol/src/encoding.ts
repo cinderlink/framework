@@ -4,7 +4,7 @@ import {
   EncodingOptions,
   ProtocolRequest,
   SignedProtocolPayload,
-} from "@candor/core-types";
+} from "@cinderlink/core-types";
 import * as json from "multiformats/codecs/json";
 import { DagJWS, DID, VerifyJWSResult } from "dids";
 import { JWE } from "did-jwt";

@@ -1,5 +1,5 @@
 import type {
-  CandorClientInterface,
+  CinderlinkClientInterface,
   EncodingOptions,
   IncomingP2PMessage,
   OutgoingP2PMessage,
@@ -8,22 +8,22 @@ import type {
   PluginInterface,
   ProtocolMessage,
   ProtocolRequest,
-} from "@candor/core-types";
+} from "@cinderlink/core-types";
 import Emittery from "emittery";
 import { v4 as uuid } from "uuid";
 import {
   loadOfflineSyncSchema,
   OfflineSyncGetConfirmation,
-} from "@candor/plugin-offline-sync-core";
+} from "@cinderlink/plugin-offline-sync-core";
 import { formatRelative } from "date-fns";
 import {
   OfflineSyncClientEvents,
   OfflineSyncRecord,
-} from "@candor/plugin-offline-sync-core";
-import { CandorProtocolPlugin } from "@candor/protocol";
+} from "@cinderlink/plugin-offline-sync-core";
+import { CinderlinkProtocolPlugin } from "@cinderlink/protocol";
 
 export class OfflineSyncClientPlugin<
-    Client extends CandorClientInterface<OfflineSyncClientEvents> = CandorClientInterface<OfflineSyncClientEvents>
+    Client extends CinderlinkClientInterface<OfflineSyncClientEvents> = CinderlinkClientInterface<OfflineSyncClientEvents>
   >
   extends Emittery<OfflineSyncClientEvents["emit"]>
   implements PluginInterface<OfflineSyncClientEvents, Client>
@@ -43,7 +43,7 @@ export class OfflineSyncClientPlugin<
   pubsub = {};
 
   pluginEvents = {
-    "/candor/handshake/success": this.onPeerConnect,
+    "/cinderlink/handshake/success": this.onPeerConnect,
   };
 
   constructor(
@@ -220,7 +220,7 @@ export class OfflineSyncClientPlugin<
       );
       const { message, sender, createdAt = 0 } = record;
       console.info(
-        `plugin/offlineSync/client > handling candor message from ${sender} (${formatRelative(
+        `plugin/offlineSync/client > handling cinderlink message from ${sender} (${formatRelative(
           createdAt,
           new Date()
         )})`
@@ -238,7 +238,7 @@ export class OfflineSyncClientPlugin<
         };
       }
       const connection = this.client.ipfs.libp2p.getConnections(peer.peerId)[0];
-      await (this.client.getPlugin("candor") as CandorProtocolPlugin)
+      await (this.client.getPlugin("cinderlink") as CinderlinkProtocolPlugin)
         ?.handleProtocolMessage<PluginEventDef, keyof PluginEventDef>(
           connection,
           message.payload as ProtocolMessage<

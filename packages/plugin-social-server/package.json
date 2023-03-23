@@ -1,8 +1,8 @@
 {
-  "name": "@candor/plugin-social-server",
-  "description": "Social network server plugin for Candor",
+  "name": "@cinderlink/plugin-social-server",
+  "description": "Social network server plugin for Cinderlink",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "0.1.2",
+  "version": "0.0.1",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -22,11 +22,11 @@
     "watch": "tsup --watch"
   },
   "devDependencies": {
-    "@candor/identifiers": "workspace:^0.0.1",
-    "@candor/core-types": "workspace:^0.1.2",
-    "@candor/plugin-social-client": "workspace:^0.2.0",
-    "@candor/plugin-social-core": "workspace:^0.1.2",
-    "@candor/tsconfig": "workspace:^1.0.0",
+    "@cinderlink/identifiers": "workspace:^0.0.1",
+    "@cinderlink/core-types": "workspace:^0.0.1",
+    "@cinderlink/plugin-social-client": "workspace:^0.0.1",
+    "@cinderlink/plugin-social-core": "workspace:^0.0.1",
+    "@cinderlink/tsconfig": "workspace:^1.0.0",
     "did-jwt": "^6.11.1",
     "dids": "^3.4.0",
     "tsup": "^6.6.3",

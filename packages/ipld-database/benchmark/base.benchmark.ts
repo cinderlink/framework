@@ -1,6 +1,6 @@
 import { rmSync } from "fs";
 import { afterAll, beforeAll, bench, describe } from "vitest";
-import { TableDefinition } from "@candor/core-types";
+import { TableDefinition } from "@cinderlink/core-types";
 import { Schema } from "./../src/schema";
 import { createSeed, createClient } from "../../client";
 import { open } from "sqlite";
@@ -35,30 +35,30 @@ const benchmarkSchema: Record<string, TableDefinition> = {
 
 let iterator = 0;
 
-let candor1, candor2;
+let cinderlink1, cinderlink2;
 let sqlite1, sqlite2;
 beforeAll(async () => {
   await rmSync("./benchmark-1", { recursive: true, force: true });
   await rmSync("./benchmark-2", { recursive: true, force: true });
 
   const seed = await createSeed("benchmark-1");
-  candor1 = await createClient(seed, [], {
+  cinderlink1 = await createClient(seed, [], {
     repo: "benchmark-1",
   });
-  await candor1.start();
-  const schema1 = new Schema("benchmark", benchmarkSchema, candor1.dag);
-  await candor1.addSchema("benchmark", schema1);
+  await cinderlink1.start();
+  const schema1 = new Schema("benchmark", benchmarkSchema, cinderlink1.dag);
+  await cinderlink1.addSchema("benchmark", schema1);
   sqlite1 = await open({
     driver: sqlite3.Database,
     filename: "./benchmark-1/benchmark.db",
   });
   const seed2 = await createSeed("benchmark-2");
-  candor2 = await createClient(seed2, [], {
+  cinderlink2 = await createClient(seed2, [], {
     repo: "benchmark-2",
   });
-  await candor2.start();
-  const schema2 = new Schema("benchmark", benchmarkSchema, candor2.dag);
-  await candor2.addSchema("benchmark", schema2);
+  await cinderlink2.start();
+  const schema2 = new Schema("benchmark", benchmarkSchema, cinderlink2.dag);
+  await cinderlink2.addSchema("benchmark", schema2);
   sqlite2 = await open({
     driver: sqlite3.Database,
     filename: "./benchmark-2/benchmark.db",
@@ -84,9 +84,9 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await candor1?.stop();
+  await cinderlink1?.stop();
   await sqlite1?.close();
-  await candor2?.stop();
+  await cinderlink2?.stop();
   await sqlite2?.close();
   await rmSync("./benchmark-1", { recursive: true, force: true });
   await rmSync("./benchmark-2", { recursive: true, force: true });
@@ -94,9 +94,9 @@ afterAll(async () => {
 
 describe("inserting records", () => {
   bench(
-    "@candor/client",
+    "@cinderlink/client",
     async () => {
-      await candor1
+      await cinderlink1
         .getSchema("benchmark")
         ?.getTable("test")
         ?.insert({
@@ -115,8 +115,8 @@ describe("inserting records", () => {
 });
 
 describe("querying records", () => {
-  bench("@candor/client", async () => {
-    await candor2
+  bench("@cinderlink/client", async () => {
+    await cinderlink2
       .getSchema("benchmark")
       ?.getTable("test")
       ?.query()

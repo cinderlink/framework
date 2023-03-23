@@ -16,6 +16,8 @@ package
 .turbo
 **/build/**
 **/dist/**
+cinderlink
+/cinderlink
 candor
 /candor
 /docker/data
@@ -24,3 +26,4 @@ vite.config.js.timestamp.*
 pnpm-lock.yaml
 pnpm-debug.log
 **/broadcast/**
+apps/*

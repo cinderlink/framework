@@ -4,8 +4,8 @@ import {
   IncomingP2PMessage,
   IncomingPubsubMessage,
   Peer,
-} from "@candor/core-types";
-import { SocialClientEvents, SocialPost } from "@candor/plugin-social-core";
+} from "@cinderlink/core-types";
+import { SocialClientEvents, SocialPost } from "@cinderlink/plugin-social-core";
 import SocialClientPlugin from "../plugin";
 
 export class SocialPosts {
@@ -13,7 +13,7 @@ export class SocialPosts {
 
   async start() {
     this.plugin.client.pluginEvents.on(
-      "/candor/handshake/success",
+      "/cinderlink/handshake/success",
       async (peer: Peer) => {
         // ask servers for posts since the last saved update + 24 hours
         const since = await this.plugin

@@ -15,9 +15,9 @@ import type { IdentityInterface } from "../identity";
 import { SchemaInterface } from "../database/schema";
 import { SubscribeEvents } from "../pubsub";
 import { EncodingOptions, ProtocolEvents } from "../protocol";
-import { CandorClientEvents } from "./types";
+import { CinderlinkClientEvents } from "./types";
 
-export interface CandorClientInterface<
+export interface CinderlinkClientInterface<
   PluginEvents extends PluginEventDef = {
     send: {};
     receive: {};
@@ -25,7 +25,7 @@ export interface CandorClientInterface<
     subscribe: {};
     emit: {};
   }
-> extends Emittery<CandorClientEvents["emit"] & ProtocolEvents["emit"]> {
+> extends Emittery<CinderlinkClientEvents["emit"] & ProtocolEvents["emit"]> {
   plugins: Record<PluginInterface["id"], PluginInterface<any>>;
   started: boolean;
   hasServerConnection: boolean;

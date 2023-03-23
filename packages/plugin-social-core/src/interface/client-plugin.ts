@@ -1,6 +1,6 @@
 import Emittery from "emittery";
 import {
-  CandorClientInterface,
+  CinderlinkClientInterface,
   PluginEventHandlers,
   PluginInterface,
   ProtocolEvents,
@@ -10,7 +10,7 @@ import {
   TableDefinition,
   TableInterface,
   TableRow,
-} from "@candor/core-types";
+} from "@cinderlink/core-types";
 import { SocialClientEvents, SocialClientPluginEvents } from "../types";
 import { SocialChatInterface } from "./chat";
 import { SocialConnectionsInterface } from "./connections";
@@ -19,7 +19,7 @@ import { SocialProfilesInterface } from "./profiles";
 import { SocialUsersInterface } from "./users";
 
 export interface SocialClientPluginInterface<
-  Client extends CandorClientInterface<any> = CandorClientInterface<
+  Client extends CinderlinkClientInterface<any> = CinderlinkClientInterface<
     SocialClientEvents & ProtocolEvents
   >
 > extends Emittery<SocialClientPluginEvents>,

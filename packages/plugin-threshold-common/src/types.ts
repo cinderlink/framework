@@ -1,4 +1,8 @@
-import { TableRow, ProtocolRequest, PluginEventDef } from "@candor/core-types";
+import {
+  TableRow,
+  ProtocolRequest,
+  PluginEventDef,
+} from "@cinderlink/core-types";
 
 export interface ThresholdPeerStatus {
   did: string;

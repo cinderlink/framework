@@ -3,12 +3,12 @@ import {
   createDID,
   signAddressVerification,
   createSeed,
-} from "@candor/identifiers";
+} from "@cinderlink/identifiers";
 import { rmSync } from "fs";
-import { createClient, CandorClient } from "../../client";
+import { createClient, CinderlinkClient } from "../../client";
 import { describe, it, expect, beforeEach, afterEach, afterAll } from "vitest";
 import { Table } from "./table";
-import { BlockData, TableDefinition, TableRow } from "@candor/core-types";
+import { BlockData, TableDefinition, TableRow } from "@cinderlink/core-types";
 
 interface UsersRow extends TableRow {
   id: number;
@@ -78,8 +78,8 @@ const validDefinition: TableDefinition<TestRow> = {
   rollup: 10,
 };
 
-let client: CandorClient;
-describe("@candor/ipld-database/table", () => {
+let client: CinderlinkClient;
+describe("@cinderlink/ipld-database/table", () => {
   beforeEach(async (tst) => {
     const seed = await createSeed("test seed");
     const did = await createDID(seed);
@@ -97,7 +97,7 @@ describe("@candor/ipld-database/table", () => {
       options: {
         repo: "test-data/" + tst.meta.name,
       },
-    })) as CandorClient;
+    })) as CinderlinkClient;
     await client.start();
   });
 

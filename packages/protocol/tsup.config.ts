@@ -6,8 +6,8 @@ export default defineConfig({
   dts: true,
   sourcemap: true,
   external: [
-    "@candor/core-types",
-    "@candor/tsconfig",
+    "@cinderlink/core-types",
+    "@cinderlink/tsconfig",
     "@libp2p/interface-connection",
     "did-jwt",
     "dids",

@@ -1,11 +1,11 @@
 import { rmSync } from "fs";
 import { describe, beforeAll, it, expect, afterAll } from "vitest";
-import { CandorClientInterface } from "@candor/core-types";
-import { createSeed } from "@candor/identifiers";
+import { CinderlinkClientInterface } from "@cinderlink/core-types";
+import { createSeed } from "@cinderlink/identifiers";
 import { createClient } from "./create";
 
-let client: CandorClientInterface;
-describe("@candor/client/dag", () => {
+let client: CinderlinkClientInterface;
+describe("@cinderlink/client/dag", () => {
   beforeAll(async () => {
     rmSync("./dag-test", { recursive: true, force: true });
     const seed = await createSeed("test seed");

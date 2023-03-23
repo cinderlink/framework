@@ -1,6 +1,6 @@
 import { v4 as uuid } from "uuid";
 import {
-  CandorClientInterface,
+  CinderlinkClientInterface,
   Peer,
   SyncPluginEvents,
   SyncTableRequest,
@@ -9,8 +9,8 @@ import {
   SyncTableRules,
   TableInterface,
   TableRow,
-} from "@candor/core-types";
-import { Schema } from "@candor/ipld-database";
+} from "@cinderlink/core-types";
+import { Schema } from "@cinderlink/ipld-database";
 
 export const SyncSchemaDef = {
   tables: {
@@ -51,7 +51,7 @@ export class TableSync {
   constructor(
     public table: TableInterface,
     public rules: SyncTableRules,
-    public client: CandorClientInterface<SyncPluginEvents>
+    public client: CinderlinkClientInterface<SyncPluginEvents>
   ) {
     this._logPrefix = `/plugin/sync/${table.def.schemaId}/${table.tableId}`;
     // this._interval = setInterval(
@@ -107,7 +107,7 @@ export class TableSync {
     await Promise.all(
       Object.entries(toSync).map(async ([did, rows]) =>
         this.client.send(did, {
-          topic: "/candor/sync/table/request",
+          topic: "/cinderlink/sync/table/request",
           payload: {
             requestId: uuid(),
             schemaId: this.table.def.schemaId,
@@ -153,7 +153,7 @@ export class TableSync {
 
     // tell the remote user we have received the rows
     this.client.send(peer.peerId.toString(), {
-      topic: "/candor/sync/table/response",
+      topic: "/cinderlink/sync/table/response",
       payload: {
         requestId: payload.requestId,
         tableId: payload.tableId,

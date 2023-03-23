@@ -7,12 +7,12 @@ import {
   OrderByInstruction,
   QueryBuilderInterface,
   TableDefinition,
-} from "@candor/core-types";
+} from "@cinderlink/core-types";
 import {
   TableRow,
   TableInterface,
   TableBlockInterface,
-} from "@candor/core-types/src/database/table";
+} from "@cinderlink/core-types/src/database/table";
 import {
   TableQueryInterface,
   QueryInstruction,
@@ -25,7 +25,7 @@ import {
   DeleteInstruction,
   SelectInstruction,
   ReturningInstruction,
-} from "@candor/core-types/src/database/query";
+} from "@cinderlink/core-types/src/database/query";
 import { TableBlock } from "./block";
 import { cache } from "./cache";
 

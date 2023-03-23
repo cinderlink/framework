@@ -1,10 +1,10 @@
-import { createServer } from "@candor/server";
-import { createSeed } from "@candor/client";
+import { createServer } from "@cinderlink/server";
+import { createSeed } from "@cinderlink/client";
 
-import CandorProtocolPlugin from "@candor/protocol";
-import SocialServerPlugin from "@candor/plugin-social-server";
-import IdentityServerPlugin from "@candor/plugin-identity-server";
-import OfflineSyncServerPlugin from "@candor/plugin-offline-sync-server";
+import CinderlinkProtocolPlugin from "@cinderlink/protocol";
+import SocialServerPlugin from "@cinderlink/plugin-social-server";
+import IdentityServerPlugin from "@cinderlink/plugin-identity-server";
+import OfflineSyncServerPlugin from "@cinderlink/plugin-offline-sync-server";
 
 const seed = await createSeed(
   "sufficiently long seed phrase that nobody will ever guess"
@@ -12,7 +12,7 @@ const seed = await createSeed(
 const server = await createServer(
   seed,
   [
-    [CandorProtocolPlugin, {}],
+    [CinderlinkProtocolPlugin, {}],
     [SocialServerPlugin, {}],
     [IdentityServerPlugin, {}],
     [OfflineSyncServerPlugin, {}],

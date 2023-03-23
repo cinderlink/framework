@@ -1,11 +1,11 @@
-import { IncomingP2PMessage } from "@candor/core-types/src/p2p";
+import { IncomingP2PMessage } from "@cinderlink/core-types/src/p2p";
 import {
   PluginInterface,
-  CandorClientInterface,
-  CandorClientEvents,
+  CinderlinkClientInterface,
+  CinderlinkClientEvents,
   EncodingOptions,
-} from "@candor/core-types";
-import { Schema } from "@candor/ipld-database";
+} from "@cinderlink/core-types";
+import { Schema } from "@cinderlink/ipld-database";
 import { IdentityServerEvents } from "./types";
 
 export type IdentityPinsRecord = {
@@ -20,12 +20,12 @@ export class IdentityServerPlugin
   implements
     PluginInterface<
       IdentityServerEvents,
-      CandorClientInterface<IdentityServerEvents>
+      CinderlinkClientInterface<IdentityServerEvents>
     >
 {
   id = "identityServer";
   constructor(
-    public client: CandorClientInterface<IdentityServerEvents>,
+    public client: CinderlinkClientInterface<IdentityServerEvents>,
     public options: Record<string, unknown> = {}
   ) {}
   async start() {
@@ -135,7 +135,7 @@ export class IdentityServerPlugin
       .execute()
       .then((r) => r.first());
 
-    return this.client.send<CandorClientEvents>(
+    return this.client.send<CinderlinkClientEvents>(
       message.peer.peerId.toString(),
       {
         topic: "/identity/resolve/response",

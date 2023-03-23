@@ -1,8 +1,8 @@
 {
-  "name": "@candor/server",
-  "description": "Federated pinning & messaging server for Candor networks",
+  "name": "@cinderlink/server",
+  "description": "Federated pinning & messaging server for Cinderlink networks",
   "authors": "Drew Ewing <drew@cinderlink.com>",
-  "version": "0.1.2",
+  "version": "0.0.1",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -22,9 +22,9 @@
     "dist"
   ],
   "devDependencies": {
-    "@candor/client": "0.1.2",
-    "@candor/core-types": "0.1.2",
-    "@candor/tsconfig": "workspace:^1.0.0",
+    "@cinderlink/client": "0.0.1",
+    "@cinderlink/core-types": "0.0.1",
+    "@cinderlink/tsconfig": "workspace:^1.0.0",
     "dids": "^3.4.0",
     "ipfs-core": "^0.18.0",
     "ipfs-core-types": "^0.14.0",
@@ -35,7 +35,7 @@
     "vitest": "^0.28.5"
   },
   "peerDependencies": {
-    "@candor/client": "@candor/client",
+    "@cinderlink/client": "@cinderlink/client",
     "ipfs-core": "^0.18.0"
   }
 }

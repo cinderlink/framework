@@ -5,14 +5,14 @@ import {
   IncomingP2PMessage,
   IncomingPubsubMessage,
   Peer,
-} from "@candor/core-types";
+} from "@cinderlink/core-types";
 import {
   SocialClientEvents,
   SocialClientPluginEvents,
   SocialUser,
   SocialUsersSearchResponse,
-} from "@candor/plugin-social-core";
-import { checkAddressVerification } from "@candor/identifiers";
+} from "@cinderlink/plugin-social-core";
+import { checkAddressVerification } from "@cinderlink/identifiers";
 import SocialClientPlugin from "../plugin";
 
 export class SocialUsers {
@@ -34,7 +34,7 @@ export class SocialUsers {
 
   async start() {
     this.plugin.client.pluginEvents.on(
-      "/candor/handshake/success",
+      "/cinderlink/handshake/success",
       async (peer: Peer) => {
         console.info("handshake success, getting updates");
 
@@ -255,7 +255,7 @@ export class SocialUsers {
     }
 
     const verified = await checkAddressVerification(
-      "candor.social",
+      "cinderlink.social",
       message.peer.did,
       message.payload.address,
       message.payload.addressVerification

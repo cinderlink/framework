@@ -3,19 +3,19 @@ import {
   ProtocolEvents,
   ReceiveEvents,
   SubscribeEvents,
-} from "@candor/core-types";
+} from "@cinderlink/core-types";
 import type {
   PluginInterface,
-  CandorClientInterface,
+  CinderlinkClientInterface,
   TableRow,
   TableDefinition,
-} from "@candor/core-types";
+} from "@cinderlink/core-types";
 import Emittery from "emittery";
 import {
   SocialClientPluginEvents,
   SocialClientEvents,
-} from "@candor/plugin-social-core";
-import { loadSocialSchema } from "@candor/plugin-social-core";
+} from "@cinderlink/plugin-social-core";
+import { loadSocialSchema } from "@cinderlink/plugin-social-core";
 import { SocialChat } from "./features/chat";
 import { SocialConnections } from "./features/connections";
 import { SocialPosts } from "./features/posts";
@@ -23,7 +23,7 @@ import { SocialProfiles } from "./features/profiles";
 import { SocialUsers } from "./features/users";
 
 export class SocialClientPlugin<
-    Client extends CandorClientInterface<any> = CandorClientInterface<
+    Client extends CinderlinkClientInterface<any> = CinderlinkClientInterface<
       SocialClientEvents & ProtocolEvents
     >
   >

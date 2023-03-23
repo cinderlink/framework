@@ -12,7 +12,7 @@ import {
   ReceiveEvents,
   HandshakeRequest,
   PluginEventDef,
-} from "@candor/core-types";
+} from "@cinderlink/core-types";
 import { v4 as uuid } from "uuid";
 import { Connection, Stream } from "@libp2p/interface-connection";
 import * as json from "multiformats/codecs/json";
@@ -21,7 +21,7 @@ import { pipe } from "it-pipe";
 import { Pushable, pushable } from "it-pushable";
 import map from "it-map";
 
-import type { CandorClientInterface } from "@candor/core-types";
+import type { CinderlinkClientInterface } from "@cinderlink/core-types";
 import { decodePayload, encodePayload } from "./encoding";
 
 export interface ProtocolHandler {
@@ -32,7 +32,7 @@ export interface ProtocolHandler {
   in: Promise<void>;
 }
 
-export class CandorProtocolPlugin<
+export class CinderlinkProtocolPlugin<
   PluginEvents extends PluginEventDef = {
     send: {};
     receive: {};
@@ -40,21 +40,21 @@ export class CandorProtocolPlugin<
     subscribe: {};
     emit: {};
   },
-  Client extends CandorClientInterface<
+  Client extends CinderlinkClientInterface<
     PluginEvents & ProtocolEvents<PluginEvents>
-  > = CandorClientInterface<PluginEvents & ProtocolEvents<PluginEvents>>
+  > = CinderlinkClientInterface<PluginEvents & ProtocolEvents<PluginEvents>>
 > implements PluginInterface<ProtocolEvents, Client>
 {
-  id = "candor";
+  id = "cinderlink";
 
   constructor(public client: Client) {}
 
   p2p = {
-    "/candor/handshake/request": this.onHandshakeRequest,
-    "/candor/handshake/challenge": this.onHandshakeChallenge,
-    "/candor/handshake/complete": this.onHandshakeComplete,
-    "/candor/handshake/success": this.onHandshakeSuccess,
-    "/candor/handshake/error": this.onHandshakeError,
+    "/cinderlink/handshake/request": this.onHandshakeRequest,
+    "/cinderlink/handshake/challenge": this.onHandshakeChallenge,
+    "/cinderlink/handshake/complete": this.onHandshakeComplete,
+    "/cinderlink/handshake/success": this.onHandshakeSuccess,
+    "/cinderlink/handshake/error": this.onHandshakeError,
   };
   pubsub = {};
   coreEvents = {
@@ -65,9 +65,9 @@ export class CandorProtocolPlugin<
   protocolHandlers: Record<string, ProtocolHandler> = {};
 
   async start() {
-    console.info(`client > registering protocol /candor/1.0.0`);
+    console.info(`client > registering protocol /cinderlink/1.0.0`);
     await this.client.ipfs.libp2p.handle(
-      "/candor/1.0.0",
+      "/cinderlink/1.0.0",
       async ({
         stream,
         connection,
@@ -132,7 +132,7 @@ export class CandorProtocolPlugin<
       )}, sending handshake request`
     );
     await this.client.send<ProtocolEvents>(peer.peerId.toString(), {
-      topic: "/candor/handshake/request",
+      topic: "/cinderlink/handshake/request",
       payload: {
         did: this.client.id,
       } as HandshakeRequest,
@@ -142,11 +142,11 @@ export class CandorProtocolPlugin<
   async onPeerConnect(peer: Peer) {
     if (!this.protocolHandlers[peer.peerId.toString()]) {
       console.info(
-        `peer/connect > dialing candor protocol ${readablePeer(peer)}`
+        `peer/connect > dialing cinderlink protocol ${readablePeer(peer)}`
       );
       const stream = await this.client.ipfs.libp2p.dialProtocol(
         peer.peerId,
-        "/candor/1.0.0"
+        "/cinderlink/1.0.0"
       );
       const connection = this.client.ipfs.libp2p.getConnections(peer.peerId)[0];
       await this.initializeProtocol(stream, connection);
@@ -199,7 +199,7 @@ export class CandorProtocolPlugin<
 
     if ((event.payload as any)?.requestId) {
       this.client.emit(
-        `/candor/request/${(event.payload as any).requestId}`,
+        `/cinderlink/request/${(event.payload as any).requestId}`,
         event as any
       );
     }
@@ -241,7 +241,7 @@ export class CandorProtocolPlugin<
   async onHandshakeRequest(
     message: IncomingP2PMessage<
       ProtocolEvents,
-      "/candor/handshake/request",
+      "/cinderlink/handshake/request",
       EncodingOptions
     >
   ) {
@@ -265,7 +265,7 @@ export class CandorProtocolPlugin<
         })`
       );
       return this.client.send<ProtocolEvents>(message.peer.peerId.toString(), {
-        topic: "/candor/handshake/success",
+        topic: "/cinderlink/handshake/success",
         payload: {},
       });
     } else if (peer.challengedAt && Date.now() - peer.challengedAt < 1000) {
@@ -277,7 +277,7 @@ export class CandorProtocolPlugin<
       return this.client.send<ProtocolEvents>(
         message.peer.peerId.toString(),
         {
-          topic: "/candor/handshake/error",
+          topic: "/cinderlink/handshake/error",
           payload: {
             error: "challenge already issued",
           },
@@ -299,7 +299,7 @@ export class CandorProtocolPlugin<
     await this.client.send<ProtocolEvents>(
       message.peer.peerId.toString(),
       {
-        topic: "/candor/handshake/challenge",
+        topic: "/cinderlink/handshake/challenge",
         payload: {
           challenge: peer.challenge,
         },
@@ -311,7 +311,7 @@ export class CandorProtocolPlugin<
   async onHandshakeChallenge(
     message: IncomingP2PMessage<
       ProtocolEvents,
-      "/candor/handshake/challenge",
+      "/cinderlink/handshake/challenge",
       EncodingOptions
     >
   ) {
@@ -329,7 +329,7 @@ export class CandorProtocolPlugin<
     await this.client.send<ProtocolEvents>(
       message.peer.peerId.toString(),
       {
-        topic: "/candor/handshake/complete",
+        topic: "/cinderlink/handshake/complete",
         payload: {
           challenge: message.payload?.challenge,
         },
@@ -341,7 +341,7 @@ export class CandorProtocolPlugin<
   async onHandshakeComplete(
     message: IncomingP2PMessage<
       ProtocolEvents,
-      "/candor/handshake/complete",
+      "/cinderlink/handshake/complete",
       EncodingOptions
     >
   ) {
@@ -383,7 +383,7 @@ export class CandorProtocolPlugin<
     await this.client.send<ProtocolEvents>(
       message.peer.peerId.toString(),
       {
-        topic: "/candor/handshake/success",
+        topic: "/cinderlink/handshake/success",
         payload: {},
       },
       { sign: true } as EncodingOptions
@@ -393,7 +393,7 @@ export class CandorProtocolPlugin<
   async onHandshakeError(
     message: IncomingP2PMessage<
       ProtocolEvents,
-      "/candor/handshake/error",
+      "/cinderlink/handshake/error",
       EncodingOptions
     >
   ) {
@@ -408,7 +408,7 @@ export class CandorProtocolPlugin<
   async onHandshakeSuccess(
     message: IncomingP2PMessage<
       ProtocolEvents,
-      "/candor/handshake/success",
+      "/cinderlink/handshake/success",
       EncodingOptions
     >
   ) {
@@ -422,14 +422,14 @@ export class CandorProtocolPlugin<
     peer.connected = true;
     this.client.peers.updatePeer(peer.peerId.toString(), peer);
     console.info(`p2p/handshake/success > authenticated ${logId}`);
-    this.client.pluginEvents.emit("/candor/handshake/success", peer as any);
+    this.client.pluginEvents.emit("/cinderlink/handshake/success", peer as any);
   }
 
   async sendHandshakeError(peerId: string, error: string) {
     await this.client.send<ProtocolEvents>(
       peerId,
       {
-        topic: "/candor/handshake/error",
+        topic: "/cinderlink/handshake/error",
         payload: {
           error,
         },
@@ -445,4 +445,4 @@ export function readablePeer(peer: Peer) {
   }]`;
 }
 
-export default CandorProtocolPlugin;
+export default CinderlinkProtocolPlugin;

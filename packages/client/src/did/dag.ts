@@ -2,7 +2,7 @@ import { GetOptions } from "ipfs-core-types/src/root";
 import { JWE } from "did-jwt";
 import { DID } from "dids";
 import { CID } from "multiformats";
-import { DAGInterface, DIDDagInterface } from "@candor/core-types";
+import { DAGInterface, DIDDagInterface } from "@cinderlink/core-types";
 
 export class DIDDag implements DIDDagInterface {
   constructor(public did: DID, private dag: DAGInterface) {}

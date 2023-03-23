@@ -12,7 +12,7 @@ export default defineConfig({
     "ipfs-core-types",
     "libp2p",
     "multiformats",
-    "@candor/tsconfig",
+    "@cinderlink/tsconfig",
     "@libp2p/interface-connection",
     "@libp2p/interface-peer-id",
     "ajv",

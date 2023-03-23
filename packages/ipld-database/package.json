@@ -1,8 +1,8 @@
 {
-  "name": "@candor/ipld-database",
-  "description": "IPLD database for @candor/client",
+  "name": "@cinderlink/ipld-database",
+  "description": "IPLD database for @cinderlink/client",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "0.1.2",
+  "version": "0.0.1",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -23,9 +23,9 @@
     "test": "vitest"
   },
   "devDependencies": {
-    "@candor/core-types": "0.1.2",
-    "@candor/test-adapters": "0.1.2",
-    "@candor/tsconfig": "workspace:^1.0.0",
+    "@cinderlink/core-types": "0.0.1",
+    "@cinderlink/test-adapters": "0.0.1",
+    "@cinderlink/tsconfig": "workspace:^1.0.0",
     "@types/ajv": "^1.0.0",
     "@types/node": "^18.13.0",
     "dids": "^3.4.0",

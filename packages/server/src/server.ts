@@ -1,7 +1,7 @@
-import { CandorClientInterface } from "@candor/core-types";
+import { CinderlinkClientInterface } from "@cinderlink/core-types";
 
-export class CandorServer {
-  constructor(private _client: CandorClientInterface) {}
+export class CinderlinkServer {
+  constructor(private _client: CinderlinkClientInterface) {}
 
   get client() {
     return this._client;
@@ -20,4 +20,4 @@ export class CandorServer {
     await this.client.stop();
   }
 }
-export default CandorServer;
+export default CinderlinkServer;

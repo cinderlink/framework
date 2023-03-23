@@ -1,21 +1,21 @@
 {
-  "name": "@candor/core",
+  "name": "@cinderlink/framework",
   "private": true,
-  "version": "0.1.2",
+  "version": "0.0.1",
   "description": "",
   "type": "module",
   "main": "index.js",
   "workspaces": [
-    "packages/*",
-    "examples/*",
-    "frontend/",
-    "ui-kit/",
-    "registry-frontend/",
-    "registry-contracts/"
+    "./packages/*",
+    "./examples/*",
+    "../social-dapp/",
+    "../ui-kit/",
+    "../registry/frontend/",
+    "../registry/contracts/"
   ],
   "scripts": {
-    "watch": "turbo watch --filter='./packages/*' --filter='./ui-kit' --continue --parallel",
-    "build": "turbo build --filter='./packages/*' --filter='./ui-kit' --continue --parallel",
+    "watch": "turbo watch --filter='./packages/*' --continue --parallel",
+    "build": "turbo build --filter='./packages/*' --continue --parallel",
     "dev": "turbo dev",
     "test": "pnpm --parallel --stream --filter=./packages/* -r test"
   },

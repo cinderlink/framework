@@ -1,6 +1,6 @@
 {
-  "name": "@candor/identifiers",
-  "description": "Account verification and derivation tools for Candor Protocol",
+  "name": "@cinderlink/identifiers",
+  "description": "Account verification and derivation tools for Cinderlink Protocol",
   "authors": "Drew <drew@cinderlink.com>",
   "version": "0.0.1",
   "type": "module",
@@ -22,7 +22,7 @@
     "test": "vitest"
   },
   "devDependencies": {
-    "@candor/tsconfig": "workspace:../tsconfig",
+    "@cinderlink/tsconfig": "workspace:../tsconfig",
     "did": "^0.5.0",
     "did-jwt": "^6.11.1",
     "did-resolver": "^4.0.1",

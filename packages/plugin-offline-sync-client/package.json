@@ -1,8 +1,8 @@
 {
-  "name": "@candor/plugin-offline-sync-client",
-  "description": "Offline sync client plugin for candor enabling users to send encrypted messages to offline users and have them delivered when they come online.",
+  "name": "@cinderlink/plugin-offline-sync-client",
+  "description": "Offline sync client plugin for cinderlink enabling users to send encrypted messages to offline users and have them delivered when they come online.",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "0.1.2",
+  "version": "0.0.1",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -22,10 +22,10 @@
     "dist"
   ],
   "devDependencies": {
-    "@candor/core-types": "0.1.2",
-    "@candor/ipld-database": "0.1.2",
-    "@candor/plugin-offline-sync-core": "0.1.2",
-    "@candor/tsconfig": "workspace:^1.0.0",
+    "@cinderlink/core-types": "0.0.1",
+    "@cinderlink/ipld-database": "0.0.1",
+    "@cinderlink/plugin-offline-sync-core": "0.0.1",
+    "@cinderlink/tsconfig": "workspace:^1.0.0",
     "@multiformats/multiaddr": "^11.4.0",
     "@types/uuid": "^9.0.0",
     "did-jwt": "^6.11.1",
@@ -44,7 +44,7 @@
     "multiformats": "^11.0.1"
   },
   "dependencies": {
-    "@candor/protocol": "workspace:^0.1.0",
+    "@cinderlink/protocol": "workspace:^0.0.1",
     "date-fns": "^2.29.3",
     "uuid": "^9.0.0"
   }

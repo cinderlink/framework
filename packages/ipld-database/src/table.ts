@@ -1,4 +1,7 @@
-import type { DIDDagInterface, TableBlockInterface } from "@candor/core-types";
+import type {
+  DIDDagInterface,
+  TableBlockInterface,
+} from "@cinderlink/core-types";
 import { CID } from "multiformats";
 import Emittery from "emittery";
 import Ajv from "ajv";
@@ -9,7 +12,7 @@ import {
   TableInterface,
   TableRow,
   TableUnwindEvent,
-} from "@candor/core-types/src/database/table";
+} from "@cinderlink/core-types/src/database/table";
 import { TableBlock } from "./block";
 import { TableQuery } from "./query";
 import { cache } from "./cache";

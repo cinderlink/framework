@@ -1,7 +1,7 @@
 import { EncodingOptions, ProtocolPayload } from "./../protocol/types";
 import { ReceiveEventHandlers } from "./../p2p/types";
 import { SubscribeEventHandlers } from "../pubsub";
-import { CandorClientEvents, CandorClientInterface } from "../client";
+import { CinderlinkClientEvents, CinderlinkClientInterface } from "../client";
 
 export type PluginEventPayloads<
   T extends Record<string, unknown> = Record<string, unknown>
@@ -23,7 +23,7 @@ export interface PluginEventDef {
 
 export interface PluginInterface<
   PluginEvents extends PluginEventDef = PluginEventDef,
-  Client extends CandorClientInterface<any> = CandorClientInterface
+  Client extends CinderlinkClientInterface<any> = CinderlinkClientInterface
 > {
   id: string;
   client: Client;
@@ -31,12 +31,12 @@ export interface PluginInterface<
   stop?(): Promise<void>;
   pubsub: SubscribeEventHandlers<PluginEvents>;
   p2p: ReceiveEventHandlers<PluginEvents>;
-  coreEvents?: Partial<PluginEventHandlers<CandorClientEvents["emit"]>>;
+  coreEvents?: Partial<PluginEventHandlers<CinderlinkClientEvents["emit"]>>;
   pluginEvents?: Partial<PluginEventHandlers<PluginEvents["emit"]>>;
 }
 export default PluginInterface;
 
 export type PluginConstructor<
-  Client extends CandorClientInterface = CandorClientInterface,
+  Client extends CinderlinkClientInterface = CinderlinkClientInterface,
   Options extends Record<string, unknown> = {}
 > = new (client: Client, options?: Options) => PluginInterface;

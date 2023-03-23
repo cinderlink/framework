@@ -12,9 +12,9 @@ export default defineConfig({
     "minisearch",
     "multiformats",
     "object-sizeof",
-    "@candor/core-types",
-    "@candor/test-adapters",
-    "@candor/tsconfig",
+    "@cinderlink/core-types",
+    "@cinderlink/test-adapters",
+    "@cinderlink/tsconfig",
     "dids",
   ],
 });

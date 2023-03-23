@@ -2,14 +2,14 @@ import { v4 as uuid } from "uuid";
 import localforage from "localforage";
 import { CID } from "multiformats";
 import type {
-  CandorClientEvents,
-  CandorClientInterface,
+  CinderlinkClientEvents,
+  CinderlinkClientInterface,
   PluginEventDef,
-} from "@candor/core-types";
+} from "@cinderlink/core-types";
 export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
   cid: string | undefined = undefined;
   document: Record<string, unknown> | undefined = undefined;
-  constructor(public client: CandorClientInterface<PluginEvents>) {}
+  constructor(public client: CinderlinkClientInterface<PluginEvents>) {}
 
   async resolve() {
     console.info(`client/identity/resolve > resolving local identity`);
@@ -101,7 +101,7 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
     let cid: string | undefined = undefined;
 
     for (const server of servers.filter((s) => !!s.peerId)) {
-      const resolved = await this.client.request<CandorClientEvents>(
+      const resolved = await this.client.request<CinderlinkClientEvents>(
         server.peerId.toString(),
         {
           topic: "/identity/resolve/request",
@@ -131,10 +131,13 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
     await Promise.all(
       this.client.peers.getServers().map(async (server) => {
         if (server.did) {
-          await this.client.send<CandorClientEvents>(server.peerId.toString(), {
-            topic: "/identity/set/request",
-            payload: { requestId: uuid(), cid },
-          });
+          await this.client.send<CinderlinkClientEvents>(
+            server.peerId.toString(),
+            {
+              topic: "/identity/set/request",
+              payload: { requestId: uuid(), cid },
+            }
+          );
         }
       })
     );

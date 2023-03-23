@@ -1,9 +1,9 @@
-import { CandorClientInterface } from "../client";
+import { CinderlinkClientInterface } from "../client";
 
 export interface IdentityInterface<Document = any> {
   cid: string | undefined;
   document: Document | undefined;
-  client: CandorClientInterface<any>;
+  client: CinderlinkClientInterface<any>;
 
   resolve(): Promise<{
     cid: string | undefined;

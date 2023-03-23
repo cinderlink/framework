@@ -3,26 +3,29 @@ import fs from "fs";
 import path from "path";
 import chalk from "chalk";
 import { ethers } from "ethers";
-import { createServer } from "@candor/server";
-import { createSignerDID, signAddressVerification } from "@candor/identifiers";
+import { createServer } from "@cinderlink/server";
+import {
+  createSignerDID,
+  signAddressVerification,
+} from "@cinderlink/identifiers";
 import { HttpApi } from "ipfs-http-server";
 import { HttpGateway } from "ipfs-http-gateway";
 
 const argv = minimist(process.argv.slice(2));
 const [command] = argv._;
-const configPath = argv.config || "candor.config.js";
+const configPath = argv.config || "cinderlink.config.js";
 
 if (command === "help" || argv.help) {
-  console.log(`${chalk.yellow("usage")}: candor [command] [options]
+  console.log(`${chalk.yellow("usage")}: cinderlink [command] [options]
 
 ${chalk.yellow("commands")}:
-  ${chalk.cyan("init")}    ${chalk.gray("initialize a new candor config")}
+  ${chalk.cyan("init")}    ${chalk.gray("initialize a new cinderlink config")}
   ${chalk.cyan("help")}    ${chalk.gray("show this help message")}
-  ${chalk.cyan("start")}   ${chalk.gray("start a candor server")}
+  ${chalk.cyan("start")}   ${chalk.gray("start a cinderlink server")}
 
 ${chalk.yellow("options")}:
   ${chalk.cyan("--config")} ${chalk.gray(
-    "path to config file (default: candor.config.js)"
+    "path to config file (default: cinderlink.config.js)"
   )}
 `);
   process.exit(0);
@@ -30,19 +33,19 @@ ${chalk.yellow("options")}:
 
 if (command === "init") {
   console.log(
-    `initializing ${chalk.cyan("candor")} at ${chalk.yellow(configPath)}`
+    `initializing ${chalk.cyan("cinderlink")} at ${chalk.yellow(configPath)}`
   );
   const wallet = ethers.Wallet.createRandom();
   fs.writeFileSync(
     configPath,
     `export default {
-        app: "candor.social",
+        app: "cinderlink.social",
         mnemonic: "${wallet.mnemonic.phrase}",
         accountNonce: 0,
         plugins: [
-          ["@candor/protocol"],
-          ["@candor/plugin-social-server"],
-          ["@candor/plugin-identity-server"],
+          ["@cinderlink/protocol"],
+          ["@cinderlink/plugin-social-server"],
+          ["@cinderlink/plugin-identity-server"],
         ],
         ipfs: {
           config: {
@@ -113,7 +116,7 @@ if (command !== "start") {
     )
   ).filter((p) => !!p);
 
-  console.log(`starting ${chalk.cyan("candor")}...`);
+  console.log(`starting ${chalk.cyan("cinderlink")}...`);
   console.info(config);
   const did = await createSignerDID(config.app, wallet, config.accountNonce);
   const addressVerification = await signAddressVerification(
@@ -147,7 +150,7 @@ if (command !== "start") {
     await gateway.stop();
     console.log(`stopping ${chalk.cyan("http api")}...`);
     await api.stop();
-    console.log(`stopping ${chalk.cyan("candor")}...`);
+    console.log(`stopping ${chalk.cyan("cinderlink")}...`);
     await server.stop();
     process.exit(0);
   });

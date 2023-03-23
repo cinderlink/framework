@@ -2,13 +2,13 @@ import {
   EncodingOptions,
   IncomingP2PMessage,
   IncomingPubsubMessage,
-} from "@candor/core-types";
+} from "@cinderlink/core-types";
 import {
   SocialClientEvents,
   SocialConnection,
   SocialConnectionFilter,
   SocialUser,
-} from "@candor/plugin-social-core";
+} from "@cinderlink/plugin-social-core";
 import SocialClientPlugin from "../plugin";
 
 const logPrefix = `plugin/social/client`;

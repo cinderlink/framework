@@ -1,22 +1,22 @@
 import {
-  CandorProtocolPlugin,
+  CinderlinkProtocolPlugin,
   decodePayload,
   encodePayload,
-} from "@candor/protocol";
+} from "@cinderlink/protocol";
 import { CID } from "multiformats";
 import type {
   Peer,
   PluginInterface,
-  CandorConstructorOptions,
+  CinderlinkConstructorOptions,
   SchemaInterface,
   SavedSchema,
   PluginEventHandler,
   OutgoingP2PMessage,
-  CandorClientInterface,
+  CinderlinkClientInterface,
   PeerStoreInterface,
   PeerRole,
   EncodingOptions,
-  CandorClientEvents,
+  CinderlinkClientEvents,
   ReceiveEvents,
   SubscribeEvents,
   ProtocolEvents,
@@ -27,8 +27,8 @@ import type {
   ProtocolRequest,
   DecodedProtocolPayload,
   EncodedProtocolPayload,
-} from "@candor/core-types";
-import type { OfflineSyncClientPluginInterface } from "@candor/plugin-offline-sync-core";
+} from "@cinderlink/core-types";
+import type { OfflineSyncClientPluginInterface } from "@cinderlink/plugin-offline-sync-core";
 import Emittery from "emittery";
 import * as json from "multiformats/codecs/json";
 import { PeerId } from "@libp2p/interface-peer-id";
@@ -36,19 +36,21 @@ import type { IPFSWithLibP2P } from "./ipfs/types";
 import { Peerstore } from "./peerstore";
 import { ClientDIDDag } from "./dag";
 import { Identity } from "./identity";
-import { Schema } from "@candor/ipld-database";
+import { Schema } from "@cinderlink/ipld-database";
 import { v4 as uuid } from "uuid";
 import { DID } from "dids";
 
-export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
-  extends Emittery<CandorClientEvents["emit"] & ProtocolEvents["emit"]>
-  implements CandorClientInterface<PluginEvents>
+export class CinderlinkClient<
+    PluginEvents extends PluginEventDef = PluginEventDef
+  >
+  extends Emittery<CinderlinkClientEvents["emit"] & ProtocolEvents["emit"]>
+  implements CinderlinkClientInterface<PluginEvents>
 {
   public started = false;
   public hasServerConnection = false;
 
   public plugins: Record<PluginInterface["id"], PluginInterface> & {
-    candor?: CandorProtocolPlugin<PluginEvents & ProtocolEvents>;
+    cinderlink?: CinderlinkProtocolPlugin<PluginEvents & ProtocolEvents>;
   };
   public pluginEvents: Emittery<PluginEvents["emit"]> = new Emittery();
   public peers: PeerStoreInterface = new Peerstore();
@@ -72,7 +74,7 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
     did,
     address,
     addressVerification,
-  }: CandorConstructorOptions) {
+  }: CinderlinkConstructorOptions) {
     super();
     this.ipfs = ipfs;
     this.did = did;
@@ -164,7 +166,7 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
         if (plugin.coreEvents)
           Object.entries(plugin.coreEvents).forEach(([topic, handler]) => {
             this.on(
-              topic as keyof CandorClientEvents["emit"],
+              topic as keyof CinderlinkClientEvents["emit"],
               (handler as PluginEventHandler).bind(plugin)
             );
           });
@@ -192,10 +194,10 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
     }
     if (
       !(await this.ipfs.libp2p.peerStore.get(peerId)).protocols.includes(
-        "/candor/1.0.0"
+        "/cinderlink/1.0.0"
       )
     ) {
-      await this.plugins.candor?.onPeerConnect(peer);
+      await this.plugins.cinderlink?.onPeerConnect(peer);
     }
   }
 
@@ -292,8 +294,8 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
       }
     }
 
-    if (this.plugins.candor?.protocolHandlers[peer.peerId.toString()]) {
-      await this.plugins.candor.protocolHandlers[
+    if (this.plugins.cinderlink?.protocolHandlers[peer.peerId.toString()]) {
+      await this.plugins.cinderlink.protocolHandlers[
         peer.peerId.toString()
       ].buffer.push(json.encode({ ...message, ...encoded }));
     }
@@ -448,7 +450,7 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
         wait.off();
         resolve(undefined);
       }, 3000);
-      const wait = this.once(`/candor/request/${requestId}`);
+      const wait = this.once(`/cinderlink/request/${requestId}`);
       wait.then((value) => {
         console.info(`request response: ${requestId}`, value);
         clearTimeout(_timeout);
@@ -480,4 +482,4 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
     await this.save();
   }
 }
-export default CandorClient;
+export default CinderlinkClient;

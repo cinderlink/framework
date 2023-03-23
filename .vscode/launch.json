@@ -13,11 +13,11 @@
       "resolveSourceMapLocations": [
         "!${workspaceFolder}/node_modules/**",
         "${workspaceFolder}/**",
-        "${workspaceFolder}/node_modules/@candor/client/**"
+        "${workspaceFolder}/node_modules/@cinderlink/client/**"
       ]
     },
     {
-      "name": "debug candor server",
+      "name": "debug cinderlink server",
       "type": "node",
       "request": "launch",
       "cwd": "${workspaceRoot}/examples/server-example/",
@@ -27,7 +27,7 @@
       "resolveSourceMapLocations": [
         "!${workspaceFolder}/node_modules/**",
         "${workspaceFolder}/**",
-        "${workspaceFolder}/node_modules/@candor/client/**"
+        "${workspaceFolder}/node_modules/@cinderlink/client/**"
       ],
       "trace": true
     }

@@ -1,4 +1,4 @@
-import { SocialProfile } from "@candor/plugin-social-core";
+import { SocialProfile } from "@cinderlink/plugin-social-core";
 import SocialClientPlugin from "../plugin";
 
 export class SocialProfiles {

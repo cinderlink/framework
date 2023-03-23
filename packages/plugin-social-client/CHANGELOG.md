@@ -1,4 +1,4 @@
-# @candor/plugin-social-client
+# @cinderlink/plugin-social-client
 
 ## 0.2.0
 

@@ -1,16 +1,16 @@
 import { rmSync } from "fs";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { createClient } from "./create";
-import { createSeed } from "@candor/identifiers";
+import { createSeed } from "@cinderlink/identifiers";
 import {
-  CandorClientInterface,
+  CinderlinkClientInterface,
   PluginInterface,
   PluginEventDef,
   ProtocolEvents,
   EncodingOptions,
   IncomingP2PMessage,
-} from "@candor/core-types";
-import { CandorProtocolPlugin } from "@candor/protocol";
+} from "@cinderlink/core-types";
+import { CinderlinkProtocolPlugin } from "@cinderlink/protocol";
 
 const response = vi.fn();
 interface TestClientEvents extends PluginEventDef {
@@ -23,7 +23,7 @@ interface TestClientEvents extends PluginEventDef {
 }
 export class TestClientPlugin implements PluginInterface<TestClientEvents> {
   id = "test-client-plugin";
-  constructor(public client: CandorClientInterface) {}
+  constructor(public client: CinderlinkClientInterface) {}
 
   p2p = {
     "/test/response": this.onTestResponse,
@@ -52,7 +52,7 @@ interface TestServerEvents extends PluginEventDef {
 }
 export class TestServerPlugin implements PluginInterface<TestServerEvents> {
   id = "test-server-plugin";
-  constructor(public client: CandorClientInterface) {}
+  constructor(public client: CinderlinkClientInterface) {}
 
   p2p = {
     "/test/request": this.onTestRequest,
@@ -75,9 +75,9 @@ export class TestServerPlugin implements PluginInterface<TestServerEvents> {
   }
 }
 
-describe("CandorClient", () => {
-  let client: CandorClientInterface<any>;
-  let server: CandorClientInterface<any>;
+describe("CinderlinkClient", () => {
+  let client: CinderlinkClientInterface<any>;
+  let server: CinderlinkClientInterface<any>;
   beforeAll(async () => {
     await rmSync("./test-client", { recursive: true, force: true });
     await rmSync("./test-server", { recursive: true, force: true });
@@ -92,7 +92,7 @@ describe("CandorClient", () => {
         Bootstrap: [],
       },
     });
-    server.addPlugin<ProtocolEvents>(new CandorProtocolPlugin(server));
+    server.addPlugin<ProtocolEvents>(new CinderlinkProtocolPlugin(server));
     server.addPlugin<TestServerEvents>(new TestServerPlugin(server));
     await server.start();
 
@@ -103,7 +103,7 @@ describe("CandorClient", () => {
         repo: "test-client",
       }
     );
-    client.addPlugin<ProtocolEvents>(new CandorProtocolPlugin(client));
+    client.addPlugin<ProtocolEvents>(new CinderlinkProtocolPlugin(client));
     client.addPlugin<TestClientEvents>(new TestClientPlugin(client));
     await client.start();
     await client.connect((await server.ipfs.id()).id, "server");

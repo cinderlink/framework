@@ -1,8 +1,8 @@
 import type { Options } from "ipfs-core";
-import type { PluginConstructor } from "@candor/core-types";
+import type { PluginConstructor } from "@cinderlink/core-types";
 import type { DID } from "dids";
-import { createClient } from "@candor/client";
-import { CandorServer } from "./server";
+import { createClient } from "@cinderlink/client";
+import { CinderlinkServer } from "./server";
 
 export interface CreateServerOptions {
   did: DID;
@@ -32,5 +32,5 @@ export async function createServer({
     console.info("adding plugin", Plugin);
     client.addPlugin(new Plugin(client, pluginOptions));
   });
-  return new CandorServer(client);
+  return new CinderlinkServer(client);
 }

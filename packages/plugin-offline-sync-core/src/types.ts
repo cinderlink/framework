@@ -4,7 +4,7 @@ import type {
   TableRow,
   OutgoingP2PMessage,
   EncodingOptions,
-} from "@candor/core-types";
+} from "@cinderlink/core-types";
 
 export type OfflineSyncSendRequest<
   Events extends PluginEventDef = PluginEventDef,

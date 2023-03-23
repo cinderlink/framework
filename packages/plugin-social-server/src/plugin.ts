@@ -9,19 +9,19 @@ import {
   SocialUsersGetResponse,
   SocialUsersSearchRequest,
   SocialUsersSearchResponse,
-} from "@candor/plugin-social-core";
+} from "@cinderlink/plugin-social-core";
 import type {
   PluginInterface,
-  CandorClientInterface,
+  CinderlinkClientInterface,
   TableRow,
   TableDefinition,
   IncomingPubsubMessage,
   IncomingP2PMessage,
   EncodingOptions,
-} from "@candor/core-types";
-import { SocialClientEvents } from "@candor/plugin-social-client";
-import { checkAddressVerification } from "@candor/identifiers";
-import {} from "@candor/plugin-social-core";
+} from "@cinderlink/core-types";
+import { SocialClientEvents } from "@cinderlink/plugin-social-client";
+import { checkAddressVerification } from "@cinderlink/identifiers";
+import {} from "@cinderlink/plugin-social-core";
 
 export type SocialServerEvents = {
   publish: {};
@@ -40,7 +40,7 @@ export type SocialServerEvents = {
 };
 
 export class SocialServerPlugin<
-  Client extends CandorClientInterface<SocialClientEvents> = CandorClientInterface<SocialClientEvents>
+  Client extends CinderlinkClientInterface<SocialClientEvents> = CinderlinkClientInterface<SocialClientEvents>
 > implements PluginInterface<SocialServerEvents, Client>
 {
   id = "socialServer";
@@ -279,7 +279,7 @@ export class SocialServerPlugin<
     }
 
     const verified = await checkAddressVerification(
-      "candor.social",
+      "cinderlink.social",
       message.peer.did,
       message.payload.address,
       message.payload.addressVerification

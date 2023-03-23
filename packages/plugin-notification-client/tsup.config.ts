@@ -6,8 +6,8 @@ export default defineConfig({
   dts: true,
   sourcemap: true,
   external: [
-    "@candor/core-types",
-    "@candor/ipld-database",
-    "@candor/plugin-social-client",
+    "@cinderlink/core-types",
+    "@cinderlink/ipld-database",
+    "@cinderlink/plugin-social-client",
   ],
 });

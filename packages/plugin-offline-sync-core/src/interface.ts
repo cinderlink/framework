@@ -4,7 +4,7 @@ import {
   PluginInterface,
   OutgoingP2PMessage,
   IncomingP2PMessage,
-} from "@candor/core-types";
+} from "@cinderlink/core-types";
 import { OfflineSyncClientEvents } from "./types";
 
 export interface OfflineSyncClientPluginInterface

@@ -9,7 +9,7 @@ import {
   TableDefinition,
   TableInterface,
   TableRow,
-} from "@candor/core-types";
+} from "@cinderlink/core-types";
 import type { CID } from "multiformats/cid";
 
 import * as json from "multiformats/codecs/json";

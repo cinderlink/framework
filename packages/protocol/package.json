@@ -1,6 +1,6 @@
 {
-  "name": "@candor/protocol",
-  "version": "0.1.0",
+  "name": "@cinderlink/protocol",
+  "version": "0.0.1",
   "description": "",
   "scripts": {
     "test": "vitest",
@@ -30,8 +30,8 @@
   "author": "Drew Ewing",
   "license": "ISC",
   "devDependencies": {
-    "@candor/core-types": "workspace:../core-types",
-    "@candor/tsconfig": "workspace:^1.0.0",
+    "@cinderlink/core-types": "workspace:../core-types",
+    "@cinderlink/tsconfig": "workspace:^1.0.0",
     "@libp2p/interface-connection": "^3.0.8",
     "@types/uuid": "^9.0.0",
     "did-jwt": "^6.11.1",

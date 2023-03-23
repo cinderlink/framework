@@ -1,5 +1,8 @@
-import { CandorClientInterface, TableDefinition } from "@candor/core-types";
-import { Schema } from "@candor/ipld-database";
+import {
+  CinderlinkClientInterface,
+  TableDefinition,
+} from "@cinderlink/core-types";
+import { Schema } from "@cinderlink/ipld-database";
 
 export const NotificationSchemaDef: Record<string, TableDefinition> = {
   notifications: {
@@ -34,7 +37,7 @@ export const NotificationSchemaDef: Record<string, TableDefinition> = {
 };
 
 export async function loadNotificationSchema(
-  client: CandorClientInterface<any>
+  client: CinderlinkClientInterface<any>
 ) {
   console.log(`plugin/notification/client > preparing schema`);
   if (!client.schemas["notification"]) {

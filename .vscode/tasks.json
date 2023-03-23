@@ -16,7 +16,7 @@
         "frontend dev",
         "anvil",
         "anvil deploy",
-        "candor server"
+        "cinderlink server"
       ],
       "dependsOrder": "sequence",
       // Mark as the default build task so cmd/ctrl+shift+b will create them
@@ -58,7 +58,7 @@
           }
         ],
         "pattern": {
-          "regexp": "^@candor/(.+):(build|watch): (.+)\\((\\d+),(\\d+)\\): (.+) TS(\\w+): (.*)$",
+          "regexp": "^@cinderlink/(.+):(build|watch): (.+)\\((\\d+),(\\d+)\\): (.+) TS(\\w+): (.*)$",
           "file": 3,
           "line": 4,
           "column": 5,
@@ -213,7 +213,7 @@
       }
     },
     {
-      "label": "candor server",
+      "label": "cinderlink server",
       "type": "shell",
       "command": "pnpm example start",
       "options": {

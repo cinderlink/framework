@@ -1,8 +1,8 @@
-import type { PluginEventDef, PluginInterface } from "@candor/core-types";
-import type { CandorClient } from "./client";
+import type { PluginEventDef, PluginInterface } from "@cinderlink/core-types";
+import type { CinderlinkClient } from "./client";
 
-export type CandorWithPlugins<Plugins extends PluginInterface[] = []> =
-  CandorClient<PluginEventDef> & {
+export type CinderlinkWithPlugins<Plugins extends PluginInterface[] = []> =
+  CinderlinkClient<PluginEventDef> & {
     plugins: {
       [K in Plugins[number]["id"]]: Plugins[number];
     };

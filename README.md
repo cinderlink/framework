@@ -1,6 +1,6 @@
-# @candor/core
+# @cinderlink/framework
 
-Tools for building dApps on the Candor platform.
+Tools for building dApps around the Cinderlink protocol.
 
 ## Repository configuration
 

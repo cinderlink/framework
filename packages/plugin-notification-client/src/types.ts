@@ -1,4 +1,4 @@
-import type { PluginEventDef } from "@candor/core-types";
+import type { PluginEventDef } from "@cinderlink/core-types";
 
 export type NotificationPayload = {
   id: string;

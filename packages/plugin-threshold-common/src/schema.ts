@@ -1,4 +1,4 @@
-import { SchemaDef, TableDefinition } from "@candor/core-types";
+import { SchemaDef, TableDefinition } from "@cinderlink/core-types";
 import { ThresholdOwnedData, ThresholdPeerData } from "./types";
 
 export const ThresholdSchema: SchemaDef = {

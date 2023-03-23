@@ -1,4 +1,4 @@
-import { ThresholdCapacityRequest } from "@candor/plugin-threshold-common";
+import { ThresholdCapacityRequest } from "@cinderlink/plugin-threshold-common";
 import {
   TableRow,
   TableDefinition,
@@ -8,9 +8,9 @@ import {
   IncomingP2PMessage,
   IncomingPubsubMessage,
   EncodingOptions,
-  CandorClientInterface,
-} from "@candor/core-types";
-import { SchemaDef } from "@candor/core-types";
+  CinderlinkClientInterface,
+} from "@cinderlink/core-types";
+import { SchemaDef } from "@cinderlink/core-types";
 import Keystore from "./keys";
 
 export interface PluginThresholdClientEvents extends PluginEventDef {
@@ -63,7 +63,7 @@ export class PluginThresholdClient
     "/threshold/capacity/request": this.onCapacityRequestPublish,
   };
 
-  constructor(public client: CandorClientInterface) {
+  constructor(public client: CinderlinkClientInterface) {
     this.keys = new Keystore();
   }
 

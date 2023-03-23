@@ -19,7 +19,7 @@ export async function createIPFS(
     },
 
     start: false,
-    repo: "candor",
+    repo: "cinderlink",
     repoAutoMigrate: false,
     EXPERIMENTAL: {
       ipnsPubsub: true,

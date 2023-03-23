@@ -1,4 +1,4 @@
-import { Peer } from "@candor/core-types";
+import { Peer } from "@cinderlink/core-types";
 import { SocialUser } from "../types";
 import SocialClientPluginInterface from "./client-plugin";
 

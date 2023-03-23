@@ -1,13 +1,13 @@
-import { SocialSyncConfig } from "@candor/plugin-social-core";
+import { SocialSyncConfig } from "@cinderlink/plugin-social-core";
 export default {
   seed: "6149b702ec3cb34951460e27c9e35a795941e466a6af90b288468016780f37bf",
   plugins: [
-    ["@candor/protocol"],
-    ["@candor/plugin-social-server"],
-    ["@candor/plugin-identity-server"],
-    ["@candor/plugin-offline-sync-server"],
+    ["@cinderlink/protocol"],
+    ["@cinderlink/plugin-social-server"],
+    ["@cinderlink/plugin-identity-server"],
+    ["@cinderlink/plugin-offline-sync-server"],
     [
-      "@candor/plugin-sync-db",
+      "@cinderlink/plugin-sync-db",
       {
         schemas: {
           ...SocialSyncConfig,

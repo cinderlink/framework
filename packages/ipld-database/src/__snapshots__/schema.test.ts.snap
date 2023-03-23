@@ -1,6 +1,6 @@
 // Vitest Snapshot v1
 
-exports[`@candor/ipld-database/schema > should create tables 1`] = `
+exports[`@cinderlink/ipld-database/schema > should create tables 1`] = `
 {
   "filters": {
     "search": {
@@ -25,7 +25,7 @@ exports[`@candor/ipld-database/schema > should create tables 1`] = `
 }
 `;
 
-exports[`@candor/ipld-database/schema > should save and restore from dag 1`] = `
+exports[`@cinderlink/ipld-database/schema > should save and restore from dag 1`] = `
 Table {
   "currentBlock": {
     "filters": {

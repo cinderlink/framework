@@ -1,8 +1,8 @@
 {
-  "name": "@candor/server-bin",
-  "description": "Candor server binary",
+  "name": "@cinderlink/server-bin",
+  "description": "Cinderlink server binary",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "0.1.2",
+  "version": "0.0.1",
   "main": "dist/bin.js",
   "type": "module",
   "module": "./dist/bin.js",
@@ -15,7 +15,7 @@
     }
   },
   "bin": {
-    "candor": "dist/bin.js"
+    "cinderlink": "dist/bin.js"
   },
   "files": [
     "dist"
@@ -26,21 +26,21 @@
     "test": "vitest"
   },
   "dependencies": {
-    "@candor/server": "0.1.2",
+    "@cinderlink/server": "0.0.1",
     "ipfs-http-gateway": "^0.13.0",
     "ipfs-http-server": "^0.15.0",
     "minimist": "^1.2.8"
   },
   "peerDependencies": {
-    "@candor/client": "workspace:^0.1.2"
+    "@cinderlink/client": "workspace:^0.0.1"
   },
   "devDependencies": {
-    "@candor/identifiers": "workspace:^0.0.1",
-    "@candor/plugin-identity-server": "workspace:^0.1.2",
-    "@candor/plugin-offline-sync-server": "workspace:^0.1.2",
-    "@candor/plugin-social-server": "workspace:^0.1.2",
-    "@candor/protocol": "workspace:^0.1.0",
-    "@candor/tsconfig": "workspace:^1.0.0",
+    "@cinderlink/identifiers": "workspace:^0.0.1",
+    "@cinderlink/plugin-identity-server": "workspace:^0.0.1",
+    "@cinderlink/plugin-offline-sync-server": "workspace:^0.0.1",
+    "@cinderlink/plugin-social-server": "workspace:^0.0.1",
+    "@cinderlink/protocol": "workspace:^0.0.1",
+    "@cinderlink/tsconfig": "workspace:^1.0.0",
     "@types/minimist": "^1.2.2",
     "chalk": "^5.2.0",
     "ethers": "^5.7.2",

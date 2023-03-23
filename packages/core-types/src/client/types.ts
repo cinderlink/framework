@@ -11,14 +11,14 @@ import {
 import { IncomingPubsubMessage } from "../pubsub";
 import { ProtocolRequest } from "../protocol";
 
-export type CandorConstructorOptions = {
+export type CinderlinkConstructorOptions = {
   ipfs: IPFSWithLibP2P;
   did: DID;
   address: string;
   addressVerification: string;
 };
 
-export interface CandorClientEvents<
+export interface CinderlinkClientEvents<
   PluginEvents extends PluginEventDef = PluginEventDef
 > extends PluginEventDef {
   send: {

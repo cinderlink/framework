@@ -3,7 +3,7 @@ import type {
   IdentityResolveRequest,
   IdentitySetRequest,
   IdentitySetResponse,
-} from "@candor/core-types";
+} from "@cinderlink/core-types";
 
 export type IdentityServerEvents = {
   publish: {};

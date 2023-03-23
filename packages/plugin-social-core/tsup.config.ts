@@ -5,5 +5,5 @@ export default defineConfig({
   format: ["esm", "cjs"],
   dts: true,
   sourcemap: true,
-  external: ["@candor/core-types", "@candor/ipld-database"],
+  external: ["@cinderlink/core-types", "@cinderlink/ipld-database"],
 });

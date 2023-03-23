@@ -1,15 +1,15 @@
 import { CID } from "multiformats";
 import { v4 as uuid } from "uuid";
-import { OfflineSyncClientPluginInterface } from "@candor/plugin-offline-sync-core";
+import { OfflineSyncClientPluginInterface } from "@cinderlink/plugin-offline-sync-core";
 import {
   SocialChatMessage,
   SocialClientEvents,
-} from "@candor/plugin-social-core";
+} from "@cinderlink/plugin-social-core";
 import {
   EncodingOptions,
   IncomingP2PMessage,
   ProtocolRequest,
-} from "@candor/core-types";
+} from "@cinderlink/core-types";
 import SocialClientPlugin from "../plugin";
 
 export class SocialChat {
@@ -60,7 +60,7 @@ export class SocialChat {
     // if the peer isn't online
     if (!peer || !peer.connected) {
       const encoded = await (
-        this.plugin.client.plugins.candor as any
+        this.plugin.client.plugins.cinderlink as any
       )?.encodeMessage(
         {
           topic: "/social/chat/message/send",

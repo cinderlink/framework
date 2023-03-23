@@ -1,12 +1,12 @@
 import type {
   PluginInterface,
-  CandorClientInterface,
+  CinderlinkClientInterface,
   TableRow,
-} from "@candor/core-types";
+} from "@cinderlink/core-types";
 import { loadNotificationSchema } from "./schema";
 import { NotificationClientEvents } from "./types";
 export class NotificationClientPlugin<
-  Client extends CandorClientInterface<NotificationClientEvents> = CandorClientInterface<NotificationClientEvents>
+  Client extends CinderlinkClientInterface<NotificationClientEvents> = CinderlinkClientInterface<NotificationClientEvents>
 > implements PluginInterface<NotificationClientEvents, Client>
 {
   id = "notificationClient";

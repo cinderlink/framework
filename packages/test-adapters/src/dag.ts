@@ -1,10 +1,10 @@
 import { CID } from "multiformats/cid";
 import { sha256 } from "multiformats/hashes/sha2";
 import * as json from "multiformats/codecs/json";
-import type { DAGInterface } from "@candor/core-types";
+import type { DAGInterface } from "@cinderlink/core-types";
 import type { DID } from "dids";
 import type { JWE } from "did-jwt";
-import { DIDDagInterface } from "@candor/core-types";
+import { DIDDagInterface } from "@cinderlink/core-types";
 
 export class TestDag implements DAGInterface {
   cache: Record<string, unknown> = {};

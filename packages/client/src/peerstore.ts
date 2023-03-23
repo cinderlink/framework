@@ -1,4 +1,4 @@
-import type { Peer, PeerStoreInterface } from "@candor/core-types";
+import type { Peer, PeerStoreInterface } from "@cinderlink/core-types";
 import { PeerId } from "@libp2p/interface-peer-id";
 
 export class Peerstore implements PeerStoreInterface {

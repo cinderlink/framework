@@ -1,4 +1,4 @@
-import { CandorClientInterface } from "../client";
+import { CinderlinkClientInterface } from "../client";
 import { QueryBuilderInterface, TableRow } from "../database";
 import { Peer } from "../p2p";
 import { PluginEventDef } from "../plugin";
@@ -11,7 +11,7 @@ export interface SyncTableRules {
   allowIncoming?: (
     row: TableRow,
     peer: Peer,
-    client: CandorClientInterface<any>
+    client: CinderlinkClientInterface<any>
   ) => Promise<boolean>;
 }
 
@@ -42,12 +42,12 @@ export interface SyncTableResponse {
 
 export interface SyncPluginEvents extends PluginEventDef {
   send: {
-    "/candor/sync/table/request": SyncTableRequest;
-    "/candor/sync/table/response": SyncTableResponse;
+    "/cinderlink/sync/table/request": SyncTableRequest;
+    "/cinderlink/sync/table/response": SyncTableResponse;
   };
   receive: {
-    "/candor/sync/table/request": SyncTableRequest;
-    "/candor/sync/table/response": SyncTableResponse;
+    "/cinderlink/sync/table/request": SyncTableRequest;
+    "/cinderlink/sync/table/response": SyncTableResponse;
   };
   publish: {};
   subscribe: {};
