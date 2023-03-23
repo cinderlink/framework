@@ -23,7 +23,7 @@ export async function createSignerDID(
   const signature = await signer.signMessage(entropy);
   const seed = await createSeed(signature);
   const did = await createDID(seed);
-  return did;
+  return { did, signature };
 }
 
 export function createAccountEntropyMessage(
@@ -31,7 +31,7 @@ export function createAccountEntropyMessage(
   address: string,
   nonce: number
 ) {
-  return `creating account for ${app} with address ${address}, nonce ${nonce}`;
+  return `account verification for ${app} with address ${address}, nonce ${nonce}`;
 }
 
 export function createAddressVerificationMessage(

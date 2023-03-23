@@ -61,7 +61,7 @@ export class SocialUsers {
         return;
       console.info(`plugin/social/client > announcing (pubsub, interval)`);
       await this.announce();
-    }, Number(this.plugin.options.announceInterval || 1000 * 60));
+    }, Number(this.plugin.options.announceInterval || 10000));
 
     await this.loadLocalUser();
   }
@@ -194,7 +194,10 @@ export class SocialUsers {
         .select()
         .execute()
     )?.first();
-    this.localUser = user;
+    this.localUser = {
+      ...user,
+      status: "online",
+    };
   }
 
   async getUserByDID(did: string): Promise<SocialUser | undefined> {
@@ -230,14 +233,6 @@ export class SocialUsers {
           EncodingOptions
         >
   ) {
-    if (!message?.peer?.did) {
-      console.warn(
-        `plugin/social/client > received social announce message from unauthenticated peer (peerId: ${message?.peer?.peerId})`,
-        message
-      );
-      return;
-    }
-
     if (!message.payload.address) {
       console.warn(
         `plugin/social/client > received social announce message from peer without address (did: ${message.peer.did})`,
@@ -255,8 +250,8 @@ export class SocialUsers {
     }
 
     const verified = await checkAddressVerification(
-      "cinderlink.social",
-      message.peer.did,
+      "candor.social",
+      message.payload.did,
       message.payload.address,
       message.payload.addressVerification
     );
@@ -268,12 +263,21 @@ export class SocialUsers {
       return;
     }
 
+    let did: string | undefined = message.peer.did;
+    if (!did) {
+      did = message.payload.did;
+      this.plugin.client.peers.updatePeer(message.peer.peerId.toString(), {
+        did: message.payload.did,
+        authenticated: true,
+      });
+    }
+
     console.info(
       `plugin/social/client > received social announce message (did: ${message.peer.did})`,
       message.payload
     );
     await this.plugin.table<SocialUser>("users")?.upsert(
-      { did: message.peer.did },
+      { did },
       {
         address: message.payload.address,
         addressVerification: message.payload.addressVerification,

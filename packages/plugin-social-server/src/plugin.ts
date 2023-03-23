@@ -279,7 +279,7 @@ export class SocialServerPlugin<
     }
 
     const verified = await checkAddressVerification(
-      "cinderlink.social",
+      "candor.social",
       message.peer.did,
       message.payload.address,
       message.payload.addressVerification

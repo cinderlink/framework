@@ -297,7 +297,6 @@ export class TableQuery<
         }
       } else if (this.terminator === "delete") {
         for (const match of matches) {
-          console.info("deleting", match.id, match);
           event.block.deleteRecord(match.id);
         }
       } else if (this.terminator === "select") {
@@ -335,10 +334,13 @@ export class TableQuery<
       }
 
       if (returning.length >= limit) {
-        returning = returning.slice(0, limit);
         event.resolved = true;
       }
     });
+
+    if (returning.length >= limit) {
+      returning = returning.slice(0, limit);
+    }
 
     if (unwound.length) {
       let writeStarted = false;
@@ -503,8 +505,8 @@ export class TableQuery<
             filters.indexes?.[indexName] || {}
           ).some((index) =>
             operation === "="
-              ? index.values[valuePosition] === value
-              : index.values[valuePosition] !== value
+              ? index.values?.[valuePosition] === value
+              : index.values?.[valuePosition] !== value
           );
           if (!hasValidIndex) {
             return false;

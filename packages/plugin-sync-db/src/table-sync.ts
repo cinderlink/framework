@@ -1,4 +1,3 @@
-import { v4 as uuid } from "uuid";
 import {
   CinderlinkClientInterface,
   Peer,
@@ -43,8 +42,9 @@ export const SyncSchemaDef = {
 };
 
 export class TableSync {
-  // _interval: NodeJS.Timer;
+  _interval: NodeJS.Timer;
   _logPrefix: string;
+
   schema: Schema;
   syncTable: TableInterface<SyncTableRow>;
 
@@ -54,47 +54,46 @@ export class TableSync {
     public client: CinderlinkClientInterface<SyncPluginEvents>
   ) {
     this._logPrefix = `/plugin/sync/${table.def.schemaId}/${table.tableId}`;
-    // this._interval = setInterval(
-    //   this.syncOutgoing.bind(this),
-    //   rules.frequency || 3000
-    // );
+    this._interval = setInterval(this.syncOutgoing.bind(this), 30000);
     this.schema = new Schema("sync", SyncSchemaDef, table.dag);
     this.syncTable = this.schema.getTable<SyncTableRow>("tables");
   }
 
   async syncOutgoing() {
-    let traversing = true;
     let offset = 0;
 
     const toSync: Record<string, TableRow[]> = {};
 
     // filter to authenticated peers
     const peers = this.client.peers.getPeers().filter((p) => !!p.did);
-    while (traversing) {
-      const chunk = await this.table
+    const chunk = await this.table
+      .query()
+      .select()
+      .offset(offset)
+      .limit(this.rules.chunkSize)
+      .execute()
+      .then((r) => r.all())
+      .catch(() => undefined);
+    if (!chunk || chunk.length === 0) {
+      return;
+    }
+    for (const row of chunk) {
+      const syncedTo = await this.syncTable
         .query()
         .select()
-        .offset(offset)
-        .limit(this.rules.chunkSize)
+        .where("schemaId", "=", this.table.def.schemaId)
+        .where("tableId", "=", this.table.tableId)
+        .where("rowId", "=", row.id)
+        .where("success", "=", true)
         .execute()
-        .then((r) => r.all());
-      if (chunk.length === 0) {
-        traversing = false;
-      }
-      for (const row of chunk) {
-        const syncedTo = await this.syncTable
-          .query()
-          .select()
-          .where("schemaId", "=", this.table.def.schemaId)
-          .where("tableId", "=", this.table.tableId)
-          .where("rowId", "=", row.id)
-          .where("success", "=", true)
-          .execute()
-          .then((r) => r.all().map((r) => r.did));
+        .then((r) => r.all().map((r) => r.did))
+        .catch(() => undefined);
+      if (syncedTo) {
         const syncPeers = peers.filter(
           (p) => !syncedTo.includes(p.did as string)
         );
         for (const peer of syncPeers) {
+          if (!peer.did) continue;
           const did: string = peer.did as string;
           if (!toSync[did]) {
             toSync[did] = [];
@@ -109,7 +108,7 @@ export class TableSync {
         this.client.send(did, {
           topic: "/cinderlink/sync/table/request",
           payload: {
-            requestId: uuid(),
+            requestId: self.crypto.randomUUID(),
             schemaId: this.table.def.schemaId,
             tableId: this.table.tableId,
             rows,

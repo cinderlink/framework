@@ -399,6 +399,7 @@ export class CinderlinkClient<
       await Promise.all(
         Object.entries(document.schemas).map(async ([name, schemaCID]) => {
           if (schemaCID) {
+            console.info("load > loading schema", name, schemaCID);
             const schema = await this.dag.loadDecrypted<SavedSchema>(
               CID.parse(schemaCID as string)
             );

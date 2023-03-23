@@ -39,7 +39,7 @@ if (command === "init") {
   fs.writeFileSync(
     configPath,
     `export default {
-        app: "cinderlink.social",
+        app: "candor.social",
         mnemonic: "${wallet.mnemonic.phrase}",
         accountNonce: 0,
         plugins: [
@@ -118,7 +118,11 @@ if (command !== "start") {
 
   console.log(`starting ${chalk.cyan("cinderlink")}...`);
   console.info(config);
-  const did = await createSignerDID(config.app, wallet, config.accountNonce);
+  const { did } = await createSignerDID(
+    config.app,
+    wallet,
+    config.accountNonce
+  );
   const addressVerification = await signAddressVerification(
     config.app,
     did.id,

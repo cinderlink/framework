@@ -1,4 +1,3 @@
-import { CID } from "multiformats";
 import { v4 as uuid } from "uuid";
 import { OfflineSyncClientPluginInterface } from "@cinderlink/plugin-offline-sync-core";
 import {
@@ -137,90 +136,65 @@ export class SocialChat {
 
     const { cid, ...msg } = message.payload;
 
-    if (!cid) {
-      console.warn(
-        `plugin/social/client > received chat message request with invalid cid`,
-        message.payload
-      );
-      return;
-    }
+    // if (!cid) {
+    //   console.warn(
+    //     `plugin/social/client > received chat message request with invalid cid`,
+    //     message.payload
+    //   );
+    //   return;
+    // }
 
-    const parsed = CID.parse(cid);
-    if (!parsed) {
-      console.warn(
-        `plugin/social/client > received chat message request with invalid cid`,
-        { message, parsed }
-      );
-      return;
-    }
+    // const parsed = CID.parse(cid);
+    // if (!parsed) {
+    //   console.warn(
+    //     `plugin/social/client > received chat message request with invalid cid`,
+    //     { message, parsed }
+    //   );
+    //   return;
+    // }
 
-    const resolved = await this.plugin.client.ipfs.dag
-      .resolve(parsed, { timeout: 10000 })
-      .catch((err) => {
-        console.warn(
-          `plugin/social/client > failed to resolve chat message from IPFS`,
-          err
-        );
-        return undefined;
-      });
-    if (resolved) {
-      console.info(`plugin/social/client > resolved message from IPFS`, {
-        cid,
-        msg,
-        resolved,
-      });
-    }
+    // const fromIPFS: SocialChatMessage | undefined = await (
+    //   this.plugin.client.dag.load(parsed, undefined, {
+    //     timeout: 5000,
+    //   }) as Promise<SocialChatMessage>
+    // ).catch((err) => {
+    //   console.warn(
+    //     `plugin/social/client > failed to load chat message from IPFS`,
+    //     err
+    //   );
+    //   console.info({ cid: parsed.toString() });
+    //   return undefined;
+    // });
 
-    const fromIPFS: SocialChatMessage | undefined = await (
-      this.plugin.client.dag.loadDecrypted(parsed, undefined, {
-        timeout: 5000,
-      }) as Promise<SocialChatMessage>
-    ).catch((err) => {
-      console.warn(
-        `plugin/social/client > failed to load chat message from IPFS`,
-        err
-      );
-      return undefined;
-    });
-
-    if (!fromIPFS) {
-      console.warn(
-        `plugin/social/client > received chat message request with invalid cid`,
-        { message, fromIPFS }
-      );
-      return;
-    }
-    console.info(`plugin/social/client > loaded message from IPFS`, {
-      cid,
-      msg,
-      fromIPFS,
-    });
-    const sortedKeysIPFS = Object.keys(fromIPFS).sort();
-    const sortedIPFS = sortedKeysIPFS.reduce((acc, key) => {
-      acc[key] = fromIPFS[key as keyof SocialChatMessage];
-      return acc;
-    }, {} as Record<string, unknown>);
-    const sortedKeysMsg = Object.keys(msg).sort();
-    const sortedMsg = sortedKeysMsg.reduce((acc, key) => {
-      acc[key] = (msg as any)[key];
-      return acc;
-    }, {} as Record<string, unknown>);
-    if (JSON.stringify(sortedIPFS) !== JSON.stringify(sortedMsg)) {
-      console.warn(
-        `plugin/social/client > received chat message request with invalid cid`,
-        { expected: sortedIPFS, received: sortedMsg }
-      );
-      return;
-    }
-
-    await this.plugin.client.ipfs.pin
-      .add(cid)
-      .catch(() => {
-        console.warn(`plugin/social/client > failed to pin chat message`);
-      })
-      .then(() => {
-        console.info(`plugin/social/client > pinned chat message`, cid, msg);
-      });
+    // if (!fromIPFS) {
+    //   console.warn(
+    //     `plugin/social/client > received chat message request with invalid cid`,
+    //     { message, fromIPFS }
+    //   );
+    //   return;
+    // }
+    // console.info(`plugin/social/client > loaded message from IPFS`, {
+    //   cid,
+    //   msg,
+    //   fromIPFS,
+    // });
+    // const sortedKeysIPFS = Object.keys(fromIPFS).sort();
+    // const sortedIPFS = sortedKeysIPFS.reduce((acc, key) => {
+    //   acc[key] = fromIPFS[key as keyof SocialChatMessage];
+    //   return acc;
+    // }, {} as Record<string, unknown>);
+    // const sortedKeysMsg = Object.keys(msg).sort();
+    // const sortedMsg = sortedKeysMsg.reduce((acc, key) => {
+    //   acc[key] = (msg as any)[key];
+    //   return acc;
+    // }, {} as Record<string, unknown>);
+    // if (JSON.stringify(sortedIPFS) !== JSON.stringify(sortedMsg)) {
+    //   console.warn(
+    //     `plugin/social/client > received chat message request with invalid cid`,
+    //     { expected: sortedIPFS, received: sortedMsg }
+    //   );
+    //   return;
+    // }
 
     const stored = await this.plugin
       .table<SocialChatMessage>("chat_messages")
