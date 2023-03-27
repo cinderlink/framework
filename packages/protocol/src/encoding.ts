@@ -4,17 +4,18 @@ import {
   EncodingOptions,
   ProtocolRequest,
   SignedProtocolPayload,
-} from "@candor/core-types";
+} from "@cinderlink/core-types";
 import * as json from "multiformats/codecs/json";
 import { DagJWS, DID, VerifyJWSResult } from "dids";
 import { JWE } from "did-jwt";
 
 export async function decodePayload<
-  Payload extends ProtocolRequest,
+  Payload,
   Encoding extends EncodingOptions,
   Encoded extends EncodedProtocolPayload<Payload, Encoding>
 >(encoded: Encoded, did?: DID): Promise<DecodedProtocolPayload<Payload>> {
   let payload: DecodedProtocolPayload<Encoded>["payload"];
+  let senderDid: string | undefined;
   if (encoded.signed) {
     if (!did) {
       throw new Error("did required to verify JWS");
@@ -26,6 +27,7 @@ export async function decodePayload<
     if (verification && verification.payload) {
       console.info("verified JWS", verification.payload);
       payload = verification.payload as Encoded;
+      senderDid = verification.didResolutionResult.didDocument?.id;
     } else {
       throw new Error("failed to verify JWS");
     }
@@ -52,11 +54,12 @@ export async function decodePayload<
     signed: encoded.signed,
     encrypted: encoded.encrypted,
     recipients: encoded.recipients,
+    ...((senderDid && { sender: senderDid }) || {}),
   } as DecodedProtocolPayload<Payload>;
 }
 
 export async function encodePayload<
-  Data extends ProtocolRequest = ProtocolRequest,
+  Data extends string | Record<string, unknown> = ProtocolRequest,
   Encoding extends EncodingOptions = EncodingOptions
 >(
   payload: Data,

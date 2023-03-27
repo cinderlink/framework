@@ -4,7 +4,7 @@ import type Emittery from "emittery";
 import type { Options as SearchOptions } from "minisearch";
 import type { DIDDagInterface } from "../dag";
 import type Minisearch from "minisearch";
-import { TableQueryInterface } from "./query";
+import { QueryBuilderInterface, TableQueryInterface } from "./query";
 import {
   BlockData,
   BlockFilters,
@@ -17,6 +17,9 @@ import {
 
 export interface TableRow {
   id: number;
+  uid: string;
+  createdAt?: number;
+  updatedAt?: number;
 }
 
 export interface TableBlockInterface<
@@ -96,21 +99,33 @@ export interface TableInterface<
 
   createBlock(prevCID: string | undefined): TableBlockInterface<Row, Def>;
   setBlock(block: TableBlockInterface<Row, Def>): void;
-  insert(data: Omit<Row, "id">): Promise<number>;
+  insert(data: Omit<Omit<Row, "id">, "uid">): Promise<string>;
+  computeUid(data: Omit<Omit<Row, "id">, "uid">): Promise<string>;
+  bulkInsert(
+    data: Omit<Omit<Row, "id">, "uid">[]
+  ): Promise<{ saved: string[]; errors: Record<number, string> }>;
   update(id: number, data: Partial<Row>): Promise<Row>;
   upsert<Index extends keyof Row = keyof Row>(
-    index: Index,
-    value: Row[Index],
+    check: Record<Index, Row[Index]>,
     data: Partial<Row>
   ): Promise<Row>;
   search(query: string, limit: number): Promise<Row[]>;
   save(): Promise<CID | undefined>;
-  query(): TableQueryInterface<Row, Def>;
+  query<Params extends any[] = any[]>(
+    fn?: (
+      qb: QueryBuilderInterface,
+      ...params: Params
+    ) => QueryBuilderInterface | undefined,
+    ...params: Params
+  ): TableQueryInterface<Row, Def>;
   load(cid: CID): Promise<void>;
   search(query: string, limit: number): Promise<Row[]>;
   unwind(
     next: (event: TableUnwindEvent<Row, Def>) => Promise<void> | void
   ): Promise<void>;
+  getById(id: number): Promise<Row | undefined>;
+  getByUid(uid: string): Promise<Row | undefined>;
+  getAllById(ids: number[]): Promise<Row[]>;
   assertValid(data: Partial<Row>): void;
   isValid(data: Partial<Row>): boolean;
   lock(): void;

@@ -1,15 +1,15 @@
 import Emittery from "emittery";
-import type { DIDDagInterface, TableRow } from "@candor/core-types";
+import type { DIDDagInterface, TableRow } from "@cinderlink/core-types";
 import { CID } from "multiformats";
 import type {
   SavedSchema,
   SchemaEvents,
   SchemaInterface,
-} from "@candor/core-types/src/database/schema";
+} from "@cinderlink/core-types/src/database/schema";
 import type {
   TableDefinition,
   TableInterface,
-} from "@candor/core-types/src/database/table";
+} from "@cinderlink/core-types/src/database/table";
 import { Table } from "./table";
 
 export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {

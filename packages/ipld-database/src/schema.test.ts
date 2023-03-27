@@ -1,9 +1,9 @@
-import { TestDIDDag } from "@candor/test-adapters/src/dag";
+import { TestDIDDag } from "@cinderlink/test-adapters/src/dag";
 import type { DID } from "dids";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { Schema } from "./schema";
-import { TableDefinition } from "@candor/core-types";
-import { createSeed, createDID } from "../../client";
+import { TableDefinition } from "@cinderlink/core-types";
+import { createSeed, createDID } from "@cinderlink/identifiers";
 
 const tableDefinition: TableDefinition = {
   schemaId: "test",
@@ -33,7 +33,7 @@ const tableDefinition: TableDefinition = {
 let did: DID;
 let dag: TestDIDDag;
 
-describe("@candor/ipld-database/schema", () => {
+describe("@cinderlink/ipld-database/schema", () => {
   beforeAll(async () => {
     const seed = await createSeed("test seed");
     did = await createDID(seed);

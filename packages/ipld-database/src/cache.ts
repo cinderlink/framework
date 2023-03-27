@@ -1,11 +1,11 @@
-import { TableDefinition } from "@candor/core-types/src/database/table";
+import { TableDefinition } from "@cinderlink/core-types/src/database/table";
 import {
   BlockData,
   QueryResult,
   TableBlockInterface,
   TableQueryInterface,
   TableRow,
-} from "@candor/core-types";
+} from "@cinderlink/core-types";
 
 import sizeof from "object-sizeof";
 import * as json from "multiformats/codecs/json";
@@ -49,25 +49,25 @@ export class DatabaseCache implements DatabaseCacheInterface {
   }
 
   cacheBlock(block: TableBlockInterface<any, any>): void {
-    // if (!block.cid || !block.cache)
-    //   throw new Error("Cannot cache unloaded block");
-    // const size = this.calculateBlockCacheSize(block);
-    // if (size > this.maxBlockCacheSize) return;
-    // this.removeBlocksToSize(this.currentBlockCacheSize + size);
-    // this.blocks[block.cid.toString()] = {
-    //   table: block.table.tableId,
-    //   age: Date.now(),
-    //   reads: 0,
-    //   block: block.cache as BlockData,
-    // };
-    // this.currentBlockCacheSize += size;
+    if (!block.cid || !block.cache)
+      throw new Error("Cannot cache unloaded block");
+    const size = this.calculateBlockCacheSize(block);
+    if (size > this.maxBlockCacheSize) return;
+    this.removeBlocksToSize(this.currentBlockCacheSize + size);
+    this.blocks[block.cid.toString()] = {
+      table: block.table.tableId,
+      age: Date.now(),
+      reads: 0,
+      block: block.cache as BlockData,
+    };
+    this.currentBlockCacheSize += size;
   }
 
   removeBlock(cid: string): void {
-    // const block = this.blocks[cid];
-    // if (!block) return;
-    // this.currentBlockCacheSize -= sizeof(block);
-    // delete this.blocks[cid];
+    const block = this.blocks[cid];
+    if (!block) return;
+    this.currentBlockCacheSize -= sizeof(block);
+    delete this.blocks[cid];
   }
 
   calculateBlockCacheSize(block: TableBlockInterface): number {
@@ -75,46 +75,46 @@ export class DatabaseCache implements DatabaseCacheInterface {
   }
 
   removeOldestBlock(): void {
-    // const oldest = Object.entries(this.blocks).reduce(
-    //   (acc, [cid, block]) => {
-    //     if (!acc || block.age < acc.age) {
-    //       return {
-    //         cid,
-    //         age: block.age,
-    //       };
-    //     }
-    //     return acc;
-    //   },
-    //   { cid: "", age: 0 }
-    // );
-    // this.removeBlock(oldest.cid);
+    const oldest = Object.entries(this.blocks).reduce(
+      (acc, [cid, block]) => {
+        if (!acc || block.age < acc.age) {
+          return {
+            cid,
+            age: block.age,
+          };
+        }
+        return acc;
+      },
+      { cid: "", age: 0 }
+    );
+    this.removeBlock(oldest.cid);
   }
 
   removeLeastReadBlock(): void {
-    // const leastRead = Object.entries(this.blocks).reduce(
-    //   (acc, [cid, block]) => {
-    //     if (!acc || block.reads < acc.reads) {
-    //       return {
-    //         cid,
-    //         reads: block.reads,
-    //       };
-    //     }
-    //     return acc;
-    //   },
-    //   { cid: "", reads: 0 }
-    // );
-    // this.removeBlock(leastRead.cid);
+    const leastRead = Object.entries(this.blocks).reduce(
+      (acc, [cid, block]) => {
+        if (!acc || block.reads < acc.reads) {
+          return {
+            cid,
+            reads: block.reads,
+          };
+        }
+        return acc;
+      },
+      { cid: "", reads: 0 }
+    );
+    this.removeBlock(leastRead.cid);
   }
 
   removeBlocksToSize(
     size: number,
     method: "age" | "popularity" = "popularity"
   ): void {
-    // while (this.currentBlockCacheSize > size) {
-    //   method === "popularity"
-    //     ? this.removeLeastReadBlock()
-    //     : this.removeOldestBlock();
-    // }
+    while (this.currentBlockCacheSize > size) {
+      method === "popularity"
+        ? this.removeLeastReadBlock()
+        : this.removeOldestBlock();
+    }
   }
 
   serializeQuery<Row extends TableRow = TableRow>(
@@ -143,21 +143,21 @@ export class DatabaseCache implements DatabaseCacheInterface {
   }
 
   cacheQuery(query: TableQueryInterface, result: QueryResult): void {
-    // const size = this.calculateQueryCacheSize(result);
-    // if (size > this.maxQueryCacheSize) return;
-    // this.removeQueriesToSize(this.currentQueryCacheSize + size);
-    // this.queries[this.serializeQuery(query)] = {
-    //   table: query.table.tableId,
-    //   age: Date.now(),
-    //   reads: 0,
-    //   result,
-    // };
-    // this.currentQueryCacheSize += size;
+    const size = this.calculateQueryCacheSize(result);
+    if (size > this.maxQueryCacheSize) return;
+    this.removeQueriesToSize(this.currentQueryCacheSize + size);
+    this.queries[this.serializeQuery(query)] = {
+      table: query.table.tableId,
+      age: Date.now(),
+      reads: 0,
+      result,
+    };
+    this.currentQueryCacheSize += size;
   }
 
   removeQuery(query: TableQueryInterface): void {
-    // const queryStr = this.serializeQuery(query);
-    // return this.removeQueryById(queryStr);
+    const queryStr = this.serializeQuery(query);
+    return this.removeQueryById(queryStr);
   }
 
   removeQueryById(queryId: string): void {
@@ -217,6 +217,7 @@ export class DatabaseCache implements DatabaseCacheInterface {
   }
 
   invalidateTable(tableId: string) {
+    console.info("invalidating table", tableId);
     Object.entries(this.blocks).forEach(([cid, block]) => {
       if (block.table === tableId) this.removeBlock(cid);
     });

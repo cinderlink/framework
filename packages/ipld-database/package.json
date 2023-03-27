@@ -1,8 +1,8 @@
 {
-  "name": "@candor/ipld-database",
-  "description": "IPLD database for @candor/client",
+  "name": "@cinderlink/ipld-database",
+  "description": "IPLD database for @cinderlink/client",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "0.1.2",
+  "version": "0.0.1",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -18,29 +18,32 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup src/index.ts --format cjs,esm --dts  --external dids,multiformats",
-    "watch": "pnpm build --watch",
+    "build": "tsup",
+    "watch": "tsup --watch",
     "test": "vitest"
   },
   "devDependencies": {
-    "@candor/core-types": "0.1.2",
-    "@candor/test-adapters": "0.1.2",
+    "@cinderlink/core-types": "workspace:0.0.1",
+    "@cinderlink/identifiers": "workspace:^0.0.1",
+    "@cinderlink/test-adapters": "workspace:0.0.1",
+    "@cinderlink/tsconfig": "workspace:^1.0.0",
     "@types/ajv": "^1.0.0",
-    "@types/node": "^18.13.0",
+    "@types/node": "^18.15.5",
     "dids": "^3.4.0",
-    "multiformats": "^11.0.1",
+    "ethers": "^5.7.2",
+    "multiformats": "^11.0.2",
     "sqlite": "^4.1.2",
-    "sqlite3": "^5.1.4",
-    "tinybench": "^2.3.1",
+    "sqlite3": "^5.1.6",
+    "tinybench": "^2.4.0",
     "ts-node": "^10.9.1",
-    "tsup": "^6.6.3",
-    "typescript": "^4.9.5",
-    "vite": "^4.1.1",
+    "tsup": "^6.7.0",
+    "typescript": "^5.0.2",
+    "vite": "^4.2.1",
     "vitest": "^0.28.5"
   },
   "peerDependencies": {
     "dids": "^3.4.0",
-    "multiformats": "^11.0.1"
+    "multiformats": "^11.0.2"
   },
   "dependencies": {
     "ajv": "^8.12.0",

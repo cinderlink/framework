@@ -1,0 +1,32 @@
+import { defineConfig } from "tsup";
+
+export default defineConfig({
+  entry: ["src/**/*.ts", "!src/**/*.test.ts"],
+  format: ["esm", "cjs"],
+  dts: true,
+  sourcemap: true,
+  external: [
+    "@cinderlink/identifiers",
+    "@cinderlink/core-types",
+    "@cinderlink/ipld-database",
+    "@cinderlink/plugin-offline-sync-core",
+    "@cinderlink/plugin-social-core",
+    "@cinderlink/protocol",
+    "@cinderlink/tsconfig",
+    "@multiformats/multiaddr",
+    "@types/uuid",
+    "did-jwt",
+    "dids",
+    "emittery",
+    "multiformats",
+    "tsup",
+    "typescript",
+    "vitest",
+    "@multiformats/multiaddr",
+    "did-jwt",
+    "dids",
+    "emittery",
+    "multiformats",
+    "uuid",
+  ],
+});

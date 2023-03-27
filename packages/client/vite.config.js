@@ -7,8 +7,8 @@ export default defineConfig({
     outDir: path.resolve(__dirname, "dist/browser"),
     lib: {
       entry: path.resolve(__dirname, "src/index.ts"),
-      name: "@candor/client",
-      fileName: (format) => `candor.${format}.js`,
+      name: "@cinderlink/client",
+      fileName: (format) => `cinderlink.${format}.js`,
     },
   },
   // output .d.ts files

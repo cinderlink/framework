@@ -1,3 +1,4 @@
+import * as json from "multiformats";
 import { PluginEventDef, PluginEventHandlers } from "../plugin/types";
 import {
   DecodedProtocolMessage,
@@ -22,8 +23,8 @@ export type LibP2PPubsubMessage<
   from: FromType;
   peer: Peer;
   sequenceNumber: number;
-  topic: string;
-  data: Data;
+  topic: keyof Events["subscribe"];
+  data: json.ByteView<Data>;
   signature?: Uint8Array;
 };
 

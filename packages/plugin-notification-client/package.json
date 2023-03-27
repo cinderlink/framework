@@ -1,8 +1,8 @@
 {
-  "name": "@candor/plugin-notification-client",
-  "version": "0.1.2",
+  "name": "@cinderlink/plugin-notification-client",
+  "version": "0.0.1",
   "authors": "Muhammad <mu@cinderlink.com>",
-  "description": "Notification plugin for candor to emit user interface notifications",
+  "description": "Notification plugin for cinderlink to emit user interface notifications",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -11,14 +11,15 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup src/index.ts --dts --format cjs,esm ",
-    "watch": "pnpm build --watch"
+    "build": "tsup",
+    "watch": "tsup --watch"
   },
   "devDependencies": {
-    "@candor/core-types": "0.1.2",
-    "@candor/ipld-database": "0.1.2",
-    "@candor/plugin-social-client": "0.2.0",
-    "tsup": "^6.6.2",
-    "typescript": "^4.9.5"
+    "@cinderlink/core-types": "workspace:0.0.1",
+    "@cinderlink/ipld-database": "workspace:0.0.1",
+    "@cinderlink/plugin-social-client": "workspace:^0.0.1",
+    "@cinderlink/tsconfig": "workspace:^1.0.0",
+    "tsup": "^6.7.0",
+    "typescript": "^5.0.2"
   }
 }

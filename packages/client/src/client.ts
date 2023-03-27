@@ -1,21 +1,23 @@
+import { multiaddr } from "@multiformats/multiaddr";
 import {
-  CandorProtocolPlugin,
+  CinderlinkProtocolPlugin,
   decodePayload,
   encodePayload,
-} from "@candor/protocol";
+} from "@cinderlink/protocol";
+import { CID } from "multiformats";
 import type {
   Peer,
   PluginInterface,
-  CandorConstructorOptions,
+  CinderlinkConstructorOptions,
   SchemaInterface,
   SavedSchema,
   PluginEventHandler,
   OutgoingP2PMessage,
-  CandorClientInterface,
+  CinderlinkClientInterface,
   PeerStoreInterface,
   PeerRole,
   EncodingOptions,
-  CandorClientEvents,
+  CinderlinkClientEvents,
   ReceiveEvents,
   SubscribeEvents,
   ProtocolEvents,
@@ -26,8 +28,8 @@ import type {
   ProtocolRequest,
   DecodedProtocolPayload,
   EncodedProtocolPayload,
-} from "@candor/core-types";
-import type { OfflineSyncClientPluginInterface } from "@candor/plugin-offline-sync-core";
+} from "@cinderlink/core-types";
+import type { OfflineSyncClientPluginInterface } from "@cinderlink/plugin-offline-sync-core";
 import Emittery from "emittery";
 import * as json from "multiformats/codecs/json";
 import { PeerId } from "@libp2p/interface-peer-id";
@@ -35,19 +37,22 @@ import type { IPFSWithLibP2P } from "./ipfs/types";
 import { Peerstore } from "./peerstore";
 import { ClientDIDDag } from "./dag";
 import { Identity } from "./identity";
-import { Schema } from "@candor/ipld-database";
+import { Schema } from "@cinderlink/ipld-database";
 import { v4 as uuid } from "uuid";
 import { DID } from "dids";
+import { peerIdFromString } from "@libp2p/peer-id";
 
-export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
-  extends Emittery<CandorClientEvents["emit"] & ProtocolEvents["emit"]>
-  implements CandorClientInterface<PluginEvents>
+export class CinderlinkClient<
+    PluginEvents extends PluginEventDef = PluginEventDef
+  >
+  extends Emittery<CinderlinkClientEvents["emit"] & ProtocolEvents["emit"]>
+  implements CinderlinkClientInterface<PluginEvents>
 {
   public started = false;
   public hasServerConnection = false;
 
   public plugins: Record<PluginInterface["id"], PluginInterface> & {
-    candor?: CandorProtocolPlugin<PluginEvents & ProtocolEvents>;
+    cinderlink?: CinderlinkProtocolPlugin<PluginEvents & ProtocolEvents>;
   };
   public pluginEvents: Emittery<PluginEvents["emit"]> = new Emittery();
   public peers: PeerStoreInterface = new Peerstore();
@@ -58,23 +63,66 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
 
   public ipfs: IPFSWithLibP2P;
   public did: DID;
+  public address: string;
+  public addressVerification: string;
   public peerId?: PeerId;
   public dag: ClientDIDDag;
   public schemas: Record<string, SchemaInterface> = {};
   public identity: Identity<PluginEvents>;
   public relayAddresses: string[] = [];
+  public role: PeerRole;
+  public initialConnectTimeout: number = 10000;
 
-  constructor({ ipfs, did }: CandorConstructorOptions) {
+  constructor({
+    ipfs,
+    did,
+    address,
+    addressVerification,
+    role,
+  }: CinderlinkConstructorOptions) {
     super();
     this.ipfs = ipfs;
     this.did = did;
+    this.address = address;
+    this.addressVerification = addressVerification;
     this.dag = new ClientDIDDag<PluginEvents>(this);
     this.identity = new Identity<PluginEvents>(this);
+    this.role = role;
     this.plugins = {};
   }
 
   async addPlugin(plugin: PluginInterface<any>) {
     this.plugins[plugin.id] = plugin;
+  }
+
+  async startPlugin(id: string) {
+    const plugin = this.getPlugin(id);
+    await plugin.start?.();
+    console.info(`/plugin/${plugin.id} > registering event handlers...`);
+    Object.entries(plugin.pubsub).forEach(([topic, handler]) => {
+      this.pubsub.on(topic, (handler as PluginEventHandler).bind(plugin));
+      this.subscribe(topic);
+    });
+
+    Object.entries(plugin.p2p).forEach(([topic, handler]) => {
+      this.p2p.on(topic, (handler as PluginEventHandler).bind(plugin));
+    });
+
+    if (plugin.coreEvents)
+      Object.entries(plugin.coreEvents).forEach(([topic, handler]) => {
+        this.on(
+          topic as keyof CinderlinkClientEvents["emit"],
+          (handler as PluginEventHandler).bind(plugin)
+        );
+      });
+
+    if (plugin.pluginEvents)
+      Object.entries(plugin.pluginEvents).forEach(([topic, handler]) => {
+        this.pluginEvents.on(
+          topic as keyof PluginEvents["emit"],
+          (handler as PluginEventHandler).bind(plugin)
+        );
+      });
   }
 
   getPlugin<T extends PluginInterface<any> = PluginInterface<any>>(
@@ -87,20 +135,16 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
     return this.plugins[id] !== undefined;
   }
 
-  async start() {
+  async start(swarmAddresses: string[] = []) {
     const info = await this.ipfs.id();
     this.peerId = info.id;
 
     console.info(`client > starting ipfs`);
     await this.ipfs.start();
 
-    await this.load();
-
     console.info(`client > registering libp2p listeners`);
-    this.ipfs.libp2p.pubsub.addEventListener(
-      "message",
-      this.onPubsubMessage.bind(this)
-    );
+    const message = this.onPubsubMessage.bind(this);
+    this.ipfs.libp2p.pubsub.addEventListener("message", message);
 
     this.ipfs.libp2p.addEventListener("peer:connect", async (connection) => {
       if (!this.peerId) {
@@ -125,50 +169,147 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
       if (!this.peers.hasPeer(peerId)) return;
       const peer = this.peers.getPeer(peerId);
       console.info(`client > peer:disconnect`, peer);
-      this.peers.updatePeer(peerId, { connected: false, authenticated: false });
       this.emit("/peer/disconnect", peer);
+      this.peers.updatePeer(peerId, { connected: false, authenticated: false });
     });
 
     this.ipfs.libp2p.pubsub.addEventListener("subscription-change", () => {
       // console.info("subscription change", event);
     });
 
+    const protocol = new CinderlinkProtocolPlugin(this as any);
+    this.addPlugin(protocol as any);
+    await this.startPlugin(protocol.id);
+
+    Promise.all(
+      swarmAddresses.map(async (addr) => {
+        const peerIdStr = addr.split("/").pop();
+        console.info("connecting to peer", peerIdStr);
+        if (peerIdStr) {
+          this.relayAddresses.push(addr);
+          const peerId = peerIdFromString(peerIdStr);
+          await this.ipfs.libp2p.peerStore.delete(peerId);
+          await this.ipfs.swarm.connect(multiaddr(addr));
+          await this.connect(peerId, "server").catch((err: Error) => {
+            console.warn(`peer ${peerIdStr} could not be dialed`);
+            console.error(err);
+          });
+        }
+      })
+    );
+
+    console.info("loading");
+    await this.load();
+
     console.info(
-      `plugins > ${Object.keys(this.plugins).length} plugins found}`
+      `plugins > ${
+        Object.keys(this.plugins).length
+      } plugins found: ${Object.keys(this.plugins).join(", ")}`
     );
     console.info(`plugins > initializing message handlers`);
     await Promise.all(
       Object.values(this.plugins).map(async (plugin) => {
-        await plugin.start?.();
-        Object.entries(plugin.pubsub).forEach(([topic, handler]) => {
-          this.pubsub.on(topic, (handler as PluginEventHandler).bind(plugin));
-          this.subscribe(topic);
-        });
-
-        Object.entries(plugin.p2p).forEach(([topic, handler]) => {
-          this.p2p.on(topic, (handler as PluginEventHandler).bind(plugin));
-        });
-
-        if (plugin.coreEvents)
-          Object.entries(plugin.coreEvents).forEach(([topic, handler]) => {
-            this.on(
-              topic as keyof CandorClientEvents["emit"],
-              (handler as PluginEventHandler).bind(plugin)
-            );
-          });
-
-        if (plugin.pluginEvents)
-          Object.entries(plugin.pluginEvents).forEach(([topic, handler]) => {
-            this.pluginEvents.on(
-              topic as keyof PluginEvents["emit"],
-              (handler as PluginEventHandler).bind(plugin)
-            );
-          });
+        if (plugin.id === protocol.id) return;
+        console.info(`/plugin/${plugin.id} > starting...`, plugin);
+        await this.startPlugin(plugin.id);
       })
     );
 
     console.info(`client > ready`);
     this.emit("/client/ready", {});
+  }
+
+  async save() {
+    if (!this.identity.hasResolved) {
+      return;
+    }
+    const schemaCIDs: Record<string, string> = {};
+    console.debug(`save > saving schemas`);
+    await Promise.all(
+      Object.entries(this.schemas).map(async ([name, schema]) => {
+        const schemaCID = await schema.save();
+        console.info(`save > saved schema ${name}`);
+        if (schemaCID) {
+          schemaCIDs[name] = schemaCID.toString();
+        }
+      })
+    );
+    const rootDoc = {
+      schemas: schemaCIDs,
+      updatedAt: Date.now(),
+    };
+    console.info(`save > encrypting root document`, rootDoc);
+    const rootCID = await this.dag.storeEncrypted(rootDoc);
+    if (rootCID) {
+      console.log(`save > saved root document with CID ${rootCID.toString()}`);
+      await this.identity.save({ cid: rootCID.toString(), document: rootDoc });
+    }
+  }
+
+  async load() {
+    if (!this.hasServerConnection && this.role !== "server") {
+      console.info(`load > waiting for server connection`);
+      await new Promise((resolve) => {
+        const timeout = setTimeout(() => {
+          resolve(false);
+        }, this.initialConnectTimeout);
+        this.p2p.once("/server/connect").then(() => {
+          clearTimeout(timeout);
+          resolve(true);
+        });
+      });
+    }
+    console.info(`load > resolving root document`);
+    const { cid, document } = await this.identity.resolve();
+    console.info(
+      `load > resolved root document with CID ${cid}. loading schemas...`,
+      { cid, document }
+    );
+    if (cid && document) {
+      if (document.schemas) {
+        await Promise.all(
+          Object.entries(document.schemas).map(async ([name, schemaCID]) => {
+            if (schemaCID) {
+              console.info("load > loading schema", name, schemaCID);
+              const schema = await this.dag
+                .loadDecrypted<SavedSchema>(
+                  CID.parse(schemaCID as string),
+                  undefined,
+                  { timeout: 1000 }
+                )
+                .catch(() => undefined);
+
+              // ask servers to pin schema
+              if (this.role !== "server") {
+                const servers = this.peers.getServers();
+                for (const server of servers) {
+                  await this.send(server.peerId.toString(), {
+                    topic: "/social/users/pin/request",
+                    payload: {
+                      requestId: uuid(),
+                      cid: schemaCID,
+                      textId: `schema.${name}`,
+                      did: this.id,
+                    } as PluginEvents["send"]["/social/users/pin/request"],
+                  });
+                }
+              }
+
+              if (schema) {
+                console.info(
+                  `load > loaded schema ${name} with CID ${schemaCID}`
+                );
+                this.schemas[name] = await Schema.fromSavedSchema(
+                  schema,
+                  this.dag
+                );
+              }
+            }
+          })
+        );
+      }
+    }
+    console.info("load > done");
   }
 
   async connect(peerId: PeerId, role: PeerRole = "peer") {
@@ -180,10 +321,10 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
     }
     if (
       !(await this.ipfs.libp2p.peerStore.get(peerId)).protocols.includes(
-        "/candor/1.0.0"
+        "/cinderlink/1.0.0"
       )
     ) {
-      await this.plugins.candor?.onPeerConnect(peer);
+      await this.plugins.cinderlink?.onPeerConnect(peer);
     }
   }
 
@@ -191,7 +332,7 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
     const peer = this.peers.getPeer(peerId.toString());
     console.info(`peer/connect > connected to ${peerId.toString()}`, peer);
     this.peers.updatePeer(peerId.toString(), { connected: true });
-    this.emit("/peer/connect", peer);
+    this.emit(`/peer/connect`, peer);
   }
 
   async onPubsubMessage<Encoding extends EncodingOptions = EncodingOptions>(
@@ -207,7 +348,15 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
     const peerId = message.detail.from;
     if (peerId === this.ipfs.libp2p.peerId) return;
 
-    const peer = this.peers.getPeer(peerId.toString());
+    let peer = this.peers.getPeer(peerId.toString());
+    if (!peer) {
+      peer = this.peers.addPeer(peerId, "peer");
+    }
+
+    const encodedPayload: EncodedProtocolPayload<
+      PluginEvents["subscribe"][keyof PluginEvents["subscribe"]],
+      Encoding
+    > = json.decode(message.detail.data);
 
     const decoded = await decodePayload<
       PluginEvents["subscribe"][keyof PluginEvents["subscribe"]],
@@ -216,7 +365,7 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
         PluginEvents["subscribe"][keyof PluginEvents["subscribe"]],
         Encoding
       >
-    >(message.detail.data, this.did);
+    >(encodedPayload, this.did);
 
     const incoming: IncomingPubsubMessage<
       PluginEvents,
@@ -227,6 +376,13 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
       topic: message.detail.topic as keyof PluginEvents["subscribe"],
       ...decoded,
     };
+
+    if (decoded.signed && decoded.sender) {
+      const sender = await this.did.resolve(decoded.sender);
+      if (sender) {
+        peer.did = decoded.sender;
+      }
+    }
 
     console.info(`p2p/in > ${incoming.topic as string}`, incoming.payload);
     this.pubsub.emit(incoming.topic, incoming);
@@ -249,7 +405,13 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
       { ...options, did: this.did }
     );
 
+    if (!this.peers.hasPeer(peerId)) {
+      console.info(`p2p/out > connecting to peer ${peerId}`);
+      await this.connect(peerIdFromString(peerId));
+    }
+
     const peer = this.peers.getPeer(peerId);
+    if (!peer) return;
     if (peer.did && !peer.connected) {
       if (this.hasPlugin("offlineSync")) {
         console.info(`p2p/out > sending message to offline peer ${peerId}`);
@@ -265,8 +427,8 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
       }
     }
 
-    if (this.plugins.candor?.protocolHandlers[peer.peerId.toString()]) {
-      await this.plugins.candor.protocolHandlers[
+    if (this.plugins.cinderlink?.protocolHandlers[peer.peerId.toString()]) {
+      await this.plugins.cinderlink.protocolHandlers[
         peer.peerId.toString()
       ].buffer.push(json.encode({ ...message, ...encoded }));
     }
@@ -319,10 +481,12 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
     message: PluginEvents["publish"][K],
     options: EncodingOptions = { sign: false, encrypt: false }
   ) {
-    const encoded = await encodePayload<typeof message, typeof options>(
-      message,
-      { ...options, did: this.did }
-    );
+    const encoded = await encodePayload<
+      PluginEvents["publish"][K] extends string | Record<string, unknown>
+        ? PluginEvents["publish"][K]
+        : never,
+      typeof options
+    >(message as any, { ...options, did: this.did });
 
     const bytes = json.encode(encoded);
 
@@ -333,62 +497,11 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
     await this.ipfs.libp2p.pubsub.publish(topic as string, bytes);
   }
 
-  async save() {
-    const schemaCIDs: Record<string, string> = {};
-    console.debug(`save > saving schemas`);
-    await Promise.all(
-      Object.entries(this.schemas).map(async ([name, schema]) => {
-        const schemaCID = await schema.save();
-        console.info(`save > saved schema ${name}`);
-        if (schemaCID) {
-          schemaCIDs[name] = schemaCID.toString();
-        }
-      })
-    );
-    const rootDoc = {
-      schemas: schemaCIDs,
-      updatedAt: Date.now(),
-    };
-    console.info(`save > encrypting root document`, rootDoc);
-    const rootCID = await this.dag.storeEncrypted(rootDoc);
-    if (rootCID) {
-      console.log(`save > saved root document with CID ${rootCID.toString()}`);
-      await this.identity.save({ cid: rootCID.toString(), document: rootDoc });
-    }
-  }
-
-  async load() {
-    console.info(`load > resolving root document`);
-    const { cid, document } = await this.identity.resolve();
-    console.info(
-      `load > resolved root document with CID ${cid}. loading schemas...`
-    );
-    if (!cid || !document) return;
-    if (document.schemas) {
-      await Promise.all(
-        Object.entries(document.schemas).map(async ([name, schemaCID]) => {
-          if (schemaCID) {
-            const schema = await this.dag.loadDecrypted<SavedSchema>(schemaCID);
-            if (schema) {
-              console.info(
-                `load > loaded schema ${name} with CID ${schemaCID}`
-              );
-              this.schemas[name] = await Schema.fromSavedSchema(
-                schema,
-                this.dag
-              );
-            }
-          }
-        })
-      );
-    }
-  }
-
   async request<
-    Encoding extends EncodingOptions = EncodingOptions,
     Events extends PluginEventDef = PluginEvents,
     OutTopic extends keyof Events["send"] = keyof Events["send"],
-    InTopic extends keyof Events["receive"] = keyof Events["receive"]
+    InTopic extends keyof Events["receive"] = keyof Events["receive"],
+    Encoding extends EncodingOptions = EncodingOptions
   >(
     peerId: string,
     message: OutgoingP2PMessage<Events, OutTopic, Encoding>,
@@ -403,25 +516,21 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
     const request: OutgoingP2PMessage<Events, OutTopic, Encoding> = {
       ...message,
       payload: {
-        ...message.payload,
+        ...(message.payload as Record<string, unknown>),
         requestId,
-      },
+      } as any,
     };
 
     console.info(`request > sending request to ${peerId}`, request);
-    await this.send<Events, keyof Events["send"], Encoding>(
-      peerId,
-      request,
-      options
-    );
-    return new Promise((resolve) => {
+
+    const result = new Promise((resolve) => {
       let _timeout: any;
+      const wait = this.once(`/cinderlink/request/${requestId}`);
       _timeout = setTimeout(() => {
         console.info(`request response timed out: ${requestId}`);
         wait.off();
         resolve(undefined);
       }, 3000);
-      const wait = this.once(`/candor/request/${requestId}`);
       wait.then((value) => {
         console.info(`request response: ${requestId}`, value);
         clearTimeout(_timeout);
@@ -430,6 +539,12 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
         );
       });
     }) as Promise<IncomingP2PMessage<Events, InTopic, Encoding> | undefined>;
+    await this.send<Events, keyof Events["send"], Encoding>(
+      peerId,
+      request,
+      options
+    );
+    return result;
   }
 
   hasSchema(name: string) {
@@ -447,4 +562,4 @@ export class CandorClient<PluginEvents extends PluginEventDef = PluginEventDef>
     await this.save();
   }
 }
-export default CandorClient;
+export default CinderlinkClient;

@@ -1,4 +1,4 @@
-import { createSeed } from "@candor/client";
+import { createSeed } from "@cinderlink/client";
 import { createServer } from "../dist/index.js";
 import { HttpApi } from "ipfs-http-server";
 import { HttpGateway } from "ipfs-http-gateway";

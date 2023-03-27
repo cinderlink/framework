@@ -1,18 +1,23 @@
-import { CandorClientInterface } from "@candor/core-types";
+import { CinderlinkClientInterface } from "@cinderlink/core-types";
 
-export class CandorServer {
-  constructor(private _client: CandorClientInterface) {}
+export class CinderlinkServer {
+  constructor(private _client: CinderlinkClientInterface) {}
 
   get client() {
     return this._client;
   }
 
   async start() {
-    await this.client.start();
+    await this.client.start([]);
+
+    process.on("SIGINT", async () => {
+      await this.stop();
+      process.exit(0);
+    });
   }
 
   async stop() {
     await this.client.stop();
   }
 }
-export default CandorServer;
+export default CinderlinkServer;

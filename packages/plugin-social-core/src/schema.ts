@@ -1,13 +1,17 @@
-import { SocialChatMessageRecord } from "./types";
-import { Schema } from "@candor/ipld-database";
-import { CandorClientInterface, TableDefinition } from "@candor/core-types";
+import { Schema } from "@cinderlink/ipld-database";
 import {
-  SocialConnectionRecord,
+  CinderlinkClientInterface,
+  TableDefinition,
+} from "@cinderlink/core-types";
+import {
+  SocialConnection,
+  SocialChatMessage,
   SocialPost,
   SocialProfile,
   SocialUser,
   SocialUserPin,
-} from "types";
+  SocialComment,
+} from "./types";
 
 export const SocialSchemaDef = {
   users: {
@@ -27,10 +31,12 @@ export const SocialSchemaDef = {
     schema: {
       type: "object",
       properties: {
+        did: { type: "string" },
+        address: { type: "string" },
+        addressVerification: { type: "string" },
         name: { type: "string" },
         bio: { type: "string" },
         avatar: { type: "string" },
-        did: { type: "string" },
         status: { type: "string" },
         updatedAt: { type: "number" },
       },
@@ -41,24 +47,19 @@ export const SocialSchemaDef = {
     encrypted: true,
     aggregate: {},
     indexes: {
-      userCid: {
-        unique: true,
-        fields: ["cid"],
-      },
       userTextId: {
         unique: true,
-        fields: ["userId", "textId"],
+        fields: ["did", "textId"],
       },
     },
     rollup: 1000,
     searchOptions: {
-      fields: ["userId", "cid", "textId"],
+      fields: ["did", "textId"],
     },
     schema: {
       type: "object",
       properties: {
-        userId: { type: "number" },
-        cid: { type: "string" },
+        did: { type: "string" },
         textId: { type: "string" },
         createdAt: { type: "number" },
         updatedAt: { type: "number" },
@@ -70,19 +71,19 @@ export const SocialSchemaDef = {
     encrypted: false,
     aggregate: {},
     indexes: {
-      userId: {
+      userUid: {
         unique: true,
-        fields: ["userId"],
+        fields: ["userUid"],
       },
     },
     rollup: 1000,
     searchOptions: {
-      fields: ["userId"],
+      fields: ["userUid"],
     },
     schema: {
       type: "object",
       properties: {
-        userId: { type: "number" },
+        userUid: { type: "string" },
         banner: { type: "string" },
         albums: {
           type: "array",
@@ -126,34 +127,29 @@ export const SocialSchemaDef = {
         from: { type: "string" },
         to: { type: "string" },
         follow: { type: "boolean" },
+        seenAt: { type: "number" },
+        createdAt: { type: "number" },
       },
     },
-  } as TableDefinition<SocialConnectionRecord>,
+  } as TableDefinition<SocialConnection>,
   posts: {
     schemaId: "social",
     encrypted: true,
     aggregate: {},
     indexes: {
-      cid: {
-        unique: true,
-        fields: ["cid"],
-      },
-      authorId: {
+      did: {
         unique: false,
-        fields: ["authorId"],
+        fields: ["did"],
       },
     },
     rollup: 1000,
     searchOptions: {
-      fields: ["cid", "authorId", "content", "attachments", "tags", "comments"],
+      fields: ["did", "content", "attachments", "tags", "comments"],
     },
     schema: {
       type: "object",
       properties: {
-        cid: {
-          type: "string",
-        },
-        authorId: { type: "number" },
+        did: { type: "string" },
         content: { type: "string" },
         attachments: { type: "array", items: { type: "string" } },
         reactions: {
@@ -169,10 +165,42 @@ export const SocialSchemaDef = {
           },
         },
         tags: { type: "array", items: { type: "string" } },
+        seenAt: { type: "number" },
         createdAt: { type: "number" },
       },
     },
   } as TableDefinition<SocialPost>,
+  comments: {
+    schemaId: "social",
+    encrypted: true,
+    aggregate: {},
+    indexes: {
+      did: {
+        unique: false,
+        fields: ["did"],
+      },
+    },
+    rollup: 1000,
+    searchOptions: {
+      fields: ["did", "content", "postUid"],
+    },
+    schema: {
+      type: "object",
+      properties: {
+        did: { type: "string" },
+        content: { type: "string" },
+        postUid: { type: "string" },
+        reactions: {
+          type: "array",
+          items: {
+            type: "string",
+          },
+        },
+        seenAt: { type: "number" },
+        createdAt: { type: "number" },
+      },
+    },
+  } as TableDefinition<SocialComment>,
   chat_messages: {
     schemaId: "social",
     encrypted: true,
@@ -180,10 +208,6 @@ export const SocialSchemaDef = {
       createdAt: "range",
     },
     indexes: {
-      cid: {
-        unique: true,
-        fields: ["cid"],
-      },
       conversation: {
         unique: false,
         fields: ["from", "to"],
@@ -191,13 +215,11 @@ export const SocialSchemaDef = {
     },
     rollup: 1000,
     searchOptions: {
-      fields: ["authorId", "cid", "content", "tags", "comments"],
+      fields: ["from", "to", "content", "tags", "comments"],
     },
     schema: {
       type: "object",
       properties: {
-        requestId: { type: "string" },
-        cid: { type: "string" },
         from: { type: "string" },
         to: { type: "string" },
         message: { type: "string" },
@@ -207,16 +229,17 @@ export const SocialSchemaDef = {
             type: "string",
           },
         },
+        seenAt: { type: "number" },
+        updatedAt: { type: "number" },
         createdAt: { type: "number" },
-        receivedAt: { type: "number" },
       },
     },
-  } as TableDefinition<SocialChatMessageRecord>,
+  } as TableDefinition<SocialChatMessage>,
 };
 
 export default SocialSchemaDef;
 
-export async function loadSocialSchema(client: CandorClientInterface<any>) {
+export async function loadSocialSchema(client: CinderlinkClientInterface<any>) {
   console.info(`plugin/social > preparing schema`);
   if (!client.schemas["social"]) {
     const schema = new Schema("social", SocialSchemaDef as any, client.dag);

@@ -5,12 +5,31 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "debug candor server",
+      "name": "frontend chrome",
+      "request": "launch",
+      "type": "chrome",
+      "url": "http://localhost:3001",
+      "webRoot": "${workspaceFolder}/apps/frontend/",
+      "resolveSourceMapLocations": [
+        "!${workspaceFolder}/node_modules/**",
+        "${workspaceFolder}/**",
+        "${workspaceFolder}/node_modules/@cinderlink/client/**"
+      ]
+    },
+    {
+      "name": "debug cinderlink server",
       "type": "node",
       "request": "launch",
       "cwd": "${workspaceRoot}/examples/server-example/",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["example", "start"]
+      "runtimeArgs": ["tsx", "src/start.ts"],
+      "localRoot": "${workspaceFolder}",
+      "resolveSourceMapLocations": [
+        "!${workspaceFolder}/node_modules/**",
+        "${workspaceFolder}/**",
+        "${workspaceFolder}/node_modules/@cinderlink/client/**"
+      ],
+      "trace": true
     }
   ]
 }

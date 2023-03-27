@@ -15,33 +15,37 @@ import type { IdentityInterface } from "../identity";
 import { SchemaInterface } from "../database/schema";
 import { SubscribeEvents } from "../pubsub";
 import { EncodingOptions, ProtocolEvents } from "../protocol";
-import { CandorClientEvents } from "./types";
+import { CinderlinkClientEvents } from "./types";
 
-export interface CandorClientInterface<
+export interface CinderlinkClientInterface<
   PluginEvents extends PluginEventDef = {
     send: {};
     receive: {};
-    emit: {};
     publish: {};
     subscribe: {};
+    emit: {};
   }
-> extends Emittery<CandorClientEvents["emit"] & ProtocolEvents["emit"]> {
+> extends Emittery<CinderlinkClientEvents["emit"] & ProtocolEvents["emit"]> {
   plugins: Record<PluginInterface["id"], PluginInterface<any>>;
   started: boolean;
   hasServerConnection: boolean;
   peers: PeerStoreInterface;
   subscriptions: string[];
   relayAddresses: string[];
+  pluginEvents: Emittery<PluginEvents["emit"]>;
 
   pubsub: Emittery<SubscribeEvents<PluginEvents>>;
   p2p: Emittery<ReceiveEvents<PluginEvents>>;
 
   ipfs: IPFSWithLibP2P;
   did: DID;
+  address: string;
+  addressVerification: string;
   peerId?: PeerId;
   dag: DIDDagInterface;
   schemas: Record<string, SchemaInterface>;
   identity: IdentityInterface;
+  initialConnectTimeout: number;
 
   get id(): string;
 
@@ -52,16 +56,13 @@ export interface CandorClientInterface<
     plugin: Plugin
   ): Promise<void>;
 
-  getPlugin<
-    E extends PluginEventDef = PluginEventDef,
-    T extends PluginInterface<E> = PluginInterface<E>
-  >(
+  getPlugin<T extends PluginInterface<any, any> = PluginInterface<any, any>>(
     id: string
   ): T;
 
   hasPlugin(id: string): boolean;
 
-  start(): Promise<void>;
+  start(connectTo: string[]): Promise<void>;
   stop(): Promise<void>;
   save(): Promise<void>;
   load(): Promise<void>;
@@ -78,10 +79,10 @@ export interface CandorClientInterface<
   ): Promise<void>;
 
   request<
-    Encoding extends EncodingOptions = EncodingOptions,
     Events extends PluginEventDef = PluginEvents,
     OutTopic extends keyof Events["send"] = keyof Events["send"],
-    InTopic extends keyof Events["receive"] = keyof Events["receive"]
+    InTopic extends keyof Events["receive"] = keyof Events["receive"],
+    Encoding extends EncodingOptions = EncodingOptions
   >(
     peerId: string,
     message: OutgoingP2PMessage<Events, OutTopic, Encoding>,

@@ -1,21 +1,21 @@
 {
-  "name": "@candor/core",
+  "name": "@cinderlink/framework",
   "private": true,
-  "version": "0.1.2",
+  "version": "0.0.1",
   "description": "",
   "type": "module",
   "main": "index.js",
   "workspaces": [
-    "packages/*",
-    "examples/*",
-    "frontend/",
-    "ui-kit/",
-    "registry-frontend/",
-    "registry-contracts/"
+    "./packages/*",
+    "./examples/*",
+    "../social-dapp/",
+    "../ui-kit/",
+    "../registry/frontend/",
+    "../registry/contracts/"
   ],
   "scripts": {
-    "watch": "turbo watch --filter='./packages/*' --filter='./ui-kit' --continue --parallel",
-    "build": "turbo build --filter='./packages/*' --filter='./ui-kit' --continue --parallel",
+    "watch": "turbo watch --filter='./packages/*' --parallel --concurrency 24",
+    "build": "turbo build --filter='./packages/*'",
     "dev": "turbo dev",
     "test": "pnpm --parallel --stream --filter=./packages/* -r test"
   },
@@ -23,7 +23,7 @@
   "author": "Drew Ewing",
   "license": "ISC",
   "devDependencies": {
-    "@changesets/cli": "^2.26.0",
+    "@changesets/cli": "^2.26.1",
     "chokidar": "^3.5.3",
     "minimist": "^1.2.8"
   }

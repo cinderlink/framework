@@ -1,8 +1,8 @@
 {
-  "name": "@candor/plugin-offline-sync-core",
-  "description": "Core types and utilities for the Candor offline sync plugin",
+  "name": "@cinderlink/plugin-offline-sync-core",
+  "description": "Core types and utilities for the Cinderlink offline sync plugin",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "0.1.2",
+  "version": "0.0.1",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -18,14 +18,15 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup src/index.ts --dts --format cjs,esm ",
-    "watch": "pnpm build --watch"
+    "build": "tsup",
+    "watch": "tsup --watch"
   },
   "devDependencies": {
-    "@candor/core-types": "0.1.2",
-    "@candor/ipld-database": "0.1.2",
-    "tsup": "^6.6.3",
-    "typescript": "^4.9.5",
+    "@cinderlink/core-types": "workspace:0.0.1",
+    "@cinderlink/ipld-database": "workspace:0.0.1",
+    "@cinderlink/tsconfig": "workspace:^1.0.0",
+    "tsup": "^6.7.0",
+    "typescript": "^5.0.2",
     "vitest": "^0.28.5"
   }
 }

@@ -1,62 +1,68 @@
+import * as ethers from "ethers";
+import {
+  createDID,
+  signAddressVerification,
+  createSeed,
+} from "@cinderlink/identifiers";
 import { rmSync } from "fs";
-import { createSeed, createClient, CandorClient } from "../../client";
+import { createClient, CinderlinkClient } from "../../client";
 import { describe, it, expect, beforeEach, afterEach, afterAll } from "vitest";
 import { Table } from "./table";
-import { BlockData, TableDefinition } from "@candor/core-types";
+import { BlockData, TableDefinition, TableRow } from "@cinderlink/core-types";
 
-export const schema: Record<string, TableDefinition> = {
-  users: {
-    schemaId: "social",
-    encrypted: false,
-    aggregate: {},
-    indexes: {
-      did: {
-        unique: true,
-        fields: ["did"],
-      },
-    },
-    rollup: 1000,
-    searchOptions: {
-      fields: ["id", "name", "did"],
-    },
-    schema: {
-      type: "object",
-      properties: {
-        name: { type: "string" },
-        bio: { type: "string" },
-        avatar: { type: "string" },
-        did: { type: "string" },
-        status: { type: "string" },
-        updatedAt: { type: "number" },
-      },
+interface NonUniqueRow extends TableRow {
+  id: number;
+  uid: string;
+  did: string;
+  update: string;
+  updatedAt: number;
+  createdAt: number;
+}
+
+interface UsersRow extends TableRow {
+  id: number;
+  name: string;
+  bio?: string;
+  avatar?: string;
+  did?: string;
+  status?: string;
+  updatedAt: number;
+}
+
+export const usersDef = {
+  schemaId: "social",
+  encrypted: false,
+  aggregate: {},
+  indexes: {
+    did: {
+      unique: true,
+      fields: ["did"],
     },
   },
-  connections: {
-    schemaId: "social",
-    encrypted: true,
-    aggregate: {},
-    indexes: {
-      outgoing: {
-        unique: true,
-        fields: ["from", "to"],
-      },
-    },
-    rollup: 1000,
-    searchOptions: {
-      fields: ["from", "to"],
-    },
-    schema: {
-      type: "object",
-      properties: {
-        from: { type: "string" },
-        to: { type: "string" },
-        follow: { type: "boolean" },
-      },
+  rollup: 1000,
+  searchOptions: {
+    fields: ["id", "name", "did"],
+  },
+  schema: {
+    type: "object",
+    properties: {
+      name: { type: "string" },
+      bio: { type: "string" },
+      avatar: { type: "string" },
+      did: { type: "string" },
+      status: { type: "string" },
+      updatedAt: { type: "number" },
     },
   },
-};
+} as TableDefinition<UsersRow>;
 
-const validDefinition: TableDefinition = {
+interface TestRow extends TableRow {
+  id: number;
+  name: string;
+  count: number;
+}
+
+const validDefinition: TableDefinition<TestRow> = {
   schemaId: "test",
   encrypted: false,
   indexes: {
@@ -81,13 +87,28 @@ const validDefinition: TableDefinition = {
   rollup: 10,
 };
 
-let client: CandorClient;
-describe("@candor/ipld-database/table", () => {
+let client: CinderlinkClient;
+describe("@cinderlink/ipld-database/table", () => {
   beforeEach(async (tst) => {
     const seed = await createSeed("test seed");
-    client = (await createClient(seed, [], {
-      repo: "test-data/" + tst.meta.name,
-    })) as CandorClient;
+    const did = await createDID(seed);
+    const wallet = ethers.Wallet.createRandom();
+    const address = wallet.address;
+    const addressVerification = await signAddressVerification(
+      "test",
+      did.id,
+      wallet
+    );
+    client = (await createClient({
+      address,
+      addressVerification,
+      did,
+      role: "peer",
+      options: {
+        repo: "test-data/" + tst.meta.name,
+      },
+    })) as CinderlinkClient;
+    client.initialConnectTimeout = 10;
     await client.start();
   });
 
@@ -100,25 +121,33 @@ describe("@candor/ipld-database/table", () => {
   });
 
   it("should create a current block", () => {
-    const table = new Table("test", validDefinition, client.dag);
+    const table = new Table<TestRow>("test", validDefinition, client.dag);
     expect(table.currentBlock).toMatchSnapshot();
   });
 
   it("should validate records", () => {
-    const table = new Table("test", validDefinition, client.dag);
+    const table = new Table<TestRow>("test", validDefinition, client.dag);
     expect(() => table.assertValid({ name: "foo", count: 1 })).not.toThrow();
+    // @ts-ignore
     expect(() => table.assertValid({ name: "foo", count: "1" })).toThrow();
+    // @ts-ignore
     expect(() => table.assertValid({ name: 1, count: 1 })).toThrow();
   });
 
   it("should insert records", async () => {
-    const table = new Table("test", validDefinition, client.dag);
-    const id = await table.insert({ name: "foo", count: 1 });
+    const table = new Table<TestRow>("test", validDefinition, client.dag);
+    const uid = await table.insert({ name: "foo", count: 1 });
     expect(Object.values(table.currentBlock.cache?.records || {}).length).toBe(
       1
     );
-    expect(id).toBe(1);
-    const results = await table.query().select().where("id", "=", id).execute();
+    expect(uid).toMatchInlineSnapshot(
+      '"bagaaieralxfilz3jrhsv5o66zhstasbsybvj5llrhcyeg4wgkvjqaph5fbeq"'
+    );
+    const results = await table
+      .query()
+      .select()
+      .where("uid", "=", uid)
+      .execute();
     expect(results).toMatchInlineSnapshot(`
       TableQueryResult {
         "rows": [
@@ -126,6 +155,7 @@ describe("@candor/ipld-database/table", () => {
             "count": 1,
             "id": 1,
             "name": "foo",
+            "uid": "bagaaieralxfilz3jrhsv5o66zhstasbsybvj5llrhcyeg4wgkvjqaph5fbeq",
           },
         ],
       }
@@ -136,18 +166,19 @@ describe("@candor/ipld-database/table", () => {
         "count": 1,
         "id": 1,
         "name": "foo",
+        "uid": "bagaaieralxfilz3jrhsv5o66zhstasbsybvj5llrhcyeg4wgkvjqaph5fbeq",
       }
     `);
   });
 
   it("should index records", async () => {
-    const table = new Table("test", validDefinition, client.dag);
+    const table = new Table<TestRow>("test", validDefinition, client.dag);
     await table.insert({ name: "foo", count: 1 });
     expect(table.currentBlock.cache?.filters?.indexes).toMatchSnapshot();
   });
 
   it("should search records", async () => {
-    const table = new Table("test", validDefinition, client.dag);
+    const table = new Table<TestRow>("test", validDefinition, client.dag);
     await table.insert({ name: "foo", count: 1 });
     await table.insert({ name: "bar", count: 1 });
     await table.insert({ name: "baz", count: 1 });
@@ -158,13 +189,14 @@ describe("@candor/ipld-database/table", () => {
           "count": 1,
           "id": 1,
           "name": "foo",
+          "uid": "bagaaieralxfilz3jrhsv5o66zhstasbsybvj5llrhcyeg4wgkvjqaph5fbeq",
         },
       ]
     `);
   });
 
   it("should rollup records", async () => {
-    const table = new Table("test", validDefinition, client.dag);
+    const table = new Table<TestRow>("test", validDefinition, client.dag);
     for (let i = 0; i < 1000; i++) {
       await table.insert({ name: `test #${i}`, count: i });
     }
@@ -173,7 +205,7 @@ describe("@candor/ipld-database/table", () => {
   });
 
   it("should aggregate records", async () => {
-    const table = new Table("test", validDefinition, client.dag);
+    const table = new Table<TestRow>("test", validDefinition, client.dag);
     for (let i = 0; i < 11; i++) {
       await table.insert({ name: `test #${i}`, count: i });
     }
@@ -188,7 +220,7 @@ describe("@candor/ipld-database/table", () => {
   });
 
   it("should rollup records with indexes", async () => {
-    const table = new Table("test", validDefinition, client.dag);
+    const table = new Table<TestRow>("test", validDefinition, client.dag);
     for (let i = 0; i < 11; i++) {
       await table.insert({ name: `test #${i}`, count: i });
     }
@@ -199,7 +231,7 @@ describe("@candor/ipld-database/table", () => {
   });
 
   it("should rollup records with aggregates", async () => {
-    const table = new Table("test", validDefinition, client.dag);
+    const table = new Table<TestRow>("test", validDefinition, client.dag);
     for (let i = 0; i < 11; i++) {
       await table.insert({ name: `test #${i}`, count: i });
     }
@@ -214,7 +246,7 @@ describe("@candor/ipld-database/table", () => {
   });
 
   it("should rollup records with search", async () => {
-    const table = new Table("test", validDefinition, client.dag);
+    const table = new Table<TestRow>("test", validDefinition, client.dag);
     for (let i = 0; i < 11; i++) {
       await table.insert({ name: `test #${i}`, count: i });
     }
@@ -225,13 +257,14 @@ describe("@candor/ipld-database/table", () => {
           "count": 10,
           "id": 11,
           "name": "test #10",
+          "uid": "bagaaiera5cclqznug4jgdkche2c2xtzdrr4vg6ytx266smmnwpiamzdcv4va",
         },
       ]
     `);
   });
 
   it("should rewrite previous blocks to update", async () => {
-    const table = new Table("test", validDefinition, client.dag);
+    const table = new Table<TestRow>("test", validDefinition, client.dag);
     for (let i = 0; i < 100; i++) {
       await table.insert({ name: `test #${i}`, count: i });
     }
@@ -250,6 +283,7 @@ describe("@candor/ipld-database/table", () => {
         "count": 1337,
         "id": 2,
         "name": "test three",
+        "uid": "bagaaierazrl3zpw6mauy7gzr6pu4youw6injufdhylqkqnerpb4wnbqggpca",
       }
     `);
 
@@ -258,7 +292,7 @@ describe("@candor/ipld-database/table", () => {
 
   describe("upsert", () => {
     it("should update inserted records", async () => {
-      const table = new Table("test", validDefinition, client.dag);
+      const table = new Table<TestRow>("test", validDefinition, client.dag);
       for (let i = 0; i < 11; i++) {
         await table.insert({ name: `test #${i}`, count: i });
       }
@@ -269,10 +303,13 @@ describe("@candor/ipld-database/table", () => {
         name: "test #1",
         count: 1,
       });
-      await table.upsert("id", result?.id, {
-        name: "test three",
-        count: 1337,
-      });
+      await table.upsert(
+        { id: result?.id },
+        {
+          name: "test three",
+          count: 1337,
+        }
+      );
 
       const updated = await table.getById(result?.id as number);
       expect(updated).toMatchObject({
@@ -283,9 +320,9 @@ describe("@candor/ipld-database/table", () => {
     });
 
     it("should insert new records", async () => {
-      const table = new Table("test", validDefinition, client.dag);
+      const table = new Table<TestRow>("test", validDefinition, client.dag);
       for (let i = 0; i < 11; i++) {
-        await table.upsert("name", `test #${i}`, { count: i });
+        await table.upsert({ name: `test #${i}` }, { count: i });
       }
       const records = await table.query().select().execute();
       expect(records.all().length).toBe(11);
@@ -298,13 +335,14 @@ describe("@candor/ipld-database/table", () => {
     });
 
     it("should insert records with unique indexes", async () => {
-      const users = new Table("users", schema.users, client.dag);
-      const returned = await users.upsert("did", "foo:bar", { name: "bar" });
+      const users = new Table<UsersRow>("users", usersDef, client.dag);
+      const returned = await users.upsert({ did: "foo:bar" }, { name: "bar" });
       expect(returned).toMatchInlineSnapshot(`
         {
           "did": "foo:bar",
           "id": 1,
           "name": "bar",
+          "uid": "bagaaieradbrlgbyiagiu4zzfadvwxskwm5vi3r3ucg56d5bgcj7xl5khnifa",
         }
       `);
       const selected = await users
@@ -318,22 +356,31 @@ describe("@candor/ipld-database/table", () => {
           "did": "foo:bar",
           "id": 1,
           "name": "bar",
+          "uid": "bagaaieradbrlgbyiagiu4zzfadvwxskwm5vi3r3ucg56d5bgcj7xl5khnifa",
         }
       `);
       expect(returned).toMatchObject(selected);
     });
 
     it("should update records with unique indexes", async () => {
-      const users = new Table("users", schema.users, client.dag);
-      const inserted = await users.insert({ did: "foo:bar", name: "bar" });
-      expect(inserted).toMatchInlineSnapshot("1");
+      const users = new Table<UsersRow>("users", usersDef, client.dag);
+      const inserted = await users.insert({
+        did: "foo:bar",
+        name: "bar",
+        updatedAt: 0,
+      });
+      expect(inserted).toMatchInlineSnapshot(
+        '"bagaaieradbrlgbyiagiu4zzfadvwxskwm5vi3r3ucg56d5bgcj7xl5khnifa"'
+      );
 
-      const upserted = await users.upsert("did", "foo:bar", { name: "baz" });
+      const upserted = await users.upsert({ did: "foo:bar" }, { name: "baz" });
       expect(upserted).toMatchInlineSnapshot(`
         {
           "did": "foo:bar",
           "id": 1,
           "name": "baz",
+          "uid": "bagaaieradbrlgbyiagiu4zzfadvwxskwm5vi3r3ucg56d5bgcj7xl5khnifa",
+          "updatedAt": 0,
         }
       `);
 
@@ -348,11 +395,77 @@ describe("@candor/ipld-database/table", () => {
           "did": "foo:bar",
           "id": 1,
           "name": "baz",
+          "uid": "bagaaieradbrlgbyiagiu4zzfadvwxskwm5vi3r3ucg56d5bgcj7xl5khnifa",
+          "updatedAt": 0,
         }
       `);
 
       expect(upserted).toMatchObject(selected);
       expect(upserted).not.toMatchObject(inserted);
+    });
+
+    it("should create distinct unique identifiers for records with unique indexes", async () => {
+      const users = new Table<UsersRow>("users", usersDef, client.dag);
+      const inserted = await users.insert({
+        did: "foo:bar",
+        name: "bar",
+        updatedAt: 0,
+      });
+
+      const computed = await users.computeUid({
+        did: "foo:bar",
+        name: "baz",
+        updatedAt: 123,
+      });
+      expect(computed).toMatch(inserted);
+    });
+
+    it("should create deterministic identifiers for records without unique indexes", async () => {
+      const nonUniqueDef: TableDefinition<NonUniqueRow> = {
+        schemaId: "test",
+        aggregate: {},
+        indexes: {},
+        searchOptions: {
+          fields: ["did", "update"],
+        },
+        schema: {
+          type: "object",
+          properties: {
+            id: { type: "number" },
+            uid: { type: "string" },
+            did: { type: "string" },
+            update: { type: "string" },
+            updatedAt: { type: "number" },
+            createdAt: { type: "number" },
+          },
+        },
+        encrypted: false,
+        rollup: 1000,
+      };
+      const nonUnique = new Table<NonUniqueRow>(
+        "nonUnique",
+        nonUniqueDef,
+        client.dag
+      );
+      const recordA = {
+        did: "foo:bar",
+        update: "bar",
+        updatedAt: 0,
+        createdAt: 0,
+      };
+      const recordB = {
+        did: "foo:bar",
+        update: "baz",
+        updatedAt: 123,
+        createdAt: 123,
+      };
+      const insertedA = await nonUnique.insert(recordA);
+      const computedA = await nonUnique.computeUid(recordA);
+      expect(computedA).toMatch(insertedA);
+      const insertedB = await nonUnique.insert(recordB);
+      const computedB = await nonUnique.computeUid(recordB);
+      expect(computedB).toMatch(insertedB);
+      expect(computedA).not.toMatch(computedB);
     });
   });
 });

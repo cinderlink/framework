@@ -4,14 +4,15 @@ import {
   BlockHeaders,
   BlockIndexes,
   InstructionType,
+  OrderByInstruction,
   QueryBuilderInterface,
   TableDefinition,
-} from "@candor/core-types";
+} from "@cinderlink/core-types";
 import {
   TableRow,
   TableInterface,
   TableBlockInterface,
-} from "@candor/core-types/src/database/table";
+} from "@cinderlink/core-types/src/database/table";
 import {
   TableQueryInterface,
   QueryInstruction,
@@ -24,7 +25,7 @@ import {
   DeleteInstruction,
   SelectInstruction,
   ReturningInstruction,
-} from "@candor/core-types/src/database/query";
+} from "@cinderlink/core-types/src/database/query";
 import { TableBlock } from "./block";
 import { cache } from "./cache";
 
@@ -38,11 +39,13 @@ export class QueryBuilder<Row extends TableRow = TableRow>
 {
   terminator: string | undefined = undefined;
   constructor(public instructions: QueryInstruction<Row>[] = []) {}
-  where<Key extends keyof Row = keyof Row>(
+  where<Key extends keyof Row = keyof Row, Op extends Operation = Operation>(
     this: QueryBuilderInterface<Row>,
     field: Key,
-    operation: Operation,
-    value: Row[Key]
+    operation: Op,
+    value: Op extends "in" | "!in" | "bwtween" | "!between"
+      ? Row[Key][]
+      : Row[Key]
   ) {
     this.instructions.push({
       instruction: "where",
@@ -294,7 +297,6 @@ export class TableQuery<
         }
       } else if (this.terminator === "delete") {
         for (const match of matches) {
-          console.info("deleting", match.id, match);
           event.block.deleteRecord(match.id);
         }
       } else if (this.terminator === "select") {
@@ -332,10 +334,13 @@ export class TableQuery<
       }
 
       if (returning.length >= limit) {
-        returning = returning.slice(0, limit);
         event.resolved = true;
       }
     });
+
+    if (returning.length >= limit) {
+      returning = returning.slice(0, limit);
+    }
 
     if (unwound.length) {
       let writeStarted = false;
@@ -392,9 +397,28 @@ export class TableQuery<
         }
       }
       if (rewriteBlock) {
+        rewriteBlock.changed = true;
         this.table.setBlock(rewriteBlock);
+        cache.invalidateTable(this.table.tableId);
       }
       this.table.unlock();
+    }
+
+    // orderBy
+    const orderByInstruction = this.instructions.find(
+      (i) => i.instruction === "orderBy"
+    ) as OrderByInstruction<Row>;
+    if (orderByInstruction) {
+      const { field, direction } = orderByInstruction;
+      returning = returning.sort((a, b) => {
+        if (a[field] < b[field]) {
+          return direction === "asc" ? -1 : 1;
+        }
+        if (a[field] > b[field]) {
+          return direction === "asc" ? 1 : -1;
+        }
+        return 0;
+      });
     }
 
     const result = new TableQueryResult<Row>(returning);
@@ -429,7 +453,7 @@ export class TableQuery<
           (operation === "=" && aggregation > value) ||
           (operation === "in" &&
             Math.max(...(value as Row[keyof Row][]).map(Number)) <
-              aggregation) ||
+              (aggregation as number)) ||
           (operation === "between" &&
             (value as [Row[keyof Row], Row[keyof Row]])?.[1] < aggregation)
         ) {
@@ -442,26 +466,29 @@ export class TableQuery<
           (operation === "=" && aggregation < value) ||
           (operation === "in" &&
             Math.min(...(value as Row[keyof Row][]).map(Number)) >
-              aggregation) ||
+              (aggregation as number)) ||
           (operation === "between" &&
-            (value as [Row[keyof Row]])?.[0] > aggregation)
+            ((value as [Row[keyof Row]])?.[0] as number) >
+              (aggregation as number))
         ) {
           return false;
         }
       } else if (aggregate === "range") {
         const [min, max] = aggregation as [number, number];
         if (
-          (operation === "<=" && max > value) ||
-          (operation === "<" && max >= value) ||
-          (operation === ">=" && min < value) ||
-          (operation === ">" && min <= value) ||
-          (operation === "=" && (min > value || max < value)) ||
+          (operation === "<=" && max > (value as number)) ||
+          (operation === "<" && max >= (value as number)) ||
+          (operation === ">=" && min < (value as number)) ||
+          (operation === ">" && min <= (value as number)) ||
+          (operation === "=" &&
+            (min > (value as number) || max < (value as number))) ||
           (operation === "in" &&
             (Math.min(...(value as Row[keyof Row][]).map(Number)) > max ||
               Math.max(...(value as Row[keyof Row][]).map(Number)) < min)) ||
           (operation === "between" &&
-            ((value as [Row[keyof Row], Row[keyof Row]])?.[1] < min ||
-              (value as [Row[keyof Row]])?.[0] > max))
+            (((value as [Row[keyof Row], Row[keyof Row]])?.[1] as number) <
+              min ||
+              ((value as [Row[keyof Row]])?.[0] as number) > max))
         ) {
           return false;
         }
@@ -478,8 +505,8 @@ export class TableQuery<
             filters.indexes?.[indexName] || {}
           ).some((index) =>
             operation === "="
-              ? index.values[valuePosition] === value
-              : index.values[valuePosition] !== value
+              ? index.values?.[valuePosition] === value
+              : index.values?.[valuePosition] !== value
           );
           if (!hasValidIndex) {
             return false;
@@ -545,22 +572,22 @@ export class TableQuery<
           break;
         }
       } else if (operation === "<") {
-        if (Number(record[field]) >= value) {
+        if (Number(record[field]) >= (value as number)) {
           match = false;
           break;
         }
       } else if (operation === "<=") {
-        if (Number(record[field]) > value) {
+        if (Number(record[field]) > (value as number)) {
           match = false;
           break;
         }
       } else if (operation === ">") {
-        if (Number(record[field]) <= value) {
+        if (Number(record[field]) <= (value as number)) {
           match = false;
           break;
         }
       } else if (operation === ">=") {
-        if (Number(record[field]) < value) {
+        if (Number(record[field]) < (value as number)) {
           match = false;
           break;
         }
@@ -572,9 +599,9 @@ export class TableQuery<
       } else if (operation === "between") {
         if (
           Number(record[field]) <
-            (value as [Row[keyof Row], Row[keyof Row]])?.[0] ||
+            ((value as [Row[keyof Row], Row[keyof Row]])?.[0] as number) ||
           Number(record[field]) >
-            (value as [Row[keyof Row], Row[keyof Row]])?.[1]
+            ((value as [Row[keyof Row], Row[keyof Row]])?.[1] as number)
         ) {
           match = false;
           break;

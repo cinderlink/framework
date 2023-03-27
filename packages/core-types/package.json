@@ -1,8 +1,8 @@
 {
-  "name": "@candor/core-types",
-  "description": "Core types for @candor/client",
+  "name": "@cinderlink/core-types",
+  "description": "Core types for @cinderlink/client",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "0.1.2",
+  "version": "0.0.1",
   "type": "module",
   "main": "src/index.ts",
   "types": "dist/index.d.ts",
@@ -17,24 +17,25 @@
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts --dts",
-    "watch": "tsup src/index.ts --dts --watch",
+    "build": "tsup",
+    "watch": "pnpm build --watch",
     "test": "vitest"
   },
   "devDependencies": {
-    "@libp2p/interface-connection": "^3.0.8",
+    "@cinderlink/tsconfig": "workspace:^1.0.0",
+    "@libp2p/interface-connection": "^3.1.1",
     "@libp2p/interface-peer-id": "^2.0.1",
     "ajv": "^8.12.0",
-    "did-jwt": "^6.11.1",
+    "did-jwt": "^6.11.5",
     "dids": "^3.4.0",
     "emittery": "^1.0.1",
     "ipfs-core-types": "^0.14.0",
     "it-pushable": "^3.1.2",
     "libp2p": "^0.42.2",
     "minisearch": "^6.0.1",
-    "multiformats": "^11.0.1",
-    "tsup": "^6.6.3",
-    "typescript": "^4.9.5",
+    "multiformats": "^11.0.2",
+    "tsup": "^6.7.0",
+    "typescript": "^5.0.2",
     "vitest": "^0.28.5"
   },
   "peerDependencies": {
@@ -43,6 +44,6 @@
     "emittery": "^1.0.1",
     "ipfs-core-types": "^0.13.0",
     "libp2p": "^0.41.0",
-    "multiformats": "^11.0.1"
+    "multiformats": "^11.0.2"
   }
 }

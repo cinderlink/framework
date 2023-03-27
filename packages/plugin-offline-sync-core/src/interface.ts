@@ -3,17 +3,24 @@ import {
   PluginEventDef,
   PluginInterface,
   OutgoingP2PMessage,
-} from "@candor/core-types";
+  IncomingP2PMessage,
+} from "@cinderlink/core-types";
 import { OfflineSyncClientEvents } from "./types";
 
 export interface OfflineSyncClientPluginInterface
   extends PluginInterface<OfflineSyncClientEvents> {
   sendMessage<
     Events extends PluginEventDef = PluginEventDef,
-    Topic extends keyof Events["send"] = keyof Events["send"],
+    OutTopic extends keyof Events["send"] = keyof Events["send"],
     Encoding extends EncodingOptions = EncodingOptions
   >(
     recipient: string,
-    encoded: OutgoingP2PMessage<Events, Topic, Encoding>
-  ): Promise<void>;
+    outgoing: OutgoingP2PMessage<Events, OutTopic, Encoding>
+  ): Promise<
+    IncomingP2PMessage<
+      OfflineSyncClientEvents,
+      "/offline/send/response",
+      Encoding
+    >
+  >;
 }

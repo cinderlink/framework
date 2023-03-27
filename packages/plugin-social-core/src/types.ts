@@ -1,14 +1,16 @@
-import { TableRow } from "@candor/core-types";
+import { PluginEventDef, TableRow } from "@cinderlink/core-types";
 
 export type SocialUserStatus = "online" | "offline" | "away";
 
-export interface SocialConnectionRecord extends TableRow {
+export interface SocialConnection extends TableRow {
   from: string;
   to: string;
   follow: boolean;
 }
 
 export interface SocialUser extends TableRow {
+  address?: string;
+  addressVerification?: string;
   name: string;
   bio: string;
   status: SocialUserStatus;
@@ -18,7 +20,8 @@ export interface SocialUser extends TableRow {
 }
 
 export interface SocialUserPin extends TableRow {
-  userId: number;
+  did: string;
+  uid: string;
   cid: string;
   textId: string;
   createdAt: number;
@@ -26,7 +29,7 @@ export interface SocialUserPin extends TableRow {
 }
 
 export interface SocialProfile extends TableRow {
-  userId: number;
+  userUid: string;
   banner: string;
   albums: string[];
   favoritePosts: string[];
@@ -35,116 +38,101 @@ export interface SocialProfile extends TableRow {
 }
 
 export interface SocialPost extends TableRow {
-  cid?: string;
-  authorId: number;
+  uid: string;
+  cid: string;
+  did: string;
   content: string;
-  attachments: string[];
-  comments: string[];
-  reactions: string[];
-  tags: string[];
+  attachments?: string[];
+  comments?: string[];
+  reactions?: string[];
+  tags?: string[];
   createdAt: number;
 }
 
 export interface SocialReaction extends TableRow {
-  postId: number;
+  postUid: string;
   reaction: "like" | "love" | "haha" | "wow" | "sad" | "angry";
   from: string;
   createdAt: number;
 }
 
 export interface SocialComment extends TableRow {
-  postId: number;
-  body: string;
-  authorId: number;
+  postUid: string;
+  content: string;
+  cid: string;
+  did: string;
   createdAt: number;
 }
 
-export type SocialClientPluginEvents = {
-  ready: void;
-  "/response/${string}":
-    | SocialUserSearchResponseMessage
-    | SocialUserGetResponseMessage;
-  "/chat/message/sent": SocialChatMessageRequest;
-  "/chat/message/received": SocialChatMessageRecord;
-  "/chat/message/response": SocialChatMessageRecord;
-};
-
-export type SocialConnectionMessage = {
+export interface SocialChatMessage extends TableRow {
+  uid: string;
+  cid: string;
   from: string;
-  to: string;
-  requestId: string;
-  follow: boolean;
-};
-
-export type SocialAnnounceMessage = {
-  requestId: string;
-  name: string;
-  bio: string;
-  avatar: string;
-  status: "online" | "offline" | "away";
-  updatedAt: number;
-};
-
-export type SocialChatMessageOutgoing = {
   to: string;
   message: string;
   attachments?: string[];
-};
-
-export type SocialChatMessageRequest = SocialChatMessageOutgoing & {
-  requestId: string;
-  cid: string;
-  from: string;
-};
-
-export type SocialChatMessageResponse = {
-  requestId: string;
-  accepted: boolean;
-  cid: string;
-};
-
-export interface SocialChatMessageRecord
-  extends SocialChatMessageRequest,
-    TableRow {
   createdAt: number;
+  seenAt: number;
   acceptedAt: number;
   rejectedAt?: number;
 }
 
-export type SocialUpdateMessage = {
-  requestId: string;
-  post: SocialPost;
-};
+export interface SocialClientPluginEvents {
+  ready: void;
+}
 
-export type SocialUpdatesRequestMessage = {
-  requestId: string;
-  author: string;
-  since: number;
-};
-
-export type SocialUpdatesResponseMessage = {
-  requestId: string;
-  updates: SocialPost[];
-};
-
-export type SocialUserSearchRequestMessage = {
+export interface SocialUsersSearchRequest {
   requestId: string;
   query: string;
-};
+}
 
-export type SocialUserSearchResponseMessage = {
+export interface SocialUsersSearchResponse {
   requestId: string;
   results: SocialUser[];
-};
+}
 
-export type SocialUserGetRequestMessage = {
+export interface SocialUsersPinRequest {
   requestId: string;
   did: string;
-};
+  cid: string;
+  textId?: string;
+}
 
-export type SocialUserGetResponseMessage = {
+export interface SocialUsersPinResponse {
+  requestId: string;
+  pin: SocialUserPin;
+}
+
+export interface SocialUsersGetRequest {
+  requestId: string;
+  did: string;
+}
+
+export interface SocialUsersGetResponse {
   requestId: string;
   user: SocialUser;
-};
+}
 
 export type SocialConnectionFilter = "in" | "out" | "mutual" | "all";
+
+export interface SocialClientEvents extends PluginEventDef {
+  send: {
+    "/social/users/announce": Partial<SocialUser>;
+    "/social/users/search/request": SocialUsersSearchRequest;
+    "/social/users/search/response": SocialUsersSearchResponse;
+    "/social/users/pin/request": SocialUsersPinRequest;
+    "/social/users/pin/response": SocialUsersPinResponse;
+  };
+  receive: {
+    "/social/users/announce": Partial<SocialUser>;
+    "/social/users/search/response": SocialUsersSearchResponse;
+    "/social/users/pin/response": SocialUsersPinResponse;
+  };
+  publish: {
+    "/social/users/announce": Partial<SocialUser>;
+  };
+  subscribe: {
+    "/social/users/announce": Partial<SocialUser>;
+  };
+  emit: {};
+}

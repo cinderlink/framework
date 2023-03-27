@@ -1,6 +1,9 @@
-import { Schema } from "@candor/ipld-database";
-import { CandorClientInterface, TableDefinition } from "@candor/core-types";
-import { OfflineSyncRecord } from "types";
+import { Schema } from "@cinderlink/ipld-database";
+import {
+  CinderlinkClientInterface,
+  TableDefinition,
+} from "@cinderlink/core-types";
+import { OfflineSyncRecord } from "./types";
 
 export const OfflineSyncSchemaDef: Record<string, TableDefinition<any>> = {
   messages: {
@@ -42,7 +45,7 @@ export const OfflineSyncSchemaDef: Record<string, TableDefinition<any>> = {
 export default OfflineSyncSchemaDef;
 
 export async function loadOfflineSyncSchema(
-  client: CandorClientInterface<any>
+  client: CinderlinkClientInterface<any>
 ) {
   console.info(`plugin/offlineSync > preparing schema`);
   if (!client.schemas["offlineSync"]) {

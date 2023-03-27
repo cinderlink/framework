@@ -39,24 +39,22 @@ export interface HandshakeError extends ProtocolRequest {
   error: string;
 }
 
-export type ProtocolJWSResult<
-  Payload extends ProtocolRequest = ProtocolRequest
-> = VerifyJWSResult & {
+export type ProtocolJWSResult<Payload = ProtocolRequest> = VerifyJWSResult & {
   payload: Payload;
 };
 
 export type SignedProtocolPayload<
-  Payload extends ProtocolRequest = ProtocolRequest,
+  Payload = ProtocolRequest,
   Verified extends boolean = false
 > = Verified extends true ? ProtocolJWSResult<Payload> : DagJWS;
 
 export type EncryptedProtocolPayload<
-  Payload extends ProtocolRequest = ProtocolRequest,
+  Payload = ProtocolRequest,
   Decrypted extends boolean = false
 > = Decrypted extends true ? ByteView<Payload> : JWE;
 
 export type ProtocolPayload<
-  Payload extends ProtocolRequest = ProtocolRequest,
+  Payload = ProtocolRequest,
   Encoding extends EncodingOptions = EncodingOptions
 > = Encoding["encrypt"] extends true
   ? EncryptedProtocolPayload<
@@ -68,17 +66,18 @@ export type ProtocolPayload<
   : Payload;
 
 export type DecodedProtocolPayload<
-  Request extends ProtocolRequest = ProtocolRequest,
+  Request = ProtocolRequest,
   Encoding extends EncodingOptions = EncodingOptions
 > = {
   payload: Request;
   signed?: Encoding["sign"];
   encrypted?: Encoding["encrypt"];
   recipients?: Encoding["recipients"];
+  sender?: string;
 };
 
 export type EncodedProtocolPayload<
-  Payload extends ProtocolPayload = ProtocolPayload,
+  Payload = ProtocolPayload,
   Encoding extends EncodingOptions = EncodingOptions
 > = {
   signed?: Encoding["sign"];
@@ -88,7 +87,7 @@ export type EncodedProtocolPayload<
 };
 
 export type ProtocolMessage<
-  Payload extends ProtocolRequest = ProtocolRequest,
+  Payload = ProtocolRequest,
   Topic = string,
   Encoding extends EncodingOptions = EncodingOptions
 > = EncodedProtocolPayload<Payload, Encoding> & {
@@ -104,7 +103,7 @@ export type DecodedProtocolMessage<
   Encoding extends EncodingOptions = EncodingOptions
 > = {
   topic: Topic;
-  payload: Events[Type][Topic] & ProtocolRequest;
+  payload: Events[Type][Topic];
   peer: Peer;
   signed?: Encoding["sign"];
   encrypted?: Encoding["encrypt"];
@@ -112,32 +111,27 @@ export type DecodedProtocolMessage<
 };
 
 export interface ProtocolEvents<
-  PluginEvents extends PluginEventDef = {
-    send: {};
-    receive: {};
-    publish: {};
-    subscribe: {};
-    emit: {};
-  }
+  PluginEvents extends PluginEventDef = PluginEventDef
 > extends PluginEventDef {
   send: {
-    "/candor/handshake/request": HandshakeRequest;
-    "/candor/handshake/challenge": HandshakeChallenge;
-    "/candor/handshake/complete": HandshakeComplete;
-    "/candor/handshake/success": HandshakeSuccess;
-    "/candor/handshake/error": HandshakeError;
+    "/cinderlink/ping": {};
+    "/cinderlink/handshake/request": HandshakeRequest;
+    "/cinderlink/handshake/challenge": HandshakeChallenge;
+    "/cinderlink/handshake/complete": HandshakeComplete;
+    "/cinderlink/handshake/success": HandshakeSuccess;
+    "/cinderlink/handshake/error": HandshakeError;
   };
   receive: {
-    "/candor/handshake/request": HandshakeRequest;
-    "/candor/handshake/challenge": HandshakeChallenge;
-    "/candor/handshake/complete": HandshakeComplete;
-    "/candor/handshake/success": HandshakeSuccess;
-    "/candor/handshake/error": HandshakeError;
+    "/cinderlink/handshake/request": HandshakeRequest;
+    "/cinderlink/handshake/challenge": HandshakeChallenge;
+    "/cinderlink/handshake/complete": HandshakeComplete;
+    "/cinderlink/handshake/success": HandshakeSuccess;
+    "/cinderlink/handshake/error": HandshakeError;
   };
   emit: {
-    "/candor/handshake/success": Peer & ProtocolRequest;
+    "/cinderlink/handshake/success": Peer;
   } & {
-    [key in `/candor/request/${string}`]:
+    [key in `/cinderlink/request/${string}`]:
       | DecodedProtocolMessage<PluginEvents>
       | DecodedProtocolMessage<PluginEvents>;
   };

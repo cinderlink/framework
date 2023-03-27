@@ -1,7 +1,7 @@
 .DS_Store
 node_modules
 apps/*
-examples/*
+**/cinderlink.config.js
 /bin
 /turbosvelte-cli
 build
@@ -18,6 +18,8 @@ package
 .turbo
 **/build/**
 **/dist/**
+cinderlink
+/cinderlink
 candor
 /candor
 /docker/data

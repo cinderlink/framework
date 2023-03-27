@@ -1,0 +1,7 @@
+{
+  "name": "@cinderlink/tsconfig",
+  "version": "1.0.0",
+  "files": [
+    "tsconfig.json"
+  ]
+}

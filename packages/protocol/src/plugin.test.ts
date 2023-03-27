@@ -2,13 +2,16 @@ import { rmSync } from "fs";
 import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import { createSeed, createClient } from "../../client/src";
 import ProtocolPlugin from "./plugin";
-import { CandorClientInterface, ProtocolEvents } from "@candor/core-types";
+import {
+  CinderlinkClientInterface,
+  ProtocolEvents,
+} from "@cinderlink/core-types";
 
 const fn = vi.fn();
 
 describe("handleProtocol", () => {
-  let client: CandorClientInterface<ProtocolEvents>;
-  let server: CandorClientInterface<ProtocolEvents>;
+  let client: CinderlinkClientInterface<ProtocolEvents>;
+  let server: CinderlinkClientInterface<ProtocolEvents>;
   beforeAll(async () => {
     await rmSync("./test-client", { recursive: true, force: true });
     await rmSync("./test-server", { recursive: true, force: true });
@@ -39,8 +42,8 @@ describe("handleProtocol", () => {
   });
 
   it("can send and receive messages", async () => {
-    client.on("/candor/handshake/success", fn);
-    server.on("/candor/handshake/success", fn);
+    client.pluginEvents.on("/cinderlink/handshake/success", fn);
+    server.pluginEvents.on("/cinderlink/handshake/success", fn);
 
     await server.start();
     await client.start();
@@ -48,7 +51,7 @@ describe("handleProtocol", () => {
     const serverPeer = await server.ipfs.id();
     await client.connect(serverPeer.id);
 
-    await client.once("/candor/handshake/success");
+    await client.once("/cinderlink/handshake/success");
     expect(fn).toHaveBeenCalledTimes(2);
   });
 

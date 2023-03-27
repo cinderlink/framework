@@ -1,16 +1,17 @@
 import type {
-  CandorClientInterface,
+  CinderlinkClientInterface,
   DAGInterface,
   PluginEventDef,
-} from "@candor/core-types";
+} from "@cinderlink/core-types";
 import { DIDDag } from "./did/dag";
 import * as json from "multiformats/codecs/json";
 import { CID } from "multiformats";
+import { GetOptions } from "ipfs-core-types/src/root";
 
 export class ClientDag<Plugins extends PluginEventDef = PluginEventDef>
   implements DAGInterface
 {
-  constructor(private client: CandorClientInterface<Plugins>) {}
+  constructor(private client: CinderlinkClientInterface<Plugins>) {}
 
   async store<T>(
     data: T,
@@ -26,10 +27,14 @@ export class ClientDag<Plugins extends PluginEventDef = PluginEventDef>
     return cid;
   }
 
-  async load<T>(cid: CID | string, path?: string): Promise<T> {
+  async load<T>(
+    cid: CID | string,
+    path?: string,
+    options: GetOptions = {}
+  ): Promise<T> {
     const stored = await this.client.ipfs.dag.get(
       typeof cid === "string" ? CID.parse(cid) : cid,
-      { path }
+      { path, ...options }
     );
     return stored.value as T;
   }
@@ -38,7 +43,7 @@ export class ClientDag<Plugins extends PluginEventDef = PluginEventDef>
 export class ClientDIDDag<
   Plugins extends PluginEventDef = PluginEventDef
 > extends DIDDag {
-  constructor(client: CandorClientInterface<Plugins>) {
+  constructor(client: CinderlinkClientInterface<Plugins>) {
     super(client.did, new ClientDag(client));
   }
 }

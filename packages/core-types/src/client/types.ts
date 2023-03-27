@@ -1,8 +1,9 @@
 import type { IPFSWithLibP2P } from "../ipfs";
-import type { IncomingP2PMessage, Peer } from "../p2p";
+import type { IncomingP2PMessage, Peer, PeerRole } from "../p2p";
 import type { DID } from "dids";
 import { PluginEventDef } from "../plugin";
 import {
+  IdentityResolved,
   IdentityResolveRequest,
   IdentityResolveResponse,
   IdentitySetRequest,
@@ -11,12 +12,15 @@ import {
 import { IncomingPubsubMessage } from "../pubsub";
 import { ProtocolRequest } from "../protocol";
 
-export type CandorConstructorOptions = {
+export type CinderlinkConstructorOptions = {
   ipfs: IPFSWithLibP2P;
   did: DID;
+  address: string;
+  addressVerification: string;
+  role: PeerRole;
 };
 
-export interface CandorClientEvents<
+export interface CinderlinkClientEvents<
   PluginEvents extends PluginEventDef = PluginEventDef
 > extends PluginEventDef {
   send: {
@@ -33,10 +37,11 @@ export interface CandorClientEvents<
   };
   emit: {
     "/client/ready": ProtocolRequest;
-    "/peer/connect": Peer & ProtocolRequest;
-    "/peer/disconnect": Peer & ProtocolRequest;
-    "/peer/handshake": Peer & ProtocolRequest;
+    "/peer/connect": Peer;
+    "/peer/disconnect": Peer;
+    "/peer/handshake": Peer;
     "/peer/message": IncomingP2PMessage<PluginEvents>;
     "/pubsub/message": IncomingPubsubMessage<PluginEvents>;
+    "/identity/resolved": IdentityResolved;
   };
 }
