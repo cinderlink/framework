@@ -11,6 +11,7 @@ import {
   SocialUser,
   SocialUserPin,
   SocialComment,
+  SocialReaction,
 } from "./types";
 
 export const SocialSchemaDef = {
@@ -201,6 +202,41 @@ export const SocialSchemaDef = {
       },
     },
   } as TableDefinition<SocialComment>,
+  reactions: {
+    schemaId: "social",
+    encrypted: true,
+    aggregate: {},
+    indexes: {
+      cid: {
+        unique: true,
+        fields: ["cid"],
+      },
+      from: {
+        unique: false,
+        fields: ["from"],
+      },
+    },
+    rollup: 1000,
+    searchOptions: {
+      fields: ["cid", "did", "postCid"],
+    },
+    schema: {
+      type: "object",
+      properties: {
+        cid: {
+          type: "string",
+        },
+        emoji: {
+          type: "string",
+        },
+        from: { type: "string" },
+        postCid: { type: "string" },
+        postUid: { type: "string" },
+        commentCid: { type: "string" },
+        createdAt: { type: "number" },
+      },
+    },
+  } as TableDefinition<SocialReaction>,
   chat_messages: {
     schemaId: "social",
     encrypted: true,
