@@ -1,4 +1,8 @@
-import { SocialComment, SocialPost } from "@cinderlink/plugin-social-core";
+import {
+  SocialComment,
+  SocialPost,
+  SocialReaction,
+} from "@cinderlink/plugin-social-core";
 import { OfflineSyncClientPluginInterface } from "@cinderlink/plugin-offline-sync-core";
 import SocialClientPlugin from "../plugin";
 
@@ -124,5 +128,59 @@ export class SocialPosts {
 
   async getLocalUserPosts(): Promise<SocialPost[]> {
     return this.getUserPosts(this.plugin.client.id);
+  }
+
+  async createReaction(
+    reaction: Partial<SocialReaction>
+  ): Promise<SocialReaction> {
+    const { postCid, commentCid } = reaction;
+    if (!postCid && !commentCid) {
+      throw new Error("postCid or commentCid is required to create a reaction");
+    }
+
+    const cid = await this.plugin.client.dag.store(reaction);
+    if (!cid) {
+      throw new Error("failed to store reaction");
+    }
+
+    const save = {
+      ...reaction,
+      cid: cid.toString(),
+      from: reaction.from || this.plugin.client.id,
+    };
+    const saved = await this.plugin.table<SocialReaction>("reactions").upsert(
+      { cid: cid.toString() },
+      {
+        ...save,
+        postCid,
+      }
+    );
+
+    if (saved === undefined) {
+      throw new Error("failed to upsert reaction");
+    }
+
+    return saved as SocialReaction;
+  }
+
+  async deleteReaction(
+    reaction: Partial<SocialReaction>
+  ): Promise<SocialReaction> {
+    const { postCid, commentCid, cid, from } = reaction;
+    if (!postCid && !commentCid) {
+      throw new Error("postCid or commentCid is required to create a reaction");
+    }
+
+    const deleted = await this.plugin
+      .table<SocialReaction>("reactions")
+      .query()
+      .where("cid", "=", cid as string)
+      .where("from", "=", from as string)
+      .returning()
+      .delete()
+      .execute()
+      .then((res) => res.first());
+
+    return deleted;
   }
 }

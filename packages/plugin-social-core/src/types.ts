@@ -50,10 +50,13 @@ export interface SocialPost extends TableRow {
 }
 
 export interface SocialReaction extends TableRow {
-  postUid: string;
-  reaction: "like" | "love" | "haha" | "wow" | "sad" | "angry";
+  cid: string;
   from: string;
+  emoji: string;
   createdAt: number;
+  commentCid?: string;
+  postUid: string;
+  postCid?: string;
 }
 
 export interface SocialComment extends TableRow {
