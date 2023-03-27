@@ -1,5 +1,7 @@
 .DS_Store
 node_modules
+apps/*
+examples/*
 /bin
 /turbosvelte-cli
 build
@@ -26,4 +28,3 @@ vite.config.js.timestamp.*
 pnpm-lock.yaml
 pnpm-debug.log
 **/broadcast/**
-apps/*
