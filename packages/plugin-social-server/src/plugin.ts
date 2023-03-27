@@ -127,12 +127,12 @@ export class SocialServerPlugin<
     return this.saveUser(message.peer.did, {
       address: message.payload.address,
       addressVerification: message.payload.addressVerification,
-      name: message.payload.name,
-      bio: message.payload.bio,
-      status: message.payload.status,
-      avatar: message.payload.avatar,
+      name: message.payload.name || "",
+      bio: message.payload.bio || "",
+      status: message.payload.status || "",
+      avatar: message.payload.avatar || "",
       did: message.peer.did,
-      updatedAt: message.payload.updatedAt,
+      updatedAt: message.payload.updatedAt || 0,
     });
   }
 
@@ -199,12 +199,12 @@ export class SocialServerPlugin<
     return this.saveUser(message.peer.did, {
       address: message.payload.address,
       addressVerification: message.payload.addressVerification,
-      name: message.payload.name,
-      bio: message.payload.bio,
-      status: message.payload.status,
-      avatar: message.payload.avatar,
+      name: message.payload.name || "",
+      bio: message.payload.bio || "",
+      status: message.payload.status || "",
+      avatar: message.payload.avatar || "",
       did: message.peer.did,
-      updatedAt: message.payload.updatedAt,
+      updatedAt: message.payload.updatedAt || 0,
     });
   }
 
