@@ -41,7 +41,7 @@
     "did-jwt": "^6.11.0",
     "dids": "^3.4.0",
     "emittery": "^1.0.1",
-    "multiformats": "^11.0.1"
+    "multiformats": "^11.0.2"
   },
   "dependencies": {
     "@cinderlink/protocol": "workspace:^0.0.1",

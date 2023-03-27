@@ -133,7 +133,9 @@ export class TableBlock<
 
   async records() {
     if (!this.cache.records && this.cid) {
-      console.info(`ipld-database/block: loading records from ${this.cid}`);
+      console.info(
+        `ipld-database/block: loading records from ${this.cid || "new block"}`
+      );
       this.cache.records = await this.loadData<Row[]>(
         this.cid!,
         "/records"
@@ -144,13 +146,17 @@ export class TableBlock<
 
     if (!this.cache.records) {
       console.info(
-        `ipld-database/block: creating empty records object for ${this.cid}`
+        `ipld-database/block: creating empty records object for ${
+          this.cid || "new block"
+        }`
       );
       this.cache.records = {};
     }
 
     if (!this.cache.records) {
-      throw new Error(`Block records not found: ${this.cid}/records`);
+      throw new Error(
+        `Block records not found: ${this.cid || "new block"}/records`
+      );
     }
 
     return this.cache.records;
@@ -431,6 +437,12 @@ export class TableBlock<
     this.table.assertValid(update);
     await this.assertUniqueConstraints(update as Row, id);
     const records = await this.records();
+    const hasChanged = Object.entries(update).some(
+      ([key, value]) => records[id][key as keyof Row] !== value
+    );
+    if (!hasChanged) {
+      return;
+    }
     records[id] = { ...records[id], ...update };
     this.cache.records = records;
     this.changed = true;
@@ -522,14 +534,23 @@ export class TableBlock<
       recordsTo = 1;
     }
 
-    if (recordsFrom !== Number(this.cache.headers!.recordsFrom) + 1) {
+    if (
+      Number(recordsFrom) !==
+      Number(this.cache.headers!.recordsFrom || 0) + 1
+    ) {
       throw new Error(
         `ipld/block: recordsFrom mismatch: ${recordsFrom} (min id) !== ${
           this.cache.headers!.recordsFrom + 1
         } (headers)`
       );
     }
-    if (recordsTo !== Number(this.cache.headers!.recordsTo)) {
+    if (Number(recordsTo) !== Number(this.cache.headers!.recordsTo)) {
+      console.warn(
+        `ipld/block: cache invalid'`,
+        Number(recordsTo),
+        Number(this.cache.headers!.recordsTo || 0),
+        this.cache
+      );
       throw new Error(
         `ipld/block: recordsTo mismatch: ${recordsTo} (max id) !== ${
           this.cache.headers!.recordsTo

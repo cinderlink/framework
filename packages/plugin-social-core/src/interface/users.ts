@@ -18,5 +18,5 @@ export interface SocialUsersInterface {
   saveLocalUser(): Promise<void>;
   loadLocalUser(): Promise<SocialUser>;
   getUserByDID(did: string): Promise<SocialUser | undefined>;
-  getUser(userId: number): Promise<SocialUser | undefined>;
+  getUser(uid: string): Promise<SocialUser | undefined>;
 }

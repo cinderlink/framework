@@ -25,6 +25,7 @@
   "license": "ISC",
   "devDependencies": {
     "@cinderlink/plugin-sync-db": "workspace:^0.0.1",
-    "@cinderlink/protocol": "workspace:^0.0.1"
+    "@cinderlink/protocol": "workspace:^0.0.1",
+    "crypto": "^1.0.1"
   }
 }

@@ -5,5 +5,5 @@ export default defineConfig({
   format: ["esm", "cjs"],
   dts: true,
   sourcemap: true,
-  external: ["@cinderlink/core-types", "@cinderlink/ipld-database"],
+  external: ["@cinderlink/core-types", "@cinderlink/ipld-database", "uuid"],
 });

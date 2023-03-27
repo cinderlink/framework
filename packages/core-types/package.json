@@ -44,6 +44,6 @@
     "emittery": "^1.0.1",
     "ipfs-core-types": "^0.13.0",
     "libp2p": "^0.41.0",
-    "multiformats": "^11.0.1"
+    "multiformats": "^11.0.2"
   }
 }

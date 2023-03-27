@@ -31,12 +31,12 @@ export const SocialSchemaDef = {
     schema: {
       type: "object",
       properties: {
+        did: { type: "string" },
         address: { type: "string" },
         addressVerification: { type: "string" },
         name: { type: "string" },
         bio: { type: "string" },
         avatar: { type: "string" },
-        did: { type: "string" },
         status: { type: "string" },
         updatedAt: { type: "number" },
       },
@@ -47,24 +47,19 @@ export const SocialSchemaDef = {
     encrypted: true,
     aggregate: {},
     indexes: {
-      userCid: {
-        unique: true,
-        fields: ["cid"],
-      },
       userTextId: {
         unique: true,
-        fields: ["userId", "textId"],
+        fields: ["did", "textId"],
       },
     },
     rollup: 1000,
     searchOptions: {
-      fields: ["userId", "cid", "textId"],
+      fields: ["did", "textId"],
     },
     schema: {
       type: "object",
       properties: {
         did: { type: "string" },
-        cid: { type: "string" },
         textId: { type: "string" },
         createdAt: { type: "number" },
         updatedAt: { type: "number" },
@@ -76,19 +71,19 @@ export const SocialSchemaDef = {
     encrypted: false,
     aggregate: {},
     indexes: {
-      userId: {
+      userUid: {
         unique: true,
-        fields: ["userId"],
+        fields: ["userUid"],
       },
     },
     rollup: 1000,
     searchOptions: {
-      fields: ["userId"],
+      fields: ["userUid"],
     },
     schema: {
       type: "object",
       properties: {
-        userId: { type: "number" },
+        userUid: { type: "string" },
         banner: { type: "string" },
         albums: {
           type: "array",
@@ -129,11 +124,9 @@ export const SocialSchemaDef = {
     schema: {
       type: "object",
       properties: {
-        cid: { type: "string" },
         from: { type: "string" },
         to: { type: "string" },
         follow: { type: "boolean" },
-        confirmations: { type: "number" },
         seenAt: { type: "number" },
         createdAt: { type: "number" },
       },
@@ -144,10 +137,6 @@ export const SocialSchemaDef = {
     encrypted: true,
     aggregate: {},
     indexes: {
-      cid: {
-        unique: true,
-        fields: ["cid"],
-      },
       did: {
         unique: false,
         fields: ["did"],
@@ -155,14 +144,11 @@ export const SocialSchemaDef = {
     },
     rollup: 1000,
     searchOptions: {
-      fields: ["cid", "did", "content", "attachments", "tags", "comments"],
+      fields: ["did", "content", "attachments", "tags", "comments"],
     },
     schema: {
       type: "object",
       properties: {
-        cid: {
-          type: "string",
-        },
         did: { type: "string" },
         content: { type: "string" },
         attachments: { type: "array", items: { type: "string" } },
@@ -179,7 +165,6 @@ export const SocialSchemaDef = {
           },
         },
         tags: { type: "array", items: { type: "string" } },
-        confirmations: { type: "number" },
         seenAt: { type: "number" },
         createdAt: { type: "number" },
       },
@@ -190,10 +175,6 @@ export const SocialSchemaDef = {
     encrypted: true,
     aggregate: {},
     indexes: {
-      cid: {
-        unique: true,
-        fields: ["cid"],
-      },
       did: {
         unique: false,
         fields: ["did"],
@@ -201,24 +182,20 @@ export const SocialSchemaDef = {
     },
     rollup: 1000,
     searchOptions: {
-      fields: ["cid", "did", "content", "postCid"],
+      fields: ["did", "content", "postUid"],
     },
     schema: {
       type: "object",
       properties: {
-        cid: {
-          type: "string",
-        },
         did: { type: "string" },
         content: { type: "string" },
-        postCid: { type: "string" },
+        postUid: { type: "string" },
         reactions: {
           type: "array",
           items: {
             type: "string",
           },
         },
-        confirmations: { type: "number" },
         seenAt: { type: "number" },
         createdAt: { type: "number" },
       },
@@ -231,10 +208,6 @@ export const SocialSchemaDef = {
       createdAt: "range",
     },
     indexes: {
-      cid: {
-        unique: true,
-        fields: ["cid"],
-      },
       conversation: {
         unique: false,
         fields: ["from", "to"],
@@ -242,13 +215,11 @@ export const SocialSchemaDef = {
     },
     rollup: 1000,
     searchOptions: {
-      fields: ["from", "to", "cid", "content", "tags", "comments"],
+      fields: ["from", "to", "content", "tags", "comments"],
     },
     schema: {
       type: "object",
       properties: {
-        requestId: { type: "string" },
-        cid: { type: "string" },
         from: { type: "string" },
         to: { type: "string" },
         message: { type: "string" },
@@ -258,10 +229,9 @@ export const SocialSchemaDef = {
             type: "string",
           },
         },
-        confirmations: { type: "number" },
         seenAt: { type: "number" },
+        updatedAt: { type: "number" },
         createdAt: { type: "number" },
-        receivedAt: { type: "number" },
       },
     },
   } as TableDefinition<SocialChatMessage>,

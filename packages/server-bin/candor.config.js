@@ -9,8 +9,8 @@ export default {
     [
       "@cinderlink/plugin-sync-db",
       {
-        schemas: {
-          ...SocialSyncConfig,
+        syncing: {
+          social: SocialSyncConfig,
         },
       },
     ],

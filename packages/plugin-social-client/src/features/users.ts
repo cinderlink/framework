@@ -6,19 +6,12 @@ import {
   IncomingPubsubMessage,
   Peer,
 } from "@cinderlink/core-types";
-import {
-  SocialClientEvents,
-  SocialClientPluginEvents,
-  SocialUser,
-  SocialUsersSearchResponse,
-} from "@cinderlink/plugin-social-core";
+import { SocialClientEvents, SocialUser } from "@cinderlink/plugin-social-core";
 import { checkAddressVerification } from "@cinderlink/identifiers";
 import SocialClientPlugin from "../plugin";
 
 export class SocialUsers {
-  localUser: SocialUser = {
-    id: 0,
-    did: "",
+  localUser: Partial<SocialUser> = {
     name: "",
     avatar: "",
     bio: "",
@@ -33,6 +26,7 @@ export class SocialUsers {
   constructor(private plugin: SocialClientPlugin) {}
 
   async start() {
+    await this.loadLocalUser();
     this.plugin.client.pluginEvents.on(
       "/cinderlink/handshake/success",
       async (peer: Peer) => {
@@ -63,20 +57,24 @@ export class SocialUsers {
   }
 
   async announce(to: string | undefined = undefined) {
-    if (!this.plugin.client.address) {
+    if (!this.plugin.client.address.length) {
       throw new Error("client address not set");
     }
-    if (!this.plugin.client.addressVerification) {
+    if (!this.plugin.client.addressVerification.length) {
       throw new Error("client address verification not set");
     }
     if (!this.plugin.client.did) {
       throw new Error("client did not set");
     }
-    const payload = {
-      requestId: uuid(),
+    console.info(
+      `plugin/social/client > address`,
+      this.plugin.client.address,
+      this.plugin.client.addressVerification
+    );
+    const payload: Partial<SocialUser> = {
+      ...this.localUser,
       address: this.plugin.client.address,
       addressVerification: this.plugin.client.addressVerification,
-      ...this.localUser,
     };
     if (to) {
       console.info(`plugin/social/client > announcing (p2p)`, payload);
@@ -97,6 +95,11 @@ export class SocialUsers {
   async getLocalUserId(): Promise<number | undefined> {
     const user = await this.getLocalUser();
     return user?.id;
+  }
+
+  async getLocalUserUid(): Promise<string | undefined> {
+    const user = await this.getLocalUser();
+    return user?.uid;
   }
 
   async searchUsers(query: string) {
@@ -128,41 +131,13 @@ export class SocialUsers {
     return response.payload.results;
   }
 
-  async getUserFromServer(did: string, server?: Peer) {
-    const requestId: string = uuid();
-    if (!server) {
-      server = this.plugin.client.peers.getServers()[0];
-    }
-
-    if (!server) {
-      throw new Error("No servers found");
-    }
-
-    const response = await this.plugin.client.request<
-      SocialClientEvents,
-      "/social/users/get/request",
-      "/social/users/get/response"
-    >(server.peerId.toString(), {
-      topic: "/social/users/get/request",
-      payload: {
-        requestId,
-        did,
-      },
-    });
-
-    if (!response) {
-      throw new Error(
-        `No response received from server (${server.peerId.toString()})`
-      );
-    }
-
-    return response.payload.user;
-  }
-
   async setState(update: Partial<SocialUser>) {
     this.localUser = {
       ...this.localUser,
       ...update,
+      did: this.plugin.client.id,
+      address: this.plugin.client.address,
+      addressVerification: this.plugin.client.addressVerification,
     };
     await this.saveLocalUser();
   }
@@ -177,6 +152,12 @@ export class SocialUsers {
         updatedAt: Date.now(),
       }
     );
+    console.info(
+      `plugin/social/client > saved local user`,
+      user,
+      this.localUser
+    );
+    this.localUser = user;
     // .findByIndex("did", this.plugin.client.id);
     if (!user?.id) {
       console.error(
@@ -197,24 +178,14 @@ export class SocialUsers {
         .query()
         .where("did", "=", this.plugin.client.id)
         .select()
-        .nocache()
         .execute()
     )?.first();
-
-    const users = (
-      await this.plugin
-        .table<SocialUser>("users")
-        .query()
-        .select()
-        .nocache()
-        .execute()
-    )?.all();
-
-    console.info("loaded local user", user, users, this.plugin.client.id);
     if (!user) return;
 
     this.localUser = {
       ...user,
+      address: this.plugin.client.address,
+      addressVerification: this.plugin.client.addressVerification,
       status: "online",
     };
   }
@@ -229,11 +200,11 @@ export class SocialUsers {
       .then((result) => result.first() as SocialUser | undefined);
   }
 
-  async getUser(userId: number): Promise<SocialUser | undefined> {
+  async getUser(uid: string): Promise<SocialUser | undefined> {
     return this.plugin
       .table("users")
       ?.query()
-      .where("id", "=", userId)
+      .where("uid", "=", uid)
       .select()
       .execute()
       .then((result) => result.first() as SocialUser | undefined);
@@ -263,6 +234,14 @@ export class SocialUsers {
     if (!message.payload.addressVerification) {
       console.warn(
         `plugin/social/client > received social announce message from peer without address verification (did: ${message.peer.did})`,
+        message
+      );
+      return;
+    }
+
+    if (!message.payload.did || !message.payload.did.length) {
+      console.warn(
+        `plugin/social/client > received social announce message from peer without did (did: ${message.peer.did})`,
         message
       );
       return;
@@ -377,37 +356,17 @@ export class SocialUsers {
       `plugin/social/client > received social pin response (did: ${message.peer.did})`,
       message.payload
     );
-    const { requestId } = message.payload;
-    this.plugin.emit(
-      `/response/${requestId}` as keyof SocialClientPluginEvents,
-      message.payload
-    );
   }
 
-  async onResponseMessage(
+  async onSearchResponse(
     message: IncomingP2PMessage<
       SocialClientEvents,
-      "/social/users/search/response" | "/social/users/get/response",
+      "/social/users/search/response",
       EncodingOptions
     >
   ) {
-    const { requestId } = message.payload;
     console.info(
-      `plugin/social/client > server response received (requestId: ${requestId})`,
-      message
-    );
-    if (message.topic === "/social/users/search/response") {
-      const users = (message.payload as SocialUsersSearchResponse).results;
-      if (!users) return;
-      for (const { id, ...user } of users) {
-        await this.plugin
-          .table<SocialUser>("users")
-          .upsert({ did: user.did }, user);
-      }
-    }
-    console.info("this", this);
-    this.plugin.emit(
-      `/response/${requestId}` as keyof SocialClientPluginEvents,
+      `plugin/social/client > received user search response (did: ${message.peer.did})`,
       message.payload
     );
   }

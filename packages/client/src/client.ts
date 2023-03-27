@@ -71,6 +71,7 @@ export class CinderlinkClient<
   public identity: Identity<PluginEvents>;
   public relayAddresses: string[] = [];
   public role: PeerRole;
+  public initialConnectTimeout: number = 10000;
 
   constructor({
     ipfs,
@@ -92,6 +93,36 @@ export class CinderlinkClient<
 
   async addPlugin(plugin: PluginInterface<any>) {
     this.plugins[plugin.id] = plugin;
+  }
+
+  async startPlugin(id: string) {
+    const plugin = this.getPlugin(id);
+    await plugin.start?.();
+    console.info(`/plugin/${plugin.id} > registering event handlers...`);
+    Object.entries(plugin.pubsub).forEach(([topic, handler]) => {
+      this.pubsub.on(topic, (handler as PluginEventHandler).bind(plugin));
+      this.subscribe(topic);
+    });
+
+    Object.entries(plugin.p2p).forEach(([topic, handler]) => {
+      this.p2p.on(topic, (handler as PluginEventHandler).bind(plugin));
+    });
+
+    if (plugin.coreEvents)
+      Object.entries(plugin.coreEvents).forEach(([topic, handler]) => {
+        this.on(
+          topic as keyof CinderlinkClientEvents["emit"],
+          (handler as PluginEventHandler).bind(plugin)
+        );
+      });
+
+    if (plugin.pluginEvents)
+      Object.entries(plugin.pluginEvents).forEach(([topic, handler]) => {
+        this.pluginEvents.on(
+          topic as keyof PluginEvents["emit"],
+          (handler as PluginEventHandler).bind(plugin)
+        );
+      });
   }
 
   getPlugin<T extends PluginInterface<any> = PluginInterface<any>>(
@@ -138,13 +169,17 @@ export class CinderlinkClient<
       if (!this.peers.hasPeer(peerId)) return;
       const peer = this.peers.getPeer(peerId);
       console.info(`client > peer:disconnect`, peer);
-      this.peers.updatePeer(peerId, { connected: false, authenticated: false });
       this.emit("/peer/disconnect", peer);
+      this.peers.updatePeer(peerId, { connected: false, authenticated: false });
     });
 
     this.ipfs.libp2p.pubsub.addEventListener("subscription-change", () => {
       // console.info("subscription change", event);
     });
+
+    const protocol = new CinderlinkProtocolPlugin(this as any);
+    this.addPlugin(protocol as any);
+    await this.startPlugin(protocol.id);
 
     Promise.all(
       swarmAddresses.map(async (addr) => {
@@ -163,6 +198,9 @@ export class CinderlinkClient<
       })
     );
 
+    console.info("loading");
+    await this.load();
+
     console.info(
       `plugins > ${
         Object.keys(this.plugins).length
@@ -171,38 +209,11 @@ export class CinderlinkClient<
     console.info(`plugins > initializing message handlers`);
     await Promise.all(
       Object.values(this.plugins).map(async (plugin) => {
+        if (plugin.id === protocol.id) return;
         console.info(`/plugin/${plugin.id} > starting...`, plugin);
-        await plugin.start?.();
-        console.info(`/plugin/${plugin.id} > registering event handlers...`);
-        Object.entries(plugin.pubsub).forEach(([topic, handler]) => {
-          this.pubsub.on(topic, (handler as PluginEventHandler).bind(plugin));
-          this.subscribe(topic);
-        });
-
-        Object.entries(plugin.p2p).forEach(([topic, handler]) => {
-          this.p2p.on(topic, (handler as PluginEventHandler).bind(plugin));
-        });
-
-        if (plugin.coreEvents)
-          Object.entries(plugin.coreEvents).forEach(([topic, handler]) => {
-            this.on(
-              topic as keyof CinderlinkClientEvents["emit"],
-              (handler as PluginEventHandler).bind(plugin)
-            );
-          });
-
-        if (plugin.pluginEvents)
-          Object.entries(plugin.pluginEvents).forEach(([topic, handler]) => {
-            this.pluginEvents.on(
-              topic as keyof PluginEvents["emit"],
-              (handler as PluginEventHandler).bind(plugin)
-            );
-          });
+        await this.startPlugin(plugin.id);
       })
     );
-
-    console.info("loading");
-    await this.load();
 
     console.info(`client > ready`);
     this.emit("/client/ready", {});
@@ -238,7 +249,15 @@ export class CinderlinkClient<
   async load() {
     if (!this.hasServerConnection && this.role !== "server") {
       console.info(`load > waiting for server connection`);
-      await this.p2p.once("/server/connect");
+      await new Promise((resolve) => {
+        const timeout = setTimeout(() => {
+          resolve(false);
+        }, this.initialConnectTimeout);
+        this.p2p.once("/server/connect").then(() => {
+          clearTimeout(timeout);
+          resolve(true);
+        });
+      });
     }
     console.info(`load > resolving root document`);
     const { cid, document } = await this.identity.resolve();
@@ -267,7 +286,7 @@ export class CinderlinkClient<
                   await this.send(server.peerId.toString(), {
                     topic: "/social/users/pin/request",
                     payload: {
-                      requestId: self.crypto.randomUUID(),
+                      requestId: uuid(),
                       cid: schemaCID,
                       textId: `schema.${name}`,
                       did: this.id,

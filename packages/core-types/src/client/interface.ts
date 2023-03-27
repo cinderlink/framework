@@ -45,6 +45,7 @@ export interface CinderlinkClientInterface<
   dag: DIDDagInterface;
   schemas: Record<string, SchemaInterface>;
   identity: IdentityInterface;
+  initialConnectTimeout: number;
 
   get id(): string;
 

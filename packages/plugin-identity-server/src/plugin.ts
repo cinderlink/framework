@@ -12,6 +12,7 @@ const logPrefix = `/plugin/identityServer`;
 
 export type IdentityPinsRecord = {
   id: number;
+  uid: string;
   name: string;
   avatar: string;
   did: string;

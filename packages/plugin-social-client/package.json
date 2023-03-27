@@ -28,6 +28,7 @@
     "@cinderlink/ipld-database": "workspace:^0.0.1",
     "@cinderlink/plugin-offline-sync-core": "workspace:^0.0.1",
     "@cinderlink/plugin-social-core": "workspace:^0.0.1",
+    "@cinderlink/plugin-sync-db": "workspace:^0.0.1",
     "@cinderlink/protocol": "workspace:^0.0.1",
     "@cinderlink/tsconfig": "workspace:^1.0.0",
     "@multiformats/multiaddr": "^11.6.1",
@@ -45,7 +46,7 @@
     "did-jwt": "^6.11.0",
     "dids": "^3.4.0",
     "emittery": "^1.0.1",
-    "multiformats": "^11.0.1"
+    "multiformats": "^11.0.2"
   },
   "dependencies": {
     "uuid": "^9.0.0"

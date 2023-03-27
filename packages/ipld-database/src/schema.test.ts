@@ -3,7 +3,7 @@ import type { DID } from "dids";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { Schema } from "./schema";
 import { TableDefinition } from "@cinderlink/core-types";
-import { createSeed, createDID } from "../../client";
+import { createSeed, createDID } from "@cinderlink/identifiers";
 
 const tableDefinition: TableDefinition = {
   schemaId: "test",

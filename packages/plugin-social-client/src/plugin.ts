@@ -1,3 +1,4 @@
+import { SyncDBPlugin } from "@cinderlink/plugin-sync-db";
 import {
   PluginEventHandlers,
   ProtocolEvents,
@@ -14,6 +15,7 @@ import Emittery from "emittery";
 import {
   SocialClientPluginEvents,
   SocialClientEvents,
+  SocialSyncConfig,
 } from "@cinderlink/plugin-social-core";
 import { loadSocialSchema } from "@cinderlink/plugin-social-core";
 import { SocialChat } from "./features/chat";
@@ -21,6 +23,8 @@ import { SocialConnections } from "./features/connections";
 import { SocialPosts } from "./features/posts";
 import { SocialProfiles } from "./features/profiles";
 import { SocialUsers } from "./features/users";
+
+const logPrefix = `plugin/social/client`;
 
 export class SocialClientPlugin<
     Client extends CinderlinkClientInterface<any> = CinderlinkClientInterface<
@@ -57,69 +61,50 @@ export class SocialClientPlugin<
 
     this.pubsub = {
       "/social/users/announce": this.users.onAnnounce.bind(this.users),
-      "/social/connections/create": this.connections.onCreate.bind(
-        this.connections
-      ),
-      "/social/posts/create": this.posts.onCreate.bind(this.posts),
     };
 
     this.p2p = {
       "/social/users/announce": this.users.onAnnounce.bind(this.users),
-      "/social/users/search/response": this.users.onResponseMessage.bind(
-        this.users
-      ),
-      "/social/users/get/response": this.users.onResponseMessage.bind(
+      "/social/users/search/response": this.users.onSearchResponse.bind(
         this.users
       ),
       "/social/users/pin/response": this.users.onPinResponse.bind(this.users),
-      "/social/connections/create": this.connections.onCreate.bind(
-        this.connections
-      ),
-      "/social/connections/confirm": this.connections.onConfirm.bind(
-        this.connections
-      ),
-      "/social/posts/create": this.posts.onCreate.bind(this.posts),
-      "/social/posts/fetch/request": this.posts.onFetchRequest.bind(this.posts),
-      "/social/posts/fetch/response": this.posts.onFetchResponse.bind(
-        this.posts
-      ),
-      "/social/posts/comments/create": this.posts.onCommentsCreate.bind(
-        this.posts
-      ),
-      "/social/posts/comments/fetch/request":
-        this.posts.onCommentsFetchRequest.bind(this.posts),
-      "/social/posts/comments/fetch/response":
-        this.posts.onCommentsFetchResponse.bind(this.posts),
-      "/social/chat/message/send": this.chat.onMessageReceived.bind(this.chat),
-      "/social/chat/message/confirm": this.chat.onMessageConfirm.bind(
-        this.chat
-      ),
     };
   }
 
   async start() {
-    console.info(`plugin/social/client > loading schema`);
-    await loadSocialSchema(this.client);
+    if (!this.client.identity.hasResolved) {
+      await this.client.identity.resolve();
+    }
 
-    console.info("starting social features");
+    console.info(`${logPrefix} > loading schema`);
+    await loadSocialSchema(this.client);
+    await this.users.loadLocalUser();
+
+    console.info(`${logPrefix} > initializing features`);
     await this.chat.start();
     await this.connections.start();
     await this.posts.start();
     await this.profiles.start();
     await this.users.start();
 
-    this.client.on("/identity/resolved", async () => {
-      await this.users.loadLocalUser();
-      this.ready = true;
-      console.info(`plugin/social/client > ready`);
-      this.emit("ready", undefined);
-    });
+    this.ready = true;
+    console.info(`${logPrefix} > ready`);
+    this.emit("ready", undefined);
+
+    console.info(`${logPrefix} > registering sync config`);
+    const syncDb: SyncDBPlugin = this.client.getPlugin("sync") as any;
+    if (syncDb) {
+      Object.entries(SocialSyncConfig).map(([table, config]) => {
+        syncDb.addTableSync("social", table, config);
+      });
+    }
   }
 
   get db() {
     const schema = this.client.getSchema("social");
     if (!schema) {
-      throw new Error(`plugin/social/client > failed to get schema`);
+      throw new Error(`${logPrefix} > failed to get schema`);
     }
     return schema;
   }
@@ -130,13 +115,13 @@ export class SocialClientPlugin<
   >(name: string) {
     const table = this.db.getTable<Row, Def>(name);
     if (!table) {
-      throw new Error(`plugin/social/client > failed to get table ${name}`);
+      throw new Error(`${logPrefix} > failed to get table ${name}`);
     }
     return table;
   }
 
   async stop() {
-    console.info(`plugin/social/client > stopping`);
+    console.info(`${logPrefix} > stopping`);
   }
 }
 

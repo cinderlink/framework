@@ -1,4 +1,4 @@
-import { ethers } from "ethers";
+import * as ethers from "ethers";
 import {
   createDID,
   signAddressVerification,
@@ -9,6 +9,15 @@ import { createClient, CinderlinkClient } from "../../client";
 import { describe, it, expect, beforeEach, afterEach, afterAll } from "vitest";
 import { Table } from "./table";
 import { BlockData, TableDefinition, TableRow } from "@cinderlink/core-types";
+
+interface NonUniqueRow extends TableRow {
+  id: number;
+  uid: string;
+  did: string;
+  update: string;
+  updatedAt: number;
+  createdAt: number;
+}
 
 interface UsersRow extends TableRow {
   id: number;
@@ -87,17 +96,19 @@ describe("@cinderlink/ipld-database/table", () => {
     const address = wallet.address;
     const addressVerification = await signAddressVerification(
       "test",
-      did,
+      did.id,
       wallet
     );
     client = (await createClient({
       address,
       addressVerification,
       did,
+      role: "peer",
       options: {
         repo: "test-data/" + tst.meta.name,
       },
     })) as CinderlinkClient;
+    client.initialConnectTimeout = 10;
     await client.start();
   });
 
@@ -125,12 +136,18 @@ describe("@cinderlink/ipld-database/table", () => {
 
   it("should insert records", async () => {
     const table = new Table<TestRow>("test", validDefinition, client.dag);
-    const id = await table.insert({ name: "foo", count: 1 });
+    const uid = await table.insert({ name: "foo", count: 1 });
     expect(Object.values(table.currentBlock.cache?.records || {}).length).toBe(
       1
     );
-    expect(id).toBe(1);
-    const results = await table.query().select().where("id", "=", id).execute();
+    expect(uid).toMatchInlineSnapshot(
+      '"bagaaieralxfilz3jrhsv5o66zhstasbsybvj5llrhcyeg4wgkvjqaph5fbeq"'
+    );
+    const results = await table
+      .query()
+      .select()
+      .where("uid", "=", uid)
+      .execute();
     expect(results).toMatchInlineSnapshot(`
       TableQueryResult {
         "rows": [
@@ -138,6 +155,7 @@ describe("@cinderlink/ipld-database/table", () => {
             "count": 1,
             "id": 1,
             "name": "foo",
+            "uid": "bagaaieralxfilz3jrhsv5o66zhstasbsybvj5llrhcyeg4wgkvjqaph5fbeq",
           },
         ],
       }
@@ -148,6 +166,7 @@ describe("@cinderlink/ipld-database/table", () => {
         "count": 1,
         "id": 1,
         "name": "foo",
+        "uid": "bagaaieralxfilz3jrhsv5o66zhstasbsybvj5llrhcyeg4wgkvjqaph5fbeq",
       }
     `);
   });
@@ -170,6 +189,7 @@ describe("@cinderlink/ipld-database/table", () => {
           "count": 1,
           "id": 1,
           "name": "foo",
+          "uid": "bagaaieralxfilz3jrhsv5o66zhstasbsybvj5llrhcyeg4wgkvjqaph5fbeq",
         },
       ]
     `);
@@ -237,6 +257,7 @@ describe("@cinderlink/ipld-database/table", () => {
           "count": 10,
           "id": 11,
           "name": "test #10",
+          "uid": "bagaaiera5cclqznug4jgdkche2c2xtzdrr4vg6ytx266smmnwpiamzdcv4va",
         },
       ]
     `);
@@ -262,6 +283,7 @@ describe("@cinderlink/ipld-database/table", () => {
         "count": 1337,
         "id": 2,
         "name": "test three",
+        "uid": "bagaaierazrl3zpw6mauy7gzr6pu4youw6injufdhylqkqnerpb4wnbqggpca",
       }
     `);
 
@@ -320,6 +342,7 @@ describe("@cinderlink/ipld-database/table", () => {
           "did": "foo:bar",
           "id": 1,
           "name": "bar",
+          "uid": "bagaaieradbrlgbyiagiu4zzfadvwxskwm5vi3r3ucg56d5bgcj7xl5khnifa",
         }
       `);
       const selected = await users
@@ -333,6 +356,7 @@ describe("@cinderlink/ipld-database/table", () => {
           "did": "foo:bar",
           "id": 1,
           "name": "bar",
+          "uid": "bagaaieradbrlgbyiagiu4zzfadvwxskwm5vi3r3ucg56d5bgcj7xl5khnifa",
         }
       `);
       expect(returned).toMatchObject(selected);
@@ -345,7 +369,9 @@ describe("@cinderlink/ipld-database/table", () => {
         name: "bar",
         updatedAt: 0,
       });
-      expect(inserted).toMatchInlineSnapshot("1");
+      expect(inserted).toMatchInlineSnapshot(
+        '"bagaaieradbrlgbyiagiu4zzfadvwxskwm5vi3r3ucg56d5bgcj7xl5khnifa"'
+      );
 
       const upserted = await users.upsert({ did: "foo:bar" }, { name: "baz" });
       expect(upserted).toMatchInlineSnapshot(`
@@ -353,6 +379,8 @@ describe("@cinderlink/ipld-database/table", () => {
           "did": "foo:bar",
           "id": 1,
           "name": "baz",
+          "uid": "bagaaieradbrlgbyiagiu4zzfadvwxskwm5vi3r3ucg56d5bgcj7xl5khnifa",
+          "updatedAt": 0,
         }
       `);
 
@@ -367,11 +395,77 @@ describe("@cinderlink/ipld-database/table", () => {
           "did": "foo:bar",
           "id": 1,
           "name": "baz",
+          "uid": "bagaaieradbrlgbyiagiu4zzfadvwxskwm5vi3r3ucg56d5bgcj7xl5khnifa",
+          "updatedAt": 0,
         }
       `);
 
       expect(upserted).toMatchObject(selected);
       expect(upserted).not.toMatchObject(inserted);
+    });
+
+    it("should create distinct unique identifiers for records with unique indexes", async () => {
+      const users = new Table<UsersRow>("users", usersDef, client.dag);
+      const inserted = await users.insert({
+        did: "foo:bar",
+        name: "bar",
+        updatedAt: 0,
+      });
+
+      const computed = await users.computeUid({
+        did: "foo:bar",
+        name: "baz",
+        updatedAt: 123,
+      });
+      expect(computed).toMatch(inserted);
+    });
+
+    it("should create deterministic identifiers for records without unique indexes", async () => {
+      const nonUniqueDef: TableDefinition<NonUniqueRow> = {
+        schemaId: "test",
+        aggregate: {},
+        indexes: {},
+        searchOptions: {
+          fields: ["did", "update"],
+        },
+        schema: {
+          type: "object",
+          properties: {
+            id: { type: "number" },
+            uid: { type: "string" },
+            did: { type: "string" },
+            update: { type: "string" },
+            updatedAt: { type: "number" },
+            createdAt: { type: "number" },
+          },
+        },
+        encrypted: false,
+        rollup: 1000,
+      };
+      const nonUnique = new Table<NonUniqueRow>(
+        "nonUnique",
+        nonUniqueDef,
+        client.dag
+      );
+      const recordA = {
+        did: "foo:bar",
+        update: "bar",
+        updatedAt: 0,
+        createdAt: 0,
+      };
+      const recordB = {
+        did: "foo:bar",
+        update: "baz",
+        updatedAt: 123,
+        createdAt: 123,
+      };
+      const insertedA = await nonUnique.insert(recordA);
+      const computedA = await nonUnique.computeUid(recordA);
+      expect(computedA).toMatch(insertedA);
+      const insertedB = await nonUnique.insert(recordB);
+      const computedB = await nonUnique.computeUid(recordB);
+      expect(computedB).toMatch(insertedB);
+      expect(computedA).not.toMatch(computedB);
     });
   });
 });

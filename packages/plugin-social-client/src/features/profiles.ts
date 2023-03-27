@@ -7,17 +7,17 @@ export class SocialProfiles {
   async start() {}
 
   async createProfile(
-    profileData: Omit<Omit<SocialProfile, "id">, "userId">
+    profileData: Omit<SocialProfile, "id">
   ): Promise<SocialProfile> {
-    const localUserId = await this.plugin.users.getLocalUserId();
-    if (localUserId === undefined) {
+    const userUid = await this.plugin.users.getLocalUserUid();
+    if (userUid === undefined) {
       throw new Error("failed to get local user id");
     }
 
-    const profile = { ...profileData, userId: localUserId };
+    const profile = { ...profileData, userUid };
     const saved = await this.plugin
       .table<SocialProfile>("profiles")
-      .upsert({ userId: localUserId }, profile);
+      .upsert({ userUid }, profile);
 
     if (saved === undefined) {
       throw new Error("failed to upsert profile");
@@ -26,12 +26,12 @@ export class SocialProfiles {
     return saved as SocialProfile;
   }
 
-  async getUserProfile(userId: number): Promise<SocialProfile | undefined> {
+  async getUserProfile(uid: string): Promise<SocialProfile | undefined> {
     const profile = (
       await this.plugin
         .table<SocialProfile>("profiles")
         .query()
-        .where("userId", "=", userId)
+        .where("userUid", "=", uid)
         .select()
         .execute()
     ).first();
@@ -40,11 +40,11 @@ export class SocialProfiles {
   }
 
   async getLocalProfile(): Promise<SocialProfile | undefined> {
-    const localUserId = await this.plugin.users.getLocalUserId();
-    if (localUserId === undefined) {
+    const userUid = await this.plugin.users.getLocalUserUid();
+    if (userUid === undefined) {
       throw new Error("failed to get local user id");
     }
 
-    return this.getUserProfile(localUserId);
+    return this.getUserProfile(userUid);
   }
 }

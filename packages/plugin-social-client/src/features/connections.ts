@@ -1,13 +1,6 @@
 import {
-  EncodingOptions,
-  IncomingP2PMessage,
-  IncomingPubsubMessage,
-} from "@cinderlink/core-types";
-import {
-  SocialClientEvents,
   SocialConnection,
   SocialConnectionFilter,
-  SocialUser,
 } from "@cinderlink/plugin-social-core";
 import SocialClientPlugin from "../plugin";
 
@@ -24,10 +17,9 @@ export class SocialConnections {
       to,
       follow: true,
     };
-    const cid = await this.plugin.client.dag.store(connection);
     const stored = await this.plugin
       .table<SocialConnection>("connections")
-      .upsert({ cid: cid?.toString() }, connection);
+      .upsert({ from: connection.from, to: connection.to }, connection);
     if (!stored) {
       console.warn(
         `${logPrefix} > failed to create connection (from: ${this.plugin.client}, to: ${to})`
@@ -232,126 +224,9 @@ export class SocialConnections {
     );
   }
 
-  async hasAnyConnectionTo(user: string): Promise<boolean> {
+  async hasConnectionWith(user: string): Promise<boolean> {
     return (
       (await this.hasConnectionFrom(user)) || (await this.hasConnectionTo(user))
     );
-  }
-
-  async onCreate(
-    message:
-      | IncomingP2PMessage<
-          SocialClientEvents,
-          "/social/connections/create",
-          EncodingOptions
-        >
-      | IncomingPubsubMessage<SocialClientEvents, "/social/connections/create">
-  ) {
-    if (!message.peer?.did) {
-      console.warn(
-        `${logPrefix} > failed to create connection from unknown peer`,
-        message
-      );
-      return;
-    }
-
-    if (message.payload.from !== message.peer.did) {
-      console.warn(
-        `${logPrefix} > refusing to create connection for another user`,
-        {
-          from: message.payload.from,
-          did: message.peer.did,
-        }
-      );
-      return;
-    }
-
-    const users = this.plugin.table<SocialUser>("users");
-
-    let fromUserId = (await this.plugin.users.getUserByDID(message.peer.did))
-      ?.id;
-    if (!fromUserId) {
-      // we don't have the user, so we need to fetch it
-      const { id, ...user } = await this.plugin.users.getUserFromServer(
-        message.peer.did
-      );
-      if (user) {
-        const fromUser = await users.upsert({ did: message.peer.did }, user);
-        fromUserId = fromUser?.id;
-      }
-    }
-
-    let toUserId = (await this.plugin.users.getUserByDID(message.payload.to))
-      ?.id;
-    if (!toUserId) {
-      // we don't have the user, so we need to fetch it
-      const user = await this.plugin.users.getUserFromServer(
-        message.payload.to
-      );
-      if (user) {
-        const toUser = await users.upsert({ did: message.payload.to }, user);
-        toUserId = toUser?.id;
-      }
-    }
-
-    if (!fromUserId || !toUserId) {
-      console.warn(`${logPrefix} > failed to create connection, missing user`, {
-        fromUserId,
-        toUserId,
-      });
-      return;
-    }
-
-    const connectionsTable = await this.plugin.table<SocialConnection>(
-      "connections"
-    );
-
-    const connection = await connectionsTable
-      ?.query()
-      .where("from", "=", message.payload.from)
-      .where("to", "=", message.payload.to)
-      .select()
-      .execute()
-      .then((result) => result.first() as SocialConnection | undefined);
-    if (connection?.id) {
-      await connectionsTable?.update(connection.id, {
-        follow: message.payload.follow,
-      });
-    } else {
-      await connectionsTable?.insert({
-        from: message.payload.from,
-        to: message.payload.to,
-        follow: !!message.payload.follow,
-      });
-    }
-  }
-
-  async onConfirm(
-    message: IncomingP2PMessage<
-      SocialClientEvents,
-      "/social/connections/confirm",
-      EncodingOptions
-    >
-  ) {
-    const { cid } = message.payload;
-    const connection = await this.plugin
-      .table<SocialConnection>("connections")
-      .query()
-      .where("cid", "=", cid)
-      .select()
-      .execute()
-      .then((result) => result.first());
-    if (!connection) {
-      console.warn(`${logPrefix} > failed to confirm connection, missing cid`, {
-        cid,
-      });
-      return;
-    }
-
-    await this.plugin
-      .table<SocialConnection>("connections")
-      .update(connection.id, {
-        confirmations: (connection.confirmations || 0) + 1,
-      });
   }
 }

@@ -5,8 +5,8 @@ export interface SocialProfilesInterface {
   plugin: SocialClientPluginInterface;
   start(): Promise<void>;
   createProfile(
-    profileData: Omit<Omit<SocialProfile, "id">, "userId">
+    profileData: Omit<Omit<SocialProfile, "id">, "userUid">
   ): Promise<SocialProfile>;
-  getUserProfile(userId: number): Promise<SocialProfile | undefined>;
+  getUserProfile(uid: string): Promise<SocialProfile | undefined>;
   getLocalProfile(): Promise<SocialProfile | undefined>;
 }

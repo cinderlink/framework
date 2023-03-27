@@ -1,60 +1,135 @@
 import { CinderlinkClientInterface } from "../client";
-import { QueryBuilderInterface, TableRow } from "../database";
+import { QueryBuilderInterface, TableInterface, TableRow } from "../database";
 import { Peer } from "../p2p";
 import { PluginEventDef } from "../plugin";
 
-export interface SyncTableRules {
-  confirmations: number;
-  frequency: number;
-  chunkSize: number;
-  query?: (qb: QueryBuilderInterface, peer: Peer) => QueryBuilderInterface;
-  allowIncoming?: (
-    row: TableRow,
-    peer: Peer,
-    client: CinderlinkClientInterface<any>
-  ) => Promise<boolean>;
-}
-
-export interface SyncTableRow extends TableRow {
+export interface SyncTablesRow extends TableRow {
   schemaId: string;
   tableId: string;
-  rowId: number;
   did: string;
-  attempts: number;
-  last_attempt: number;
-  success: boolean;
+  lastSyncedAt: number;
+  lastFetchedAt: number;
 }
 
-export interface SyncTableRequest {
+export interface SyncRowsRow extends TableRow {
+  schemaId: string;
+  tableId: string;
+  rowUid: string;
+  did: string;
+  success?: boolean;
+  error?: string;
+  attempts?: number;
+  lastSyncedAt: number;
+  lastFetchedAt: number;
+}
+
+export interface SyncConfig<Row extends TableRow> {
+  query: (
+    table: TableInterface<Row>,
+    params: Record<string, any>,
+    client: CinderlinkClientInterface<any>
+  ) => QueryBuilderInterface<Row>;
+  fetchInterval?: number;
+  fetchFrom?: (
+    peers: Peer[],
+    table: TableInterface<Row>,
+    client: CinderlinkClientInterface<any>
+  ) => Promise<string | string[] | boolean>;
+  syncInterval?: number;
+  syncTo?: (
+    peers: Peer[],
+    table: TableInterface<Row>,
+    client: CinderlinkClientInterface<any>
+  ) => Promise<string | string[] | boolean>;
+  syncRowTo?: (
+    row: Row,
+    peers: Peer[],
+    table: TableInterface<Row>,
+    client: CinderlinkClientInterface<any>
+  ) => Promise<string | string[] | boolean>;
+  allowFetchFrom?: (
+    did: string,
+    table: TableInterface<Row>,
+    client: CinderlinkClientInterface<any>
+  ) => Promise<boolean>;
+  allowFetchRowFrom?: (
+    row: Row,
+    did: string,
+    table: TableInterface<Row>,
+    client: CinderlinkClientInterface<any>
+  ) => Promise<boolean>;
+  allowNewFrom?: (
+    did: string,
+    table: TableInterface<Row>,
+    client: CinderlinkClientInterface<any>
+  ) => Promise<boolean>;
+  allowUpdateFrom?: (
+    row: Row,
+    did: string,
+    table: TableInterface<Row>,
+    client: CinderlinkClientInterface<any>
+  ) => Promise<boolean>;
+  incomingRateLimit?: number;
+  outgoingRateLimit?: number;
+}
+
+export interface SyncSaveRequest {
   requestId: string;
   schemaId: string;
   tableId: string;
   rows: TableRow[];
 }
 
-export interface SyncTableResponse {
+export interface SyncSaveResponse {
   requestId: string;
   schemaId: string;
   tableId: string;
-  saved: number[];
-  errors: Record<number, string>;
+  saved?: string[];
+  errors?: Record<number, string>;
+}
+
+export interface SyncFetchRequest {
+  requestId: string;
+  schemaId: string;
+  tableId: string;
+  since: number;
+}
+
+export interface SyncFetchResponse {
+  requestId: string;
+  schemaId: string;
+  tableId: string;
+  rows: TableRow[];
 }
 
 export interface SyncPluginEvents extends PluginEventDef {
   send: {
-    "/cinderlink/sync/table/request": SyncTableRequest;
-    "/cinderlink/sync/table/response": SyncTableResponse;
+    "/cinderlink/sync/save/request": SyncSaveRequest;
+    "/cinderlink/sync/save/response": SyncSaveResponse;
+    "/cinderlink/sync/fetch/request": SyncFetchRequest;
+    "/cinderlink/sync/fetch/response": SyncFetchResponse;
   };
   receive: {
-    "/cinderlink/sync/table/request": SyncTableRequest;
-    "/cinderlink/sync/table/response": SyncTableResponse;
+    "/cinderlink/sync/save/request": SyncSaveRequest;
+    "/cinderlink/sync/save/response": SyncSaveResponse;
+    "/cinderlink/sync/fetch/request": SyncFetchRequest;
+    "/cinderlink/sync/fetch/response": SyncFetchResponse;
   };
-  publish: {};
-  subscribe: {};
+  publish: {
+    "/cinderlink/sync/save/request": SyncSaveRequest;
+    "/cinderlink/sync/save/response": SyncSaveResponse;
+    "/cinderlink/sync/fetch/request": SyncFetchRequest;
+    "/cinderlink/sync/fetch/response": SyncFetchResponse;
+  };
+  subscribe: {
+    "/cinderlink/sync/save/request": SyncSaveRequest;
+    "/cinderlink/sync/save/response": SyncSaveResponse;
+    "/cinderlink/sync/fetch/request": SyncFetchRequest;
+    "/cinderlink/sync/fetch/response": SyncFetchResponse;
+  };
   emit: {};
 }
 
-export type SyncSchemaOptions = Record<string, Record<string, SyncTableRules>>;
 export interface SyncPluginOptions {
-  schemas: SyncSchemaOptions;
+  syncing: Record<string, SyncConfig<any>>;
 }

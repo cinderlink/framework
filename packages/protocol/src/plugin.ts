@@ -13,13 +13,13 @@ import {
   HandshakeRequest,
   PluginEventDef,
 } from "@cinderlink/core-types";
-import { v4 as uuid } from "uuid";
 import { Connection, Stream } from "@libp2p/interface-connection";
 import * as json from "multiformats/codecs/json";
 import * as lp from "it-length-prefixed";
 import { pipe } from "it-pipe";
 import { Pushable, pushable } from "it-pushable";
 import map from "it-map";
+import { v4 as uuid } from "uuid";
 
 import type { CinderlinkClientInterface } from "@cinderlink/core-types";
 import { decodePayload, encodePayload } from "./encoding";
@@ -59,6 +59,7 @@ export class CinderlinkProtocolPlugin<
   pubsub = {};
   coreEvents = {
     "/peer/connect": this.onPeerConnect,
+    "/peer/disconnect": this.onPeerDisconnect,
   };
   pluginEvents = {};
 
@@ -137,6 +138,14 @@ export class CinderlinkProtocolPlugin<
         did: this.client.id,
       } as HandshakeRequest,
     });
+
+    let interval = setInterval(async () => {
+      if (peer.connected) {
+        await this.client.ipfs.libp2p.ping(peer.peerId);
+      } else {
+        clearInterval(interval);
+      }
+    }, 1000 * 10);
   }
 
   async onPeerConnect(peer: Peer) {
@@ -150,6 +159,16 @@ export class CinderlinkProtocolPlugin<
       );
       const connection = this.client.ipfs.libp2p.getConnections(peer.peerId)[0];
       await this.initializeProtocol(stream, connection);
+    }
+  }
+
+  async onPeerDisconnect(peer: Peer) {
+    if (this.protocolHandlers[peer.peerId.toString()]) {
+      console.info(
+        `peer/disconnect > closing cinderlink protocol ${readablePeer(peer)}`
+      );
+      this.protocolHandlers[peer.peerId.toString()].buffer.end();
+      delete this.protocolHandlers[peer.peerId.toString()];
     }
   }
 
@@ -205,7 +224,9 @@ export class CinderlinkProtocolPlugin<
     }
 
     console.debug(
-      `p2p/in:${topic as string} > from ${event.peer.did}, data: `,
+      `p2p/in:${topic as string} > from ${
+        event.peer.did || event.peer.peerId.toString()
+      }, data: `,
       event.payload
     );
     await this.client.p2p.emit(

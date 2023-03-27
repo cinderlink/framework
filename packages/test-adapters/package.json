@@ -13,8 +13,12 @@
   "devDependencies": {
     "@cinderlink/core-types": "workspace:0.0.1",
     "@cinderlink/tsconfig": "workspace:^1.0.0",
+    "@libp2p/crypto": "^1.0.14",
+    "@libp2p/interface-peer-id": "^2.0.1",
+    "@libp2p/peer-id-factory": "^2.0.3",
     "did-jwt": "^6.11.5",
     "dids": "^3.4.0",
+    "emittery": "^1.0.1",
     "multiformats": "^11.0.2",
     "tsup": "^6.7.0",
     "typescript": "^5.0.2",
@@ -23,6 +27,6 @@
   "peerDependencies": {
     "did-jwt": "^6.11.0",
     "dids": "^3.4.0",
-    "multiformats": "^11.0.1"
+    "multiformats": "^11.0.2"
   }
 }

@@ -136,6 +136,7 @@ if (command !== "start") {
     nodes: config.nodes,
     options: config.ipfs,
   });
+  server.client.initialConnectTimeout = 1;
   await server.start();
 
   console.log(`starting ${chalk.cyan("http api")}...`);

@@ -1,3 +1,5 @@
+import { sha256 } from "multiformats/hashes/sha2";
+import * as json from "multiformats/codecs/json";
 import type {
   DIDDagInterface,
   TableBlockInterface,
@@ -64,42 +66,73 @@ export class Table<
     this.emit("/block/saved", block);
   }
 
-  async insert(data: Omit<Row, "id">) {
+  async insert(data: Omit<Omit<Row, "id">, "uid">) {
     this.assertValid(data as Partial<Row>);
-    await this.assertUniqueConstraint(data as Row);
     await this.awaitLock();
-    const id = ++this.currentIndex;
-    console.info(`table/${this.tableId} > inserting record ${id}`, data);
-    await this.currentBlock.addRecord({ ...data, id } as Row);
-    cache.invalidateTable(this.tableId);
+    const id = this.currentIndex + 1;
+    this.currentIndex = id + 0;
+    const sorted = Table.sortObject(data) as Omit<Omit<Row, "id">, "uid">;
+    const uid = await this.computeUid(sorted);
+    await this.assertUniqueConstraint({ id, uid, ...sorted } as Row);
+    await this.currentBlock.addRecord({ id, uid, ...sorted } as Row);
     if (
       Object.values(this.currentBlock.cache?.records || {}).length >=
-      this.def.rollup
+      (this.def.rollup || 1000)
     ) {
       const cid = await this.currentBlock.save();
       if (cid) {
         this.currentBlock = this.createBlock(cid.toString());
       }
     }
+    cache.invalidateTable(this.tableId);
     this.unlock();
-    this.emit("/record/inserted", { ...data, id } as Row);
+    this.emit("/record/inserted", { ...data, uid, id } as Row);
     console.info(`table/${this.tableId} > inserted record ${id}`, data);
-    return id;
+    return uid;
   }
 
-  async bulkInsert(data: Row[]) {
+  static sortObject(object: Record<string, unknown>) {
+    return Object.keys(object)
+      .sort()
+      .reduce((obj, key) => {
+        obj[key] = object[key];
+        return obj;
+      }, {} as Record<string, unknown>);
+  }
+
+  async computeUid(data: Omit<Omit<Row, "id">, "uid">): Promise<string> {
+    const sorted = Table.sortObject(data) as Omit<Omit<Row, "id">, "uid">;
+    const uniqueFields: (keyof Row)[] | undefined = Object.values(
+      this.def.indexes
+    ).find((index) => index.unique)?.fields;
+
+    const uidData = uniqueFields?.length
+      ? uniqueFields.reduce((obj, key) => {
+          obj[key as keyof Omit<Omit<Row, "id">, "uid">] =
+            sorted[key as keyof Omit<Omit<Row, "id">, "uid">];
+          return obj;
+        }, {} as Omit<Omit<Row, "id">, "uid">)
+      : sorted;
+
+    return CID.create(
+      1,
+      json.code,
+      await sha256.digest(json.encode(uidData))
+    ).toString();
+  }
+
+  async bulkInsert(data: Omit<Omit<Row, "id">, "uid">[]) {
     await this.awaitLock();
-    const saved: number[] = [];
+    const saved: string[] = [];
     const errors: Record<number, string> = {};
     for (const index in data) {
       const row = data[index];
       await this.insert(row)
-        .then((id) => {
-          saved.push(id);
+        .then((uid) => {
+          saved.push(uid);
         })
         .catch((err) => {
-          const identifier = row.id || index;
-          errors[identifier as number] = err;
+          errors[index] = err;
         });
     }
     this.unlock();
@@ -113,6 +146,8 @@ export class Table<
     this.assertValid(data);
     const existing = check["id" as Index]
       ? await this.getById(check["id" as Index] as number)
+      : check["uid" as Index]
+      ? await this.getByUid(check["uid" as Index] as string)
       : await this.query()
           .and((qb) => {
             for (const index in check) {
@@ -120,7 +155,6 @@ export class Table<
             }
           })
           .select()
-          .nocache()
           .execute()
           .then((r) => r.first());
 
@@ -131,7 +165,7 @@ export class Table<
     }
     this.unlock();
     return this.insert({ ...check, ...data } as Omit<Row, "id">).then((id) =>
-      this.getById(id)
+      this.getByUid(id)
     );
   }
 
@@ -149,10 +183,15 @@ export class Table<
 
   async getById(id: number) {
     await this.awaitUnlock();
+    const results = await this.query().where("id", "=", id).select().execute();
+    return results.first();
+  }
+
+  async getByUid(uid: string) {
+    await this.awaitUnlock();
     const results = await this.query()
-      .where("id", "=", id)
+      .where("uid", "=", uid)
       .select()
-      .nocache()
       .execute();
     return results.first();
   }
@@ -162,7 +201,6 @@ export class Table<
     const results = await this.query()
       .where("id", "in", ids)
       .select()
-      .nocache()
       .execute()
       .then((r) => r.all());
     return results;
@@ -189,12 +227,15 @@ export class Table<
   }
 
   async save() {
+    await this.awaitLock();
     if (this.currentBlock.changed) {
       console.info(`table/${this.tableId} > saving`, this.currentBlock.cid);
       cache.invalidateTable(this.tableId);
       await this.currentBlock.save();
       console.info(`table/${this.tableId} > saved`, this.currentBlock.cid);
     }
+
+    this.unlock();
 
     return this.currentBlock.cid;
   }

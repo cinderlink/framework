@@ -17,8 +17,9 @@ import {
 
 export interface TableRow {
   id: number;
-  cid?: string;
-  confirmations?: number;
+  uid: string;
+  createdAt?: number;
+  updatedAt?: number;
 }
 
 export interface TableBlockInterface<
@@ -98,10 +99,11 @@ export interface TableInterface<
 
   createBlock(prevCID: string | undefined): TableBlockInterface<Row, Def>;
   setBlock(block: TableBlockInterface<Row, Def>): void;
-  insert(data: Omit<Row, "id">): Promise<number>;
+  insert(data: Omit<Omit<Row, "id">, "uid">): Promise<string>;
+  computeUid(data: Omit<Omit<Row, "id">, "uid">): Promise<string>;
   bulkInsert(
-    data: Omit<Row, "id">[]
-  ): Promise<{ saved: number[]; errors: Record<number, string> }>;
+    data: Omit<Omit<Row, "id">, "uid">[]
+  ): Promise<{ saved: string[]; errors: Record<number, string> }>;
   update(id: number, data: Partial<Row>): Promise<Row>;
   upsert<Index extends keyof Row = keyof Row>(
     check: Record<Index, Row[Index]>,
@@ -122,6 +124,7 @@ export interface TableInterface<
     next: (event: TableUnwindEvent<Row, Def>) => Promise<void> | void
   ): Promise<void>;
   getById(id: number): Promise<Row | undefined>;
+  getByUid(uid: string): Promise<Row | undefined>;
   getAllById(ids: number[]): Promise<Row[]>;
   assertValid(data: Partial<Row>): void;
   isValid(data: Partial<Row>): boolean;
