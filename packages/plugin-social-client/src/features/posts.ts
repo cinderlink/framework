@@ -133,9 +133,9 @@ export class SocialPosts {
   async createReaction(
     reaction: Partial<SocialReaction>
   ): Promise<SocialReaction> {
-    const { postCid, commentCid } = reaction;
-    if (!postCid && !commentCid) {
-      throw new Error("postCid or commentCid is required to create a reaction");
+    const { postUid, postCid } = reaction;
+    if (!postUid) {
+      throw new Error("postUid is required to create a reaction");
     }
 
     const cid = await this.plugin.client.dag.store(reaction);
@@ -153,6 +153,7 @@ export class SocialPosts {
       {
         ...save,
         postCid,
+        postUid,
       }
     );
 
@@ -166,15 +167,16 @@ export class SocialPosts {
   async deleteReaction(
     reaction: Partial<SocialReaction>
   ): Promise<SocialReaction> {
-    const { postCid, commentCid, cid, from } = reaction;
-    if (!postCid && !commentCid) {
-      throw new Error("postCid or commentCid is required to create a reaction");
+    const { postUid, from, emoji } = reaction;
+    if (!postUid) {
+      throw new Error("postUid is required to delete a reaction");
     }
 
     const deleted = await this.plugin
       .table<SocialReaction>("reactions")
       .query()
-      .where("cid", "=", cid as string)
+      .where("postUid", "=", postUid as string)
+      .where("emoji", "=", emoji as string)
       .where("from", "=", from as string)
       .returning()
       .delete()
