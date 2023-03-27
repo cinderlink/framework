@@ -37,6 +37,7 @@ export class TestClient<PluginEvents extends PluginEventDef>
   schemas: Record<string, SchemaInterface> = {};
   identity = {} as any;
   plugins = {} as Record<string, PluginInterface<any, any>>;
+  initialConnectTimeout = 1;
 
   constructor(public readonly did: DID) {
     super();
@@ -122,7 +123,7 @@ export class TestClient<PluginEvents extends PluginEventDef>
 
   async send() {}
 
-  async subscribe(topic: string) {}
+  async subscribe(_: string) {}
 
   async unsubscribe() {}
 
