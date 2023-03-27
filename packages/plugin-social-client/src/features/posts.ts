@@ -133,27 +133,25 @@ export class SocialPosts {
   async createReaction(
     reaction: Partial<SocialReaction>
   ): Promise<SocialReaction> {
-    const { postUid, postCid } = reaction;
+    const { postUid, from } = reaction;
     if (!postUid) {
       throw new Error("postUid is required to create a reaction");
     }
-
-    const cid = await this.plugin.client.dag.store(reaction);
-    if (!cid) {
-      throw new Error("failed to store reaction");
+    if (!from) {
+      throw new Error("from is required to create a reaction");
     }
 
     const save = {
       ...reaction,
-      cid: cid.toString(),
       from: reaction.from || this.plugin.client.id,
     };
     const saved = await this.plugin.table<SocialReaction>("reactions").upsert(
-      { cid: cid.toString() },
+      {
+        postUid,
+        from,
+      },
       {
         ...save,
-        postCid,
-        postUid,
       }
     );
 
@@ -161,13 +159,13 @@ export class SocialPosts {
       throw new Error("failed to upsert reaction");
     }
 
-    return saved as SocialReaction;
+    return saved;
   }
 
   async deleteReaction(
     reaction: Partial<SocialReaction>
   ): Promise<SocialReaction> {
-    const { postUid, from, emoji } = reaction;
+    const { postUid, from } = reaction;
     if (!postUid) {
       throw new Error("postUid is required to delete a reaction");
     }
@@ -175,9 +173,8 @@ export class SocialPosts {
     const deleted = await this.plugin
       .table<SocialReaction>("reactions")
       .query()
-      .where("postUid", "=", postUid as string)
-      .where("emoji", "=", emoji as string)
       .where("from", "=", from as string)
+      .where("postUid", "=", postUid)
       .returning()
       .delete()
       .execute()

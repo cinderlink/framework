@@ -207,33 +207,26 @@ export const SocialSchemaDef = {
     encrypted: true,
     aggregate: {},
     indexes: {
-      cid: {
+      postUid: {
         unique: true,
-        fields: ["cid"],
-      },
-      from: {
-        unique: false,
-        fields: ["from"],
+        fields: ["postUid", "from"],
       },
     },
     rollup: 1000,
     searchOptions: {
-      fields: ["cid", "did", "postCid"],
+      fields: ["postUid", "from"],
     },
     schema: {
       type: "object",
       properties: {
-        cid: {
-          type: "string",
-        },
         emoji: {
           type: "string",
         },
         from: { type: "string" },
-        postCid: { type: "string" },
         postUid: { type: "string" },
-        commentCid: { type: "string" },
+        commentUid: { type: "string" },
         createdAt: { type: "number" },
+        updatedAt: { type: "number" },
       },
     },
   } as TableDefinition<SocialReaction>,
