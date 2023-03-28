@@ -404,6 +404,10 @@ export class TableQuery<
         cache.invalidateTable(this.table.tableId);
       }
       this.table.unlock();
+      if (this.terminator === "delete") {
+        console.log("emitting delete event");
+        this.table.emit("/record/deleted", {} as Row);
+      }
     }
 
     // orderBy

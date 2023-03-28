@@ -1,4 +1,8 @@
-import { SocialComment, SocialPost } from "@cinderlink/plugin-social-core";
+import {
+  SocialComment,
+  SocialPost,
+  SocialReaction,
+} from "@cinderlink/plugin-social-core";
 import { OfflineSyncClientPluginInterface } from "@cinderlink/plugin-offline-sync-core";
 import SocialClientPlugin from "../plugin";
 
@@ -124,5 +128,65 @@ export class SocialPosts {
 
   async getLocalUserPosts(): Promise<SocialPost[]> {
     return this.getUserPosts(this.plugin.client.id);
+  }
+
+  async createReaction(
+    reaction: Partial<SocialReaction>
+  ): Promise<SocialReaction> {
+    const { postUid, from, type, commentUid } = reaction;
+    if (!postUid) {
+      throw new Error("postUid is required to create a reaction");
+    }
+    if (!from) {
+      throw new Error("from is required to create a reaction");
+    }
+    if (!type) {
+      throw new Error("type is required to create a reaction");
+    }
+
+    const save = {
+      ...reaction,
+      from: reaction.from || this.plugin.client.id,
+    };
+
+    const saved = await this.plugin.table<SocialReaction>("reactions").upsert(
+      { postUid, from, commentUid } as {
+        postUid: string;
+        from: string;
+        commentUid: string;
+      },
+      {
+        ...save,
+      }
+    );
+
+    if (saved === undefined) {
+      throw new Error("failed to upsert reaction");
+    }
+
+    return saved;
+  }
+
+  async deleteReaction(
+    reaction: Partial<SocialReaction>
+  ): Promise<SocialReaction> {
+    const { postUid, from, type, commentUid } = reaction;
+    if (!postUid) {
+      throw new Error("postUid is required to delete a reaction");
+    }
+
+    const deleted = await this.plugin
+      .table<SocialReaction>("reactions")
+      .query()
+      .where("from", "=", from as string)
+      .where("postUid", "=", postUid)
+      .where("commentUid", "=", commentUid as string)
+      .where("type", "=", type as "post" | "comment")
+      .returning()
+      .delete()
+      .execute()
+      .then((res) => res.first());
+
+    return deleted;
   }
 }
