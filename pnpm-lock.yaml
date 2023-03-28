@@ -738,13 +738,17 @@ importers:
 
   packages/protocol:
     specifiers:
+      '@cinderlink/client': workspace:^0.0.1
       '@cinderlink/core-types': workspace:../core-types
+      '@cinderlink/identifiers': workspace:^0.0.1
+      '@cinderlink/test-adapters': workspace:^0.0.1
       '@cinderlink/tsconfig': workspace:^1.0.0
       '@libp2p/interface-connection': ^3.1.1
       '@types/uuid': ^9.0.1
       did-jwt: ^6.11.5
       dids: ^3.4.0
       emittery: ^1.0.1
+      ethers: ^5.7.2
       it-length-prefixed: ^8.0.4
       it-map: ^2.0.1
       it-pipe: ^2.0.5
@@ -756,13 +760,17 @@ importers:
       uuid: ^9.0.0
       vitest: ^0.28.5
     devDependencies:
+      '@cinderlink/client': link:../client
       '@cinderlink/core-types': link:../core-types
+      '@cinderlink/identifiers': link:../identifiers
+      '@cinderlink/test-adapters': link:../test-adapters
       '@cinderlink/tsconfig': link:../tsconfig
       '@libp2p/interface-connection': 3.1.1
       '@types/uuid': 9.0.1
       did-jwt: 6.11.5
       dids: 3.4.0
       emittery: 1.0.1
+      ethers: 5.7.2
       it-length-prefixed: 8.0.4
       it-map: 2.0.1
       it-pipe: 2.0.5
@@ -3447,7 +3455,7 @@ packages:
       '@noble/secp256k1': 1.7.1
       multiformats: 11.0.2
       node-forge: 1.3.1
-      protons-runtime: 5.0.0
+      protons-runtime: 5.0.0_uint8arraylist@2.4.3
       uint8arraylist: 2.4.3
       uint8arrays: 4.0.3
 
@@ -3840,7 +3848,7 @@ packages:
       '@libp2p/interface-peer-id': 2.0.1
       '@libp2p/peer-id': 2.0.3
       multiformats: 11.0.2
-      protons-runtime: 5.0.0
+      protons-runtime: 5.0.0_uint8arraylist@2.4.3
       uint8arraylist: 2.4.3
       uint8arrays: 4.0.3
 
@@ -3864,7 +3872,7 @@ packages:
       '@libp2p/peer-id': 2.0.3
       '@libp2p/utils': 3.0.5
       '@multiformats/multiaddr': 12.1.0
-      protons-runtime: 5.0.0
+      protons-runtime: 5.0.0_uint8arraylist@2.4.3
       uint8-varint: 1.0.4
       uint8arraylist: 2.4.3
       uint8arrays: 4.0.3
@@ -3891,7 +3899,7 @@ packages:
       it-map: 2.0.1
       mortice: 3.0.1
       multiformats: 11.0.2
-      protons-runtime: 5.0.0
+      protons-runtime: 5.0.0_uint8arraylist@2.4.3
       uint8arraylist: 2.4.3
       uint8arrays: 4.0.3
     transitivePeerDependencies:
@@ -13015,6 +13023,15 @@ packages:
   /protons-runtime/5.0.0:
     resolution: {integrity: sha512-QqjGnPGkpvbzq0dITzhG9DVK10rRIHf7nePcU2QQVVpFGuYbwrOWnvGSvei1GcceAzB9syTz6vHzvTPmGRR0PA==}
     engines: {node: '>=16.0.0', npm: '>=7.0.0'}
+    dependencies:
+      protobufjs: 7.2.2
+      uint8arraylist: 2.4.3
+
+  /protons-runtime/5.0.0_uint8arraylist@2.4.3:
+    resolution: {integrity: sha512-QqjGnPGkpvbzq0dITzhG9DVK10rRIHf7nePcU2QQVVpFGuYbwrOWnvGSvei1GcceAzB9syTz6vHzvTPmGRR0PA==}
+    engines: {node: '>=16.0.0', npm: '>=7.0.0'}
+    peerDependencies:
+      uint8arraylist: ^2.3.2
     dependencies:
       protobufjs: 7.2.2
       uint8arraylist: 2.4.3
