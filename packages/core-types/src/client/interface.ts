@@ -49,12 +49,7 @@ export interface CinderlinkClientInterface<
 
   get id(): string;
 
-  addPlugin<
-    Events extends PluginEventDef = PluginEventDef,
-    Plugin extends PluginInterface<Events> = PluginInterface<Events>
-  >(
-    plugin: Plugin
-  ): Promise<void>;
+  addPlugin(plugin: PluginInterface<any, any>): Promise<void>;
 
   getPlugin<T extends PluginInterface<any, any> = PluginInterface<any, any>>(
     id: string

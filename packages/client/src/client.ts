@@ -91,7 +91,9 @@ export class CinderlinkClient<
     this.plugins = {};
   }
 
-  async addPlugin(plugin: PluginInterface<any>) {
+  async addPlugin<
+    Plugin extends PluginInterface<any, any> = PluginInterface<any, any>
+  >(plugin: Plugin) {
     this.plugins[plugin.id] = plugin;
   }
 

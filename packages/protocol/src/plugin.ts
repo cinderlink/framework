@@ -9,7 +9,6 @@ import {
   PluginInterface,
   ProtocolRequest,
   Peer,
-  ReceiveEvents,
   HandshakeRequest,
   PluginEventDef,
 } from "@cinderlink/core-types";
@@ -33,21 +32,18 @@ export interface ProtocolHandler {
 }
 
 export class CinderlinkProtocolPlugin<
-  PluginEvents extends PluginEventDef = {
-    send: {};
-    receive: {};
-    publish: {};
-    subscribe: {};
-    emit: {};
-  },
-  Client extends CinderlinkClientInterface<
-    PluginEvents & ProtocolEvents<PluginEvents>
-  > = CinderlinkClientInterface<PluginEvents & ProtocolEvents<PluginEvents>>
-> implements PluginInterface<ProtocolEvents, Client>
+  Events extends PluginEventDef = PluginEventDef
+> implements
+    PluginInterface<
+      ProtocolEvents,
+      CinderlinkClientInterface<Events & ProtocolEvents>
+    >
 {
   id = "cinderlink";
 
-  constructor(public client: Client) {}
+  constructor(
+    public client: CinderlinkClientInterface<Events & ProtocolEvents>
+  ) {}
 
   p2p = {
     "/cinderlink/handshake/request": this.onHandshakeRequest,
@@ -61,7 +57,7 @@ export class CinderlinkProtocolPlugin<
     "/peer/connect": this.onPeerConnect,
     "/peer/disconnect": this.onPeerDisconnect,
   };
-  pluginEvents = {};
+  ProtocolEvents = {};
 
   protocolHandlers: Record<string, ProtocolHandler> = {};
 
@@ -117,9 +113,9 @@ export class CinderlinkProtocolPlugin<
             return map(source, (buf) => {
               return json.decode<
                 ProtocolMessage<
-                  PluginEvents["receive"][keyof PluginEvents["receive"]] &
+                  ProtocolEvents["receive"][keyof ProtocolEvents["receive"]] &
                     ProtocolRequest,
-                  keyof PluginEvents["receive"]
+                  keyof ProtocolEvents["receive"]
                 >
               >(buf.subarray());
             });
@@ -190,7 +186,7 @@ export class CinderlinkProtocolPlugin<
   }
 
   async handleProtocolMessage<
-    Events extends PluginEventDef = PluginEvents,
+    Events extends PluginEventDef = ProtocolEvents,
     Topic extends keyof Events["receive"] = keyof Events["receive"],
     Encoding extends EncodingOptions = EncodingOptions
   >(
@@ -247,25 +243,22 @@ export class CinderlinkProtocolPlugin<
       event.payload
     );
     await this.client.p2p.emit(
-      topic as keyof PluginEvents["receive"],
-      event as ReceiveEvents<
-        PluginEvents & ProtocolEvents<PluginEvents>,
-        EncodingOptions
-      >[Topic]
+      topic as keyof ProtocolEvents["receive"],
+      event as any
     );
   }
 
   async encodeMessage<
     Topic extends keyof (
-      | ProtocolEvents<PluginEvents>["send"]
-      | ProtocolEvents<PluginEvents>["publish"]
+      | ProtocolEvents<ProtocolEvents>["send"]
+      | ProtocolEvents<ProtocolEvents>["publish"]
     ) = keyof (
-      | ProtocolEvents<PluginEvents>["send"]
-      | ProtocolEvents<PluginEvents>["publish"]
+      | ProtocolEvents<ProtocolEvents>["send"]
+      | ProtocolEvents<ProtocolEvents>["publish"]
     ),
     Encoding extends EncodingOptions = EncodingOptions
   >(
-    message: OutgoingP2PMessage<PluginEvents, Topic>,
+    message: OutgoingP2PMessage<ProtocolEvents, Topic>,
     { sign, encrypt, recipients }: Encoding = {} as Encoding
   ) {
     return encodePayload(message, {
