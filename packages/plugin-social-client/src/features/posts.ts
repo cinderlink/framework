@@ -133,23 +133,24 @@ export class SocialPosts {
   async createReaction(
     reaction: Partial<SocialReaction>
   ): Promise<SocialReaction> {
-    const { postUid, from } = reaction;
+    const { postUid, from, type, commentUid } = reaction;
     if (!postUid) {
       throw new Error("postUid is required to create a reaction");
     }
     if (!from) {
       throw new Error("from is required to create a reaction");
     }
+    if (!type) {
+      throw new Error("type is required to create a reaction");
+    }
 
     const save = {
       ...reaction,
       from: reaction.from || this.plugin.client.id,
     };
+
     const saved = await this.plugin.table<SocialReaction>("reactions").upsert(
-      {
-        postUid,
-        from,
-      },
+      { postUid, from, commentUid },
       {
         ...save,
       }
@@ -165,7 +166,7 @@ export class SocialPosts {
   async deleteReaction(
     reaction: Partial<SocialReaction>
   ): Promise<SocialReaction> {
-    const { postUid, from } = reaction;
+    const { postUid, from, type, commentUid } = reaction;
     if (!postUid) {
       throw new Error("postUid is required to delete a reaction");
     }
@@ -175,6 +176,8 @@ export class SocialPosts {
       .query()
       .where("from", "=", from as string)
       .where("postUid", "=", postUid)
+      .where("commentUid", "=", commentUid as string)
+      .where("type", "=", type as "post" | "comment")
       .returning()
       .delete()
       .execute()

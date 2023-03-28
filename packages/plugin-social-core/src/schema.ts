@@ -209,7 +209,7 @@ export const SocialSchemaDef = {
     indexes: {
       postUid: {
         unique: true,
-        fields: ["postUid", "from"],
+        fields: ["postUid", "from", "commentUid"],
       },
     },
     rollup: 1000,
@@ -223,6 +223,7 @@ export const SocialSchemaDef = {
           type: "string",
         },
         from: { type: "string" },
+        type: { type: "string" },
         postUid: { type: "string" },
         commentUid: { type: "string" },
         createdAt: { type: "number" },
