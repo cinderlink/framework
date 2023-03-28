@@ -1,18 +1,39 @@
 import { rmSync } from "fs";
 import { describe, beforeAll, it, expect, afterAll } from "vitest";
-import { CinderlinkClientInterface } from "@cinderlink/core-types";
-import { createSeed } from "@cinderlink/identifiers";
+import {
+  CinderlinkClientInterface,
+  ProtocolEvents,
+} from "@cinderlink/core-types";
+import * as ethers from "ethers";
+import {
+  createDID,
+  createSeed,
+  signAddressVerification,
+} from "@cinderlink/identifiers";
 import { createClient } from "./create";
 
-let client: CinderlinkClientInterface;
+let client: CinderlinkClientInterface<ProtocolEvents>;
 describe("@cinderlink/client/dag", () => {
   beforeAll(async () => {
     rmSync("./dag-test", { recursive: true, force: true });
-    const seed = await createSeed("test seed");
-    client = await createClient(seed, [], {
-      repo: "dag-test",
+    const clientWallet = ethers.Wallet.createRandom();
+    const clientDID = await createDID(await createSeed("test client"));
+    const clientAV = await signAddressVerification(
+      "test",
+      clientDID.id,
+      clientWallet
+    );
+    client = await createClient<ProtocolEvents>({
+      did: clientDID,
+      address: clientWallet.address,
+      addressVerification: clientAV,
+      role: "peer",
+      options: {
+        repo: "dag-test",
+      },
     });
-    await client.start();
+    client.initialConnectTimeout = 0;
+    await client.start([]);
   });
 
   afterAll(async () => {
@@ -51,5 +72,6 @@ describe("@cinderlink/client/dag", () => {
 
   afterAll(async () => {
     await client?.stop();
+    rmSync("./dag-test", { recursive: true, force: true });
   });
 });

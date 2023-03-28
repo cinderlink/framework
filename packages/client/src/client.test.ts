@@ -1,7 +1,11 @@
 import { rmSync } from "fs";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { createClient } from "./create";
-import { createSeed } from "@cinderlink/identifiers";
+import {
+  createSeed,
+  createDID,
+  signAddressVerification,
+} from "@cinderlink/identifiers";
 import {
   CinderlinkClientInterface,
   PluginInterface,
@@ -10,7 +14,7 @@ import {
   EncodingOptions,
   IncomingP2PMessage,
 } from "@cinderlink/core-types";
-import { CinderlinkProtocolPlugin } from "@cinderlink/protocol";
+import * as ethers from "ethers";
 
 const response = vi.fn();
 interface TestClientEvents extends PluginEventDef {
@@ -52,7 +56,7 @@ interface TestServerEvents extends PluginEventDef {
 }
 export class TestServerPlugin implements PluginInterface<TestServerEvents> {
   id = "test-server-plugin";
-  constructor(public client: CinderlinkClientInterface) {}
+  constructor(public client: CinderlinkClientInterface<TestServerEvents>) {}
 
   p2p = {
     "/test/request": this.onTestRequest,
@@ -79,34 +83,59 @@ describe("CinderlinkClient", () => {
   let client: CinderlinkClientInterface<any>;
   let server: CinderlinkClientInterface<any>;
   beforeAll(async () => {
-    await rmSync("./test-client", { recursive: true, force: true });
-    await rmSync("./test-server", { recursive: true, force: true });
-    server = await createClient(await createSeed("test server"), [], {
-      repo: "test-server",
-      config: {
-        Addresses: {
-          Swarm: ["/ip4/127.0.0.1/tcp/7356", "/ip4/127.0.0.1/tcp/7357/ws"],
-          API: "/ip4/127.0.0.1/tcp/7358",
-          Gateway: "/ip4/127.0.0.1/tcp/7359",
-        },
-        Bootstrap: [],
+    await rmSync("./client-test-client", { recursive: true, force: true });
+    await rmSync("./client-test-server", { recursive: true, force: true });
+    const clientWallet = ethers.Wallet.createRandom();
+    const clientDID = await createDID(await createSeed("test client"));
+    const clientAV = await signAddressVerification(
+      "test",
+      clientDID.id,
+      clientWallet
+    );
+    client = await createClient<ProtocolEvents>({
+      did: clientDID,
+      address: clientWallet.address,
+      addressVerification: clientAV,
+      role: "peer",
+      options: {
+        repo: "client-test-client",
       },
     });
-    server.addPlugin<ProtocolEvents>(new CinderlinkProtocolPlugin(server));
-    server.addPlugin<TestServerEvents>(new TestServerPlugin(server));
-    await server.start();
+    client.initialConnectTimeout = 0;
+    client.addPlugin(new TestClientPlugin(client) as any);
 
-    client = await createClient(
-      await createSeed("test client"),
-      [(await server.ipfs.id()).addresses[0].toString()],
-      {
-        repo: "test-client",
-      }
+    const serverWallet = ethers.Wallet.createRandom();
+    const serverDID = await createDID(await createSeed("test server"));
+    const serverAV = await signAddressVerification(
+      "test",
+      serverDID.id,
+      serverWallet
     );
-    client.addPlugin<ProtocolEvents>(new CinderlinkProtocolPlugin(client));
-    client.addPlugin<TestClientEvents>(new TestClientPlugin(client));
-    await client.start();
-    await client.connect((await server.ipfs.id()).id, "server");
+    server = await createClient<ProtocolEvents>({
+      did: serverDID,
+      address: serverWallet.address,
+      addressVerification: serverAV,
+      role: "server",
+      options: {
+        repo: "client-test-server",
+        config: {
+          Addresses: {
+            Swarm: ["/ip4/127.0.0.1/tcp/7356", "/ip4/127.0.0.1/tcp/7357/ws"],
+            API: "/ip4/127.0.0.1/tcp/7358",
+            Gateway: "/ip4/127.0.0.1/tcp/7359",
+          },
+          Bootstrap: [],
+        },
+      },
+    });
+    server.initialConnectTimeout = 0;
+    server.addPlugin(new TestServerPlugin(server) as any);
+
+    await server.start([]);
+    await client.start([]);
+
+    const serverPeer = await server.ipfs.id();
+    await client.connect(serverPeer.id);
   });
 
   it("can execute a request lifecycle", async () => {
@@ -124,6 +153,8 @@ describe("CinderlinkClient", () => {
 
   afterAll(async () => {
     await client?.stop();
-    rmSync("./dag-test", { recursive: true, force: true });
+    await server?.stop();
+    rmSync("./client-test-client", { recursive: true, force: true });
+    rmSync("./client-test-server", { recursive: true, force: true });
   });
 });
