@@ -150,7 +150,11 @@ export class SocialPosts {
     };
 
     const saved = await this.plugin.table<SocialReaction>("reactions").upsert(
-      { postUid, from, commentUid },
+      { postUid, from, commentUid } as {
+        postUid: string;
+        from: string;
+        commentUid: string;
+      },
       {
         ...save,
       }
