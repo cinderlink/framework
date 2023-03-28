@@ -83,7 +83,7 @@ importers:
       '@cinderlink/plugin-notification-client': 0.0.1
       '@cinderlink/plugin-offline-sync-client': 0.0.1_tho7ezjzx3cuycsphsu335vrvq
       '@cinderlink/plugin-offline-sync-core': link:../../packages/plugin-offline-sync-core
-      '@cinderlink/plugin-social-client': link:../../packages/plugin-social-client
+      '@cinderlink/plugin-social-client': 0.0.1_tho7ezjzx3cuycsphsu335vrvq
       '@cinderlink/plugin-social-core': link:../../packages/plugin-social-core
       '@cinderlink/plugin-sync-db': link:../../packages/plugin-sync-db
       '@cinderlink/protocol': link:../../packages/protocol
@@ -279,13 +279,13 @@ importers:
       '@cinderlink/client': workspace:^0.0.1
       '@cinderlink/core-types': workspace:^0.0.1
       '@cinderlink/plugin-identity-server': workspace:^0.0.1
-      '@cinderlink/plugin-offline-sync-server': workspace:^0.0.1
+      '@cinderlink/plugin-offline-sync-server': workspace:^0.0.2
       '@cinderlink/plugin-social-core': workspace:^0.0.1
-      '@cinderlink/plugin-social-server': workspace:^0.0.1
+      '@cinderlink/plugin-social-server': workspace:^0.0.2
       '@cinderlink/plugin-sync-db': workspace:^0.0.2
       '@cinderlink/protocol': workspace:^0.0.1
       '@cinderlink/server': workspace:^0.0.1
-      '@cinderlink/server-bin': workspace:^0.0.1
+      '@cinderlink/server-bin': workspace:^0.0.2
       crypto: ^1.0.1
       ts-node: ^10.9.1
     dependencies:
@@ -536,7 +536,7 @@ importers:
     specifiers:
       '@cinderlink/core-types': workspace:^0.0.1
       '@cinderlink/ipld-database': workspace:^0.0.1
-      '@cinderlink/plugin-social-client': workspace:^0.0.1
+      '@cinderlink/plugin-social-client': workspace:^0.0.2
       '@cinderlink/tsconfig': workspace:^1.0.0
       tsup: ^6.7.0
       typescript: ^5.0.2
@@ -692,7 +692,7 @@ importers:
     specifiers:
       '@cinderlink/core-types': workspace:^0.0.1
       '@cinderlink/identifiers': workspace:^0.0.1
-      '@cinderlink/plugin-social-client': workspace:^0.0.1
+      '@cinderlink/plugin-social-client': workspace:^0.0.2
       '@cinderlink/plugin-social-core': workspace:^0.0.1
       '@cinderlink/tsconfig': workspace:^1.0.0
       did-jwt: ^6.11.5
@@ -818,8 +818,8 @@ importers:
     specifiers:
       '@cinderlink/identifiers': workspace:^0.0.1
       '@cinderlink/plugin-identity-server': workspace:^0.0.1
-      '@cinderlink/plugin-offline-sync-server': workspace:^0.0.1
-      '@cinderlink/plugin-social-server': workspace:^0.0.1
+      '@cinderlink/plugin-offline-sync-server': workspace:^0.0.2
+      '@cinderlink/plugin-social-server': workspace:^0.0.2
       '@cinderlink/protocol': workspace:^0.0.1
       '@cinderlink/server': workspace:^0.0.1
       '@cinderlink/tsconfig': workspace:^1.0.0
@@ -2323,7 +2323,7 @@ packages:
       it-pb-stream: 3.2.0
       it-pipe: 2.0.5
       it-stream-types: 1.0.5
-      protons-runtime: 5.0.0
+      protons-runtime: 5.0.0_uint8arraylist@2.4.3
       uint8arraylist: 2.4.3
       uint8arrays: 4.0.3
     transitivePeerDependencies:
@@ -2534,6 +2534,23 @@ packages:
       '@cinderlink/protocol': 0.0.1
       '@multiformats/multiaddr': 11.6.1
       date-fns: 2.29.3
+      did-jwt: 6.11.5
+      dids: 3.4.0
+      emittery: 1.0.1
+      multiformats: 11.0.2
+      uuid: 9.0.0
+    dev: true
+
+  /@cinderlink/plugin-social-client/0.0.1_tho7ezjzx3cuycsphsu335vrvq:
+    resolution: {integrity: sha512-ZHIp0RG0CFndmUk1xZUYGDxFAOET6uOOwOgBwmhvTHYbekf8zKzjOtG8tUqQxcsp/7tpsGr2Gu8uyM5o+cVw3Q==}
+    peerDependencies:
+      '@multiformats/multiaddr': ^11.4.0
+      did-jwt: ^6.11.0
+      dids: ^3.4.0
+      emittery: ^1.0.1
+      multiformats: ^11.0.2
+    dependencies:
+      '@multiformats/multiaddr': 11.6.1
       did-jwt: 6.11.5
       dids: 3.4.0
       emittery: 1.0.1
@@ -3593,7 +3610,7 @@ packages:
       '@libp2p/interface-pubsub': 3.0.6
       '@libp2p/logger': 2.0.7
       '@libp2p/pubsub': 6.0.4
-      protons-runtime: 5.0.0
+      protons-runtime: 5.0.0_uint8arraylist@2.4.3
       uint8arraylist: 2.4.3
       uint8arrays: 4.0.3
     transitivePeerDependencies:
@@ -3843,7 +3860,7 @@ packages:
       p-defer: 4.0.0
       p-queue: 7.3.4
       private-ip: 3.0.0
-      protons-runtime: 5.0.0
+      protons-runtime: 5.0.0_uint8arraylist@2.4.3
       timeout-abort-controller: 3.0.0
       uint8arraylist: 2.4.3
       uint8arrays: 4.0.3
@@ -3973,7 +3990,7 @@ packages:
       '@libp2p/peer-id': 2.0.3
       '@libp2p/utils': 3.0.6
       '@multiformats/multiaddr': 12.1.0
-      protons-runtime: 5.0.0
+      protons-runtime: 5.0.0_uint8arraylist@2.4.3
       uint8-varint: 1.0.4
       uint8arraylist: 2.4.3
       uint8arrays: 4.0.3
@@ -4000,7 +4017,7 @@ packages:
       it-map: 2.0.1
       mortice: 3.0.1
       multiformats: 11.0.2
-      protons-runtime: 5.0.0
+      protons-runtime: 5.0.0_uint8arraylist@2.4.3
       uint8arraylist: 2.4.3
       uint8arrays: 4.0.3
     transitivePeerDependencies:
@@ -4052,7 +4069,7 @@ packages:
       '@libp2p/interface-dht': 2.0.1
       '@libp2p/interfaces': 3.3.1
       multiformats: 11.0.2
-      protons-runtime: 5.0.0
+      protons-runtime: 5.0.0_uint8arraylist@2.4.3
       uint8arraylist: 2.4.3
       uint8arrays: 4.0.3
     transitivePeerDependencies:
@@ -11096,7 +11113,7 @@ packages:
       it-handshake: 4.1.2
       it-length-prefixed: 8.0.4
       it-stream-types: 1.0.5
-      protons-runtime: 5.0.0
+      protons-runtime: 5.0.0_uint8arraylist@2.4.3
       uint8arraylist: 2.4.3
 
   /it-peekable/2.0.1:
@@ -13558,6 +13575,15 @@ packages:
   /protons-runtime/5.0.0:
     resolution: {integrity: sha512-QqjGnPGkpvbzq0dITzhG9DVK10rRIHf7nePcU2QQVVpFGuYbwrOWnvGSvei1GcceAzB9syTz6vHzvTPmGRR0PA==}
     engines: {node: '>=16.0.0', npm: '>=7.0.0'}
+    dependencies:
+      protobufjs: 7.2.3
+      uint8arraylist: 2.4.3
+
+  /protons-runtime/5.0.0_uint8arraylist@2.4.3:
+    resolution: {integrity: sha512-QqjGnPGkpvbzq0dITzhG9DVK10rRIHf7nePcU2QQVVpFGuYbwrOWnvGSvei1GcceAzB9syTz6vHzvTPmGRR0PA==}
+    engines: {node: '>=16.0.0', npm: '>=7.0.0'}
+    peerDependencies:
+      uint8arraylist: ^2.3.2
     dependencies:
       protobufjs: 7.2.3
       uint8arraylist: 2.4.3

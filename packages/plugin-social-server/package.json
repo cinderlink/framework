@@ -2,7 +2,7 @@
   "name": "@cinderlink/plugin-social-server",
   "description": "Social network server plugin for Cinderlink",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -24,7 +24,7 @@
   "devDependencies": {
     "@cinderlink/core-types": "workspace:^0.0.1",
     "@cinderlink/identifiers": "workspace:^0.0.1",
-    "@cinderlink/plugin-social-client": "workspace:^0.0.1",
+    "@cinderlink/plugin-social-client": "workspace:^0.0.2",
     "@cinderlink/plugin-social-core": "workspace:^0.0.1",
     "@cinderlink/tsconfig": "workspace:^1.0.0",
     "did-jwt": "^6.11.5",
