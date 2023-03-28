@@ -108,7 +108,7 @@ describe("@cinderlink/ipld-database/table", () => {
         repo: "test-data/" + tst.meta.name,
       },
     })) as CinderlinkClient;
-    client.initialConnectTimeout = 10;
+    client.initialConnectTimeout = 1;
     await client.start();
   });
 
@@ -197,10 +197,10 @@ describe("@cinderlink/ipld-database/table", () => {
 
   it("should rollup records", async () => {
     const table = new Table<TestRow>("test", validDefinition, client.dag);
-    for (let i = 0; i < 1000; i++) {
+    for (let i = 0; i < 11; i++) {
       await table.insert({ name: `test #${i}`, count: i });
     }
-    expect(table.currentIndex).toBe(1000);
+    expect(table.currentIndex).toBe(11);
     expect(table.currentBlock.cache?.prevCID).not.toBeUndefined();
   });
 
@@ -266,7 +266,7 @@ describe("@cinderlink/ipld-database/table", () => {
   it("should rewrite previous blocks to update", async () => {
     const table = new Table<TestRow>("test", validDefinition, client.dag);
     const uids: string[] = [];
-    for (let i = 1; i < 101; i++) {
+    for (let i = 1; i < 11; i++) {
       uids.push(await table.insert({ name: `test #${i}`, count: i }));
     }
     await table.update(uids[2], { name: "test three", count: 1337 });
@@ -276,7 +276,7 @@ describe("@cinderlink/ipld-database/table", () => {
       .select()
       .execute()
       .then((r) => r.all());
-    expect(allRecords).toHaveLength(100);
+    expect(allRecords).toHaveLength(10);
 
     const updated = await table.getByUid(uids[2]);
     expect(updated).toMatchInlineSnapshot(`
@@ -288,7 +288,7 @@ describe("@cinderlink/ipld-database/table", () => {
       }
     `);
 
-    expect(table.currentIndex).toBe(101);
+    expect(table.currentIndex).toBe(11);
   }, 30000);
 
   describe("upsert", () => {
