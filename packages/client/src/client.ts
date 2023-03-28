@@ -184,6 +184,7 @@ export class CinderlinkClient<
     Promise.all(
       swarmAddresses.map(async (addr) => {
         const peerIdStr = addr.split("/").pop();
+        if (peerIdStr === this.peerId?.toString()) return;
         console.info("connecting to peer", peerIdStr);
         if (peerIdStr) {
           this.relayAddresses.push(addr);

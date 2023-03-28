@@ -87,6 +87,11 @@ export class CinderlinkProtocolPlugin<
   async stop() {}
 
   async initializeProtocol(stream: Stream, connection: Connection) {
+    if (
+      !connection.remotePeer?.toString() ||
+      (this.client.peerId && connection.remotePeer.equals(this.client.peerId))
+    )
+      return;
     let peer = this.client.peers.getPeer(connection.remotePeer.toString());
     if (!peer) {
       peer = this.client.peers.addPeer(connection.remotePeer, "peer");
@@ -98,57 +103,69 @@ export class CinderlinkProtocolPlugin<
       );
     }
 
-    const self = this;
-    const buffer = pushable();
-    this.protocolHandlers[peer.peerId.toString()] = {
-      buffer,
-      stream,
-      out: pipe(buffer, lp.encode(), stream.sink),
-      in: pipe(
-        stream.source,
-        lp.decode(),
-        (source) => {
-          return map(source, (buf) => {
-            return json.decode<
-              ProtocolMessage<
-                PluginEvents["receive"][keyof PluginEvents["receive"]] &
-                  ProtocolRequest,
-                keyof PluginEvents["receive"]
-              >
-            >(buf.subarray());
-          });
-        },
-        async function (source) {
-          for await (const encoded of source) {
-            console.info("protocol > received message", encoded);
-            await self.handleProtocolMessage(connection, encoded);
+    try {
+      const self = this;
+      const buffer = pushable();
+      this.protocolHandlers[peer.peerId.toString()] = {
+        buffer,
+        stream,
+        out: pipe(buffer, lp.encode(), stream.sink),
+        in: pipe(
+          stream.source,
+          lp.decode(),
+          (source) => {
+            return map(source, (buf) => {
+              return json.decode<
+                ProtocolMessage<
+                  PluginEvents["receive"][keyof PluginEvents["receive"]] &
+                    ProtocolRequest,
+                  keyof PluginEvents["receive"]
+                >
+              >(buf.subarray());
+            });
+          },
+          async function (source) {
+            try {
+              for await (const encoded of source) {
+                console.info("protocol > received message", encoded);
+                await self.handleProtocolMessage(connection, encoded);
+              }
+            } catch (e) {
+              console.error(e);
+            }
           }
+        ),
+      } as ProtocolHandler;
+
+      console.info(
+        `protocol > initialized protocol with ${readablePeer(
+          peer
+        )}, sending handshake request`
+      );
+      await this.client.send<ProtocolEvents>(peer.peerId.toString(), {
+        topic: "/cinderlink/handshake/request",
+        payload: {
+          did: this.client.id,
+        } as HandshakeRequest,
+      });
+
+      let interval = setInterval(async () => {
+        if (peer.connected) {
+          await this.client.ipfs.libp2p.ping(peer.peerId).catch(() => {});
+        } else {
+          clearInterval(interval);
         }
-      ),
-    } as ProtocolHandler;
-
-    console.info(
-      `protocol > initialized protocol with ${readablePeer(
-        peer
-      )}, sending handshake request`
-    );
-    await this.client.send<ProtocolEvents>(peer.peerId.toString(), {
-      topic: "/cinderlink/handshake/request",
-      payload: {
-        did: this.client.id,
-      } as HandshakeRequest,
-    });
-
-    let interval = setInterval(async () => {
-      if (peer.connected) {
-        await this.client.ipfs.libp2p.ping(peer.peerId);
-      } else {
-        clearInterval(interval);
-      }
-    }, 1000 * 10);
+      }, 1000 * 10);
+    } catch (e) {
+      console.error(e);
+    }
   }
 
   async onPeerConnect(peer: Peer) {
+    if (this.client.peerId && peer.peerId.equals(this.client.peerId)) {
+      return;
+    }
+
     if (!this.protocolHandlers[peer.peerId.toString()]) {
       console.info(
         `peer/connect > dialing cinderlink protocol ${readablePeer(peer)}`
