@@ -17,7 +17,7 @@ describe("@cinderlink/client/dag", () => {
   beforeAll(async () => {
     rmSync("./dag-test", { recursive: true, force: true });
     const clientWallet = ethers.Wallet.createRandom();
-    const clientDID = await createDID(await createSeed("test client"));
+    const clientDID = await createDID(await createSeed("dag-test-client"));
     const clientAV = await signAddressVerification(
       "test",
       clientDID.id,

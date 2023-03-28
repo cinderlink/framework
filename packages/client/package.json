@@ -29,7 +29,7 @@
     "watch:browser": "vite build --watch",
     "build:browser": "vite build",
     "preview": "vite preview",
-    "test": "vitest"
+    "test": "vitest run"
   },
   "devDependencies": {
     "@chainsafe/libp2p-gossipsub": "^6.2.0",

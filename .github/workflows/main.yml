@@ -35,10 +35,10 @@ jobs:
         run: pnpm -r install
 
       - name: Build package
-        run: pnpm -r build
+        run: pnpm build
 
       - name: Run tests
-        run: pnpm -r test
+        run: pnpm test
 
       - name: Publish package
         run: pnpm -r publish --access public

@@ -35,7 +35,7 @@ jobs:
         run: pnpm -r install
 
       - name: Build packages
-        run: pnpm -r build
+        run: pnpm build
 
       - name: Run tests
-        run: pnpm -r test
+        run: pnpm test

@@ -116,8 +116,8 @@ describe("@cinderlink/ipld-database/table", () => {
     await client.stop();
   });
 
-  afterAll(() => {
-    rmSync("./test-data", { recursive: true, force: true });
+  afterEach((tst) => {
+    rmSync("./test-data/" + tst.meta.name, { recursive: true, force: true });
   });
 
   it("should create a current block", () => {
