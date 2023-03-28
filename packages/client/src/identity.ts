@@ -94,9 +94,7 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
           }
         }
       }
-    } catch (err) {
-      console.warn("IPNS resolve failed", err);
-    }
+    } catch (_) {}
 
     return {
       cid: undefined,

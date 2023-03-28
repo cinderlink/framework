@@ -54,9 +54,9 @@ describe("handleProtocol", () => {
         repo: "test-server",
         config: {
           Addresses: {
-            Swarm: ["/ip4/127.0.0.1/tcp/7356", "/ip4/127.0.0.1/tcp/7357/ws"],
-            API: "/ip4/127.0.0.1/tcp/7358",
-            Gateway: "/ip4/127.0.0.1/tcp/7359",
+            Swarm: ["/ip4/127.0.0.1/tcp/7366", "/ip4/127.0.0.1/tcp/7367/ws"],
+            API: "/ip4/127.0.0.1/tcp/7368",
+            Gateway: "/ip4/127.0.0.1/tcp/7369",
           },
           Bootstrap: [],
         },
