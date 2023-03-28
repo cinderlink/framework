@@ -17,7 +17,6 @@ jobs:
       - name: Set up Node.js (LTS)
         uses: actions/setup-node@v3
         with:
-          token: ${{ secrets.NPM_TOKEN }}
           node-version: "lts/*"
 
       - name: Set up pnpm
