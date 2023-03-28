@@ -7,6 +7,8 @@ on:
 
 jobs:
   build:
+    env:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -15,6 +17,7 @@ jobs:
       - name: Set up Node.js (LTS)
         uses: actions/setup-node@v3
         with:
+          token: ${{ secrets.NPM_TOKEN }}
           node-version: "lts/*"
 
       - name: Set up pnpm
@@ -42,5 +45,3 @@ jobs:
 
       - name: Publish package
         run: pnpm -r publish --access public --no-git-checks
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
