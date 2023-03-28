@@ -1,10 +1,15 @@
+import Emittery from "emittery";
 import { Schema } from "@cinderlink/ipld-database";
 import {
   CinderlinkClientInterface,
   EncodingOptions,
   IncomingP2PMessage,
   IncomingPubsubMessage,
+  PluginEventHandlers,
   PluginInterface,
+  ProtocolEvents,
+  ReceiveEvents,
+  SubscribeEvents,
   SyncConfig,
   SyncPluginEvents,
   SyncPluginOptions,
@@ -18,12 +23,13 @@ import { v4 as uuid } from "uuid";
 
 const logPrefix = `plugin/sync`;
 
-export class SyncDBPlugin
-  implements
-    PluginInterface<
-      SyncPluginEvents,
-      CinderlinkClientInterface<SyncPluginEvents>
+export class SyncDBPlugin<
+    Client extends CinderlinkClientInterface<any> = CinderlinkClientInterface<
+      SyncPluginEvents & ProtocolEvents
     >
+  >
+  extends Emittery<SyncPluginEvents>
+  implements PluginInterface<SyncPluginEvents, Client>
 {
   id = "sync";
   schema?: Schema;
@@ -32,25 +38,27 @@ export class SyncDBPlugin
   syncing: Record<string, Record<string, SyncConfig<any>>> = {};
   timers: Record<string, NodeJS.Timer> = {};
 
+  pubsub: PluginEventHandlers<SubscribeEvents<SyncPluginEvents>> = {
+    "/cinderlink/sync/save/request": this.onSyncSaveRequest,
+    "/cinderlink/sync/save/response": this.onSyncSaveResponse,
+    "/cinderlink/sync/fetch/request": this.onSyncFetchRequest,
+    "/cinderlink/sync/fetch/response": this.onSyncFetchResponse,
+  };
+  p2p: PluginEventHandlers<ReceiveEvents<SyncPluginEvents>> = {
+    "/cinderlink/sync/save/request": this.onSyncSaveRequest,
+    "/cinderlink/sync/save/response": this.onSyncSaveResponse,
+    "/cinderlink/sync/fetch/request": this.onSyncFetchRequest,
+    "/cinderlink/sync/fetch/response": this.onSyncFetchResponse,
+  };
+
   constructor(
-    public client: CinderlinkClientInterface<SyncPluginEvents>,
-    public options: SyncPluginOptions
+    public client: Client,
+    public options: Partial<SyncPluginOptions> = {}
   ) {
+    super();
     console.info(`${logPrefix} > initializing`, { options });
   }
 
-  p2p = {
-    "/cinderlink/sync/save/request": this.onSyncSaveRequest,
-    "/cinderlink/sync/save/response": this.onSyncSaveResponse,
-    "/cinderlink/sync/fetch/request": this.onSyncFetchRequest,
-    "/cinderlink/sync/fetch/response": this.onSyncFetchResponse,
-  };
-  pubsub = {
-    "/cinderlink/sync/save/request": this.onSyncSaveRequest,
-    "/cinderlink/sync/save/response": this.onSyncSaveResponse,
-    "/cinderlink/sync/fetch/request": this.onSyncFetchRequest,
-    "/cinderlink/sync/fetch/response": this.onSyncFetchResponse,
-  };
   coreEvents = {};
   pluginEvents = {};
 

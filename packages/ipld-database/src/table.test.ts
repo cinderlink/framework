@@ -6,7 +6,7 @@ import {
 } from "../../identifiers";
 import { rmSync } from "fs";
 import { createClient, CinderlinkClient } from "../../client";
-import { describe, it, expect, beforeEach, afterEach, afterAll } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { Table } from "./table";
 import { BlockData, TableDefinition, TableRow } from "../../core-types";
 
