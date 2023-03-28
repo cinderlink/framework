@@ -30,7 +30,6 @@
   "author": "Drew Ewing",
   "license": "ISC",
   "devDependencies": {
-    "@cinderlink/client": "workspace:^0.0.1",
     "@cinderlink/core-types": "workspace:../core-types",
     "@cinderlink/identifiers": "workspace:^0.0.1",
     "@cinderlink/test-adapters": "workspace:^0.0.1",

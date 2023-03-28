@@ -158,7 +158,7 @@ export class SyncDBPlugin
         ).includes(did);
         if (!row.updatedAt) {
           row.updatedAt = Date.now();
-          await table.update(row.id, row);
+          await table.update(row.uid, row);
         }
         if (syncRow) {
           syncRows.push(row);

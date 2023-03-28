@@ -158,26 +158,28 @@ export class Table<
           .execute()
           .then((r) => r.first());
 
-    if (existing?.id) {
-      return this.update(existing.id, data as Row);
+    console.info(`table/${this.tableId} > upserting record`, existing, data);
+
+    if (existing?.uid) {
+      return this.update(existing.uid, data as Row);
     } else if (data.id) {
       throw new Error(`Failed upsert with id ${data.id}, record not found`);
     }
-    this.unlock();
     return this.insert({ ...check, ...data } as Omit<Row, "id">).then((id) =>
       this.getByUid(id)
     );
   }
 
-  async update(id: number, update: Partial<Row>) {
+  async update(uid: string, update: Partial<Row>) {
     const updated = (
       await this.query()
-        .where("id", "=", id)
+        .where("uid", "=", uid)
         .update(update)
         .returning()
         .execute()
     ).first() as Row;
     this.emit("/record/updated", updated);
+    cache.invalidateTable(this.tableId);
     return updated;
   }
 

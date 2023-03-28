@@ -5,12 +5,10 @@ import {
   createSeed,
   signAddressVerification,
 } from "@cinderlink/identifiers";
-import { createClient } from "@cinderlink/client";
+import { createClient } from "../../client";
 import * as ethers from "ethers";
-import ProtocolPlugin from "./plugin";
 import {
   CinderlinkClientInterface,
-  PluginEventDef,
   ProtocolEvents,
 } from "@cinderlink/core-types";
 
