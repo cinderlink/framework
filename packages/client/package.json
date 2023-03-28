@@ -3,7 +3,7 @@
   "repository": "https://github.com/cinderlinksocial/core",
   "description": "Typescript client for the Cinderlink development toolkit",
   "authors": "Drew Ewing <drew@cinderlink.com>",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -35,7 +35,7 @@
     "@chainsafe/libp2p-gossipsub": "^6.2.0",
     "@chainsafe/libp2p-noise": "^11.0.1",
     "@cinderlink/identifiers": "workspace:^0.0.1",
-    "@cinderlink/plugin-offline-sync-core": "workspace:0.0.1",
+    "@cinderlink/plugin-offline-sync-core": "workspace:^0.0.1",
     "@cinderlink/protocol": "workspace:^0.0.1",
     "@cinderlink/tsconfig": "workspace:^1.0.0",
     "@libp2p/crypto": "^1.0.14",
@@ -74,8 +74,8 @@
     "libp2p": "^0.41.0"
   },
   "dependencies": {
-    "@cinderlink/core-types": "workspace:0.0.1",
-    "@cinderlink/ipld-database": "workspace:0.0.1",
+    "@cinderlink/core-types": "workspace:^0.0.1",
+    "@cinderlink/ipld-database": "workspace:^0.0.1",
     "@libp2p/mplex": "^7.1.2",
     "ajv": "^8.12.0",
     "did-jwt": "^6.11.5",

@@ -15,8 +15,8 @@
     "watch": "tsup --watch"
   },
   "devDependencies": {
-    "@cinderlink/core-types": "workspace:0.0.1",
-    "@cinderlink/ipld-database": "workspace:0.0.1",
+    "@cinderlink/core-types": "workspace:^0.0.1",
+    "@cinderlink/ipld-database": "workspace:^0.0.1",
     "@cinderlink/plugin-social-client": "workspace:^0.0.1",
     "@cinderlink/tsconfig": "workspace:^1.0.0",
     "tsup": "^6.7.0",

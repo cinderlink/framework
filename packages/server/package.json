@@ -22,8 +22,8 @@
     "dist"
   ],
   "devDependencies": {
-    "@cinderlink/client": "workspace:0.0.1",
-    "@cinderlink/core-types": "workspace:0.0.1",
+    "@cinderlink/client": "workspace:^0.0.1",
+    "@cinderlink/core-types": "workspace:^0.0.1",
     "@cinderlink/tsconfig": "workspace:^1.0.0",
     "@types/node": "^18.15.5",
     "dids": "^3.4.0",
