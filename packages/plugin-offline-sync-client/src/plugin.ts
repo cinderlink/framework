@@ -5,9 +5,13 @@ import type {
   OutgoingP2PMessage,
   Peer,
   PluginEventDef,
+  PluginEventHandlers,
   PluginInterface,
+  ProtocolEvents,
   ProtocolMessage,
   ProtocolRequest,
+  ReceiveEvents,
+  SubscribeEvents,
 } from "@cinderlink/core-types";
 import Emittery from "emittery";
 import { v4 as uuid } from "uuid";
@@ -23,7 +27,9 @@ import {
 import { CinderlinkProtocolPlugin } from "@cinderlink/protocol";
 
 export class OfflineSyncClientPlugin<
-    Client extends CinderlinkClientInterface<OfflineSyncClientEvents> = CinderlinkClientInterface<OfflineSyncClientEvents>
+    Client extends CinderlinkClientInterface<any> = CinderlinkClientInterface<
+      OfflineSyncClientEvents & ProtocolEvents
+    >
   >
   extends Emittery<OfflineSyncClientEvents["emit"]>
   implements PluginInterface<OfflineSyncClientEvents, Client>
@@ -33,14 +39,14 @@ export class OfflineSyncClientPlugin<
   interval: number | null = null;
   ready = false;
 
-  p2p = {
+  p2p: PluginEventHandlers<ReceiveEvents<OfflineSyncClientEvents>> = {
     "/offline/send/response": this.onSendResponse,
     "/offline/get/request": this.onGetRequest,
     "/offline/get/response": this.onGetResponse,
     "/offline/get/confirmation": this.onGetConfirmation,
   };
 
-  pubsub = {};
+  pubsub: PluginEventHandlers<SubscribeEvents<OfflineSyncClientEvents>> = {};
 
   pluginEvents = {
     "/cinderlink/handshake/success": this.onPeerConnect,
