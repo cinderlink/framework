@@ -29,13 +29,14 @@
     "watch:browser": "vite build --watch",
     "build:browser": "vite build",
     "preview": "vite preview",
-    "test": "vitest"
+    "test": "vitest run"
   },
   "devDependencies": {
     "@chainsafe/libp2p-gossipsub": "^6.2.0",
     "@chainsafe/libp2p-noise": "^11.0.1",
+    "@cinderlink/identifiers": "workspace:^0.0.1",
     "@cinderlink/plugin-offline-sync-core": "workspace:0.0.1",
-    "@cinderlink/protocol": "workspace:../protocol",
+    "@cinderlink/protocol": "workspace:^0.0.1",
     "@cinderlink/tsconfig": "workspace:^1.0.0",
     "@libp2p/crypto": "^1.0.14",
     "@libp2p/interface-connection": "^3.1.1",

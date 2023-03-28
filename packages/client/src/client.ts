@@ -91,7 +91,9 @@ export class CinderlinkClient<
     this.plugins = {};
   }
 
-  async addPlugin(plugin: PluginInterface<any>) {
+  async addPlugin<
+    Plugin extends PluginInterface<any, any> = PluginInterface<any, any>
+  >(plugin: Plugin) {
     this.plugins[plugin.id] = plugin;
   }
 
@@ -184,6 +186,7 @@ export class CinderlinkClient<
     Promise.all(
       swarmAddresses.map(async (addr) => {
         const peerIdStr = addr.split("/").pop();
+        if (peerIdStr === this.peerId?.toString()) return;
         console.info("connecting to peer", peerIdStr);
         if (peerIdStr) {
           this.relayAddresses.push(addr);

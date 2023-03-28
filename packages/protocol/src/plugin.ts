@@ -9,7 +9,6 @@ import {
   PluginInterface,
   ProtocolRequest,
   Peer,
-  ReceiveEvents,
   HandshakeRequest,
   PluginEventDef,
 } from "@cinderlink/core-types";
@@ -33,21 +32,18 @@ export interface ProtocolHandler {
 }
 
 export class CinderlinkProtocolPlugin<
-  PluginEvents extends PluginEventDef = {
-    send: {};
-    receive: {};
-    publish: {};
-    subscribe: {};
-    emit: {};
-  },
-  Client extends CinderlinkClientInterface<
-    PluginEvents & ProtocolEvents<PluginEvents>
-  > = CinderlinkClientInterface<PluginEvents & ProtocolEvents<PluginEvents>>
-> implements PluginInterface<ProtocolEvents, Client>
+  Events extends PluginEventDef = PluginEventDef
+> implements
+    PluginInterface<
+      ProtocolEvents,
+      CinderlinkClientInterface<Events & ProtocolEvents>
+    >
 {
   id = "cinderlink";
 
-  constructor(public client: Client) {}
+  constructor(
+    public client: CinderlinkClientInterface<Events & ProtocolEvents>
+  ) {}
 
   p2p = {
     "/cinderlink/handshake/request": this.onHandshakeRequest,
@@ -61,7 +57,7 @@ export class CinderlinkProtocolPlugin<
     "/peer/connect": this.onPeerConnect,
     "/peer/disconnect": this.onPeerDisconnect,
   };
-  pluginEvents = {};
+  ProtocolEvents = {};
 
   protocolHandlers: Record<string, ProtocolHandler> = {};
 
@@ -87,6 +83,11 @@ export class CinderlinkProtocolPlugin<
   async stop() {}
 
   async initializeProtocol(stream: Stream, connection: Connection) {
+    if (
+      !connection.remotePeer?.toString() ||
+      (this.client.peerId && connection.remotePeer.equals(this.client.peerId))
+    )
+      return;
     let peer = this.client.peers.getPeer(connection.remotePeer.toString());
     if (!peer) {
       peer = this.client.peers.addPeer(connection.remotePeer, "peer");
@@ -98,57 +99,69 @@ export class CinderlinkProtocolPlugin<
       );
     }
 
-    const self = this;
-    const buffer = pushable();
-    this.protocolHandlers[peer.peerId.toString()] = {
-      buffer,
-      stream,
-      out: pipe(buffer, lp.encode(), stream.sink),
-      in: pipe(
-        stream.source,
-        lp.decode(),
-        (source) => {
-          return map(source, (buf) => {
-            return json.decode<
-              ProtocolMessage<
-                PluginEvents["receive"][keyof PluginEvents["receive"]] &
-                  ProtocolRequest,
-                keyof PluginEvents["receive"]
-              >
-            >(buf.subarray());
-          });
-        },
-        async function (source) {
-          for await (const encoded of source) {
-            console.info("protocol > received message", encoded);
-            await self.handleProtocolMessage(connection, encoded);
+    try {
+      const self = this;
+      const buffer = pushable();
+      this.protocolHandlers[peer.peerId.toString()] = {
+        buffer,
+        stream,
+        out: pipe(buffer, lp.encode(), stream.sink),
+        in: pipe(
+          stream.source,
+          lp.decode(),
+          (source) => {
+            return map(source, (buf) => {
+              return json.decode<
+                ProtocolMessage<
+                  ProtocolEvents["receive"][keyof ProtocolEvents["receive"]] &
+                    ProtocolRequest,
+                  keyof ProtocolEvents["receive"]
+                >
+              >(buf.subarray());
+            });
+          },
+          async function (source) {
+            try {
+              for await (const encoded of source) {
+                console.info("protocol > received message", encoded);
+                await self.handleProtocolMessage(connection, encoded);
+              }
+            } catch (e) {
+              console.error(e);
+            }
           }
+        ),
+      } as ProtocolHandler;
+
+      console.info(
+        `protocol > initialized protocol with ${readablePeer(
+          peer
+        )}, sending handshake request`
+      );
+      await this.client.send<ProtocolEvents>(peer.peerId.toString(), {
+        topic: "/cinderlink/handshake/request",
+        payload: {
+          did: this.client.id,
+        } as HandshakeRequest,
+      });
+
+      let interval = setInterval(async () => {
+        if (peer.connected) {
+          await this.client.ipfs.libp2p.ping(peer.peerId).catch(() => {});
+        } else {
+          clearInterval(interval);
         }
-      ),
-    } as ProtocolHandler;
-
-    console.info(
-      `protocol > initialized protocol with ${readablePeer(
-        peer
-      )}, sending handshake request`
-    );
-    await this.client.send<ProtocolEvents>(peer.peerId.toString(), {
-      topic: "/cinderlink/handshake/request",
-      payload: {
-        did: this.client.id,
-      } as HandshakeRequest,
-    });
-
-    let interval = setInterval(async () => {
-      if (peer.connected) {
-        await this.client.ipfs.libp2p.ping(peer.peerId);
-      } else {
-        clearInterval(interval);
-      }
-    }, 1000 * 10);
+      }, 1000 * 10);
+    } catch (e) {
+      console.error(e);
+    }
   }
 
   async onPeerConnect(peer: Peer) {
+    if (this.client.peerId && peer.peerId.equals(this.client.peerId)) {
+      return;
+    }
+
     if (!this.protocolHandlers[peer.peerId.toString()]) {
       console.info(
         `peer/connect > dialing cinderlink protocol ${readablePeer(peer)}`
@@ -173,7 +186,7 @@ export class CinderlinkProtocolPlugin<
   }
 
   async handleProtocolMessage<
-    Events extends PluginEventDef = PluginEvents,
+    Events extends PluginEventDef = ProtocolEvents,
     Topic extends keyof Events["receive"] = keyof Events["receive"],
     Encoding extends EncodingOptions = EncodingOptions
   >(
@@ -230,25 +243,22 @@ export class CinderlinkProtocolPlugin<
       event.payload
     );
     await this.client.p2p.emit(
-      topic as keyof PluginEvents["receive"],
-      event as ReceiveEvents<
-        PluginEvents & ProtocolEvents<PluginEvents>,
-        EncodingOptions
-      >[Topic]
+      topic as keyof ProtocolEvents["receive"],
+      event as any
     );
   }
 
   async encodeMessage<
     Topic extends keyof (
-      | ProtocolEvents<PluginEvents>["send"]
-      | ProtocolEvents<PluginEvents>["publish"]
+      | ProtocolEvents<ProtocolEvents>["send"]
+      | ProtocolEvents<ProtocolEvents>["publish"]
     ) = keyof (
-      | ProtocolEvents<PluginEvents>["send"]
-      | ProtocolEvents<PluginEvents>["publish"]
+      | ProtocolEvents<ProtocolEvents>["send"]
+      | ProtocolEvents<ProtocolEvents>["publish"]
     ),
     Encoding extends EncodingOptions = EncodingOptions
   >(
-    message: OutgoingP2PMessage<PluginEvents, Topic>,
+    message: OutgoingP2PMessage<ProtocolEvents, Topic>,
     { sign, encrypt, recipients }: Encoding = {} as Encoding
   ) {
     return encodePayload(message, {

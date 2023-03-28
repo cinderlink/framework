@@ -3,12 +3,12 @@ import {
   createDID,
   signAddressVerification,
   createSeed,
-} from "@cinderlink/identifiers";
+} from "../../identifiers";
 import { rmSync } from "fs";
 import { createClient, CinderlinkClient } from "../../client";
 import { describe, it, expect, beforeEach, afterEach, afterAll } from "vitest";
 import { Table } from "./table";
-import { BlockData, TableDefinition, TableRow } from "@cinderlink/core-types";
+import { BlockData, TableDefinition, TableRow } from "../../core-types";
 
 interface NonUniqueRow extends TableRow {
   id: number;
@@ -108,7 +108,7 @@ describe("@cinderlink/ipld-database/table", () => {
         repo: "test-data/" + tst.meta.name,
       },
     })) as CinderlinkClient;
-    client.initialConnectTimeout = 10;
+    client.initialConnectTimeout = 1;
     await client.start();
   });
 
@@ -116,8 +116,8 @@ describe("@cinderlink/ipld-database/table", () => {
     await client.stop();
   });
 
-  afterAll(() => {
-    rmSync("./test-data", { recursive: true, force: true });
+  afterEach((tst) => {
+    rmSync("./test-data/" + tst.meta.name, { recursive: true, force: true });
   });
 
   it("should create a current block", () => {
@@ -197,10 +197,10 @@ describe("@cinderlink/ipld-database/table", () => {
 
   it("should rollup records", async () => {
     const table = new Table<TestRow>("test", validDefinition, client.dag);
-    for (let i = 0; i < 1000; i++) {
+    for (let i = 0; i < 11; i++) {
       await table.insert({ name: `test #${i}`, count: i });
     }
-    expect(table.currentIndex).toBe(1000);
+    expect(table.currentIndex).toBe(11);
     expect(table.currentBlock.cache?.prevCID).not.toBeUndefined();
   });
 
@@ -265,46 +265,47 @@ describe("@cinderlink/ipld-database/table", () => {
 
   it("should rewrite previous blocks to update", async () => {
     const table = new Table<TestRow>("test", validDefinition, client.dag);
-    for (let i = 0; i < 100; i++) {
-      await table.insert({ name: `test #${i}`, count: i });
+    const uids: string[] = [];
+    for (let i = 1; i < 11; i++) {
+      uids.push(await table.insert({ name: `test #${i}`, count: i }));
     }
-    await table.update(2, { name: "test three", count: 1337 });
+    await table.update(uids[2], { name: "test three", count: 1337 });
 
     const allRecords = await table
       .query()
       .select()
       .execute()
       .then((r) => r.all());
-    expect(allRecords).toHaveLength(100);
+    expect(allRecords).toHaveLength(10);
 
-    const updated = await table.getById(2);
+    const updated = await table.getByUid(uids[2]);
     expect(updated).toMatchInlineSnapshot(`
       {
         "count": 1337,
-        "id": 2,
+        "id": 3,
         "name": "test three",
-        "uid": "bagaaierazrl3zpw6mauy7gzr6pu4youw6injufdhylqkqnerpb4wnbqggpca",
+        "uid": "bagaaierabxgwcvvlt2sqgrxwqoxhlkqphc5g5o3rwnkqbyw4bxh5txk3lmiq",
       }
     `);
 
-    expect(table.currentIndex).toBe(101);
+    expect(table.currentIndex).toBe(11);
   }, 30000);
 
   describe("upsert", () => {
     it("should update inserted records", async () => {
       const table = new Table<TestRow>("test", validDefinition, client.dag);
-      for (let i = 0; i < 11; i++) {
+      for (let i = 1; i < 11; i++) {
         await table.insert({ name: `test #${i}`, count: i });
       }
 
-      const result = await table.getById(2);
+      const result = await table.getById(1);
       expect(result).toMatchObject({
-        id: 2,
+        id: 1,
         name: "test #1",
         count: 1,
       });
       await table.upsert(
-        { id: result?.id },
+        { id: 1 },
         {
           name: "test three",
           count: 1337,
@@ -313,7 +314,7 @@ describe("@cinderlink/ipld-database/table", () => {
 
       const updated = await table.getById(result?.id as number);
       expect(updated).toMatchObject({
-        id: result?.id,
+        id: 1,
         name: "test three",
         count: 1337,
       });

@@ -227,7 +227,7 @@ export class TableQuery<
     }
 
     if (this.table.writing) {
-      await this.table.awaitUnlock();
+      await this.table.awaitLock();
     }
 
     const nocache = this.instructions.some((i) => i.instruction === "nocache");
@@ -270,6 +270,7 @@ export class TableQuery<
         const updateInstruction = this.instructions.find(
           (i) => i.instruction === "update"
         ) as UpdateInstruction<Row>;
+        console.info("!!!!!!! UPDATE", matches, updateInstruction);
         for (const match of matches) {
           if (updateInstruction.fn) {
             const updated = updateInstruction.fn(match);
@@ -280,12 +281,13 @@ export class TableQuery<
               );
             });
           } else if (updateInstruction.values) {
+            const change = { ...match };
             for (const [key, value] of Object.entries(
               updateInstruction.values
             )) {
-              match[key as keyof Row] = value;
+              change[key as keyof Row] = value;
             }
-            await event.block.updateRecord(match.id, match).catch(() => {
+            await event.block.updateRecord(match.id, change).catch(() => {
               console.error(
                 "Failed to update record (unique key constraint violation)",
                 match
@@ -322,15 +324,20 @@ export class TableQuery<
       if (returningInstruction) {
         returning = returningInstruction.fields?.length
           ? returning.concat(
-              matches.map(
-                (m: Row) =>
-                  returningInstruction.fields?.reduce(
-                    (acc, field) => ({ ...acc, [field]: m[field] }),
-                    {}
-                  ) as Row
-              )
+              matches.map((m: Row) => {
+                const updated = event.block.cache?.records?.[m.id];
+                return returningInstruction.fields?.reduce(
+                  (acc, field) => ({
+                    ...acc,
+                    [field]: updated?.[field] || m[field],
+                  }),
+                  {}
+                ) as Row;
+              })
             )
-          : returning.concat(matches);
+          : returning.concat(
+              matches.map((m) => event.block.cache?.records?.[m.id] || m)
+            );
       }
 
       if (returning.length >= limit) {
@@ -346,11 +353,6 @@ export class TableQuery<
       let writeStarted = false;
       let rewriteBlock: TableBlockInterface<Row, Def> | undefined;
       let prevCID: string | undefined;
-      if (this.table.writing) {
-        await this.table.awaitLock();
-      } else {
-        this.table.lock();
-      }
       for (const block of unwound.reverse()) {
         if (!writeStarted && block.changed) {
           writeStarted = true;

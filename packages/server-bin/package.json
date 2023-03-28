@@ -22,8 +22,7 @@
   ],
   "scripts": {
     "build": "tsup",
-    "watch": "tsup --watch",
-    "test": "vitest"
+    "watch": "tsup --watch"
   },
   "dependencies": {
     "@cinderlink/server": "workspace:0.0.1",

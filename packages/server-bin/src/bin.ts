@@ -10,6 +10,9 @@ import {
 } from "@cinderlink/identifiers";
 import { HttpApi } from "ipfs-http-server";
 import { HttpGateway } from "ipfs-http-gateway";
+import events from "events";
+
+events.setMaxListeners(1024);
 
 const argv = minimist(process.argv.slice(2));
 const [command] = argv._;

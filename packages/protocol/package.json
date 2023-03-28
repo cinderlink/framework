@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "",
   "scripts": {
-    "test": "vitest",
+    "test": "vitest run",
     "build": "tsup",
     "watch": "tsup --watch"
   },
@@ -30,13 +30,16 @@
   "author": "Drew Ewing",
   "license": "ISC",
   "devDependencies": {
-    "@cinderlink/core-types": "workspace:../core-types",
-    "@cinderlink/tsconfig": "workspace:^1.0.0",
+    "@cinderlink/core-types": "^0.0.1",
+    "@cinderlink/identifiers": "^0.0.1",
+    "@cinderlink/test-adapters": "^0.0.1",
+    "@cinderlink/tsconfig": "^1.0.0",
     "@libp2p/interface-connection": "^3.1.1",
     "@types/uuid": "^9.0.1",
     "did-jwt": "^6.11.5",
     "dids": "^3.4.0",
     "emittery": "^1.0.1",
+    "ethers": "^5.7.2",
     "it-length-prefixed": "^8.0.4",
     "it-map": "^2.0.1",
     "it-pipe": "^2.0.5",

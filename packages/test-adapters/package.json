@@ -7,8 +7,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsup",
-    "watch": "tsup --watch",
-    "test": "vitest"
+    "watch": "tsup --watch"
   },
   "devDependencies": {
     "@cinderlink/core-types": "workspace:0.0.1",

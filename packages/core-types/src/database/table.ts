@@ -104,7 +104,7 @@ export interface TableInterface<
   bulkInsert(
     data: Omit<Omit<Row, "id">, "uid">[]
   ): Promise<{ saved: string[]; errors: Record<number, string> }>;
-  update(id: number, data: Partial<Row>): Promise<Row>;
+  update(uid: string, data: Partial<Row>): Promise<Row>;
   upsert<Index extends keyof Row = keyof Row>(
     check: Record<Index, Row[Index]>,
     data: Partial<Row>

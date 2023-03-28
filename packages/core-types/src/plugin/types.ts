@@ -23,7 +23,7 @@ export interface PluginEventDef {
 
 export interface PluginInterface<
   PluginEvents extends PluginEventDef = PluginEventDef,
-  Client extends CinderlinkClientInterface<any> = CinderlinkClientInterface
+  Client extends CinderlinkClientInterface<any> = CinderlinkClientInterface<any>
 > {
   id: string;
   client: Client;
