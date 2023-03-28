@@ -18,8 +18,7 @@
   },
   "scripts": {
     "build": "tsup",
-    "watch": "pnpm build --watch",
-    "test": "echo 'not implemented yet'"
+    "watch": "pnpm build --watch"
   },
   "devDependencies": {
     "@cinderlink/tsconfig": "workspace:^1.0.0",
