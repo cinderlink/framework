@@ -36,7 +36,7 @@ describe("handleProtocol", () => {
         repo: "test-client",
       },
     });
-    client.initialConnectTimeout = 1;
+    client.initialConnectTimeout = 0;
 
     const serverWallet = ethers.Wallet.createRandom();
     const serverDID = await createDID(await createSeed("test server"));
@@ -62,7 +62,7 @@ describe("handleProtocol", () => {
         },
       },
     });
-    server.initialConnectTimeout = 1;
+    server.initialConnectTimeout = 0;
     // client.addPlugin(new ProtocolPlugin(client) as any);
     // server.addPlugin(new ProtocolPlugin(server) as any);
   });
@@ -77,7 +77,10 @@ describe("handleProtocol", () => {
     const serverPeer = await server.ipfs.id();
     await client.connect(serverPeer.id);
 
-    await client.pluginEvents.once("/cinderlink/handshake/success");
+    await Promise.all([
+      client.pluginEvents.once("/cinderlink/handshake/success"),
+      server.pluginEvents.once("/cinderlink/handshake/success"),
+    ]);
     expect(fn).toHaveBeenCalledTimes(2);
   });
 
