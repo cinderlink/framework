@@ -2,7 +2,7 @@
   "name": "@cinderlink/server",
   "description": "Federated pinning & messaging server for Cinderlink networks",
   "authors": "Drew Ewing <drew@cinderlink.com>",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -22,7 +22,7 @@
     "dist"
   ],
   "devDependencies": {
-    "@cinderlink/client": "workspace:^0.0.1",
+    "@cinderlink/client": "workspace:^0.0.2",
     "@cinderlink/core-types": "workspace:^0.0.1",
     "@cinderlink/tsconfig": "workspace:^1.0.0",
     "@types/node": "^18.15.5",
@@ -36,7 +36,7 @@
     "vitest": "^0.28.5"
   },
   "peerDependencies": {
-    "@cinderlink/client": "@cinderlink/client",
+    "@cinderlink/client": "workspace:^0.0.2",
     "ipfs-core": "^0.18.0"
   }
 }

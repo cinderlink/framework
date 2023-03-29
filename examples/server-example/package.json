@@ -10,13 +10,13 @@
     "ts": "ts-node src/start.ts"
   },
   "dependencies": {
-    "@cinderlink/client": "workspace:^0.0.1",
+    "@cinderlink/client": "workspace:^0.0.2",
     "@cinderlink/core-types": "workspace:^0.0.1",
     "@cinderlink/plugin-identity-server": "workspace:^0.0.1",
     "@cinderlink/plugin-offline-sync-server": "workspace:^0.0.2",
-    "@cinderlink/plugin-social-core": "workspace:^0.0.1",
+    "@cinderlink/plugin-social-core": "workspace:^0.0.2",
     "@cinderlink/plugin-social-server": "workspace:^0.0.2",
-    "@cinderlink/server": "workspace:^0.0.1",
+    "@cinderlink/server": "workspace:^0.0.2",
     "@cinderlink/server-bin": "workspace:^0.0.2",
     "ts-node": "^10.9.1"
   },

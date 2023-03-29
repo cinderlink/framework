@@ -24,7 +24,7 @@
   "devDependencies": {
     "@cinderlink/core-types": "workspace:^0.0.1",
     "@cinderlink/plugin-offline-sync-client": "workspace:^0.0.2",
-    "@cinderlink/plugin-offline-sync-core": "workspace:^0.0.1",
+    "@cinderlink/plugin-offline-sync-core": "workspace:^0.0.2",
     "@cinderlink/protocol": "workspace:^0.0.1",
     "@cinderlink/tsconfig": "workspace:^1.0.0",
     "did-jwt": "^6.11.5",

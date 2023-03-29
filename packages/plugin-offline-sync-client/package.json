@@ -23,8 +23,8 @@
   ],
   "devDependencies": {
     "@cinderlink/core-types": "workspace:^0.0.1",
-    "@cinderlink/ipld-database": "workspace:^0.0.1",
-    "@cinderlink/plugin-offline-sync-core": "workspace:^0.0.1",
+    "@cinderlink/ipld-database": "workspace:^0.0.2",
+    "@cinderlink/plugin-offline-sync-core": "workspace:^0.0.2",
     "@cinderlink/tsconfig": "workspace:^1.0.0",
     "@multiformats/multiaddr": "^11.6.1",
     "@types/uuid": "^9.0.1",

@@ -25,7 +25,7 @@
     "watch": "tsup --watch"
   },
   "dependencies": {
-    "@cinderlink/server": "workspace:^0.0.1",
+    "@cinderlink/server": "workspace:^0.0.2",
     "ipfs-http-gateway": "^0.13.0",
     "ipfs-http-server": "^0.15.0",
     "minimist": "^1.2.8"
