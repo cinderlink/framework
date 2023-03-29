@@ -1,9 +1,6 @@
 import { OfflineSyncClientPluginInterface } from "@cinderlink/plugin-offline-sync-core";
 import { SocialChatMessage } from "@cinderlink/plugin-social-core";
-import {
-  DecodedProtocolPayload,
-  ProtocolRequest,
-} from "@cinderlink/core-types";
+import { ProtocolRequest } from "@cinderlink/core-types";
 import { encodePayload } from "@cinderlink/protocol";
 import { v4 as uuid } from "uuid";
 import SocialClientPlugin from "../plugin";
