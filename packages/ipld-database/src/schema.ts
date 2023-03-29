@@ -22,7 +22,7 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
   ) {
     super();
     Object.entries(defs).forEach(([tableId, def]) => {
-      console.info(`Creating table "${tableId}"`);
+      // console.info(`Creating table "${tableId}"`);
       this.tables[tableId] = new Table(tableId, def, this.dag);
     });
   }
@@ -59,14 +59,10 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
     try {
       await Promise.all(
         Object.entries(this.tables).map(async ([name]) => {
-          console.info(`ipld-database/schema/save: saving table ${name}`);
+          // console.info(`ipld-database/schema/save: saving table ${name}`);
           const tableCID = await this.tables[name].save();
           if (tableCID) {
             tables[name] = tableCID?.toString();
-          } else {
-            console.info(
-              `ipld-database/schema/save: skipping empty table ${name}`
-            );
           }
         })
       ).catch((err) => {
@@ -83,10 +79,10 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
       tables,
     };
 
-    console.info(
-      `ipld-database/schema/save: saving ${this.schemaId}`,
-      savedSchema
-    );
+    // console.info(
+    //   `ipld-database/schema/save: saving ${this.schemaId}`,
+    //   savedSchema
+    // );
 
     return this.encrypted
       ? this.dag.storeEncrypted(savedSchema)
@@ -108,11 +104,11 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
   ): Promise<SchemaInterface> {
     if (!data) throw new Error("Invalid schema data");
     const schema = new Schema(data.schemaId, data.defs, dag, encrypted);
-    console.info(`Loading schema "${data.schemaId}"`, data);
+    // console.info(`Loading schema "${data.schemaId}"`, data);
     await Promise.all(
       Object.entries(data.tables).map(async ([name, tableCID]) => {
         if (tableCID) {
-          console.info(`Loading table "${name}" from ${tableCID}`);
+          // console.info(`Loading table "${name}" from ${tableCID}`);
           await schema.tables[name]?.load(CID.parse(tableCID));
         }
       })

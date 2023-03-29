@@ -68,6 +68,7 @@ export class Table<
 
   async insert(data: Omit<Omit<Row, "id">, "uid">) {
     this.assertValid(data as Partial<Row>);
+    // console.info(`${this.tableId} > locking to insert`, data);
     await this.awaitLock();
     const id = this.currentIndex + 1;
     this.currentIndex = id + 0;
@@ -85,9 +86,10 @@ export class Table<
       }
     }
     cache.invalidateTable(this.tableId);
+    // console.info(`${this.tableId} > unlocking from insert`, data);
     this.unlock();
     this.emit("/record/inserted", { ...data, uid, id } as Row);
-    console.info(`table/${this.tableId} > inserted record ${id}`, data);
+    // console.info(`table/${this.tableId} > inserted record ${id}`, data);
     return uid;
   }
 
@@ -122,7 +124,6 @@ export class Table<
   }
 
   async bulkInsert(data: Omit<Omit<Row, "id">, "uid">[]) {
-    await this.awaitLock();
     const saved: string[] = [];
     const errors: Record<number, string> = {};
     for (const index in data) {
@@ -135,7 +136,6 @@ export class Table<
           errors[index] = err;
         });
     }
-    this.unlock();
     return { saved, errors };
   }
 
@@ -158,7 +158,7 @@ export class Table<
           .execute()
           .then((r) => r.first());
 
-    console.info(`table/${this.tableId} > upserting record`, existing, data);
+    // console.info(`table/${this.tableId} > upserting record`, existing, data);
 
     if (existing?.uid) {
       return this.update(existing.uid, data as Row);
@@ -214,10 +214,10 @@ export class Table<
       if (!event.block.index) {
         event.block.buildSearchIndex();
       }
-      console.info(
-        `block index loaded for ${event.block.cid}`,
-        event.block.index
-      );
+      // console.info(
+      //   `block index loaded for ${event.block.cid}`,
+      //   event.block.index
+      // );
       const searchResults = (await event.block.search(
         query,
         limit - results.length
@@ -229,16 +229,23 @@ export class Table<
   }
 
   async save() {
-    await this.awaitLock();
-    if (this.currentBlock.changed) {
-      console.info(`table/${this.tableId} > saving`, this.currentBlock.cid);
-      cache.invalidateTable(this.tableId);
-      await this.currentBlock.save();
-      console.info(`table/${this.tableId} > saved`, this.currentBlock.cid);
+    if (!this.currentBlock.changed) {
+      return this.currentBlock.cid;
     }
 
-    this.unlock();
+    // console.info(
+    //   `table/${this.tableId} > locking for save (${this.currentBlock.cid})`
+    // );
+    await this.awaitLock();
+    console.info(`table/${this.tableId} > saving`, this.currentBlock.cid);
+    await this.currentBlock.save();
+    cache.invalidateTable(this.tableId);
+    // console.info(`table/${this.tableId} > saved`, this.currentBlock.cid);
 
+    // console.info(
+    //   `table/${this.tableId} > unlocking for save (${this.currentBlock.cid})`
+    // );
+    this.unlock();
     return this.currentBlock.cid;
   }
 
@@ -309,6 +316,7 @@ export class Table<
   }
 
   lock() {
+    // console.info(`table/${this.tableId} > locking table`);
     if (this.writing) {
       throw new Error("Table is already writing");
     }
@@ -321,6 +329,7 @@ export class Table<
     if (!this.writing) {
       return;
     }
+    // console.info(`table/${this.tableId} > unlocking table`);
     this.writing = false;
     this.writeStartAt = 0;
     const duration = Date.now() - this.writeStartAt;
@@ -331,15 +340,18 @@ export class Table<
     if (!this.writing) {
       return Promise.resolve();
     }
+    // console.info(`table/${this.tableId} > waiting for unlock`);
     return this.once("/write/finished").then(() => {});
   }
 
   awaitLock(): Promise<void> {
     if (!this.writing) {
-      return Promise.resolve(this.lock());
+      this.lock();
+      return Promise.resolve();
     }
+    // console.info(`table/${this.tableId} > waiting for lock`);
     return this.once("/write/finished").then(() => {
-      return this.lock();
+      return this.awaitLock();
     });
   }
 }

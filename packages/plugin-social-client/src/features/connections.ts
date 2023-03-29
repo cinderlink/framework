@@ -86,17 +86,23 @@ export class SocialConnections {
       .limit(limit)
       .select();
 
-    if (filter === "in" || filter === "mutual") {
+    if (filter === "in") {
       query.where("to", "=", user);
     } else if (filter === "out") {
       query.where("from", "=", user);
-    }
-
-    if (filter === "mutual") {
+    } else if (filter === "all" || filter === "mutual") {
+      query.or((qb) => {
+        qb.select().where("to", "=", user);
+      });
       query.or((qb) => {
         qb.select().where("from", "=", user);
       });
     }
+    // } else if (filter === "mutual") {
+    //   query.where("to", "=", user).whereFn((row) => {
+    //     return this.connectionExists(row.from, user);
+    //   })
+    // }
 
     const results = (await query.execute()).all();
 

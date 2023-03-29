@@ -22,6 +22,7 @@ export class SocialUsers {
   };
   announceInterval: NodeJS.Timer | null = null;
   hasServerConnection = false;
+  loadingLocalUser = false;
 
   constructor(private plugin: SocialClientPlugin) {}
 
@@ -54,6 +55,18 @@ export class SocialUsers {
       console.info(`plugin/social/client > announcing (pubsub, interval)`);
       await this.announce();
     }, Number(this.plugin.options.announceInterval || 180000));
+
+    const connections = await this.plugin.connections.getConnections(
+      this.plugin.client.id,
+      "out"
+    );
+    const connectedUsers = connections.map((c) => c.to);
+    for (const did of connectedUsers) {
+      const user = await this.getUserByDID(did);
+      if (!user) {
+        await this.plugin.users.searchUsers(did);
+      }
+    }
   }
 
   async announce(to: string | undefined = undefined) {
@@ -169,9 +182,14 @@ export class SocialUsers {
 
   async loadLocalUser() {
     if (!this.plugin.client.identity.hasResolved) {
+      console.info("plugin/social/client > identity not resolved, waiting...");
+      return;
+    } else if (this.loadingLocalUser) {
       return;
     }
 
+    this.loadingLocalUser = true;
+    console.info("plugin/social/client > loading local user...");
     const user = (
       await this.plugin
         .table<SocialUser>("users")
@@ -180,7 +198,10 @@ export class SocialUsers {
         .select()
         .execute()
     )?.first();
-    if (!user) return;
+    if (!user) {
+      console.info("plugin/social/client > local user not found, returning...");
+      return;
+    }
 
     this.localUser = {
       ...user,
@@ -188,6 +209,7 @@ export class SocialUsers {
       addressVerification: this.plugin.client.addressVerification,
       status: "online",
     };
+    console.info("plugin/social/client > local user loaded", this.localUser);
   }
 
   async getUserByDID(did: string): Promise<SocialUser | undefined> {
@@ -368,6 +390,22 @@ export class SocialUsers {
     console.info(
       `plugin/social/client > received user search response (did: ${message.peer.did})`,
       message.payload
+    );
+    // insert users we don't have
+    await Promise.all(
+      message.payload.results.map(async (user) => {
+        const existing = await this.plugin.users.getUserByDID(user.did);
+        if (!existing) {
+          await this.plugin.table<SocialUser>("users")?.insert({
+            did: user.did,
+            name: user.name,
+            bio: user.bio,
+            status: "offline",
+            avatar: user.avatar,
+            updatedAt: user.updatedAt,
+          });
+        }
+      })
     );
   }
 }

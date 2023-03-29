@@ -44,7 +44,7 @@ export class Peerstore implements PeerStoreInterface {
   }
 
   peerCount() {
-    return Object.keys(this.peers).length;
+    return this.getPeers().length;
   }
 
   removePeer(peerId: string) {
