@@ -28,6 +28,7 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
   }
 
   setDefs(defs: Record<string, TableDefinition>) {
+    this.defs = defs;
     Object.entries(defs).forEach(([tableId, def]) => {
       if (!this.tables[tableId]) {
         this.tables[tableId] = new Table(tableId, def, this.dag);

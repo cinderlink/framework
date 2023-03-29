@@ -25,21 +25,21 @@
     "watch": "tsup --watch"
   },
   "dependencies": {
-    "@cinderlink/server": "workspace:^0.0.2",
+    "@cinderlink/server": "workspace:../server",
     "ipfs-http-gateway": "^0.13.0",
     "ipfs-http-server": "^0.15.0",
     "minimist": "^1.2.8"
   },
   "peerDependencies": {
-    "@cinderlink/client": "workspace:^0.0.1"
+    "@cinderlink/client": "workspace:../client"
   },
   "devDependencies": {
-    "@cinderlink/identifiers": "workspace:^0.0.1",
-    "@cinderlink/plugin-identity-server": "workspace:^0.0.1",
-    "@cinderlink/plugin-offline-sync-server": "workspace:^0.0.2",
-    "@cinderlink/plugin-social-server": "workspace:^0.0.2",
-    "@cinderlink/protocol": "workspace:^0.0.1",
-    "@cinderlink/tsconfig": "workspace:^1.0.0",
+    "@cinderlink/identifiers": "workspace:../identifiers",
+    "@cinderlink/plugin-identity-server": "workspace:../plugin-identity-server",
+    "@cinderlink/plugin-offline-sync-server": "workspace:../plugin-offline-sync-server",
+    "@cinderlink/plugin-social-server": "workspace:../plugin-social-server",
+    "@cinderlink/protocol": "workspace:../protocol",
+    "@cinderlink/tsconfig": "workspace:../tsconfig",
     "@types/minimist": "^1.2.2",
     "@types/node": "^18.15.5",
     "chalk": "^5.2.0",

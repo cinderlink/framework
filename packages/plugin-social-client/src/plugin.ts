@@ -122,6 +122,7 @@ export class SocialClientPlugin<
 
   async stop() {
     console.info(`${logPrefix} > stopping`);
+    await this.users.stop();
   }
 }
 

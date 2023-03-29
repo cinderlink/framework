@@ -10,8 +10,8 @@
     "watch": "tsup --watch"
   },
   "devDependencies": {
-    "@cinderlink/core-types": "workspace:^0.0.1",
-    "@cinderlink/tsconfig": "workspace:^1.0.0",
+    "@cinderlink/core-types": "workspace:../core-types",
+    "@cinderlink/tsconfig": "workspace:../tsconfig",
     "@libp2p/crypto": "^1.0.14",
     "@libp2p/interface-peer-id": "^2.0.1",
     "@libp2p/peer-id-factory": "^2.0.3",
