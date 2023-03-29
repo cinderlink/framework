@@ -72,6 +72,8 @@ export class CinderlinkClient<
   public relayAddresses: string[] = [];
   public role: PeerRole;
   public initialConnectTimeout: number = 10000;
+  public nodeAddresses: string[] = [];
+  public nodeReconnectTimer: NodeJS.Timer | undefined = undefined;
 
   constructor({
     ipfs,
@@ -137,7 +139,9 @@ export class CinderlinkClient<
     return this.plugins[id] !== undefined;
   }
 
-  async start(swarmAddresses: string[] = []) {
+  async start(nodeAddrs: string[] = []) {
+    this.nodeAddresses = nodeAddrs;
+
     const info = await this.ipfs.id();
     this.peerId = info.id;
 
@@ -181,13 +185,46 @@ export class CinderlinkClient<
 
     const protocol = new CinderlinkProtocolPlugin(this as any);
     this.addPlugin(protocol as any);
-    await this.startPlugin(protocol.id);
+    console.info("starting protocol plugin");
+    this.startPlugin(protocol.id);
+    console.info("connecting to nodes");
+    this.connectToNodes();
+    console.info("loading");
+    await this.load();
+    this.nodeReconnectTimer = setInterval(
+      this.connectToNodes.bind(this),
+      15000
+    );
 
+    console.info(
+      `plugins > ${
+        Object.keys(this.plugins).length
+      } plugins found: ${Object.keys(this.plugins).join(", ")}`
+    );
+    await Promise.all(
+      Object.values(this.plugins).map(async (plugin) => {
+        if (plugin.id === protocol.id) return;
+        console.info(`/plugin/${plugin.id} > starting...`, plugin);
+        await this.startPlugin(plugin.id);
+      })
+    );
+
+    console.info(`client > ready`);
+    this.emit("/client/ready", {});
+  }
+
+  async connectToNodes() {
     Promise.all(
-      swarmAddresses.map(async (addr) => {
+      this.nodeAddresses.map(async (addr) => {
         const peerIdStr = addr.split("/").pop();
         if (peerIdStr === this.peerId?.toString()) return;
         if (peerIdStr) {
+          const peer = this.peers.getPeer(peerIdStr);
+          if (peer?.connected) {
+            return;
+          }
+
+          console.info(`client > connecting to node ${peerIdStr}...`);
           this.relayAddresses.push(addr);
           const peerId = peerIdFromString(peerIdStr);
           await this.ipfs.libp2p.peerStore.delete(peerId);
@@ -205,24 +242,6 @@ export class CinderlinkClient<
         }
       })
     );
-
-    await this.load();
-
-    console.info(
-      `plugins > ${
-        Object.keys(this.plugins).length
-      } plugins found: ${Object.keys(this.plugins).join(", ")}`
-    );
-    await Promise.all(
-      Object.values(this.plugins).map(async (plugin) => {
-        if (plugin.id === protocol.id) return;
-        console.info(`/plugin/${plugin.id} > starting...`, plugin);
-        await this.startPlugin(plugin.id);
-      })
-    );
-
-    console.info(`client > ready`);
-    this.emit("/client/ready", {});
   }
 
   async save() {
@@ -399,7 +418,8 @@ export class CinderlinkClient<
     options: Encoding = {
       sign: false,
       encrypt: false,
-    } as Encoding
+    } as Encoding,
+    offline = false
   ) {
     const encoded = await encodePayload(
       message.payload as DecodedProtocolPayload<ProtocolRequest, Encoding>,
@@ -413,19 +433,22 @@ export class CinderlinkClient<
 
     const peer = this.peers.getPeer(peerId);
     if (!peer) return;
-    if (peer.did && !peer.connected) {
-      if (this.hasPlugin("offlineSync")) {
-        console.info(`p2p/out > sending message to offline peer ${peerId}`);
-        await this.getPlugin<OfflineSyncClientPluginInterface>(
-          "offlineSync"
-        ).sendMessage(peer.did, {
-          topic: message.topic as string,
-          payload: encoded.payload,
-          signed: encoded.signed,
-          encrypted: encoded.encrypted,
-          recipients: encoded.recipients,
-        });
-      }
+    if (
+      offline &&
+      peer.did &&
+      !peer.connected &&
+      this.hasPlugin("offlineSyncClient")
+    ) {
+      console.info(`p2p/out > sending message to offline peer ${peerId}`);
+      await this.getPlugin<OfflineSyncClientPluginInterface>(
+        "offlineSync"
+      ).sendMessage(peer.did, {
+        topic: message.topic as string,
+        payload: encoded.payload,
+        signed: encoded.signed,
+        encrypted: encoded.encrypted,
+        recipients: encoded.recipients,
+      });
     }
 
     if (this.plugins.cinderlink?.protocolHandlers[peer.peerId.toString()]) {

@@ -21,7 +21,7 @@
     "watch": "pnpm build --watch"
   },
   "devDependencies": {
-    "@cinderlink/tsconfig": "workspace:^1.0.0",
+    "@cinderlink/tsconfig": "workspace:../tsconfig",
     "@libp2p/interface-connection": "^3.1.1",
     "@libp2p/interface-peer-id": "^2.0.1",
     "ajv": "^8.12.0",

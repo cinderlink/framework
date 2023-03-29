@@ -6,7 +6,11 @@ import {
   IncomingPubsubMessage,
   Peer,
 } from "@cinderlink/core-types";
-import { SocialClientEvents, SocialUser } from "@cinderlink/plugin-social-core";
+import {
+  SocialClientEvents,
+  SocialUser,
+  SocialUserStatus,
+} from "@cinderlink/plugin-social-core";
 import { checkAddressVerification } from "@cinderlink/identifiers";
 import SocialClientPlugin from "../plugin";
 
@@ -20,6 +24,7 @@ export class SocialUsers {
     status: "online",
     updatedAt: Date.now(),
   };
+  userStatusInterval: NodeJS.Timer | null = null;
   announceInterval: NodeJS.Timer | null = null;
   hasServerConnection = false;
   loadingLocalUser = false;
@@ -33,6 +38,8 @@ export class SocialUsers {
       async (peer: Peer) => {
         if (peer.role === "server") {
           this.hasServerConnection = true;
+        } else {
+          await this.setUserStatus(peer.did as string, "online");
         }
 
         if (
@@ -44,6 +51,12 @@ export class SocialUsers {
         }
       }
     );
+
+    this.plugin.client.on("/peer/disconnect", async (peer: Peer) => {
+      if (peer.role === "peer") {
+        await this.setUserStatus(peer.did as string, "offline");
+      }
+    });
 
     this.announceInterval = setInterval(async () => {
       if (
@@ -67,6 +80,48 @@ export class SocialUsers {
         await this.plugin.users.searchUsers(did);
       }
     }
+
+    this.userStatusInterval = setInterval(async () => {
+      const peers = this.plugin.client.peers
+        .getPeers()
+        .filter((p) => p.did && p.connected);
+      for (const peer of peers) {
+        const user = await this.getUserByDID(peer.did as string);
+        if (user?.status === "offline") {
+          await this.plugin.users.setUserStatus(peer.did as string, "online");
+        }
+      }
+
+      await this.plugin
+        .table<SocialUser>("users")
+        .query()
+        .where("status", "!=", "offline")
+        .where(
+          "did",
+          "!in",
+          peers.map((p) => p.did as string)
+        )
+        .update({ status: "offline" })
+        .execute();
+    }, 10000);
+  }
+
+  async stop() {
+    if (this.userStatusInterval) {
+      clearInterval(this.userStatusInterval);
+    }
+    if (this.announceInterval) {
+      clearInterval(this.announceInterval);
+    }
+  }
+
+  async setUserStatus(did: string, status: SocialUserStatus) {
+    await this.plugin
+      .table<SocialUser>("users")
+      .query()
+      .where("did", "=", did)
+      .update({ status })
+      .execute();
   }
 
   async announce(to: string | undefined = undefined) {
@@ -297,7 +352,7 @@ export class SocialUsers {
       message.payload
     );
     await this.plugin.table<SocialUser>("users")?.upsert(
-      { did },
+      { did: message.payload.did },
       {
         address: message.payload.address,
         addressVerification: message.payload.addressVerification,
@@ -305,7 +360,7 @@ export class SocialUsers {
         bio: message.payload.bio,
         status: message.payload.status,
         avatar: message.payload.avatar,
-        did: message.peer.did,
+        did: message.payload.did,
         updatedAt: message.payload.updatedAt,
       }
     );

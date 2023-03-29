@@ -1,7 +1,8 @@
 import { OfflineSyncClientPluginInterface } from "@cinderlink/plugin-offline-sync-core";
-import { v4 as uuid } from "uuid";
 import { SocialChatMessage } from "@cinderlink/plugin-social-core";
 import { ProtocolRequest } from "@cinderlink/core-types";
+import { encodePayload } from "@cinderlink/protocol";
+import { v4 as uuid } from "uuid";
 import SocialClientPlugin from "../plugin";
 
 export class SocialChat {
@@ -48,14 +49,29 @@ export class SocialChat {
 
     // if the user isn't online
     const peer = this.plugin.client.peers.getPeerByDID(message.to);
-    if (!peer?.connected && this.plugin.client.hasPlugin("offlineSync")) {
+    if (!peer?.connected && this.plugin.client.hasPlugin("offlineSyncClient")) {
       const offlineSync =
         this.plugin.client.getPlugin<OfflineSyncClientPluginInterface>(
           "offlineSync"
         );
+      console.info("sending chat message to offline sync", {
+        to: message.to,
+        message: savedMessage,
+      });
+
+      const encoded = await encodePayload(savedMessage as any, {
+        did: this.plugin.client.did,
+        sign: false,
+        encrypt: true,
+        recipients: [message.to],
+      });
+
       await offlineSync?.sendMessage(message.to, {
         topic: "social/chat/message/send",
-        payload: savedMessage,
+        payload: encoded.payload,
+        signed: encoded.signed,
+        encrypted: encoded.encrypted,
+        recipients: encoded.recipients,
       });
     }
 

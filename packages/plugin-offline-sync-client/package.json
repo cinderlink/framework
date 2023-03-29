@@ -2,7 +2,7 @@
   "name": "@cinderlink/plugin-offline-sync-client",
   "description": "Offline sync client plugin for cinderlink enabling users to send encrypted messages to offline users and have them delivered when they come online.",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -22,10 +22,10 @@
     "dist"
   ],
   "devDependencies": {
-    "@cinderlink/core-types": "workspace:^0.0.1",
-    "@cinderlink/ipld-database": "workspace:^0.0.2",
-    "@cinderlink/plugin-offline-sync-core": "workspace:^0.0.2",
-    "@cinderlink/tsconfig": "workspace:^1.0.0",
+    "@cinderlink/core-types": "workspace:../core-types",
+    "@cinderlink/ipld-database": "workspace:../ipld-database",
+    "@cinderlink/plugin-offline-sync-core": "workspace:../plugin-offline-sync-core",
+    "@cinderlink/tsconfig": "workspace:../tsconfig",
     "@multiformats/multiaddr": "^11.6.1",
     "@types/uuid": "^9.0.1",
     "did-jwt": "^6.11.5",
@@ -44,7 +44,7 @@
     "multiformats": "^11.0.2"
   },
   "dependencies": {
-    "@cinderlink/protocol": "workspace:^0.0.1",
+    "@cinderlink/protocol": "workspace:../protocol",
     "date-fns": "^2.29.3",
     "uuid": "^9.0.0"
   }

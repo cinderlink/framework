@@ -358,7 +358,7 @@ export class TableBlock<
 
   async violatesUniqueConstraints(row: Partial<Row>, id?: number) {
     for (const [name, index] of Object.entries(this.table.def.indexes)) {
-      const values = index.fields.map((f: keyof Row) => row[f]);
+      const values = index.fields.map((f) => row[f] as Row[keyof Row]);
       if (index.unique && (await this.hasIndexValues(name, values, id))) {
         return true;
       }
@@ -371,13 +371,11 @@ export class TableBlock<
       const values = index.fields.map((f) => row[f] as Row[keyof Row]);
       if (index.unique && (await this.hasIndexValues(name, values, id))) {
         console.error(
-          `ipld-database/block: Unique index violation: index ${name} already has values: ${values}`,
-          this.table.currentBlock.cache?.filters?.indexes,
-          this.table.currentBlock.cache?.records,
-          id
+          `ipld-database/block: Unique index violation: ${this.table.def.schemaId}.${this.table.tableId}.${name}`,
+          { index, row }
         );
         throw new Error(
-          `ipld-database/block: Unique index violation: index ${name} already has values: ${values}`
+          `ipld-database/block: Unique index violation: ${this.table.def.schemaId}.${this.table.tableId}.${name}`
         );
       }
     }

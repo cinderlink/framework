@@ -318,7 +318,7 @@ export class Table<
   lock() {
     // console.info(`table/${this.tableId} > locking table`);
     if (this.writing) {
-      throw new Error("Table is already writing");
+      throw new Error("Table is already writing?!");
     }
     this.writing = true;
     this.writeStartAt = Date.now();
@@ -345,13 +345,12 @@ export class Table<
   }
 
   awaitLock(): Promise<void> {
-    if (!this.writing) {
-      this.lock();
-      return Promise.resolve();
+    try {
+      return Promise.resolve(this.lock());
+    } catch (e) {
+      return this.once("/write/finished").then(() => {
+        return this.awaitLock();
+      });
     }
-    // console.info(`table/${this.tableId} > waiting for lock`);
-    return this.once("/write/finished").then(() => {
-      return this.awaitLock();
-    });
   }
 }

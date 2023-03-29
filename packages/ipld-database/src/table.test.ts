@@ -468,5 +468,47 @@ describe("@cinderlink/ipld-database/table", () => {
       expect(computedB).toMatch(insertedB);
       expect(computedA).not.toMatch(computedB);
     });
+
+    it("should respect the lock status of a table", async () => {
+      const table = new Table<TestRow>("test", validDefinition, client.dag);
+      table.lock();
+      expect(() => table.lock()).toThrow("Table is already writing");
+      table.unlock();
+      await expect(() =>
+        table.upsert({ id: 1 }, { name: "test" })
+      ).not.toThrow();
+    });
+  });
+
+  it("should allow waiting for a table to be unlocked", async () => {
+    const table = new Table<TestRow>("test", validDefinition, client.dag);
+    table.lock();
+    const promise = table.awaitUnlock();
+    table.unlock();
+    expect(promise).resolves.toBeUndefined();
+  });
+
+  it("should allow waiting for a lock on a table", async () => {
+    const table = new Table<TestRow>("test", validDefinition, client.dag);
+    table.lock();
+    const promise = table.awaitLock();
+    table.unlock();
+    expect(promise).resolves.toBeUndefined();
+  });
+
+  it("should support multiple pending locks", async () => {
+    const table = new Table<TestRow>("test", validDefinition, client.dag);
+    table.lock();
+    const promise1 = table.awaitLock().then(() => {
+      table.unlock();
+      return 1;
+    });
+    const promise2 = table.awaitLock().then(() => {
+      table.unlock();
+      return 2;
+    });
+    table.unlock();
+    expect(promise1).resolves.toBe(1);
+    expect(promise2).resolves.toBe(2);
   });
 });
