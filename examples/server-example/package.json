@@ -1,7 +1,7 @@
 {
   "name": "@cinderlink/example-server",
   "private": true,
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "",
   "main": "src/start.ts",
   "type": "module",
@@ -10,21 +10,21 @@
     "ts": "ts-node src/start.ts"
   },
   "dependencies": {
-    "@cinderlink/client": "workspace:^0.0.1",
+    "@cinderlink/client": "workspace:^0.0.2",
     "@cinderlink/core-types": "workspace:^0.0.1",
     "@cinderlink/plugin-identity-server": "workspace:^0.0.1",
-    "@cinderlink/plugin-offline-sync-server": "workspace:^0.0.1",
-    "@cinderlink/plugin-social-core": "workspace:^0.0.1",
-    "@cinderlink/plugin-social-server": "workspace:^0.0.1",
-    "@cinderlink/server": "workspace:^0.0.1",
-    "@cinderlink/server-bin": "workspace:^0.0.1",
+    "@cinderlink/plugin-offline-sync-server": "workspace:^0.0.2",
+    "@cinderlink/plugin-social-core": "workspace:^0.0.2",
+    "@cinderlink/plugin-social-server": "workspace:^0.0.2",
+    "@cinderlink/server": "workspace:^0.0.2",
+    "@cinderlink/server-bin": "workspace:^0.0.2",
     "ts-node": "^10.9.1"
   },
   "keywords": [],
   "author": "Drew Ewing",
   "license": "ISC",
   "devDependencies": {
-    "@cinderlink/plugin-sync-db": "workspace:^0.0.1",
+    "@cinderlink/plugin-sync-db": "workspace:^0.0.2",
     "@cinderlink/protocol": "workspace:^0.0.1",
     "crypto": "^1.0.1"
   }

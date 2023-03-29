@@ -2,7 +2,7 @@
   "name": "@cinderlink/ipld-database",
   "description": "IPLD database for @cinderlink/client",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -23,9 +23,9 @@
     "test": "vitest run"
   },
   "devDependencies": {
-    "@cinderlink/core-types": "workspace:0.0.1",
+    "@cinderlink/core-types": "workspace:^0.0.1",
     "@cinderlink/identifiers": "workspace:^0.0.1",
-    "@cinderlink/test-adapters": "workspace:0.0.1",
+    "@cinderlink/test-adapters": "workspace:^0.0.1",
     "@cinderlink/tsconfig": "workspace:^1.0.0",
     "@types/ajv": "^1.0.0",
     "@types/node": "^18.15.5",

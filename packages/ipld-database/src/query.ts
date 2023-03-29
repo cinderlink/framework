@@ -222,18 +222,13 @@ export class TableQuery<
       throw new Error("No terminator method called (update, delete, select)");
     }
 
-    if (cache.hasQuery<Row, Def>(this)) {
+    const nocache = this.instructions.some((i) => i.instruction === "nocache");
+    if (cache.hasQuery<Row, Def>(this) && !nocache) {
       return cache.getQuery<Row, Def>(this) as TableQueryResult<Row>;
     }
 
-    if (this.table.writing) {
-      await this.table.awaitLock();
-    }
-
-    const nocache = this.instructions.some((i) => i.instruction === "nocache");
-    if (nocache) {
-      cache.clear();
-    }
+    // console.info(`table/${this.table.tableId}/query > locking table`);
+    await this.table.awaitLock();
 
     let terminator = this.terminator;
     let offset = this._offset;
@@ -242,6 +237,8 @@ export class TableQuery<
     // Block cache (for update and delete)
     const unwound: TableBlockInterface<Row, Def>[] = [];
     let returning: Row[] = [];
+
+    // console.info(`table/${this.table.tableId}/query > unwinding table`);
     await this.table.unwind(async (event) => {
       await event.block.headers();
       // we need to make sure the block is aggregated before we can use it
@@ -270,7 +267,6 @@ export class TableQuery<
         const updateInstruction = this.instructions.find(
           (i) => i.instruction === "update"
         ) as UpdateInstruction<Row>;
-        console.info("!!!!!!! UPDATE", matches, updateInstruction);
         for (const match of matches) {
           if (updateInstruction.fn) {
             const updated = updateInstruction.fn(match);
@@ -289,12 +285,12 @@ export class TableQuery<
             }
             await event.block.updateRecord(match.id, change).catch(() => {
               console.error(
-                "Failed to update record (unique key constraint violation)",
+                `table/${this.table.tableId}/update: failed to update record (unique key constraint violation)`,
                 match
               );
             });
           } else {
-            console.warn(`No update function or values provided to update`);
+            // console.warn(`No update function or values provided to update`);
           }
         }
       } else if (this.terminator === "delete") {
@@ -344,15 +340,21 @@ export class TableQuery<
         event.resolved = true;
       }
     });
+    // console.info(`table/${this.table.tableId}/query > unwinding completed`);
 
     if (returning.length >= limit) {
       returning = returning.slice(0, limit);
     }
 
+    // console.info(
+    //   `table/${this.table.tableId}/query > checking unwound`,
+    //   unwound.length
+    // );
     if (unwound.length) {
       let writeStarted = false;
       let rewriteBlock: TableBlockInterface<Row, Def> | undefined;
       let prevCID: string | undefined;
+      // console.info(`table/${this.table.tableId}/query > rewriting table`);
       for (const block of unwound.reverse()) {
         if (!writeStarted && block.changed) {
           writeStarted = true;
@@ -370,19 +372,19 @@ export class TableQuery<
 
         if (writeStarted && rewriteBlock) {
           const records = await block.records();
-          console.info(
-            `ipld-database/table-query: rewriting block ${block.cid}`,
-            records
-          );
+          // console.info(
+          //   `ipld-database/table-query: rewriting block ${block.cid}`,
+          //   records
+          // );
           for (const [, record] of Object.entries(records)) {
             await rewriteBlock.addRecord(record);
           }
           if (rewriteBlock.needsRollup) {
             prevCID = (await rewriteBlock.save())?.toString();
             const headers = rewriteBlock.cache?.headers as BlockHeaders;
-            console.info(
-              `ipld-database/table-query: block rewritten. old CID: ${block.cid}, new CID: ${prevCID}, range: [${headers.recordsFrom}, ${headers.recordsTo}]`
-            );
+            // console.info(
+            //   `ipld-database/table-query: block rewritten. old CID: ${block.cid}, new CID: ${prevCID}, range: [${headers.recordsFrom}, ${headers.recordsTo}]`
+            // );
             rewriteBlock = new TableBlock<Row, Def>(this.table, undefined, {
               prevCID: prevCID?.toString(),
               headers: {
@@ -398,11 +400,14 @@ export class TableQuery<
           }
         }
       }
+
+      // console.info(`table/${this.table.tableId}/query > setting block`);
       if (rewriteBlock) {
         rewriteBlock.changed = true;
         this.table.setBlock(rewriteBlock);
         cache.invalidateTable(this.table.tableId);
       }
+      // console.info(`table/${this.table.tableId}/query > unlocking table`);
       this.table.unlock();
       if (this.terminator === "delete") {
         console.log("emitting delete event");
@@ -426,6 +431,8 @@ export class TableQuery<
         return 0;
       });
     }
+
+    this.table.unlock();
 
     const result = new TableQueryResult<Row>(returning);
     cache.cacheQuery(this as any, result as any);

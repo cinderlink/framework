@@ -187,21 +187,25 @@ export class CinderlinkClient<
       swarmAddresses.map(async (addr) => {
         const peerIdStr = addr.split("/").pop();
         if (peerIdStr === this.peerId?.toString()) return;
-        console.info("connecting to peer", peerIdStr);
         if (peerIdStr) {
           this.relayAddresses.push(addr);
           const peerId = peerIdFromString(peerIdStr);
           await this.ipfs.libp2p.peerStore.delete(peerId);
-          await this.ipfs.swarm.connect(multiaddr(addr));
-          await this.connect(peerId, "server").catch((err: Error) => {
-            console.warn(`peer ${peerIdStr} could not be dialed`);
-            console.error(err);
-          });
+          const connected = await this.ipfs.swarm
+            .connect(multiaddr(addr))
+            .catch(() => false);
+          if (connected !== false) {
+            await this.connect(peerId, "server").catch((err: Error) => {
+              console.warn(`client > peer ${peerIdStr} could not be dialed`);
+              console.error(err);
+            });
+          } else {
+            console.warn(`client > peer ${peerIdStr} could not be dialed`);
+          }
         }
       })
     );
 
-    console.info("loading");
     await this.load();
 
     console.info(
@@ -209,7 +213,6 @@ export class CinderlinkClient<
         Object.keys(this.plugins).length
       } plugins found: ${Object.keys(this.plugins).join(", ")}`
     );
-    console.info(`plugins > initializing message handlers`);
     await Promise.all(
       Object.values(this.plugins).map(async (plugin) => {
         if (plugin.id === protocol.id) return;
@@ -227,11 +230,9 @@ export class CinderlinkClient<
       return;
     }
     const schemaCIDs: Record<string, string> = {};
-    console.debug(`save > saving schemas`);
     await Promise.all(
       Object.entries(this.schemas).map(async ([name, schema]) => {
         const schemaCID = await schema.save();
-        console.info(`save > saved schema ${name}`);
         if (schemaCID) {
           schemaCIDs[name] = schemaCID.toString();
         }
@@ -241,17 +242,19 @@ export class CinderlinkClient<
       schemas: schemaCIDs,
       updatedAt: Date.now(),
     };
-    console.info(`save > encrypting root document`, rootDoc);
+    console.info(`client/save > encrypting root document`, rootDoc);
     const rootCID = await this.dag.storeEncrypted(rootDoc);
     if (rootCID) {
-      console.log(`save > saved root document with CID ${rootCID.toString()}`);
+      console.log(
+        `client/save > saved root document with CID ${rootCID.toString()}`
+      );
       await this.identity.save({ cid: rootCID.toString(), document: rootDoc });
     }
   }
 
   async load() {
     if (!this.hasServerConnection && this.role !== "server") {
-      console.info(`load > waiting for server connection`);
+      console.info(`client/load > waiting for server connection`);
       await new Promise((resolve) => {
         const timeout = setTimeout(() => {
           resolve(false);
@@ -262,10 +265,10 @@ export class CinderlinkClient<
         });
       });
     }
-    console.info(`load > resolving root document`);
+    console.info(`client/load > resolving root document`);
     const { cid, document } = await this.identity.resolve();
     console.info(
-      `load > resolved root document with CID ${cid}. loading schemas...`,
+      `client/load > resolved root document with CID ${cid}. loading schemas...`,
       { cid, document }
     );
     if (cid && document) {
@@ -273,7 +276,7 @@ export class CinderlinkClient<
         await Promise.all(
           Object.entries(document.schemas).map(async ([name, schemaCID]) => {
             if (schemaCID) {
-              console.info("load > loading schema", name, schemaCID);
+              console.info("client/load > loading schema", name, schemaCID);
               const schema = await this.dag
                 .loadDecrypted<SavedSchema>(
                   CID.parse(schemaCID as string),
@@ -299,9 +302,6 @@ export class CinderlinkClient<
               }
 
               if (schema) {
-                console.info(
-                  `load > loaded schema ${name} with CID ${schemaCID}`
-                );
                 this.schemas[name] = await Schema.fromSavedSchema(
                   schema,
                   this.dag
@@ -312,7 +312,6 @@ export class CinderlinkClient<
         );
       }
     }
-    console.info("load > done");
   }
 
   async connect(peerId: PeerId, role: PeerRole = "peer") {
@@ -387,7 +386,6 @@ export class CinderlinkClient<
       }
     }
 
-    console.info(`p2p/in > ${incoming.topic as string}`, incoming.payload);
     this.pubsub.emit(incoming.topic, incoming);
   }
 
@@ -444,7 +442,7 @@ export class CinderlinkClient<
   }
 
   async stop() {
-    console.info(`stop > shutting down...`);
+    console.info(`client/stop > shutting down...`);
     await this.save();
     await Promise.all(
       Object.values(this.plugins).map(async (plugin) => {
@@ -524,18 +522,15 @@ export class CinderlinkClient<
       } as any,
     };
 
-    console.info(`request > sending request to ${peerId}`, request);
-
     const result = new Promise((resolve) => {
       let _timeout: any;
       const wait = this.once(`/cinderlink/request/${requestId}`);
       _timeout = setTimeout(() => {
-        console.info(`request response timed out: ${requestId}`);
+        console.warn(`request response timed out: ${requestId}`);
         wait.off();
         resolve(undefined);
       }, 3000);
       wait.then((value) => {
-        console.info(`request response: ${requestId}`, value);
         clearTimeout(_timeout);
         resolve(
           value as unknown as IncomingP2PMessage<Events, InTopic, Encoding>

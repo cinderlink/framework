@@ -9,6 +9,7 @@ import {
   PluginInterface,
   ProtocolEvents,
   ReceiveEvents,
+  SchemaInterface,
   SubscribeEvents,
   SyncConfig,
   SyncPluginEvents,
@@ -66,7 +67,7 @@ export class SyncDBPlugin<
     console.info(`${logPrefix} > initializing table watchers`);
     if (!this.client.hasSchema("sync")) {
       this.schema = new Schema("sync", SyncSchemaDef, this.client.dag);
-      this.client.addSchema("sync", this.schema);
+      this.client.addSchema("sync", this.schema as SchemaInterface);
     } else {
       this.schema = this.client.getSchema("sync") as Schema;
     }
