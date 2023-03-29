@@ -1,6 +1,6 @@
 {
   "name": "@cinderlink/plugin-notification-client",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "authors": "Muhammad <mu@cinderlink.com>",
   "description": "Notification plugin for cinderlink to emit user interface notifications",
   "main": "./dist/index.js",
