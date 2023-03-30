@@ -2,7 +2,7 @@
   "name": "@cinderlink/core-types",
   "description": "Core types for @cinderlink/client",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "type": "module",
   "main": "src/index.ts",
   "types": "dist/index.d.ts",
