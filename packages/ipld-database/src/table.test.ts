@@ -171,6 +171,127 @@ describe("@cinderlink/ipld-database/table", () => {
     `);
   });
 
+  // should delete record
+  it("should delete records", async () => {
+    const table = new Table<TestRow>("test", validDefinition, client.dag);
+    const res1 = await table.query().select().execute();
+    expect(res1).toMatchInlineSnapshot(`
+      TableQueryResult {
+        "rows": [],
+      }
+    `);
+
+    await table.query().delete().execute();
+
+    const uid = await table.insert({ name: "foo", count: 1 });
+    const deleted = await table
+      .query()
+      .where("uid", "=", uid)
+      .where("name", "=", "foo")
+      .returning()
+      .delete()
+      .execute()
+      .then((r) => r.first());
+
+    expect(deleted).toMatchInlineSnapshot(`
+    {
+      "count": 1,
+      "id": 1,
+      "name": "foo",
+      "uid": "bagaaieralxfilz3jrhsv5o66zhstasbsybvj5llrhcyeg4wgkvjqaph5fbeq",
+    }
+  `);
+
+    const res2 = await table.query().select().where("uid", "=", uid).execute();
+    expect(res2).toMatchInlineSnapshot(`
+    TableQueryResult {
+      "rows": [],
+    }
+  `);
+
+    const uid2 = await table.insert({ name: "bar", count: 1 });
+    const res3 = await table.query().select().where("uid", "=", uid2).execute();
+
+    expect(res3).toMatchInlineSnapshot(`
+    TableQueryResult {
+      "rows": [
+        {
+          "count": 1,
+          "id": 2,
+          "name": "bar",
+          "uid": "bagaaierabqacwfurdcftu6qupl2ghi4z5kb2bhpkb6m7by34tsyozyfwvbha",
+        },
+      ],
+    }
+  `);
+
+    await table.insert({ name: "baz", count: 1 });
+    await table.insert({ name: "qux", count: 1 });
+
+    const deleted2 = await table
+      .query()
+      .returning()
+      .where("name", "=", "bar")
+      .delete()
+      .execute()
+      .then((r) => r.first());
+
+    expect(deleted2).toMatchInlineSnapshot(`
+    {
+      "count": 1,
+      "id": 2,
+      "name": "bar",
+      "uid": "bagaaierabqacwfurdcftu6qupl2ghi4z5kb2bhpkb6m7by34tsyozyfwvbha",
+    }
+  `);
+
+    const deleted3 = await table
+      .query()
+      .returning()
+      .where("name", "=", "baz")
+      .delete()
+      .execute()
+      .then((r) => r.first());
+
+    expect(deleted3).toMatchInlineSnapshot(`
+    {
+      "count": 1,
+      "id": 3,
+      "name": "baz",
+      "uid": "bagaaieray3ffizo6c2xgizctiophfmpxhk7wezbixgy67pjsjf3ydoccu7tq",
+    }
+  `);
+
+    const deleted4 = await table
+      .query()
+      .returning()
+      .where("name", "=", "qux")
+      .delete()
+      .execute()
+      .then((r) => r.first());
+
+    expect(deleted4).toMatchInlineSnapshot(`
+    {
+      "count": 1,
+      "id": 4,
+      "name": "qux",
+      "uid": "bagaaierasvkzich2hfud5lysxlqqllj7v56tkkmmrtdhnvy5v5j2h756axtq",
+    }
+  `);
+
+    // select all
+    const res4 = await table
+      .query()
+      .returning()
+      .select()
+      .execute()
+      .then((r) => r.all());
+
+    expect(res4).toMatchInlineSnapshot(`
+      []
+  `);
+  });
+
   it("should index records", async () => {
     const table = new Table<TestRow>("test", validDefinition, client.dag);
     await table.insert({ name: "foo", count: 1 });

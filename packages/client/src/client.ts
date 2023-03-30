@@ -41,6 +41,7 @@ import { Schema } from "@cinderlink/ipld-database";
 import { v4 as uuid } from "uuid";
 import { DID } from "dids";
 import { peerIdFromString } from "@libp2p/peer-id";
+import { Files } from "./files";
 
 export class CinderlinkClient<
     PluginEvents extends PluginEventDef = PluginEventDef
@@ -67,6 +68,7 @@ export class CinderlinkClient<
   public addressVerification: string;
   public peerId?: PeerId;
   public dag: ClientDIDDag;
+  public files: Files<PluginEvents>;
   public schemas: Record<string, SchemaInterface> = {};
   public identity: Identity<PluginEvents>;
   public relayAddresses: string[] = [];
@@ -89,6 +91,7 @@ export class CinderlinkClient<
     this.addressVerification = addressVerification;
     this.dag = new ClientDIDDag<PluginEvents>(this);
     this.identity = new Identity<PluginEvents>(this);
+    this.files = new Files<PluginEvents>(this);
     this.role = role;
     this.plugins = {};
   }

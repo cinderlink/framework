@@ -1,6 +1,7 @@
 import { PluginEventDef, TableRow } from "@cinderlink/core-types";
 
 export type SocialUserStatus = "online" | "offline" | "away";
+export type Base64 = `data:image/${string};base64${string}`;
 
 export interface SocialConnection extends TableRow {
   from: string;

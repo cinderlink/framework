@@ -31,6 +31,7 @@ export class TestClient<PluginEvents extends PluginEventDef>
   pubsub = new Emittery<SubscribeEvents<PluginEvents>>();
   p2p = new Emittery<ReceiveEvents<PluginEvents>>();
   ipfs = {} as any;
+  files = {} as any;
   address = "test";
   addressVerification = "test";
   dag: DIDDagInterface;

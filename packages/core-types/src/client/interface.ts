@@ -16,6 +16,7 @@ import { SchemaInterface } from "../database/schema";
 import { SubscribeEvents } from "../pubsub";
 import { EncodingOptions, ProtocolEvents } from "../protocol";
 import { CinderlinkClientEvents } from "./types";
+import { FilesInterface } from "../files/interface";
 
 export interface CinderlinkClientInterface<
   PluginEvents extends PluginEventDef = {
@@ -38,6 +39,7 @@ export interface CinderlinkClientInterface<
   p2p: Emittery<ReceiveEvents<PluginEvents>>;
 
   ipfs: IPFSWithLibP2P;
+  files: FilesInterface;
   did: DID;
   address: string;
   addressVerification: string;
