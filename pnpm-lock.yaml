@@ -16,7 +16,7 @@ importers:
 
   apps/social-dapp:
     specifiers:
-      '@cinderlink/client': ^0.0.5
+      '@cinderlink/client': ^0.0.6
       '@cinderlink/core-types': ^0.0.2
       '@cinderlink/identifiers': ^0.0.1
       '@cinderlink/ipld-database': ^0.0.4
@@ -68,10 +68,10 @@ importers:
       '@cinderlink/core-types': link:../../packages/core-types
       '@cinderlink/identifiers': link:../../packages/identifiers
       '@cinderlink/ipld-database': link:../../packages/ipld-database
-      '@cinderlink/plugin-notification-client': link:../../packages/plugin-notification-client
+      '@cinderlink/plugin-notification-client': 0.0.3
       '@cinderlink/plugin-offline-sync-client': link:../../packages/plugin-offline-sync-client
       '@cinderlink/plugin-offline-sync-core': link:../../packages/plugin-offline-sync-core
-      '@cinderlink/plugin-social-client': link:../../packages/plugin-social-client
+      '@cinderlink/plugin-social-client': 0.0.3_dids@3.4.0
       '@cinderlink/plugin-social-core': link:../../packages/plugin-social-core
       '@cinderlink/plugin-sync-db': link:../../packages/plugin-sync-db
       '@cinderlink/protocol': link:../../packages/protocol
@@ -2485,6 +2485,23 @@ packages:
       emittery: 1.0.1
       libp2p: 0.42.2
       multiformats: 11.0.2
+    dev: true
+
+  /@cinderlink/plugin-notification-client/0.0.3:
+    resolution: {integrity: sha512-Nzv8YEdV6IQnWtuampf1SAGaYd2iJKM89q4fLCvSWe492RYCOaxMqyZXInPt21HEbuNMJasHxKxR2WUIMcdXtg==}
+    dev: true
+
+  /@cinderlink/plugin-social-client/0.0.3_dids@3.4.0:
+    resolution: {integrity: sha512-M9XGLsf41LzCuBd6fKDz+kBmmJcxdNtZF/dgh8KAhYsI/4hMRphxWRg1HBSIEwui1vkb9mKKr9bUhjfpy1JTLQ==}
+    peerDependencies:
+      '@multiformats/multiaddr': ^11.4.0
+      did-jwt: ^6.11.0
+      dids: ^3.4.0
+      emittery: ^1.0.1
+      multiformats: ^11.0.2
+    dependencies:
+      dids: 3.4.0
+      uuid: 9.0.0
     dev: true
 
   /@cinderlink/test-adapters/0.0.1_klx7r6se5e2fimwvbop4ufaqzu:
