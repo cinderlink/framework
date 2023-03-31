@@ -20,6 +20,6 @@
     "@cinderlink/plugin-social-client": "workspace:../plugin-social-client",
     "@cinderlink/tsconfig": "workspace:../tsconfig",
     "tsup": "^6.7.0",
-    "typescript": "^5.0.2"
+    "typescript": "^5.0.3"
   }
 }

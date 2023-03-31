@@ -28,7 +28,7 @@
     "@cinderlink/test-adapters": "workspace:../test-adapters",
     "@cinderlink/tsconfig": "workspace:../tsconfig",
     "@types/ajv": "^1.0.0",
-    "@types/node": "^18.15.5",
+    "@types/node": "^18.15.11",
     "dids": "^3.4.0",
     "ethers": "^5.7.2",
     "multiformats": "^11.0.2",
@@ -37,7 +37,7 @@
     "tinybench": "^2.4.0",
     "ts-node": "^10.9.1",
     "tsup": "^6.7.0",
-    "typescript": "^5.0.2",
+    "typescript": "^5.0.3",
     "vite": "^4.2.1",
     "vitest": "^0.28.5"
   },

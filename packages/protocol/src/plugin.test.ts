@@ -72,10 +72,9 @@ describe("handleProtocol", () => {
     server.pluginEvents.on("/cinderlink/handshake/success", fn);
 
     await server.start([]);
-    await client.start([]);
-
     const serverPeer = await server.ipfs.id();
-    await client.connect(serverPeer.id);
+
+    await client.start([serverPeer.addresses[0].toString()]);
 
     await Promise.all([
       client.pluginEvents.once("/cinderlink/handshake/success"),

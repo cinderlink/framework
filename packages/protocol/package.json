@@ -1,6 +1,6 @@
 {
   "name": "@cinderlink/protocol",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "",
   "scripts": {
     "test": "vitest run",
@@ -30,10 +30,10 @@
   "author": "Drew Ewing",
   "license": "ISC",
   "devDependencies": {
-    "@cinderlink/core-types": "^0.0.1",
-    "@cinderlink/identifiers": "^0.0.1",
-    "@cinderlink/test-adapters": "^0.0.1",
-    "@cinderlink/tsconfig": "^1.0.0",
+    "@cinderlink/core-types": "workspace:../core-types",
+    "@cinderlink/identifiers": "workspace:../identifiers",
+    "@cinderlink/test-adapters": "workspace:../test-adapters",
+    "@cinderlink/tsconfig": "workspace:../tsconfig",
     "@libp2p/interface-connection": "^3.1.1",
     "@types/uuid": "^9.0.1",
     "did-jwt": "^6.11.5",
@@ -47,7 +47,7 @@
     "libp2p": "^0.42.2",
     "multiformats": "^11.0.2",
     "tsup": "^6.7.0",
-    "typescript": "^5.0.2",
+    "typescript": "^5.0.3",
     "uuid": "^9.0.0",
     "vitest": "^0.28.5"
   }

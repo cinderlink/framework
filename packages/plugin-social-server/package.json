@@ -30,7 +30,7 @@
     "did-jwt": "^6.11.5",
     "dids": "^3.4.0",
     "tsup": "^6.7.0",
-    "typescript": "^5.0.2",
+    "typescript": "^5.0.3",
     "vitest": "^0.28.5"
   },
   "peerDependencies": {
