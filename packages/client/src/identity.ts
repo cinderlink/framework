@@ -122,7 +122,13 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
       );
       if (resolved?.payload.cid) {
         const doc: IdentityDocument | undefined = await this.client.dag
-          .loadDecrypted<IdentityDocument>(resolved.payload.cid as string)
+          .loadDecrypted<IdentityDocument>(
+            resolved.payload.cid as string,
+            undefined,
+            {
+              timeout: 3000,
+            }
+          )
           .catch(() => undefined);
         if (
           doc &&
