@@ -34,7 +34,7 @@ export const SocialSyncConfig: Record<string, SyncConfig<any>> = {
     outgoingRateLimit: 5000,
   },
   chat_messages: {
-    syncInterval: 1000,
+    syncInterval: 2500,
     query(table: TableInterface<SocialChatMessage>, params) {
       return table.query().where("updatedAt", ">", params.since).select();
     },
@@ -68,8 +68,8 @@ export const SocialSyncConfig: Record<string, SyncConfig<any>> = {
           .includes(did)
       );
     },
-    incomingRateLimit: 1000,
-    outgoingRateLimit: 1000,
+    incomingRateLimit: 2500,
+    outgoingRateLimit: 25000,
   },
   connections: {
     syncInterval: 5000,

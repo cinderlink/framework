@@ -74,6 +74,8 @@ export class SyncDBPlugin<
 
     this.syncRows = this.schema.getTable<SyncRowsRow>("rows");
     this.syncTables = this.schema.getTable<SyncTablesRow>("tables");
+
+    await this.syncRows.query().where("success", "=", true).delete().execute();
   }
 
   addTableSync<Row extends TableRow>(

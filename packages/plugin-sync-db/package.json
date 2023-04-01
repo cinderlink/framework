@@ -2,7 +2,7 @@
   "name": "@cinderlink/plugin-sync-db",
   "description": "Database sync plugin for the Cinderlink framework",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
