@@ -508,6 +508,13 @@ export class TableBlock<
       return this.cid;
     }
 
+    if (Object.keys(this.cache?.records || {}).length === 0) {
+      console.warn(
+        `ipld-database/block: no records in block ${this.cid}, skipping save...`
+      );
+      return undefined;
+    }
+
     console.info(
       `ipld-database/block: saving block ${this.cid}`,
       Object.keys(this.cache?.records || {}).map(Number)

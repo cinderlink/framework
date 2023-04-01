@@ -12,7 +12,7 @@ export class SocialPosts {
   async start() {}
 
   async createPost(
-    post: Omit<Omit<SocialPost, "id">, "uid">
+    post: Omit<Omit<Omit<Omit<SocialPost, "id">, "uid">, "cid">, "did">
   ): Promise<SocialPost> {
     const cid = await this.plugin.client.dag.store(post);
     if (!cid) {
@@ -33,10 +33,12 @@ export class SocialPosts {
 
     // publish the post
     console.info(`plugin/social/client > publishing post`, { post: saved });
-    await this.plugin.client.publish("/social/posts/create", saved, {
-      sign: true,
-      encrypt: false,
-    });
+    await this.plugin.client
+      .publish("/social/posts/create", saved, {
+        sign: true,
+        encrypt: false,
+      })
+      .catch(() => {});
 
     return saved as SocialPost;
   }
