@@ -300,7 +300,7 @@ export class CinderlinkProtocolPlugin<
         payload: {},
       });
     } else if (peer.challengedAt && Date.now() - peer.challengedAt < 1000) {
-      console.info(
+      console.warn(
         `p2p/handshake > challenge already issued to ${peer.peerId} (${
           peer.did ? peer.did : "N/A"
         })`
@@ -310,7 +310,7 @@ export class CinderlinkProtocolPlugin<
         {
           topic: "/cinderlink/handshake/error",
           payload: {
-            error: "challenge already issued",
+            challenge: peer.challenge,
           },
         },
         { sign: true } as EncodingOptions
