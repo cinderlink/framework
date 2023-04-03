@@ -172,6 +172,7 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
     await this.client.ipfs.name.publish(cid, { timeout: 1000 }).catch(() => {});
     await this.client.ipfs.pin.add(cid, { recursive: true }).catch(() => {});
     if (forceRemote || Date.now() - this.lastSavedAt < 30000) {
+      this.lastSavedAt = Date.now();
       await Promise.all(
         this.client.peers.getServers().map(async (server) => {
           if (server.did) {
