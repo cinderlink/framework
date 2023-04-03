@@ -12,6 +12,7 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
   cid: string | undefined = undefined;
   document: Record<string, unknown> | undefined = undefined;
   hasResolved = false;
+  lastSavedAt = 0;
   constructor(public client: CinderlinkClientInterface<PluginEvents>) {}
 
   async resolve(): Promise<IdentityResolved> {
@@ -150,9 +151,11 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
   async save({
     cid,
     document,
+    forceRemote,
   }: {
     cid: string;
     document: Record<string, unknown>;
+    forceRemote?: boolean;
   }) {
     if (!this.hasResolved) {
       console.warn(`client/identity/save > identity has not been resolved`);
@@ -168,23 +171,27 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
     await localforage.setItem("rootCID", cid).catch(() => {});
     await this.client.ipfs.name.publish(cid, { timeout: 1000 }).catch(() => {});
     await this.client.ipfs.pin.add(cid, { recursive: true }).catch(() => {});
-    await Promise.all(
-      this.client.peers.getServers().map(async (server) => {
-        if (server.did) {
-          console.info(`client/identity/save > sending identity to server`, {
-            server,
-          });
-          await this.client.send<CinderlinkClientEvents>(
-            server.peerId.toString(),
-            {
-              topic: "/identity/set/request",
-              payload: { requestId: uuid(), cid },
-            }
-          );
-        } else {
-          console.info(`client/identity/save > no did for server`, { server });
-        }
-      })
-    );
+    if (forceRemote || Date.now() - this.lastSavedAt < 30000) {
+      await Promise.all(
+        this.client.peers.getServers().map(async (server) => {
+          if (server.did) {
+            console.info(`client/identity/save > sending identity to server`, {
+              server,
+            });
+            await this.client.send<CinderlinkClientEvents>(
+              server.peerId.toString(),
+              {
+                topic: "/identity/set/request",
+                payload: { requestId: uuid(), cid },
+              }
+            );
+          } else {
+            console.info(`client/identity/save > no did for server`, {
+              server,
+            });
+          }
+        })
+      );
+    }
   }
 }

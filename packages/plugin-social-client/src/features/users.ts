@@ -85,12 +85,18 @@ export class SocialUsers {
       const peers = this.plugin.client.peers
         .getPeers()
         .filter((p) => p.did && p.connected);
-      for (const peer of peers) {
-        const user = await this.getUserByDID(peer.did as string);
-        if (user?.status === "offline") {
-          await this.plugin.users.setUserStatus(peer.did as string, "online");
-        }
-      }
+
+      await this.plugin
+        .table<SocialUser>("users")
+        .query()
+        .where("status", "!=", "offline")
+        .where(
+          "did",
+          "in",
+          peers.map((p) => p.did as string)
+        )
+        .update({ status: "online" })
+        .execute();
 
       await this.plugin
         .table<SocialUser>("users")

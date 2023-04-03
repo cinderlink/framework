@@ -233,6 +233,7 @@ export class TableQuery<
     let terminator = this.terminator;
     let offset = this._offset;
     let limit = this._limit;
+    let changed = false;
 
     // Block cache (for update and delete)
     const unwound: TableBlockInterface<Row, Def>[] = [];
@@ -314,6 +315,8 @@ export class TableQuery<
         );
       }
 
+      changed = changed || event.block.changed;
+
       const returningInstruction = this.instructions.find(
         (i) => i.instruction === "returning"
       ) as ReturningInstruction<Row>;
@@ -350,11 +353,11 @@ export class TableQuery<
     //   `table/${this.table.tableId}/query > checking unwound`,
     //   unwound.length
     // );
-    if (unwound.length) {
+    if (unwound.length && changed) {
       let writeStarted = false;
       let rewriteBlock: TableBlockInterface<Row, Def> | undefined;
       let prevCID: string | undefined;
-      // console.info(`table/${this.table.tableId}/query > rewriting table`);
+      console.info(`table/${this.table.tableId}/query > rewriting table`);
       for (const block of unwound.reverse()) {
         if (!writeStarted && block.changed) {
           writeStarted = true;

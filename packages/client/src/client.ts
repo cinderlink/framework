@@ -247,7 +247,7 @@ export class CinderlinkClient<
     );
   }
 
-  async save() {
+  async save(forceRemote = false) {
     if (!this.identity.hasResolved) {
       return;
     }
@@ -266,11 +266,15 @@ export class CinderlinkClient<
     };
     console.info(`client/save > encrypting root document`, rootDoc);
     const rootCID = await this.dag.storeEncrypted(rootDoc);
-    if (rootCID) {
+    if (rootCID && rootCID.toString() !== this.identity.cid?.toString()) {
       console.log(
         `client/save > saved root document with CID ${rootCID.toString()}`
       );
-      await this.identity.save({ cid: rootCID.toString(), document: rootDoc });
+      await this.identity.save({
+        cid: rootCID.toString(),
+        document: rootDoc,
+        forceRemote,
+      });
     }
   }
 

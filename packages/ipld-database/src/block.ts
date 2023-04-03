@@ -435,9 +435,19 @@ export class TableBlock<
     this.table.assertValid(update);
     await this.assertUniqueConstraints(update as Row, id);
     const records = await this.records();
-    const hasChanged = Object.entries(update).some(
-      ([key, value]) => records[id][key as keyof Row] !== value
-    );
+    const hasChanged = Object.entries(update).some(([key, value]) => {
+      const changed = records[id][key as keyof Row] !== value;
+      if (changed) {
+        console.info(
+          `ipld-database/block/${
+            this.table.tableId
+          }: change detected on record ${id} (${key}: ${
+            records[id][key as keyof Row]
+          } !== ${value})`
+        );
+      }
+      return changed;
+    });
     if (!hasChanged) {
       return;
     }
