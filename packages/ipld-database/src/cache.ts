@@ -217,7 +217,6 @@ export class DatabaseCache implements DatabaseCacheInterface {
   }
 
   invalidateTable(tableId: string) {
-    console.info("invalidating table", tableId);
     Object.entries(this.blocks).forEach(([cid, block]) => {
       if (block.table === tableId) this.removeBlock(cid);
     });

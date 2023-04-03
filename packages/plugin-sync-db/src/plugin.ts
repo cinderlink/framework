@@ -446,12 +446,12 @@ export class SyncDBPlugin<
 
     if (saved?.length) {
       for (const uid of saved.filter((uid) => !!uid)) {
-        // console.info(`${logPrefix} > marking row as synced`, {
-        //   schemaId,
-        //   tableId,
-        //   uid,
-        //   did: message.peer.did,
-        // });
+        console.info(`${logPrefix} > marking row as synced`, {
+          schemaId,
+          tableId,
+          uid,
+          did: message.peer.did,
+        });
         await this.syncRows?.upsert(
           {
             schemaId,
@@ -479,6 +479,10 @@ export class SyncDBPlugin<
 
     const errorEntries = Object.entries(errors || {});
     for (const [uid, error] of errorEntries) {
+      console.info(`${logPrefix}/${schemaId}/${tableId} > error syncing row`, {
+        uid,
+        error,
+      });
       await this.syncRows?.upsert(
         { schemaId, tableId, rowUid: uid, did: message.peer.did },
         {
@@ -647,6 +651,10 @@ export class SyncDBPlugin<
       }
 
       await table.upsert({ uid: row.uid }, row);
+
+      console.info(`${logPrefix}/${schemaId}/${tableId} > saving fetched row`, {
+        row,
+      });
       await this.syncRows?.upsert(
         { schemaId, tableId, rowUid: row.uid, did: message.peer.did },
         {
