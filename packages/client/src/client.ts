@@ -4,7 +4,6 @@ import {
   decodePayload,
   encodePayload,
 } from "@cinderlink/protocol";
-import { CID } from "multiformats";
 import type {
   Peer,
   PluginInterface,
