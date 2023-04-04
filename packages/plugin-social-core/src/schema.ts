@@ -12,6 +12,7 @@ import {
   SocialUserPin,
   SocialComment,
   SocialReaction,
+  SocialNotification,
 } from "./types";
 
 export const SocialSchemaDef = {
@@ -265,6 +266,35 @@ export const SocialSchemaDef = {
       },
     },
   } as TableDefinition<SocialChatMessage>,
+  notifications: {
+    schemaId: "notification",
+    encrypted: false,
+    aggregate: {},
+    indexes: {
+      type: {
+        unique: true,
+        fields: ["source", "type"],
+      },
+    },
+    rollup: 1000,
+    searchOptions: {
+      fields: ["source", "type"],
+    },
+    schema: {
+      type: "object",
+      properties: {
+        type: { type: "string" },
+        source: { type: "string" },
+        title: { type: "string" },
+        body: { type: "string" },
+        dismissed: { type: "boolean" },
+        createdAt: { type: "number" },
+        read: { type: "boolean" },
+        link: { type: "string" },
+        metaData: { type: "object" },
+      },
+    },
+  } as TableDefinition<SocialNotification>,
 };
 
 export default SocialSchemaDef;
