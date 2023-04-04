@@ -15,7 +15,7 @@ import IdentityServerPlugin from "./plugin";
 import { IdentityServerEvents } from "./types";
 
 const clientWallet = ethers.Wallet.createRandom();
-const clientDID = await createDID(await createSeed("test client"));
+const clientDID = await createDID(await createSeed("test identity client"));
 const clientAV = await signAddressVerification(
   "test",
   clientDID.id,
@@ -49,7 +49,7 @@ describe("IdentityServerPlugin", () => {
     )?.toString();
 
     const serverWallet = ethers.Wallet.createRandom();
-    const serverDID = await createDID(await createSeed("test server"));
+    const serverDID = await createDID(await createSeed("test identity server"));
     const serverAV = await signAddressVerification(
       "test",
       serverDID.id,
@@ -64,9 +64,9 @@ describe("IdentityServerPlugin", () => {
         repo: "identity-server-server",
         config: {
           Addresses: {
-            Swarm: ["/ip4/127.0.0.1/tcp/7356", "/ip4/127.0.0.1/tcp/7357/ws"],
-            API: "/ip4/127.0.0.1/tcp/7358",
-            Gateway: "/ip4/127.0.0.1/tcp/7359",
+            Swarm: ["/ip4/127.0.0.1/tcp/7376", "/ip4/127.0.0.1/tcp/7377/ws"],
+            API: "/ip4/127.0.0.1/tcp/7378",
+            Gateway: "/ip4/127.0.0.1/tcp/7379",
           },
           Bootstrap: [],
         },
@@ -78,7 +78,7 @@ describe("IdentityServerPlugin", () => {
     await server.start([]);
     const serverPeer = await server.ipfs.id();
     await client.start([
-      `/ip4/127.0.0.1/tcp/7357/ws/p2p/${serverPeer.id.toString()}`,
+      `/ip4/127.0.0.1/tcp/7377/ws/p2p/${serverPeer.id.toString()}`,
     ]);
   });
 
@@ -128,7 +128,7 @@ describe("IdentityServerPlugin", () => {
     });
     const serverPeer = await server.ipfs.id();
     await clientB.start([
-      `/ip4/127.0.0.1/tcp/7357/ws/p2p/${serverPeer.id.toString()}`,
+      `/ip4/127.0.0.1/tcp/7377/ws/p2p/${serverPeer.id.toString()}`,
     ]);
     const resolved = await clientB.identity.resolve();
 

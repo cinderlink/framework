@@ -20,7 +20,7 @@
   "scripts": {
     "build": "tsup",
     "watch": "tsup --watch",
-    "test": "vitest"
+    "test": "vitest run"
   },
   "dependencies": {
     "@cinderlink/core-types": "workspace:../core-types",

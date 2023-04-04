@@ -502,7 +502,7 @@ export class CinderlinkClient<
     );
 
     this.running = false;
-    this.ipfs.stop();
+    await this.ipfs.stop().catch(() => {});
   }
 
   get id() {
