@@ -308,7 +308,7 @@ export class CinderlinkProtocolPlugin<
       return this.client.send<ProtocolEvents>(
         message.peer.peerId.toString(),
         {
-          topic: "/cinderlink/handshake/error",
+          topic: "/cinderlink/handshake/challenge",
           payload: {
             challenge: peer.challenge,
           },

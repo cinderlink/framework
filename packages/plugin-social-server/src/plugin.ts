@@ -297,20 +297,15 @@ export class SocialServerPlugin<
       return;
     }
 
-    const existing = await table
-      .query()
-      .where("did", "=", message.peer.did)
-      .where("cid", "=", message.payload.cid)
-      .or((qb) =>
-        qb
-          .where("did", "=", message.peer.did as string)
-          .where("textId", "=", message.payload.textId as string)
-      )
-      .select()
-      .execute()
-      .then((r) => r.first());
+    const resolved = await this.client.ipfs
+      .resolve(message.payload.cid, { recursive: true, timeout: 5000 })
+      .catch(() => {});
+    if (resolved) {
+      await this.client.ipfs.pin.add(message.payload.cid, {
+        recursive: true,
+        timeout: 3000,
+      });
 
-    if (existing) {
       // upsert the existing pin
       const pin = await table.upsert(
         {
@@ -333,6 +328,14 @@ export class SocialServerPlugin<
         },
       });
     }
+
+    return this.client.send(message.peer.peerId.toString(), {
+      topic: "/social/users/pin/response",
+      payload: {
+        requestId: message.payload.requestId,
+        error: "Failed to resolve CID",
+      },
+    });
   }
 
   async saveUser(did: string, user: Omit<Omit<SocialUser, "id">, "uid">) {

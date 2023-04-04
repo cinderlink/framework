@@ -2,6 +2,8 @@ import type Emittery from "emittery";
 import type { CID } from "multiformats";
 import type { DIDDagInterface } from "../dag";
 import type { TableDefinition, TableInterface, TableRow } from "./table";
+import { JWE } from "did-jwt";
+import { BlockData } from "./block";
 
 export type SchemaDef = {
   schemaId: string;
@@ -15,7 +17,7 @@ export type SchemaEvents = {
 export type SavedSchema = {
   schemaId: string;
   defs: Record<string, TableDefinition>;
-  tables: Record<string, string | undefined>;
+  tables: Record<string, BlockData<any, any> | undefined>;
 };
 
 export interface SchemaInterface extends Emittery<SchemaEvents> {
@@ -41,6 +43,9 @@ export interface SchemaInterface extends Emittery<SchemaEvents> {
   setDefs<Def extends TableDefinition = TableDefinition>(
     defs: Record<string, Def>
   ): void;
+
+  serialize(): Promise<SavedSchema | undefined>;
+  export(): Promise<JWE | SavedSchema | undefined>;
   save(): Promise<CID | undefined>;
 }
 

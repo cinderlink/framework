@@ -1,5 +1,10 @@
+import { JWE } from "did-jwt";
 import Emittery from "emittery";
-import type { DIDDagInterface, TableRow } from "@cinderlink/core-types";
+import type {
+  BlockData,
+  DIDDagInterface,
+  TableRow,
+} from "@cinderlink/core-types";
 import { CID } from "multiformats";
 import type {
   SavedSchema,
@@ -55,15 +60,15 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
     return this.tables[tableId] as TableInterface<Row, Def>;
   }
 
-  async save() {
-    const tables: Record<string, string | undefined> = {};
+  async serialize() {
+    const tables: Record<string, BlockData<any> | undefined> = {};
     try {
       await Promise.all(
         Object.entries(this.tables).map(async ([name]) => {
           // console.info(`ipld-database/schema/save: saving table ${name}`);
-          const tableCID = await this.tables[name].save();
-          if (tableCID) {
-            tables[name] = tableCID?.toString();
+          const table = await this.tables[name].serialize();
+          if (table) {
+            tables[name] = table;
           }
         })
       ).catch((err) => {
@@ -74,26 +79,34 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
     }
     if (!Object.keys(tables).length) return undefined;
 
-    const savedSchema = {
+    const asJson: SavedSchema = {
       schemaId: this.schemaId,
       defs: this.defs,
       tables,
     };
 
-    // console.info(
-    //   `ipld-database/schema/save: saving ${this.schemaId}`,
-    //   savedSchema
-    // );
-
-    return this.encrypted
-      ? this.dag.storeEncrypted(savedSchema)
-      : this.dag.store(savedSchema);
+    return asJson;
   }
 
-  static async load(cid: string | CID, dag: DIDDagInterface, encrypted = true) {
-    const data = encrypted
-      ? await dag.loadDecrypted<SavedSchema>(cid)
-      : await dag.load<SavedSchema>(cid);
+  async export(): Promise<JWE | SavedSchema | undefined> {
+    const serialized = await this.serialize();
+    if (!serialized) {
+      return undefined;
+    }
+    return serialized;
+  }
+
+  async save() {
+    const serialized = await this.serialize();
+    if (!serialized) {
+      throw new Error("failed to serialize schema: " + this.schemaId);
+    }
+    console.info("serialized schema", serialized);
+    return this.dag.store(serialized);
+  }
+
+  static async load(cid: string | CID, dag: DIDDagInterface) {
+    const data = await dag.load<SavedSchema>(cid);
     if (!data) throw new Error("Invalid schema data");
     return Schema.fromSavedSchema(data, dag);
   }
@@ -105,12 +118,13 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
   ): Promise<SchemaInterface> {
     if (!data) throw new Error("Invalid schema data");
     const schema = new Schema(data.schemaId, data.defs, dag, encrypted);
+    console.info("hydrating schema", data);
     // console.info(`Loading schema "${data.schemaId}"`, data);
     await Promise.all(
-      Object.entries(data.tables).map(async ([name, tableCID]) => {
-        if (tableCID) {
-          // console.info(`Loading table "${name}" from ${tableCID}`);
-          await schema.tables[name]?.load(CID.parse(tableCID));
+      Object.entries(data.tables).map(async ([name, tableData]) => {
+        // console.info(`Loading table "${name}" from ${tableCID}`);
+        if (tableData) {
+          await schema.tables[name]?.deserialize(tableData);
         }
       })
     );

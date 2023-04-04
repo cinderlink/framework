@@ -1,6 +1,7 @@
 import { sha256 } from "multiformats/hashes/sha2";
 import * as json from "multiformats/codecs/json";
 import type {
+  BlockData,
   DIDDagInterface,
   TableBlockInterface,
 } from "@cinderlink/core-types";
@@ -247,6 +248,16 @@ export class Table<
     // );
     this.unlock();
     return this.currentBlock.cid;
+  }
+
+  async serialize() {
+    return this.currentBlock.serialize();
+  }
+
+  async deserialize(cache: BlockData<Row, Def>) {
+    const block = TableBlock.fromJSON<Row, Def>(this as any, cache);
+    await block.load();
+    this.setBlock(block);
   }
 
   async load(cid: CID) {

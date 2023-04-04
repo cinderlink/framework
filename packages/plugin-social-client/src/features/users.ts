@@ -33,13 +33,13 @@ export class SocialUsers {
 
   async start() {
     await this.loadLocalUser();
-    this.plugin.client.pluginEvents.on(
+    this.plugin.client.p2p.on(
       "/cinderlink/handshake/success",
-      async (peer: Peer) => {
-        if (peer.role === "server") {
+      async (event) => {
+        if (event.peer.role === "server") {
           this.hasServerConnection = true;
         } else {
-          await this.setUserStatus(peer.did as string, "online");
+          await this.setUserStatus(event.peer.did as string, "online");
         }
 
         if (
@@ -47,7 +47,7 @@ export class SocialUsers {
           this.localUser.name !== "guest" &&
           this.plugin.client.addressVerification
         ) {
-          await this.announce(peer.peerId.toString());
+          await this.announce(event.peer.peerId.toString());
         }
       }
     );

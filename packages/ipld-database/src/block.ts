@@ -213,7 +213,7 @@ export class TableBlock<
     id?: number
   ) {
     const indexes = (await this.filters()).indexes;
-    const serialized = TableBlock.serialize(value);
+    const serialized = TableBlock.serializeValue(value);
     return (
       indexes[name]?.[serialized] !== undefined &&
       (!id ||
@@ -229,7 +229,7 @@ export class TableBlock<
    */
   async removeIndexWithValues(index: string, values: string[], id: number) {
     const filters = await this.filters();
-    const serialized = TableBlock.serialize(values);
+    const serialized = TableBlock.serializeValue(values);
     if (filters.indexes[index]?.[serialized]?.ids?.includes?.(id)) {
       filters.indexes[index][serialized].ids.splice(
         filters.indexes[index][serialized].ids.indexOf(id),
@@ -265,7 +265,7 @@ export class TableBlock<
     if (!filters.indexes[index]) {
       filters.indexes[index] = {};
     }
-    const serialized = TableBlock.serialize(values);
+    const serialized = TableBlock.serializeValue(values);
     if (!filters.indexes[index][serialized]) {
       filters.indexes[index as string][serialized] = {
         values: values as Row[keyof Row][],
@@ -513,9 +513,9 @@ export class TableBlock<
     }
   }
 
-  async save() {
+  async serialize(): Promise<BlockData<Row> | undefined> {
     if (!this.changed) {
-      return this.cid;
+      return this.cache as BlockData<Row, TableDefinition<Row>>;
     }
 
     if (Object.keys(this.cache?.records || {}).length === 0) {
@@ -529,13 +529,6 @@ export class TableBlock<
       `ipld-database/block: saving block ${this.cid}`,
       Object.keys(this.cache?.records || {}).map(Number)
     );
-
-    if (!Object.keys(this.cache.records || {}).length) {
-      console.warn(
-        `ipld-database/block: no records in block ${this.cid}, skipping save...`
-      );
-      return;
-    }
 
     let recordsFrom =
       Math.min(...Object.keys(this.cache.records || {}).map(Number)) || 1;
@@ -592,9 +585,6 @@ export class TableBlock<
       data.filters
     );
 
-    // this.cid = await (this.table.encrypted
-    //   ? this.table.dag.storeEncrypted(data as Record<string, any>)
-    //   : this.table.dag.store(data)
     this.cid = await this.table.dag.store(data).catch(() => {
       console.warn(
         `ipld-database/block: failed to save block (probably contains an undefined value)`,
@@ -611,6 +601,11 @@ export class TableBlock<
     cache.invalidateTable(this.table.tableId);
     this.changed = false;
 
+    return data;
+  }
+
+  async save() {
+    await this.serialize();
     return this.cid;
   }
 
@@ -663,15 +658,14 @@ export class TableBlock<
   }
 
   toString() {
-    return TableBlock.serialize(this.toJSON());
+    return TableBlock.serializeValue(this.toJSON());
   }
 
-  static fromJSON<T extends TableRow = TableRow>(
-    table: TableInterface<T>,
-    cache: BlockData<T>,
-    cid?: CID
-  ) {
-    return new TableBlock<T>(table, cid, cache);
+  static fromJSON<
+    T extends TableRow = TableRow,
+    D extends TableDefinition<T> = TableDefinition<T>
+  >(table: TableInterface<T, D>, cache: BlockData<T, D>, cid?: CID) {
+    return new TableBlock<T, D>(table, cid, cache);
   }
 
   static fromString<
@@ -681,15 +675,15 @@ export class TableBlock<
     return new TableBlock<Row, Def>(
       table,
       cid,
-      TableBlock.deserialize(value) as BlockData<Row, Def>
+      TableBlock.deserializeValue(value) as BlockData<Row, Def>
     );
   }
 
-  static deserialize(value: string) {
+  static deserializeValue(value: string) {
     return json.decode(base58btc.decode(value));
   }
 
-  static serialize(value: any) {
+  static serializeValue(value: any) {
     return base58btc.encode(json.encode(value));
   }
 }

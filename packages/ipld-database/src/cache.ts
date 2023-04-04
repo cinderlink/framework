@@ -49,8 +49,9 @@ export class DatabaseCache implements DatabaseCacheInterface {
   }
 
   cacheBlock(block: TableBlockInterface<any, any>): void {
-    if (!block.cid || !block.cache)
-      throw new Error("Cannot cache unloaded block");
+    if (!block.cid || !block.cache) {
+      return;
+    }
     const size = this.calculateBlockCacheSize(block);
     if (size > this.maxBlockCacheSize) return;
     this.removeBlocksToSize(this.currentBlockCacheSize + size);

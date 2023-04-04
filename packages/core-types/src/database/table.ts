@@ -48,6 +48,7 @@ export interface TableBlockInterface<
   updateRecord(id: number, update: Partial<Row>): Promise<void>;
   deleteRecord(id: number): Promise<void>;
   toJSON(): BlockData<Row>;
+  serialize(): Promise<BlockData<Row> | undefined>;
   toString(): string;
 }
 
@@ -132,6 +133,8 @@ export interface TableInterface<
   unlock(): void;
   awaitLock(): Promise<void>;
   awaitUnlock(): Promise<void>;
+  serialize(): Promise<BlockData<Row> | undefined>;
+  deserialize(cache: BlockData<Row, Def>): Promise<void>;
 }
 
 export type TableUnwindEvent<

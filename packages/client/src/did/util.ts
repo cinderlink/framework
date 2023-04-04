@@ -40,3 +40,22 @@ export async function getSigner(payload: any, signer: string, did: DID) {
   }
   return verify.kid === signer;
 }
+
+export function removeUndefined<Obj = any>(object: Obj): Obj {
+  if (Array.isArray(object)) {
+    return object.filter((v) => v !== undefined).map(removeUndefined) as Obj;
+  } else if (typeof object === "object") {
+    const newObject: Record<string, unknown> = {};
+    Object.entries(object as Record<string, unknown>).forEach(
+      ([key, value]) => {
+        if (typeof value === "object") {
+          newObject[key] = removeUndefined(value as Record<string, unknown>);
+        } else if (typeof value !== "undefined") {
+          newObject[key] = value;
+        }
+      }
+    );
+    return newObject as Obj;
+  }
+  return object;
+}

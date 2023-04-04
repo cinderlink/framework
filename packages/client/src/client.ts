@@ -42,6 +42,7 @@ import { v4 as uuid } from "uuid";
 import { DID } from "dids";
 import { peerIdFromString } from "@libp2p/peer-id";
 import { Files } from "./files";
+import { JWE } from "did-jwt";
 
 export class CinderlinkClient<
     PluginEvents extends PluginEventDef = PluginEventDef
@@ -49,7 +50,7 @@ export class CinderlinkClient<
   extends Emittery<CinderlinkClientEvents["emit"] & ProtocolEvents["emit"]>
   implements CinderlinkClientInterface<PluginEvents>
 {
-  public started = false;
+  public running = false;
   public hasServerConnection = false;
 
   public plugins: Record<PluginInterface["id"], PluginInterface> & {
@@ -213,6 +214,7 @@ export class CinderlinkClient<
     );
 
     console.info(`client > ready`);
+    this.running = true;
     this.emit("/client/ready", {});
   }
 
@@ -248,20 +250,23 @@ export class CinderlinkClient<
   }
 
   async save(forceRemote = false) {
-    if (!this.identity.hasResolved) {
+    if (!this.identity.hasResolved || this.identity.resolving) {
       return;
     }
-    const schemaCIDs: Record<string, string> = {};
+    const savedSchemas: Record<string, JWE | SavedSchema> = {};
     await Promise.all(
       Object.entries(this.schemas).map(async ([name, schema]) => {
-        const schemaCID = await schema.save();
-        if (schemaCID) {
-          schemaCIDs[name] = schemaCID.toString();
+        const exported = await schema.export();
+        if (exported) {
+          savedSchemas[name] = exported;
         }
       })
     );
+
+    if (!Object.keys(savedSchemas).length) return;
+
     const rootDoc = {
-      schemas: schemaCIDs,
+      schemas: savedSchemas,
       updatedAt: Date.now(),
     };
     console.info(`client/save > encrypting root document`, rootDoc);
@@ -280,63 +285,76 @@ export class CinderlinkClient<
 
   async load() {
     if (!this.hasServerConnection && this.role !== "server") {
-      console.info(`client/load > waiting for server connection`);
+      console.info(
+        `client/load > waiting for server connection`,
+        this.initialConnectTimeout
+      );
       await new Promise((resolve) => {
         const timeout = setTimeout(() => {
+          console.info("client/load > timed out waiting for server");
+          this.p2p.off("/cinderlink/handshake/success", onHandshake);
           resolve(false);
         }, this.initialConnectTimeout);
-        this.p2p.once("/server/connect").then(() => {
-          clearTimeout(timeout);
-          resolve(true);
-        });
+        const onHandshake = (message: any) => {
+          if (message.peer.role === "server") {
+            console.info("client/load > server connected");
+            this.hasServerConnection = true;
+            clearTimeout(timeout);
+            this.p2p.off("/cinderlink/handshake/success", onHandshake);
+            resolve(true);
+          }
+        };
+        this.p2p.on("/cinderlink/handshake/success", onHandshake);
       });
+      console.info("Done waiting for server connection");
     }
     console.info(`client/load > resolving root document`);
     const { cid, document } = await this.identity.resolve();
     console.info(
-      `client/load > resolved root document with CID ${cid}. loading schemas...`,
-      { cid, document }
+      `client/load > resolved root document?! with CID ${cid}. loading schemas...`,
+      { cid, document, hasServer: this.hasServerConnection }
     );
-    if (cid && document) {
-      if (document.schemas) {
-        await Promise.all(
-          Object.entries(document.schemas).map(async ([name, schemaCID]) => {
-            if (schemaCID) {
-              console.info("client/load > loading schema", name, schemaCID);
-              const schema = await this.dag
-                .loadDecrypted<SavedSchema>(
-                  CID.parse(schemaCID as string),
-                  undefined,
-                  { timeout: 1000 }
-                )
-                .catch(() => undefined);
-
-              // ask servers to pin schema
-              if (this.role !== "server") {
-                const servers = this.peers.getServers();
-                for (const server of servers) {
-                  await this.send(server.peerId.toString(), {
-                    topic: "/social/users/pin/request",
-                    payload: {
-                      requestId: uuid(),
-                      cid: schemaCID,
-                      textId: `schema.${name}`,
-                      did: this.id,
-                    } as PluginEvents["send"]["/social/users/pin/request"],
-                  });
-                }
-              }
-
-              if (schema) {
-                this.schemas[name] = await Schema.fromSavedSchema(
-                  schema,
-                  this.dag
-                );
-              }
+    if (cid && document?.schemas) {
+      console.info(
+        "client/load > preparing to import schemas",
+        document.schemas
+      );
+      await Promise.all(
+        Object.entries(document.schemas).map(async ([name, schema]) => {
+          let saved: SavedSchema | undefined = undefined;
+          if (typeof schema === "string") {
+            // legacy schema support from CID
+            console.info("client/load > loading schema from CID", name, schema);
+            saved = (await this.dag
+              .loadDecrypted(schema, undefined, {
+                timeout: 3000,
+              })
+              .catch(() =>
+                this.dag
+                  .load(schema, undefined, { timeout: 3000 })
+                  .catch(() => undefined)
+              )) as SavedSchema | undefined;
+          } else if ((schema as SavedSchema).schemaId) {
+            console.info("client/load > deserializing schema", name, schema);
+            saved = schema as SavedSchema;
+          } else if (schema) {
+            console.info("client/load > decrypting schema", name, schema);
+            const decrypted = await this.dag.did.decryptDagJWE(schema as JWE);
+            console.info("client/load > decrypted schema", name, decrypted);
+            if ((decrypted as SavedSchema).schemaId) {
+              saved = decrypted as SavedSchema;
             }
-          })
-        );
-      }
+          }
+
+          if (saved) {
+            console.info("client/load > hydrating schema", {
+              name,
+              schema,
+            });
+            this.schemas[name] = await Schema.fromSavedSchema(saved, this.dag);
+          }
+        })
+      );
     }
   }
 
@@ -473,7 +491,7 @@ export class CinderlinkClient<
 
   async stop() {
     console.info(`client/stop > shutting down...`);
-    await this.save();
+    // await this.save();
     await Promise.all(
       Object.values(this.plugins).map(async (plugin) => {
         await plugin.stop?.();
@@ -484,6 +502,7 @@ export class CinderlinkClient<
       })
     );
 
+    this.running = false;
     this.ipfs.stop();
   }
 
@@ -540,6 +559,7 @@ export class CinderlinkClient<
   ): Promise<IncomingP2PMessage<Events, InTopic, Encoding> | undefined> {
     const peer = this.peers.getPeer(peerId);
     if (!peer) {
+      console.info("!!!PEERS!!!", this.peers.getPeers());
       throw new Error(`peer does not exist: ${peerId}`);
     }
 

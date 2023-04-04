@@ -14,6 +14,7 @@ export class SocialPosts {
   async createPost(
     post: Omit<Omit<Omit<Omit<SocialPost, "id">, "uid">, "cid">, "did">
   ): Promise<SocialPost> {
+    console.info("storing post", { post });
     const cid = await this.plugin.client.dag.store(post);
     if (!cid) {
       throw new Error("failed to store post");
