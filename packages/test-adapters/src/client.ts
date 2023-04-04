@@ -22,7 +22,7 @@ export class TestClient<PluginEvents extends PluginEventDef>
   extends Emittery<CinderlinkClientEvents["emit"] & ProtocolEvents["emit"]>
   implements CinderlinkClientInterface<PluginEvents>
 {
-  started = false;
+  running = false;
   hasServerConnection = false;
   peers = new Peerstore();
   subscriptions: string[] = [];
@@ -103,11 +103,11 @@ export class TestClient<PluginEvents extends PluginEventDef>
       })
     );
 
-    this.started = true;
+    this.running = true;
   }
 
   async stop() {
-    this.started = false;
+    this.running = false;
   }
 
   async save() {
