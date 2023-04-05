@@ -273,18 +273,18 @@ export const SocialSchemaDef = {
     indexes: {
       type: {
         unique: true,
-        fields: ["source", "type"],
+        fields: ["sourceUid", "type"],
       },
     },
     rollup: 1000,
     searchOptions: {
-      fields: ["source", "type"],
+      fields: ["sourceUid", "type"],
     },
     schema: {
       type: "object",
       properties: {
         type: { type: "string" },
-        source: { type: "string" },
+        sourceUid: { type: "string" },
         title: { type: "string" },
         body: { type: "string" },
         dismissed: { type: "boolean" },
