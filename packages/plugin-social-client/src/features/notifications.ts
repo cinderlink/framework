@@ -43,6 +43,7 @@ export class SocialNotifications {
     const table = await this.plugin.table<SocialNotification>("notifications");
     const notifications = await table
       .query()
+      .orderBy("createdAt", "desc")
       .select()
       .execute()
       .then((res) => res.all());
