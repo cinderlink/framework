@@ -2,7 +2,7 @@
   "name": "@cinderlink/plugin-identity-server",
   "description": "Identity server plugin for Cinderlink",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -27,8 +27,8 @@
     "@cinderlink/ipld-database": "workspace:../ipld-database"
   },
   "devDependencies": {
-    "@cinderlink/identifiers": "workspace:^0.0.1",
-    "@cinderlink/test-adapters": "workspace:^0.0.3",
+    "@cinderlink/identifiers": "workspace:../identifiers",
+    "@cinderlink/test-adapters": "workspace:../test-adapters",
     "@cinderlink/tsconfig": "workspace:../tsconfig",
     "@ipld/car": "^5.1.1",
     "@types/node": "^18.15.11",
