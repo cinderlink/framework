@@ -43,7 +43,7 @@ export class QueryBuilder<Row extends TableRow = TableRow>
     this: QueryBuilderInterface<Row>,
     field: Key,
     operation: Op,
-    value: Op extends "in" | "!in" | "bwtween" | "!between"
+    value: Op extends "in" | "!in" | "between" | "!between"
       ? Row[Key][]
       : Row[Key]
   ) {
@@ -169,6 +169,116 @@ export class QueryBuilder<Row extends TableRow = TableRow>
     return this;
   }
 
+  instructionsMatchRecord(record: Row) {
+    const whereInstructions: WhereInstruction<Row>[] = this.instructions
+      .filter((i) => i.instruction === "where")
+      .concat(
+        this.instructions
+          .filter((i) => i.instruction === "and")
+          .map((i) =>
+            (i as AndInstruction<Row>).queries.filter(
+              (q) => q.instruction === "where"
+            )
+          )
+          .flat()
+      ) as WhereInstruction<Row>[];
+
+    const orInstructions: OrInstruction<Row>[] = this.instructions.filter(
+      (i) => i.instruction === "or"
+    ) as OrInstruction<Row>[];
+
+    const hasMatchingWhere = this.whereInstructionsMatchRecord(
+      whereInstructions,
+      record
+    );
+    const hasMatchingOr = orInstructions.some((orInstruction) => {
+      const whereInstructions: WhereInstruction<Row>[] = orInstruction.queries
+        .filter((q) => q.instruction === "where")
+        .concat(
+          orInstruction.queries
+            .filter((i) => i.instruction === "and")
+            .map((i) =>
+              (i as AndInstruction<Row>).queries.filter(
+                (q) => q.instruction === "where"
+              )
+            )
+            .flat()
+        ) as WhereInstruction<Row>[];
+      return this.whereInstructionsMatchRecord(whereInstructions, record);
+    });
+    return hasMatchingWhere || hasMatchingOr;
+  }
+
+  whereInstructionsMatchRecord(where: WhereInstruction<Row>[], record: Row) {
+    let match = true;
+    for (const query of where) {
+      const { field, operation, value } = query;
+
+      if (operation === "=") {
+        if (record[field] !== value) {
+          match = false;
+          break;
+        }
+      } else if (operation === "!=") {
+        if (record[field] === value) {
+          match = false;
+          break;
+        }
+      } else if (operation === "<") {
+        if (Number(record[field]) >= (value as number)) {
+          match = false;
+          break;
+        }
+      } else if (operation === "<=") {
+        if (Number(record[field]) > (value as number)) {
+          match = false;
+          break;
+        }
+      } else if (operation === ">") {
+        if (Number(record[field]) <= (value as number)) {
+          match = false;
+          break;
+        }
+      } else if (operation === ">=") {
+        if (Number(record[field]) < (value as number)) {
+          match = false;
+          break;
+        }
+      } else if (operation === "in") {
+        if (!(value as Row[keyof Row][]).includes(record[field])) {
+          match = false;
+          break;
+        }
+      } else if (operation === "!in") {
+        if ((value as Row[keyof Row][]).includes(record[field])) {
+          match = false;
+          break;
+        }
+      } else if (operation === "between") {
+        if (
+          Number(record[field]) <
+            ((value as [Row[keyof Row], Row[keyof Row]])?.[0] as number) ||
+          Number(record[field]) >
+            ((value as [Row[keyof Row], Row[keyof Row]])?.[1] as number)
+        ) {
+          match = false;
+          break;
+        }
+      } else if (operation === "!between") {
+        if (
+          Number(record[field]) >=
+            ((value as [Row[keyof Row], Row[keyof Row]])?.[0] as number) &&
+          Number(record[field]) <=
+            ((value as [Row[keyof Row], Row[keyof Row]])?.[1] as number)
+        ) {
+          match = false;
+          break;
+        }
+      }
+    }
+    return match;
+  }
+
   nocache() {
     this.instructions.push({
       instruction: "nocache",
@@ -252,7 +362,7 @@ export class TableQuery<
       }
 
       const filters = await event.block.filters();
-      if (!this.instructionsMatchBlock(filters)) {
+      if (!this.instructionsMatchBlockFilters(filters)) {
         return;
       }
       const records = (await event.block.records()) as Record<string, Row>;
@@ -442,12 +552,12 @@ export class TableQuery<
     return result;
   }
 
-  instructionsMatchBlock(filters: BlockFilters<Row, Def>) {
+  instructionsMatchBlockFilters(filters: BlockFilters<Row>) {
     const whereInstructions: WhereInstruction<Row>[] = this.instructions
       .filter((i) => i.instruction === "where")
       .concat(
         this.instructions
-          .filter((i) => i.instruction === "and" || i.instruction === "or")
+          .filter((i) => i.instruction === "and")
           .map((i) =>
             (i as AndInstruction<Row> | OrInstruction<Row>).queries.filter(
               (q) => q.instruction === "where"
@@ -456,6 +566,43 @@ export class TableQuery<
           .flat()
       ) as WhereInstruction<Row>[];
 
+    if (this.whereInstructionsMatchBlockFilters(whereInstructions, filters)) {
+      return true;
+    }
+
+    const orInstructions = this.instructions.filter(
+      (i) => i.instruction === "or"
+    ) as OrInstruction<Row>[];
+
+    for (const orInstruction of orInstructions) {
+      if (
+        this.whereInstructionsMatchBlockFilters(
+          orInstruction.queries
+            .filter((q) => q.instruction === "where")
+            .concat(
+              orInstruction.queries
+                .filter((q) => q.instruction === "and")
+                .map((i) =>
+                  (
+                    i as AndInstruction<Row> | OrInstruction<Row>
+                  ).queries.filter((q) => q.instruction === "where")
+                )
+                .flat()
+            ) as WhereInstruction<Row>[],
+          filters
+        )
+      ) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  whereInstructionsMatchBlockFilters(
+    whereInstructions: WhereInstruction<Row>[],
+    filters: BlockFilters<Row>
+  ) {
     for (const query of whereInstructions) {
       const { field, operation, value } = query;
 
@@ -530,101 +677,7 @@ export class TableQuery<
         }
       }
     }
-
     return true;
-  }
-
-  instructionsMatchRecord(record: Row) {
-    const whereInstructions: WhereInstruction<Row>[] = this.instructions
-      .filter((i) => i.instruction === "where")
-      .concat(
-        this.instructions
-          .filter((i) => i.instruction === "and")
-          .map((i) =>
-            (i as AndInstruction<Row> | OrInstruction<Row>).queries.filter(
-              (q) => q.instruction === "where"
-            )
-          )
-          .flat()
-      ) as WhereInstruction<Row>[];
-
-    const orInstructions: OrInstruction<Row>[] = this.instructions.filter(
-      (i) => i.instruction === "or"
-    ) as OrInstruction<Row>[];
-
-    return (
-      this.whereInstructionsMatchRecord(whereInstructions, record) ||
-      orInstructions.some((orInstruction) => {
-        const whereInstructions: WhereInstruction<Row>[] = orInstruction.queries
-          .filter((q) => q.instruction === "where")
-          .concat(
-            orInstruction.queries
-              .filter((i) => i.instruction === "and")
-              .map((i) =>
-                (i as AndInstruction<Row> | OrInstruction<Row>).queries.filter(
-                  (q) => q.instruction === "where"
-                )
-              )
-              .flat()
-          ) as WhereInstruction<Row>[];
-        return this.whereInstructionsMatchRecord(whereInstructions, record);
-      })
-    );
-  }
-
-  whereInstructionsMatchRecord(where: WhereInstruction<Row>[], record: Row) {
-    let match = true;
-    for (const query of where) {
-      const { field, operation, value } = query;
-
-      if (operation === "=") {
-        if (record[field] !== value) {
-          match = false;
-          break;
-        }
-      } else if (operation === "!=") {
-        if (record[field] === value) {
-          match = false;
-          break;
-        }
-      } else if (operation === "<") {
-        if (Number(record[field]) >= (value as number)) {
-          match = false;
-          break;
-        }
-      } else if (operation === "<=") {
-        if (Number(record[field]) > (value as number)) {
-          match = false;
-          break;
-        }
-      } else if (operation === ">") {
-        if (Number(record[field]) <= (value as number)) {
-          match = false;
-          break;
-        }
-      } else if (operation === ">=") {
-        if (Number(record[field]) < (value as number)) {
-          match = false;
-          break;
-        }
-      } else if (operation === "in") {
-        if (!(value as Row[keyof Row][]).includes(record[field])) {
-          match = false;
-          break;
-        }
-      } else if (operation === "between") {
-        if (
-          Number(record[field]) <
-            ((value as [Row[keyof Row], Row[keyof Row]])?.[0] as number) ||
-          Number(record[field]) >
-            ((value as [Row[keyof Row], Row[keyof Row]])?.[1] as number)
-        ) {
-          match = false;
-          break;
-        }
-      }
-    }
-    return match;
   }
 }
 

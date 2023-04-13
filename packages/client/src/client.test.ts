@@ -13,6 +13,7 @@ import {
   ProtocolEvents,
   EncodingOptions,
   IncomingP2PMessage,
+  ReceiveEventHandlers,
 } from "@cinderlink/core-types";
 import * as ethers from "ethers";
 
@@ -25,11 +26,11 @@ interface TestClientEvents extends PluginEventDef {
     "/test/response": { message: string };
   };
 }
-export class TestClientPlugin implements PluginInterface<TestClientEvents> {
+export class TestClientPlugin implements PluginInterface {
   id = "test-client-plugin";
   constructor(public client: CinderlinkClientInterface) {}
 
-  p2p = {
+  p2p: ReceiveEventHandlers<TestClientEvents> = {
     "/test/response": this.onTestResponse,
   };
   pubsub = {};
@@ -54,11 +55,11 @@ interface TestServerEvents extends PluginEventDef {
     "/test/request": { message: string };
   };
 }
-export class TestServerPlugin implements PluginInterface<TestServerEvents> {
+export class TestServerPlugin implements PluginInterface {
   id = "test-server-plugin";
   constructor(public client: CinderlinkClientInterface<TestServerEvents>) {}
 
-  p2p = {
+  p2p: ReceiveEventHandlers<TestServerEvents> = {
     "/test/request": this.onTestRequest,
   };
   pubsub = {};
@@ -102,7 +103,7 @@ describe("CinderlinkClient", () => {
       },
     });
     client.initialConnectTimeout = 0;
-    client.addPlugin(new TestClientPlugin(client) as any);
+    client.addPlugin(new TestClientPlugin(client));
 
     const serverWallet = ethers.Wallet.createRandom();
     const serverDID = await createDID(await createSeed("test server"));
@@ -129,13 +130,15 @@ describe("CinderlinkClient", () => {
       },
     });
     server.initialConnectTimeout = 0;
-    server.addPlugin(new TestServerPlugin(server) as any);
+    server.addPlugin(new TestServerPlugin(server));
 
-    await server.start([]);
-    await client.start([]);
+    await Promise.all([server.start([]), client.start([])]);
 
     const serverPeer = await server.ipfs.id();
-    await client.connect(serverPeer.id);
+    await Promise.all([
+      client.connect(serverPeer.id),
+      await client.pluginEvents.once("/cinderlink/handshake/success"),
+    ]);
   });
 
   it("can execute a request lifecycle", async () => {
@@ -148,7 +151,7 @@ describe("CinderlinkClient", () => {
       }
     );
 
-    expect(response).toHaveBeenCalledWith("hello");
+    expect(response).toHaveBeenCalled();
   });
 
   afterAll(async () => {

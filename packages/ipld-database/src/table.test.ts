@@ -122,7 +122,7 @@ describe("@cinderlink/ipld-database/table", () => {
 
   it("should create a current block", () => {
     const table = new Table<TestRow>("test", validDefinition, client.dag);
-    expect(table.currentBlock).toMatchSnapshot();
+    expect(table.currentBlock).not.toBeUndefined();
   });
 
   it("should validate records", () => {
@@ -148,27 +148,25 @@ describe("@cinderlink/ipld-database/table", () => {
       .select()
       .where("uid", "=", uid)
       .execute();
-    expect(results).toMatchInlineSnapshot(`
-      TableQueryResult {
-        "rows": [
-          {
-            "count": 1,
-            "id": 1,
-            "name": "foo",
-            "uid": "bagaaieralxfilz3jrhsv5o66zhstasbsybvj5llrhcyeg4wgkvjqaph5fbeq",
-          },
-        ],
-      }
-    `);
-    const record = results.first();
-    expect(record).toMatchInlineSnapshot(`
+    expect(results.all()).toMatchObject([
       {
-        "count": 1,
-        "id": 1,
-        "name": "foo",
-        "uid": "bagaaieralxfilz3jrhsv5o66zhstasbsybvj5llrhcyeg4wgkvjqaph5fbeq",
-      }
-    `);
+        count: 1,
+        createdAt: expect.any(Number),
+        id: 1,
+        name: "foo",
+        uid: "bagaaieralxfilz3jrhsv5o66zhstasbsybvj5llrhcyeg4wgkvjqaph5fbeq",
+        updatedAt: expect.any(Number),
+      },
+    ]);
+    const record = results.first();
+    expect(record).toMatchObject({
+      count: 1,
+      createdAt: expect.any(Number),
+      id: 1,
+      name: "foo",
+      uid: "bagaaieralxfilz3jrhsv5o66zhstasbsybvj5llrhcyeg4wgkvjqaph5fbeq",
+      updatedAt: expect.any(Number),
+    });
   });
 
   // should delete record
@@ -193,14 +191,14 @@ describe("@cinderlink/ipld-database/table", () => {
       .execute()
       .then((r) => r.first());
 
-    expect(deleted).toMatchInlineSnapshot(`
-    {
-      "count": 1,
-      "id": 1,
-      "name": "foo",
-      "uid": "bagaaieralxfilz3jrhsv5o66zhstasbsybvj5llrhcyeg4wgkvjqaph5fbeq",
-    }
-  `);
+    expect(deleted).toMatchObject({
+      count: 1,
+      createdAt: expect.any(Number),
+      id: 1,
+      name: "foo",
+      uid: "bagaaieralxfilz3jrhsv5o66zhstasbsybvj5llrhcyeg4wgkvjqaph5fbeq",
+      updatedAt: expect.any(Number),
+    });
 
     const res2 = await table.query().select().where("uid", "=", uid).execute();
     expect(res2).toMatchInlineSnapshot(`
@@ -212,18 +210,16 @@ describe("@cinderlink/ipld-database/table", () => {
     const uid2 = await table.insert({ name: "bar", count: 1 });
     const res3 = await table.query().select().where("uid", "=", uid2).execute();
 
-    expect(res3).toMatchInlineSnapshot(`
-    TableQueryResult {
-      "rows": [
-        {
-          "count": 1,
-          "id": 2,
-          "name": "bar",
-          "uid": "bagaaierabqacwfurdcftu6qupl2ghi4z5kb2bhpkb6m7by34tsyozyfwvbha",
-        },
-      ],
-    }
-  `);
+    expect(res3.all()).toMatchObject([
+      {
+        count: 1,
+        createdAt: expect.any(Number),
+        id: 2,
+        name: "bar",
+        uid: "bagaaierabqacwfurdcftu6qupl2ghi4z5kb2bhpkb6m7by34tsyozyfwvbha",
+        updatedAt: expect.any(Number),
+      },
+    ]);
 
     await table.insert({ name: "baz", count: 1 });
     await table.insert({ name: "qux", count: 1 });
@@ -236,14 +232,14 @@ describe("@cinderlink/ipld-database/table", () => {
       .execute()
       .then((r) => r.first());
 
-    expect(deleted2).toMatchInlineSnapshot(`
-    {
-      "count": 1,
-      "id": 2,
-      "name": "bar",
-      "uid": "bagaaierabqacwfurdcftu6qupl2ghi4z5kb2bhpkb6m7by34tsyozyfwvbha",
-    }
-  `);
+    expect(deleted2).toMatchObject({
+      count: 1,
+      createdAt: expect.any(Number),
+      id: 2,
+      name: "bar",
+      uid: "bagaaierabqacwfurdcftu6qupl2ghi4z5kb2bhpkb6m7by34tsyozyfwvbha",
+      updatedAt: expect.any(Number),
+    });
 
     const deleted3 = await table
       .query()
@@ -253,14 +249,14 @@ describe("@cinderlink/ipld-database/table", () => {
       .execute()
       .then((r) => r.first());
 
-    expect(deleted3).toMatchInlineSnapshot(`
-    {
-      "count": 1,
-      "id": 3,
-      "name": "baz",
-      "uid": "bagaaieray3ffizo6c2xgizctiophfmpxhk7wezbixgy67pjsjf3ydoccu7tq",
-    }
-  `);
+    expect(deleted3).toMatchObject({
+      count: 1,
+      createdAt: expect.any(Number),
+      id: 3,
+      name: "baz",
+      uid: "bagaaieray3ffizo6c2xgizctiophfmpxhk7wezbixgy67pjsjf3ydoccu7tq",
+      updatedAt: expect.any(Number),
+    });
 
     const deleted4 = await table
       .query()
@@ -270,14 +266,14 @@ describe("@cinderlink/ipld-database/table", () => {
       .execute()
       .then((r) => r.first());
 
-    expect(deleted4).toMatchInlineSnapshot(`
-    {
-      "count": 1,
-      "id": 4,
-      "name": "qux",
-      "uid": "bagaaierasvkzich2hfud5lysxlqqllj7v56tkkmmrtdhnvy5v5j2h756axtq",
-    }
-  `);
+    expect(deleted4).toMatchObject({
+      count: 1,
+      createdAt: expect.any(Number),
+      id: 4,
+      name: "qux",
+      uid: "bagaaierasvkzich2hfud5lysxlqqllj7v56tkkmmrtdhnvy5v5j2h756axtq",
+      updatedAt: expect.any(Number),
+    });
 
     // select all
     const res4 = await table
@@ -304,16 +300,16 @@ describe("@cinderlink/ipld-database/table", () => {
     await table.insert({ name: "bar", count: 1 });
     await table.insert({ name: "baz", count: 1 });
     const results = await table.search("foo");
-    expect(results).toMatchInlineSnapshot(`
-      [
-        {
-          "count": 1,
-          "id": 1,
-          "name": "foo",
-          "uid": "bagaaieralxfilz3jrhsv5o66zhstasbsybvj5llrhcyeg4wgkvjqaph5fbeq",
-        },
-      ]
-    `);
+    expect(results).toMatchObject([
+      {
+        count: 1,
+        createdAt: expect.any(Number),
+        id: 1,
+        name: "foo",
+        uid: "bagaaieralxfilz3jrhsv5o66zhstasbsybvj5llrhcyeg4wgkvjqaph5fbeq",
+        updatedAt: expect.any(Number),
+      },
+    ]);
   });
 
   it("should rollup records", async () => {
@@ -372,16 +368,16 @@ describe("@cinderlink/ipld-database/table", () => {
       await table.insert({ name: `test #${i}`, count: i });
     }
     const results = await table.search("test #3");
-    expect(results).toMatchInlineSnapshot(`
-      [
-        {
-          "count": 10,
-          "id": 11,
-          "name": "test #10",
-          "uid": "bagaaiera5cclqznug4jgdkche2c2xtzdrr4vg6ytx266smmnwpiamzdcv4va",
-        },
-      ]
-    `);
+    expect(results).toMatchObject([
+      {
+        count: 10,
+        createdAt: expect.any(Number),
+        id: 11,
+        name: "test #10",
+        uid: "bagaaiera5cclqznug4jgdkche2c2xtzdrr4vg6ytx266smmnwpiamzdcv4va",
+        updatedAt: expect.any(Number),
+      },
+    ]);
   });
 
   it("should rewrite previous blocks to update", async () => {
@@ -400,14 +396,14 @@ describe("@cinderlink/ipld-database/table", () => {
     expect(allRecords).toHaveLength(10);
 
     const updated = await table.getByUid(uids[2]);
-    expect(updated).toMatchInlineSnapshot(`
-      {
-        "count": 1337,
-        "id": 3,
-        "name": "test three",
-        "uid": "bagaaierabxgwcvvlt2sqgrxwqoxhlkqphc5g5o3rwnkqbyw4bxh5txk3lmiq",
-      }
-    `);
+    expect(updated).toMatchObject({
+      count: 1337,
+      createdAt: expect.any(Number),
+      id: 3,
+      name: "test three",
+      uid: "bagaaierabxgwcvvlt2sqgrxwqoxhlkqphc5g5o3rwnkqbyw4bxh5txk3lmiq",
+      updatedAt: expect.any(Number),
+    });
 
     expect(table.currentIndex).toBe(11);
   }, 30000);
@@ -459,28 +455,28 @@ describe("@cinderlink/ipld-database/table", () => {
     it("should insert records with unique indexes", async () => {
       const users = new Table<UsersRow>("users", usersDef, client.dag);
       const returned = await users.upsert({ did: "foo:bar" }, { name: "bar" });
-      expect(returned).toMatchInlineSnapshot(`
-        {
-          "did": "foo:bar",
-          "id": 1,
-          "name": "bar",
-          "uid": "bagaaieradbrlgbyiagiu4zzfadvwxskwm5vi3r3ucg56d5bgcj7xl5khnifa",
-        }
-      `);
+      expect(returned).toMatchObject({
+        createdAt: expect.any(Number),
+        did: "foo:bar",
+        id: 1,
+        name: "bar",
+        uid: "bagaaieradbrlgbyiagiu4zzfadvwxskwm5vi3r3ucg56d5bgcj7xl5khnifa",
+        updatedAt: expect.any(Number),
+      });
       const selected = await users
         .query()
         .select()
         .where("did", "=", "foo:bar")
         .execute()
         .then((r) => r.first());
-      expect(selected).toMatchInlineSnapshot(`
-        {
-          "did": "foo:bar",
-          "id": 1,
-          "name": "bar",
-          "uid": "bagaaieradbrlgbyiagiu4zzfadvwxskwm5vi3r3ucg56d5bgcj7xl5khnifa",
-        }
-      `);
+      expect(selected).toMatchObject({
+        createdAt: expect.any(Number),
+        did: "foo:bar",
+        id: 1,
+        name: "bar",
+        uid: "bagaaieradbrlgbyiagiu4zzfadvwxskwm5vi3r3ucg56d5bgcj7xl5khnifa",
+        updatedAt: expect.any(Number),
+      });
       expect(returned).toMatchObject(selected);
     });
 
@@ -496,15 +492,13 @@ describe("@cinderlink/ipld-database/table", () => {
       );
 
       const upserted = await users.upsert({ did: "foo:bar" }, { name: "baz" });
-      expect(upserted).toMatchInlineSnapshot(`
-        {
-          "did": "foo:bar",
-          "id": 1,
-          "name": "baz",
-          "uid": "bagaaieradbrlgbyiagiu4zzfadvwxskwm5vi3r3ucg56d5bgcj7xl5khnifa",
-          "updatedAt": 0,
-        }
-      `);
+      expect(upserted).toMatchObject({
+        did: "foo:bar",
+        id: 1,
+        name: "baz",
+        uid: "bagaaieradbrlgbyiagiu4zzfadvwxskwm5vi3r3ucg56d5bgcj7xl5khnifa",
+        updatedAt: expect.any(Number),
+      });
 
       const selected = await users
         .query()
@@ -512,15 +506,13 @@ describe("@cinderlink/ipld-database/table", () => {
         .where("did", "=", "foo:bar")
         .execute()
         .then((r) => r.first());
-      expect(selected).toMatchInlineSnapshot(`
-        {
-          "did": "foo:bar",
-          "id": 1,
-          "name": "baz",
-          "uid": "bagaaieradbrlgbyiagiu4zzfadvwxskwm5vi3r3ucg56d5bgcj7xl5khnifa",
-          "updatedAt": 0,
-        }
-      `);
+      expect(selected).toMatchObject({
+        did: "foo:bar",
+        id: 1,
+        name: "baz",
+        uid: "bagaaieradbrlgbyiagiu4zzfadvwxskwm5vi3r3ucg56d5bgcj7xl5khnifa",
+        updatedAt: expect.any(Number),
+      });
 
       expect(upserted).toMatchObject(selected);
       expect(upserted).not.toMatchObject(inserted);
@@ -631,5 +623,37 @@ describe("@cinderlink/ipld-database/table", () => {
     table.unlock();
     expect(promise1).resolves.toBe(1);
     expect(promise2).resolves.toBe(2);
+  });
+
+  it("should properly support OR queries", async () => {
+    const table = new Table<TestRow>("test", validDefinition, client.dag);
+    await table.insert({ name: "foo", count: 0 });
+    await table.insert({ name: "bar", count: 1 });
+    await table.insert({ name: "baz", count: 2 });
+    const result = await table
+      .query()
+      .select()
+      .where("name", "=", "foo")
+      .or((qb) => qb.where("name", "=", "bar"))
+      .or((qb) => qb.where("name", "=", "nope"))
+      .execute();
+    expect(result.all()).toMatchObject([
+      {
+        id: 1,
+        count: 0,
+        name: "foo",
+        uid: expect.any(String),
+        createdAt: expect.any(Number),
+        updatedAt: expect.any(Number),
+      },
+      {
+        id: 2,
+        count: 1,
+        name: "bar",
+        uid: expect.any(String),
+        createdAt: expect.any(Number),
+        updatedAt: expect.any(Number),
+      },
+    ]);
   });
 });

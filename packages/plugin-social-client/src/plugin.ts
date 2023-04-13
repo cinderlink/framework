@@ -1,9 +1,8 @@
 import { SyncDBPlugin } from "@cinderlink/plugin-sync-db";
 import {
-  PluginEventHandlers,
   ProtocolEvents,
-  ReceiveEvents,
-  SubscribeEvents,
+  ReceiveEventHandlers,
+  SubscribeEventHandlers,
 } from "@cinderlink/core-types";
 import type {
   PluginInterface,
@@ -27,12 +26,12 @@ import { SocialUsers } from "./features/users";
 const logPrefix = `plugin/social/client`;
 
 export class SocialClientPlugin<
-    Client extends CinderlinkClientInterface<any> = CinderlinkClientInterface<
+    Client extends CinderlinkClientInterface<
       SocialClientEvents & ProtocolEvents
-    >
+    > = CinderlinkClientInterface<SocialClientEvents & ProtocolEvents>
   >
   extends Emittery<SocialClientPluginEvents>
-  implements PluginInterface<SocialClientEvents, Client>
+  implements PluginInterface<SocialClientEvents>
 {
   id = "socialClient";
   ready = false;
@@ -45,8 +44,8 @@ export class SocialClientPlugin<
   profiles: SocialProfiles;
   users: SocialUsers;
 
-  pubsub: PluginEventHandlers<SubscribeEvents<SocialClientEvents>>;
-  p2p: PluginEventHandlers<ReceiveEvents<SocialClientEvents>>;
+  pubsub: SubscribeEventHandlers<SocialClientEvents>;
+  p2p: ReceiveEventHandlers<SocialClientEvents>;
 
   constructor(
     public client: Client,
@@ -69,6 +68,7 @@ export class SocialClientPlugin<
         this.users
       ),
       "/social/users/pin/response": this.users.onPinResponse.bind(this.users),
+      "/social/users/get/response": this.users.onGetResponse.bind(this.users),
     };
   }
 
@@ -93,7 +93,7 @@ export class SocialClientPlugin<
     this.emit("ready", undefined);
 
     console.info(`${logPrefix} > registering sync config`);
-    const syncDb: SyncDBPlugin = this.client.getPlugin("sync") as any;
+    const syncDb: SyncDBPlugin = this.client.getPlugin("sync");
     if (syncDb) {
       Object.entries(SocialSyncConfig).map(([table, config]) => {
         syncDb.addTableSync("social", table, config);

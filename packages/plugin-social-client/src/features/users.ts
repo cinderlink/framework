@@ -1,4 +1,3 @@
-import { multiaddr } from "@multiformats/multiaddr";
 import { v4 as uuid } from "uuid";
 import {
   EncodingOptions,
@@ -22,7 +21,7 @@ export class SocialUsers {
     address: "",
     addressVerification: "",
     status: "online",
-    updatedAt: Date.now(),
+    updatedAt: 0,
   };
   userStatusInterval: NodeJS.Timer | null = null;
   announceInterval: NodeJS.Timer | null = null;
@@ -33,13 +32,13 @@ export class SocialUsers {
 
   async start() {
     await this.loadLocalUser();
-    this.plugin.client.p2p.on(
+    this.plugin.client.pluginEvents.on(
       "/cinderlink/handshake/success",
-      async (event) => {
-        if (event.peer.role === "server") {
+      async (peer) => {
+        if (peer.role === "server") {
           this.hasServerConnection = true;
         } else {
-          await this.setUserStatus(event.peer.did as string, "online");
+          await this.setUserStatus(peer.did as string, "online");
         }
 
         if (
@@ -47,10 +46,16 @@ export class SocialUsers {
           this.localUser.name !== "guest" &&
           this.plugin.client.addressVerification
         ) {
-          await this.announce(event.peer.peerId.toString());
+          await this.announce(peer.peerId.toString());
         }
       }
     );
+
+    this.plugin.client.on("/peer/connect", async (peer: Peer) => {
+      if (peer.role === "peer" && peer.did) {
+        await this.setUserStatus(peer.did as string, "online");
+      }
+    });
 
     this.plugin.client.on("/peer/disconnect", async (peer: Peer) => {
       if (peer.role === "peer") {
@@ -67,7 +72,7 @@ export class SocialUsers {
         return;
       console.info(`plugin/social/client > announcing (pubsub, interval)`);
       await this.announce();
-    }, Number(this.plugin.options.announceInterval || 180000));
+    }, Number(this.plugin.options.announceInterval || 30000));
 
     const connections = await this.plugin.connections.getConnections(
       this.plugin.client.id,
@@ -81,35 +86,45 @@ export class SocialUsers {
       }
     }
 
-    this.userStatusInterval = setInterval(async () => {
-      const peers = this.plugin.client.peers
-        .getPeers()
-        .filter((p) => p.did && p.connected);
+    this.userStatusInterval = setInterval(
+      this.updateUserStatuses.bind(this),
+      10000
+    );
 
-      await this.plugin
-        .table<SocialUser>("users")
-        .query()
-        .where("status", "!=", "offline")
-        .where(
-          "did",
-          "in",
-          peers.map((p) => p.did as string)
-        )
-        .update({ status: "online" })
-        .execute();
+    this.localUser.status === "online";
+    await this.saveLocalUser();
+    await this.updateUserStatuses();
+    await this.announce();
+  }
 
-      await this.plugin
-        .table<SocialUser>("users")
-        .query()
-        .where("status", "!=", "offline")
-        .where(
-          "did",
-          "!in",
-          peers.map((p) => p.did as string)
-        )
-        .update({ status: "offline" })
-        .execute();
-    }, 10000);
+  async updateUserStatuses() {
+    const peers = this.plugin.client.peers
+      .getPeers()
+      .filter((p) => p.did && p.connected);
+
+    await this.plugin
+      .table<SocialUser>("users")
+      .query()
+      .where("status", "!=", "offline")
+      .where(
+        "did",
+        "!in",
+        peers.map((p) => p.did as string)
+      )
+      .update({ status: "offline" })
+      .execute();
+
+    await this.plugin
+      .table<SocialUser>("users")
+      .query()
+      .where("status", "!=", "online")
+      .where(
+        "did",
+        "in",
+        peers.map((p) => p.did as string)
+      )
+      .update({ status: "online" })
+      .execute();
   }
 
   async stop() {
@@ -147,6 +162,7 @@ export class SocialUsers {
     );
     const payload: Partial<SocialUser> = {
       ...this.localUser,
+      status: "online",
       address: this.plugin.client.address,
       addressVerification: this.plugin.client.addressVerification,
     };
@@ -273,14 +289,64 @@ export class SocialUsers {
     console.info("plugin/social/client > local user loaded", this.localUser);
   }
 
+  async getUserFromServer(did: string): Promise<SocialUser | undefined> {
+    const servers = this.plugin.client.peers.getServers();
+    let result: SocialUser | undefined;
+
+    await Promise.all(
+      servers
+        .filter((s) => s.connected && s.authenticated)
+        .map(async (server) => {
+          await this.plugin.client
+            .request<
+              SocialClientEvents,
+              "/social/users/get/request",
+              "/social/users/get/response"
+            >(server.peerId.toString(), {
+              topic: "/social/users/get/request",
+              payload: {
+                requestId: uuid(),
+                did,
+              },
+            })
+            .then((response) => {
+              if (
+                Number(response?.payload.user.updatedAt) >
+                Number(result?.updatedAt)
+              ) {
+                result = response?.payload.user;
+              }
+            });
+        })
+    );
+    return result;
+  }
+
   async getUserByDID(did: string): Promise<SocialUser | undefined> {
-    return this.plugin
+    const user = await this.plugin
       .table<SocialUser>("users")
       .query()
       .where("did", "=", did)
       .select()
       .execute()
       .then((result) => result.first() as SocialUser | undefined);
+    if (user) {
+      return user;
+    }
+
+    const serverUser = await this.getUserFromServer(did);
+    if (serverUser) {
+      const { name, avatar, address, addressVerification, updatedAt } =
+        serverUser;
+      return this.plugin
+        .table<SocialUser>("users")
+        .upsert(
+          { did },
+          { name, avatar, address, addressVerification, updatedAt }
+        );
+    }
+
+    return undefined;
   }
 
   async getUser(uid: string): Promise<SocialUser | undefined> {
@@ -344,17 +410,21 @@ export class SocialUsers {
       return;
     }
 
-    let did: string | undefined = message.peer.did;
-    if (!did) {
-      did = message.payload.did;
+    if (message.payload.did) {
       this.plugin.client.peers.updatePeer(message.peer.peerId.toString(), {
         did: message.payload.did,
         authenticated: true,
       });
     }
 
+    if (!message.peer.did) {
+      this.plugin.client.peers.updatePeer(message.peer.peerId.toString(), {
+        did: message.payload.did,
+      });
+    }
+
     console.info(
-      `plugin/social/client > received social announce message (did: ${message.peer.did})`,
+      `plugin/social/client > received social announce message (did: ${message.payload.did}, connected: ${message.peer.connected})`,
       message.payload
     );
     await this.plugin.table<SocialUser>("users")?.upsert(
@@ -375,49 +445,14 @@ export class SocialUsers {
       const peers = this.plugin.client.ipfs.libp2p.getPeers() || [];
       if (
         peers.length < this.plugin.maxConnectionCount &&
-        !peers
-          .map((p) => p.toString())
-          ?.includes(message.peer.peerId.toString())
+        (!this.plugin.client.peers.hasPeer(message.peer.peerId.toString()) ||
+          !this.plugin.client.peers.getPeer(message.peer.peerId.toString())
+            ?.connected)
       ) {
-        const addr =
-          await this.plugin.client.ipfs.libp2p.peerStore.addressBook.get(
-            message.peer.peerId
-          );
-        if (addr[0]) {
-          console.warn(
-            `plugin/social/client > discovered peer ${message.peer.peerId} (address: ${addr[0].multiaddr})`,
-            addr
-          );
-        } else {
-          const relayAddr = `${this.plugin.client.relayAddresses[0]}/p2p-circuit/p2p/${message.peer.peerId}`;
-          console.warn(
-            `plugin/social/client > discovered peer ${message.peer.peerId} without address, attempting relay (relay: ${relayAddr})`
-          );
-          await this.plugin.client.ipfs.libp2p.peerStore.addressBook.set(
-            message.peer.peerId,
-            [multiaddr(relayAddr)]
-          );
-        }
-        await this.plugin.client.ipfs.swarm.connect(message.peer.peerId);
+        console.info(
+          `plugin/social/client > connecting to peer ${message.peer.peerId}`
+        );
         await this.plugin.client.connect(message.peer.peerId);
-      } else {
-        console.warn(
-          `plugin/social/client > already connected to peer ${message.peer.peerId}`
-        );
-        let peer = this.plugin.client.peers.getPeer(
-          message.peer.peerId.toString()
-        );
-        if (peer) {
-          peer.peerId = message.peer.peerId;
-          peer.did = message.peer.did;
-          peer.connected = true;
-          this.plugin.client.peers.updatePeer(peer.peerId.toString(), peer);
-        } else {
-          peer = this.plugin.client.peers.addPeer(message.peer.peerId, "peer");
-          peer.did = message.peer.did;
-          peer.connected = true;
-          this.plugin.client.peers.updatePeer(peer.peerId.toString(), peer);
-        }
       }
     } catch (e) {
       console.warn(
@@ -437,6 +472,19 @@ export class SocialUsers {
   ) {
     console.info(
       `plugin/social/client > received social pin response (did: ${message.peer.did})`,
+      message.payload
+    );
+  }
+
+  async onGetResponse(
+    message: IncomingP2PMessage<
+      SocialClientEvents,
+      "/social/users/get/response",
+      EncodingOptions
+    >
+  ) {
+    console.info(
+      `plugin/social/client > received social users get response (did: ${message.peer.did})`,
       message.payload
     );
   }

@@ -38,6 +38,7 @@ export interface CinderlinkClientEvents<
   emit: {
     "/client/ready": ProtocolRequest;
     "/peer/connect": Peer;
+    "/server/connect": Peer;
     "/peer/disconnect": Peer;
     "/peer/handshake": Peer;
     "/peer/message": IncomingP2PMessage<PluginEvents>;

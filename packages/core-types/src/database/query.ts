@@ -122,6 +122,7 @@ export interface QueryBuilderInterface<Row extends TableRow = TableRow> {
   delete(): QueryBuilderInterface<Row>;
   select(fields?: (keyof Row)[]): QueryBuilderInterface<Row>;
   returning(fields?: (keyof Row)[]): QueryBuilderInterface<Row>;
+  instructionsMatchRecord(record: Row): boolean;
   execute(): Promise<QueryResult<Row>>;
 }
 

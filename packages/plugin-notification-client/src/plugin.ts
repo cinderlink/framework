@@ -2,15 +2,12 @@ import type {
   PluginInterface,
   CinderlinkClientInterface,
   TableRow,
-  ProtocolEvents,
 } from "@cinderlink/core-types";
 import { loadNotificationSchema } from "./schema";
 import { NotificationClientEvents } from "./types";
 export class NotificationClientPlugin<
-  Client extends CinderlinkClientInterface<any> = CinderlinkClientInterface<
-    NotificationClientEvents & ProtocolEvents
-  >
-> implements PluginInterface<NotificationClientEvents, Client>
+  Client extends CinderlinkClientInterface<NotificationClientEvents> = CinderlinkClientInterface<NotificationClientEvents>
+> implements PluginInterface<NotificationClientEvents>
 {
   id = "notificationClient";
   ready = false;

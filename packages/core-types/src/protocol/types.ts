@@ -114,7 +114,6 @@ export interface ProtocolEvents<
   PluginEvents extends PluginEventDef = PluginEventDef
 > extends PluginEventDef {
   send: {
-    "/cinderlink/ping": {};
     "/cinderlink/handshake/request": HandshakeRequest;
     "/cinderlink/handshake/challenge": HandshakeChallenge;
     "/cinderlink/handshake/complete": HandshakeComplete;

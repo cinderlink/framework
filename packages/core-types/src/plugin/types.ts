@@ -3,12 +3,11 @@ import { ReceiveEventHandlers } from "./../p2p/types";
 import { SubscribeEventHandlers } from "../pubsub";
 import { CinderlinkClientEvents, CinderlinkClientInterface } from "../client";
 
-export type PluginEventPayloads<
-  T extends Record<string, unknown> = Record<string, unknown>
-> = Record<keyof T, ProtocolPayload<T[keyof T], EncodingOptions>>;
+export type PluginEventPayloads<T extends Record<string, unknown> = any> =
+  Record<keyof T, ProtocolPayload<T[keyof T], EncodingOptions>>;
 export type PluginEventHandler<T = unknown> = (payload: T) => void;
 export type PluginEventHandlers<
-  Events extends PluginEventDef[keyof PluginEventDef]
+  Events extends PluginEventDef[keyof PluginEventDef] = PluginEventDef[keyof PluginEventDef]
 > = {
   [key in keyof Events]: PluginEventHandler<Events[key]>;
 };
@@ -21,18 +20,28 @@ export interface PluginEventDef {
   emit: PluginEventPayloads;
 }
 
-export interface PluginInterface<
-  PluginEvents extends PluginEventDef = PluginEventDef,
-  Client extends CinderlinkClientInterface<any> = CinderlinkClientInterface<any>
-> {
+export interface PluginBaseInterface {
   id: string;
-  client: Client;
+  client: CinderlinkClientInterface<any>;
   start?(): Promise<void>;
   stop?(): Promise<void>;
-  pubsub: SubscribeEventHandlers<PluginEvents>;
-  p2p: ReceiveEventHandlers<PluginEvents>;
+  pubsub: SubscribeEventHandlers<any>;
+  p2p: ReceiveEventHandlers<any>;
   coreEvents?: Partial<PluginEventHandlers<CinderlinkClientEvents["emit"]>>;
-  pluginEvents?: Partial<PluginEventHandlers<PluginEvents["emit"]>>;
+  pluginEvents?: PluginEventHandlers<any>;
+}
+
+export interface PluginInterface<
+  Events extends PluginEventDef = any,
+  PeerEvents extends PluginEventDef = any,
+  Client extends CinderlinkClientInterface<
+    Events & PeerEvents
+  > = CinderlinkClientInterface<any>
+> extends PluginBaseInterface {
+  client: Client;
+  pubsub: SubscribeEventHandlers<Events>;
+  p2p: ReceiveEventHandlers<Events>;
+  pluginEvents?: PluginEventHandlers<PeerEvents["emit"]>;
 }
 export default PluginInterface;
 

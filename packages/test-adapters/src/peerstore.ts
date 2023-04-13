@@ -6,6 +6,9 @@ export class Peerstore implements PeerStoreInterface {
   peerIds: Record<string, string> = {};
 
   addPeer(peerId: PeerId, role: "server" | "peer" = "peer", did?: string) {
+    if (this.peers[peerId.toString()]) {
+      throw new Error("peer already exists");
+    }
     if (did) {
       this.peerIds[did] = peerId.toString();
     }
@@ -43,7 +46,15 @@ export class Peerstore implements PeerStoreInterface {
     return Object.values(this.peers).filter((peer) => peer.role === "peer");
   }
 
+  getAllPeers(): Peer[] {
+    return Object.values(this.peers);
+  }
+
   peerCount() {
+    return Object.keys(this.peers).length;
+  }
+
+  allPeerCount(): number {
     return Object.keys(this.peers).length;
   }
 

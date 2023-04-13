@@ -73,7 +73,7 @@ describe("IdentityServerPlugin", () => {
       },
     });
     server.initialConnectTimeout = 0;
-    server.addPlugin(new IdentityServerPlugin(server) as any);
+    await server.addPlugin(new IdentityServerPlugin(server));
 
     await server.start([]);
     const serverPeer = await server.ipfs.id();

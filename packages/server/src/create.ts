@@ -29,9 +29,11 @@ export async function createServer({
     options,
     role: "server",
   });
-  plugins.forEach(([Plugin, pluginOptions]) => {
-    console.info("adding plugin", Plugin);
-    client.addPlugin(new Plugin(client, pluginOptions));
-  });
+  await Promise.all(
+    plugins.map(async ([Plugin, pluginOptions]) => {
+      console.info("adding plugin", Plugin);
+      await client.addPlugin(new Plugin(client, pluginOptions));
+    })
+  );
   return new CinderlinkServer(client);
 }

@@ -4,6 +4,7 @@ import type {
   CinderlinkClientInterface,
   IncomingP2PMessage,
   EncodingOptions,
+  ProtocolEvents,
 } from "@cinderlink/core-types";
 import {
   loadOfflineSyncSchema,
@@ -31,11 +32,7 @@ export type OfflineSyncServerEvents = {
 };
 
 export class OfflineSyncServerPlugin
-  implements
-    PluginInterface<
-      OfflineSyncServerEvents,
-      CinderlinkClientInterface<OfflineSyncServerEvents>
-    >
+  implements PluginInterface<OfflineSyncServerEvents, ProtocolEvents>
 {
   id = "offlineSyncServer";
   constructor(

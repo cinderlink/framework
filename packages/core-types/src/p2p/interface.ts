@@ -10,7 +10,9 @@ export interface PeerStoreInterface {
   getServers(): Peer[];
   getServerCount(): number;
   getPeers(): Peer[];
+  getAllPeers(): Peer[];
   peerCount(): number;
+  allPeerCount(): number;
   removePeer(peerId: string): void;
   getPeer(peerId: string): Peer;
   updatePeer(peerId: string, peer: Partial<Peer>): void;

@@ -16,7 +16,11 @@ export const SocialSyncConfig: Record<string, SyncConfig<any>> = {
   users: {
     syncInterval: 5000,
     query(table: TableInterface<SocialUser>, params) {
-      return table.query().where("updatedAt", ">", params.since).select();
+      return table
+        .query()
+        .where("updatedAt", ">", params.since)
+        .or((qb) => qb.where("createdAt", ">", params.since))
+        .select();
     },
     async syncTo(peers: Peer[]) {
       return peers.filter((p) => p.did).map((p) => p.did as string);
@@ -36,7 +40,11 @@ export const SocialSyncConfig: Record<string, SyncConfig<any>> = {
   chat_messages: {
     syncInterval: 2500,
     query(table: TableInterface<SocialChatMessage>, params) {
-      return table.query().where("updatedAt", ">", params.since).select();
+      return table
+        .query()
+        .where("updatedAt", ">", params.since)
+        .or((qb) => qb.where("createdAt", ">", params.since))
+        .select();
     },
     async syncTo(peers: Peer[]) {
       return peers.filter((p) => p.did).map((p) => p.did as string);
@@ -74,7 +82,11 @@ export const SocialSyncConfig: Record<string, SyncConfig<any>> = {
   connections: {
     syncInterval: 5000,
     query(table: TableInterface<SocialChatMessage>, params) {
-      return table.query().where("updatedAt", ">", params.since).select();
+      return table
+        .query()
+        .where("updatedAt", ">", params.since)
+        .or((qb) => qb.where("createdAt", ">", params.since))
+        .select();
     },
     async syncTo(peers: Peer[]) {
       return peers.filter((p) => p.did).map((p) => p.did as string);

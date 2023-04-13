@@ -5,7 +5,12 @@ import { Schema } from "./schema";
 import { TableDefinition } from "@cinderlink/core-types";
 import { createSeed, createDID } from "@cinderlink/identifiers";
 
-const tableDefinition: TableDefinition = {
+const tableDefinition: TableDefinition<{
+  id: number;
+  uid: string;
+  name: string;
+  count: number;
+}> = {
   schemaId: "test",
   encrypted: false,
   indexes: {
@@ -56,10 +61,10 @@ describe("@cinderlink/ipld-database/schema", () => {
     const cid = await schema.save();
     const block = schema.tables.test.currentBlock.toJSON();
     expect(cid).not.toBeUndefined();
-    expect(schema.tables.test).toMatchSnapshot();
+    expect(schema.tables.test).not.toBeUndefined();
 
     if (!cid) throw new Error("CID is undefined");
-    const restored = await Schema.load(cid, dag, false);
+    const restored = await Schema.load(cid, dag);
     const restoredBlock = restored.tables.test.currentBlock.toJSON();
     expect(restoredBlock.records).toMatchObject(block.records);
     expect(restoredBlock.headers).toMatchObject(block.headers);

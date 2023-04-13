@@ -25,12 +25,12 @@ import { v4 as uuid } from "uuid";
 const logPrefix = `plugin/sync`;
 
 export class SyncDBPlugin<
-    Client extends CinderlinkClientInterface<any> = CinderlinkClientInterface<
+    Client extends CinderlinkClientInterface<
       SyncPluginEvents & ProtocolEvents
-    >
+    > = CinderlinkClientInterface<SyncPluginEvents & ProtocolEvents>
   >
   extends Emittery<SyncPluginEvents>
-  implements PluginInterface<SyncPluginEvents, Client>
+  implements PluginInterface<SyncPluginEvents>
 {
   id = "sync";
   schema?: Schema;
@@ -130,7 +130,7 @@ export class SyncDBPlugin<
     }
 
     const peers = this.client.peers
-      .getPeers()
+      .getAllPeers()
       .filter((peer) => peer.authenticated && peer.did !== undefined);
 
     let syncDids: string[] = [];
@@ -144,43 +144,39 @@ export class SyncDBPlugin<
     }
 
     if (!syncDids.length) {
+      console.info(`${logPrefix} > no peers to sync to`, {
+        schemaId,
+        tableId,
+        syncTo,
+        peers,
+      });
       return;
     }
 
     for (const did of syncDids) {
       const lastSyncedAt = await this.getLastSyncedAt(schemaId, tableId, did);
+      console.info(
+        `${logPrefix} > last synced ${schemaId}.${tableId}/${did} at ${lastSyncedAt}`
+      );
       const query = sync.query(
         table,
-        { did, since: lastSyncedAt },
+        { did, since: Number(lastSyncedAt) },
         this.client
       );
-      const rows = await query.execute().then((r) => r.rows);
+      const rows = await query.execute().then((r) => r.all());
       if (!rows.length) {
+        console.info(`${logPrefix} > no rows to sync`, {
+          schemaId,
+          tableId,
+          did,
+          rows,
+          instructions: query.instructions,
+        });
         continue;
       }
-      console.info({ did, schemaId, tableId, rows, lastSyncedAt });
+      console.info("syncing rows", rows);
 
-      const syncRows: TableRow[] = [];
-      for (const row of rows) {
-        const syncRow = (
-          ((await sync.syncRowTo?.(row, peers, table, this.client)) || [
-            did,
-          ]) as string[]
-        ).includes(did);
-        if (!row.updatedAt) {
-          row.updatedAt = Date.now();
-          await table.update(row.uid, row);
-        }
-        if (syncRow) {
-          syncRows.push(row);
-        }
-      }
-
-      if (!syncRows.length) {
-        continue;
-      }
-
-      await this.sendSyncRows(schemaId, tableId, did, syncRows);
+      await this.sendSyncRows(schemaId, tableId, did, rows);
     }
   }
 
@@ -197,7 +193,7 @@ export class SyncDBPlugin<
       .select()
       .execute()
       .then((rows) => rows.first());
-    return table?.lastSyncedAt || 0;
+    return Number(table?.lastSyncedAt || 0);
   }
 
   async fetchTableRows(
@@ -240,7 +236,7 @@ export class SyncDBPlugin<
       return;
     }
 
-    const peers = this.client.peers.getPeers().filter((p) => !!p.did);
+    const peers = this.client.peers.getAllPeers().filter((p) => !!p.did);
 
     let recipients = await sync.fetchFrom?.(peers, table, this.client);
     if ([undefined, true].includes(recipients as any)) {
@@ -350,6 +346,7 @@ export class SyncDBPlugin<
       ? await sync.allowNewFrom(message.peer.did, table, this.client)
       : true;
     const saved: string[] = [];
+    const errors: Record<string, string> = {};
 
     for (const { id, ...row } of rows) {
       if (!row.uid) {
@@ -374,6 +371,7 @@ export class SyncDBPlugin<
         //   message.peer.did
         // );
         save = false;
+        errors[row.uid] = "not allowed";
       } else if (!existing && !allowNew) {
         // console.info(
         //   `${logPrefix} > skipping new (not allowed)`,
@@ -381,11 +379,22 @@ export class SyncDBPlugin<
         //   message.peer.did
         // );
         save = false;
+        errors[row.uid] = "not allowed";
+      } else if ((existing?.updatedAt || 0) >= (row.updatedAt || 0)) {
+        // console.info(
+        //   `${logPrefix} > skipping update (older)`,
+        //   row.uid,
+        //   message.peer.did
+        // );
+        save = false;
+        errors[row.uid] = "outdated";
       }
-      saved.push(row.uid);
       if (save) {
+        saved.push(row.uid);
         const { id, ...data } = row as any;
-        const existing = await table.getByUid(row.uid as string);
+        const existing = await table
+          .getByUid(row.uid as string)
+          .catch(() => undefined);
         if ((existing?.updatedAt || 0) > (row.updatedAt || 0)) {
           continue;
         }
@@ -393,7 +402,7 @@ export class SyncDBPlugin<
           data.updatedAt = Date.now();
         }
         // console.info(`${logPrefix} > saving row`, row.uid, data);
-        await table.upsert({ uid: row.uid }, data);
+        await table.upsert({ uid: row.uid }, data).catch(() => {});
       }
     }
 
@@ -404,6 +413,7 @@ export class SyncDBPlugin<
         schemaId,
         tableId,
         saved,
+        errors,
       },
     });
   }
@@ -466,6 +476,12 @@ export class SyncDBPlugin<
         );
       }
     }
+
+    console.info("saving sync table", {
+      schemaId,
+      tableId,
+      did: message.peer.did,
+    });
     await this.syncTables?.upsert(
       {
         schemaId,

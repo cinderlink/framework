@@ -114,9 +114,9 @@ export interface TableInterface<
   save(): Promise<CID | undefined>;
   query<Params extends any[] = any[]>(
     fn?: (
-      qb: QueryBuilderInterface,
+      qb: QueryBuilderInterface<Row>,
       ...params: Params
-    ) => QueryBuilderInterface | undefined,
+    ) => QueryBuilderInterface<Row> | undefined,
     ...params: Params
   ): TableQueryInterface<Row, Def>;
   load(cid: CID): Promise<void>;

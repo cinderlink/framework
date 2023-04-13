@@ -451,7 +451,11 @@ export class TableBlock<
     if (!hasChanged) {
       return;
     }
-    records[id] = { ...records[id], ...update };
+    records[id] = {
+      ...records[id],
+      ...update,
+      updatedAt: update.updatedAt || Date.now(),
+    };
     this.cache.records = records;
     this.changed = true;
   }
