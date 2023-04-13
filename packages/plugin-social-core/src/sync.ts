@@ -47,7 +47,7 @@ export const SocialSyncConfig: Record<string, SyncConfig<any>> = {
         .select();
     },
     async syncTo(peers: Peer[]) {
-      return peers.filter((p) => p.did).map((p) => p.did as string);
+      return peers.filter((p) => !!p.did).map((p) => p.did as string);
     },
     async syncRowTo(row: SocialChatMessage, peers: Peer[]) {
       const syncTo = peers
