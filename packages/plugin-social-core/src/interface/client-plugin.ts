@@ -18,12 +18,9 @@ import { SocialPostsInterface } from "./posts";
 import { SocialProfilesInterface } from "./profiles";
 import { SocialUsersInterface } from "./users";
 
-export interface SocialClientPluginInterface<
-  Client extends CinderlinkClientInterface<any> = CinderlinkClientInterface<
-    SocialClientEvents & ProtocolEvents
-  >
-> extends Emittery<SocialClientPluginEvents>,
-    PluginInterface<SocialClientEvents, Client> {
+export interface SocialClientPluginInterface
+  extends Emittery<SocialClientPluginEvents>,
+    PluginInterface<SocialClientEvents, CinderlinkClientInterface> {
   id: "socialClient";
   ready: boolean;
   maxConnectionCount: number;
@@ -38,7 +35,7 @@ export interface SocialClientPluginInterface<
   p2p: PluginEventHandlers<ReceiveEvents<SocialClientEvents>>;
 
   db: SchemaInterface;
-  client: Client;
+  client: CinderlinkClientInterface;
   options: Record<string, unknown>;
 
   start(): Promise<void>;

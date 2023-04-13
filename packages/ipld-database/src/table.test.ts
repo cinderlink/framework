@@ -632,4 +632,36 @@ describe("@cinderlink/ipld-database/table", () => {
     expect(promise1).resolves.toBe(1);
     expect(promise2).resolves.toBe(2);
   });
+
+  it("should properly support OR queries", async () => {
+    const table = new Table<TestRow>("test", validDefinition, client.dag);
+    await table.insert({ name: "foo", count: 0 });
+    await table.insert({ name: "bar", count: 1 });
+    await table.insert({ name: "baz", count: 2 });
+    const result = await table
+      .query()
+      .select()
+      .where("name", "=", "foo")
+      .or((qb) => qb.where("name", "=", "bar"))
+      .or((qb) => qb.where("name", "=", "nope"))
+      .execute();
+    expect(result.all()).toMatchObject([
+      {
+        id: 1,
+        count: 0,
+        name: "foo",
+        uid: expect.any(String),
+        createdAt: expect.any(Number),
+        updatedAt: expect.any(Number),
+      },
+      {
+        id: 2,
+        count: 1,
+        name: "bar",
+        uid: expect.any(String),
+        createdAt: expect.any(Number),
+        updatedAt: expect.any(Number),
+      },
+    ]);
+  });
 });

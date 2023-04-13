@@ -73,6 +73,12 @@ export class Table<
     await this.awaitLock();
     const id = this.currentIndex + 1;
     this.currentIndex = id + 0;
+    if (!data.createdAt) {
+      data.createdAt = Date.now();
+    }
+    if (!data.updatedAt) {
+      data.updatedAt = Date.now();
+    }
     const sorted = Table.sortObject(data) as Omit<Omit<Row, "id">, "uid">;
     const uid = await this.computeUid(sorted);
     await this.assertUniqueConstraint({ id, uid, ...sorted } as Row);

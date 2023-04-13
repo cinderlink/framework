@@ -127,11 +127,13 @@ export interface SocialClientEvents extends PluginEventDef {
     "/social/users/search/response": SocialUsersSearchResponse;
     "/social/users/pin/request": SocialUsersPinRequest;
     "/social/users/pin/response": SocialUsersPinResponse;
+    "/social/users/get/request": SocialUsersGetRequest;
   };
   receive: {
     "/social/users/announce": Partial<SocialUser>;
     "/social/users/search/response": SocialUsersSearchResponse;
     "/social/users/pin/response": SocialUsersPinResponse;
+    "/social/users/get/response": SocialUsersGetResponse;
   };
   publish: {
     "/social/users/announce": Partial<SocialUser>;

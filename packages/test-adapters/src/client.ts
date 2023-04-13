@@ -29,7 +29,7 @@ export class TestClient<PluginEvents extends PluginEventDef>
   relayAddresses: string[] = [];
   pluginEvents = new Emittery<PluginEvents["emit"]>();
   pubsub = new Emittery<SubscribeEvents<PluginEvents>>();
-  p2p = new Emittery<ReceiveEvents<PluginEvents>>();
+  p2p = new Emittery<ReceiveEvents<PluginEvents & CinderlinkClientEvents>>();
   ipfs = {} as any;
   files = {} as any;
   address = "test";

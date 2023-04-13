@@ -7,8 +7,7 @@ import {
 } from "@cinderlink/core-types";
 import { OfflineSyncClientEvents } from "./types";
 
-export interface OfflineSyncClientPluginInterface
-  extends PluginInterface<OfflineSyncClientEvents> {
+export interface OfflineSyncClientPluginInterface extends PluginInterface {
   sendMessage<
     Events extends PluginEventDef = PluginEventDef,
     OutTopic extends keyof Events["send"] = keyof Events["send"],

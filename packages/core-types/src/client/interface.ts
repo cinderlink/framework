@@ -27,7 +27,7 @@ export interface CinderlinkClientInterface<
     emit: {};
   }
 > extends Emittery<CinderlinkClientEvents["emit"] & ProtocolEvents["emit"]> {
-  plugins: Record<PluginInterface["id"], PluginInterface<any>>;
+  plugins: Record<PluginInterface["id"], PluginInterface>;
   running: boolean;
   hasServerConnection: boolean;
   peers: PeerStoreInterface;
@@ -36,7 +36,7 @@ export interface CinderlinkClientInterface<
   pluginEvents: Emittery<PluginEvents["emit"]>;
 
   pubsub: Emittery<SubscribeEvents<PluginEvents>>;
-  p2p: Emittery<ReceiveEvents<PluginEvents>>;
+  p2p: Emittery<ReceiveEvents<PluginEvents & CinderlinkClientEvents>>;
 
   ipfs: IPFSWithLibP2P;
   files: FilesInterface;
@@ -51,11 +51,9 @@ export interface CinderlinkClientInterface<
 
   get id(): string;
 
-  addPlugin(plugin: PluginInterface<any, any>): Promise<void>;
+  addPlugin(plugin: PluginInterface): Promise<void>;
 
-  getPlugin<T extends PluginInterface<any, any> = PluginInterface<any, any>>(
-    id: string
-  ): T;
+  getPlugin<T extends PluginInterface>(id: string): T;
 
   hasPlugin(id: string): boolean;
 

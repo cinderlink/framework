@@ -1,19 +1,24 @@
-import { TestClient } from "@cinderlink/test-adapters/src/client";
-import { createPeerId } from "@cinderlink/test-adapters/src/peer-id";
+import { SyncPluginEvents } from "./../../core-types";
+import * as ethers from "ethers";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { TableRow, TableInterface, SyncConfig } from "@cinderlink/core-types";
-import { createDID, createSeed } from "@cinderlink/identifiers";
-import { Schema } from "@cinderlink/ipld-database";
+import {
+  TableRow,
+  TableInterface,
+  SyncConfig,
+  CinderlinkClientInterface,
+  ProtocolEvents,
+  SchemaInterface,
+  TableDefinition,
+} from "@cinderlink/core-types";
+import {
+  createDID,
+  createSeed,
+  signAddressVerification,
+} from "@cinderlink/identifiers";
+import { createClient } from "../../client";
+import { rmSync } from "fs";
 import SyncDBPlugin from "./plugin";
-
-const testSeed = await createSeed("test");
-const testDID = await createDID(testSeed);
-const testSeedB = await createSeed("test-b");
-const testPeerIdB = await createPeerId(testSeed);
-const testDIDB = await createDID(testSeedB);
-let testClient: TestClient<any>;
-let syncPlugin: SyncDBPlugin;
-let schema: Schema;
+import { Schema } from "@cinderlink/ipld-database";
 
 interface DidRow extends TableRow {
   did: string;
@@ -21,13 +26,38 @@ interface DidRow extends TableRow {
   updatedAt: number;
 }
 
-const didRowSyncConfig: SyncConfig<DidRow> = {
-  syncInterval: 1000,
-  query(table: TableInterface<DidRow>, params) {
-    return table.query().where("updatedAt", ">", params.since).select();
+const didRowDef: TableDefinition<DidRow> = {
+  schemaId: "test",
+  encrypted: true,
+  rollup: 10,
+  aggregate: {},
+  searchOptions: {
+    fields: ["did", "content"],
   },
-  async syncRowTo(row: DidRow) {
-    return [row.did];
+  schema: {
+    type: "object",
+    properties: {
+      did: { type: "string" },
+      content: { type: "string" },
+      updatedAt: { type: "number" },
+    },
+  },
+  indexes: {
+    did: {
+      unique: true,
+      fields: ["did"],
+    },
+  },
+};
+
+const didRowSyncConfig: SyncConfig<DidRow> = {
+  syncInterval: 20,
+  query(table: TableInterface<DidRow>, params) {
+    return table
+      .query()
+      .where("updatedAt", ">=", params.since || 0)
+      .where("did", "=", params.did)
+      .select();
   },
   async allowNewFrom() {
     return true;
@@ -35,107 +65,126 @@ const didRowSyncConfig: SyncConfig<DidRow> = {
   async allowUpdateFrom(row: DidRow, did: string) {
     return did === row.did;
   },
-  async allowFetchFrom() {
-    return false;
-  },
   incomingRateLimit: 10000,
   outgoingRateLimit: 100,
 };
 
 describe("TableSync", () => {
+  let client: CinderlinkClientInterface<SyncPluginEvents & ProtocolEvents>;
+  let server: CinderlinkClientInterface<SyncPluginEvents & ProtocolEvents>;
+  let clientSyncPlugin: SyncDBPlugin<typeof client>;
+  let serverSyncPlugin: SyncDBPlugin<typeof server>;
+  let clientSchema: SchemaInterface;
+  let serverSchema: SchemaInterface;
   beforeEach(async () => {
-    vi.useFakeTimers();
-    testClient = new TestClient(testDID);
-    testClient.send = vi.fn() as any;
-    testClient.peers.addPeer(testPeerIdB, "peer", testDIDB.id);
-    testClient.peers.updatePeer(testPeerIdB.toString(), {
-      authenticated: true,
-      connected: true,
-    });
-    syncPlugin = new SyncDBPlugin(testClient as any, {
-      syncing: {},
-    });
-    testClient.addPlugin(syncPlugin as any);
-
-    schema = new Schema(
+    await rmSync("./test-sync-client", { recursive: true, force: true });
+    await rmSync("./test-sync-server", { recursive: true, force: true });
+    const clientWallet = ethers.Wallet.createRandom();
+    const clientDID = await createDID(await createSeed("test sync client"));
+    const clientAV = await signAddressVerification(
       "test",
-      {
-        didRows: {
-          schemaId: "test",
-          encrypted: false,
-          aggregate: {},
-          indexes: {},
-          rollup: 1000,
-          searchOptions: {
-            fields: ["did", "content"],
+      clientDID.id,
+      clientWallet
+    );
+    client = await createClient<SyncPluginEvents & ProtocolEvents>({
+      did: clientDID,
+      address: clientWallet.address,
+      addressVerification: clientAV,
+      role: "peer",
+      options: {
+        repo: "test-sync-client",
+      },
+    });
+
+    const serverWallet = ethers.Wallet.createRandom();
+    const serverDID = await createDID(await createSeed("test sync server"));
+    const serverAV = await signAddressVerification(
+      "test",
+      serverDID.id,
+      serverWallet
+    );
+    server = await createClient<SyncPluginEvents & ProtocolEvents>({
+      did: serverDID,
+      address: serverWallet.address,
+      addressVerification: serverAV,
+      role: "server",
+      options: {
+        repo: "test-sync-server",
+        config: {
+          Addresses: {
+            Swarm: ["/ip4/127.0.0.1/tcp/7386", "/ip4/127.0.0.1/tcp/7387/ws"],
+            API: "/ip4/127.0.0.1/tcp/7388",
+            Gateway: "/ip4/127.0.0.1/tcp/7389",
           },
-          schema: {
-            type: "object",
-            properties: {
-              did: {
-                type: "string",
-              },
-              content: {
-                type: "string",
-              },
-            },
-            required: ["did", "content"],
-          },
-        },
-        related: {
-          schemaId: "test",
-          encrypted: false,
-          aggregate: {},
-          indexes: {},
-          rollup: 1000,
-          searchOptions: {
-            fields: ["rowUid", "content"],
-          },
-          schema: {
-            type: "object",
-            properties: {
-              uid: {
-                type: "string",
-              },
-              content: {
-                type: "string",
-              },
-            },
-            required: ["rowUid", "content"],
-          },
+          Bootstrap: [],
         },
       },
-      testClient.dag
-    );
+    });
+    server.initialConnectTimeout = 0;
 
-    testClient.addSchema("test", schema);
-    await testClient.start();
+    await server.start([]);
+    const serverPeer = await server.ipfs.id();
+    client.initialConnectTimeout = 0;
+
+    await Promise.all([
+      client.start([serverPeer.addresses[0].toString()]),
+      client.pluginEvents.once("/cinderlink/handshake/success"),
+      server.pluginEvents.once("/cinderlink/handshake/success"),
+    ]);
+
+    if (!server.hasSchema("test")) {
+      serverSchema = new Schema("test", { didRows: didRowDef }, server.dag);
+      await server.addSchema("test", serverSchema);
+    }
+
+    if (!client.hasSchema("test")) {
+      clientSchema = new Schema("test", { didRows: didRowDef }, client.dag);
+      await client.addSchema("test", clientSchema);
+    }
+
+    serverSyncPlugin = new SyncDBPlugin(server);
+    await server.addPlugin(serverSyncPlugin);
+
+    clientSyncPlugin = new SyncDBPlugin(client);
+    await client.addPlugin(clientSyncPlugin);
+
+    vi.spyOn(client, "send");
+    vi.spyOn(client.p2p, "emit");
   });
 
   afterEach(async () => {
-    vi.useRealTimers();
+    vi.restoreAllMocks();
+    try {
+      await client.stop().catch(() => {});
+      await server.stop().catch(() => {});
+    } catch (_) {}
+    await rmSync("./test-sync-client", { recursive: true, force: true });
+    await rmSync("./test-sync-server", { recursive: true, force: true });
   });
 
   it("should create new table configurations", async () => {
-    syncPlugin.addTableSync("test", "didRows", didRowSyncConfig);
-    expect(syncPlugin.syncing).toEqual({
+    clientSyncPlugin.addTableSync("test", "didRows", didRowSyncConfig);
+    expect(clientSyncPlugin.syncing).toEqual({
       test: {
         didRows: didRowSyncConfig,
       },
     });
-    expect(syncPlugin.timers).not.toEqual({});
   });
 
   it("should send sync messages on an interval", async () => {
-    syncPlugin.addTableSync("test", "didRows", didRowSyncConfig);
-    await schema.getTable<DidRow>("didRows").insert({
-      did: testDIDB.id,
+    clientSyncPlugin.addTableSync("test", "didRows", didRowSyncConfig);
+    serverSyncPlugin.addTableSync("test", "didRows", didRowSyncConfig);
+    await client.getSchema("test")?.getTable<DidRow>("didRows").insert({
+      did: server.id,
       content: "test",
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
-    await vi.runOnlyPendingTimersAsync();
-    expect(testClient.send).toHaveBeenCalledWith(testPeerIdB.toString(), {
+    vi.spyOn(clientSyncPlugin, "syncTableRows");
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    expect(clientSyncPlugin.syncTableRows).toHaveBeenCalledTimes(2);
+
+    expect(client.send).toHaveBeenCalledWith(server.peerId?.toString(), {
       topic: "/cinderlink/sync/save/request",
       payload: {
         requestId: expect.any(String),
@@ -145,7 +194,7 @@ describe("TableSync", () => {
           {
             id: 1,
             uid: expect.any(String),
-            did: testDIDB.id,
+            did: server.id,
             content: "test",
             createdAt: expect.any(Number),
             updatedAt: expect.any(Number),
@@ -156,105 +205,65 @@ describe("TableSync", () => {
   });
 
   it("should not send sync messages if the row is not configured to be sent", async () => {
-    syncPlugin.addTableSync("test", "didRows", didRowSyncConfig);
-    await schema.getTable<DidRow>("didRows").insert({
+    clientSyncPlugin.addTableSync("test", "didRows", didRowSyncConfig);
+    serverSyncPlugin.addTableSync("test", "didRows", didRowSyncConfig);
+    await clientSchema.getTable<DidRow>("didRows").insert({
       did: "foobar",
       content: "test",
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
-    await vi.runOnlyPendingTimersAsync();
-    expect(testClient.send).not.toHaveBeenCalled();
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    expect(client.send).not.toHaveBeenCalled();
   });
 
   it("should save incoming rows", async () => {
-    syncPlugin.addTableSync("test", "didRows", didRowSyncConfig);
+    clientSyncPlugin.addTableSync("test", "didRows", didRowSyncConfig);
+    serverSyncPlugin.addTableSync("test", "didRows", didRowSyncConfig);
     const row = {
-      did: testDIDB.id,
+      did: server.id,
       content: "test",
       createdAt: Date.now(),
       updatedAt: Date.now(),
     };
-    const uid = await schema.getTable<DidRow>("didRows").computeUid(row);
-    await testClient.p2p.emit("/cinderlink/sync/save/request", {
-      peer: {
-        peerId: testPeerIdB,
-        did: testDIDB.id,
-        role: "peer",
-        subscriptions: [],
-        metadata: {},
-        authenticated: true,
-        connected: true,
-      },
-      topic: "/cinderlink/sync/save/request",
-      payload: {
-        requestId: "test",
-        schemaId: "test",
-        tableId: "didRows",
-        rows: [
-          {
-            ...row,
-            uid,
-          },
-        ],
-      },
-      signed: false,
-      encrypted: false,
-    });
-    console.info(
-      "saved row",
-      await schema.getTable<DidRow>("didRows").getByUid(uid),
-      uid
-    );
-    const allRows = await schema
+    const uid = await clientSchema.getTable<DidRow>("didRows").insert(row);
+    const saved = await clientSchema.getTable<DidRow>("didRows").getByUid(uid);
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    const serverRow = await serverSchema
       .getTable<DidRow>("didRows")
-      .query()
-      .select()
-      .execute()
-      .then((r) => r.all());
-    console.info(allRows);
-    const savedRow = await schema.getTable<DidRow>("didRows").getByUid(uid);
-    expect(savedRow).toEqual({
-      id: 1,
-      uid: expect.any(String),
-      did: testDIDB.id,
-      content: "test",
-      createdAt: expect.any(Number),
-      updatedAt: expect.any(Number),
-    });
+      .getByUid(uid);
+    expect(client.send).toHaveBeenCalled();
+    expect(serverRow).toEqual(saved);
   });
 
   it("should not send a row to the same peer twice", async () => {
-    syncPlugin.addTableSync("test", "didRows", didRowSyncConfig);
-    const uid = await schema.getTable<DidRow>("didRows").insert({
-      did: testDIDB.id,
+    clientSyncPlugin.addTableSync("test", "didRows", didRowSyncConfig);
+    serverSyncPlugin.addTableSync("test", "didRows", didRowSyncConfig);
+    const uid = await clientSchema.getTable<DidRow>("didRows").insert({
+      did: server.id,
       content: "test",
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
-    await vi.advanceTimersByTimeAsync(1000);
-    await testClient.p2p.emit("/cinderlink/sync/save/response", {
-      peer: {
-        peerId: testPeerIdB,
-        did: testDIDB.id,
-        role: "peer",
-        subscriptions: [],
-        metadata: {},
-        authenticated: true,
-        connected: true,
-      },
-      topic: "/cinderlink/sync/save/response",
-      payload: {
-        requestId: "test",
-        schemaId: "test",
-        tableId: "didRows",
-        saved: [uid],
-      },
-      signed: false,
-      encrypted: false,
-    });
-    await vi.advanceTimersByTimeAsync(1000);
-    expect(testClient.send).toHaveBeenCalledWith(testPeerIdB.toString(), {
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    expect(client.p2p.emit).toHaveBeenCalledWith(
+      "/cinderlink/sync/save/response",
+      {
+        topic: "/cinderlink/sync/save/response",
+        encrypted: false,
+        payload: {
+          requestId: expect.any(String),
+          schemaId: "test",
+          tableId: "didRows",
+          saved: [uid],
+          errors: {},
+        },
+        peer: expect.any(Object),
+        recipients: undefined,
+        signed: false,
+      }
+    );
+    expect(client.send).toHaveBeenLastCalledWith(server.peerId?.toString(), {
       topic: "/cinderlink/sync/save/request",
       payload: {
         requestId: expect.any(String),
@@ -264,7 +273,7 @@ describe("TableSync", () => {
           {
             id: 1,
             uid: expect.any(String),
-            did: testDIDB.id,
+            did: server.id,
             content: "test",
             createdAt: expect.any(Number),
             updatedAt: expect.any(Number),
@@ -272,6 +281,6 @@ describe("TableSync", () => {
         ],
       },
     });
-    expect(testClient.send).toHaveBeenCalledOnce();
+    expect(client.send).toHaveBeenCalledOnce();
   });
 });

@@ -31,19 +31,12 @@ export interface ProtocolHandler {
   in: Promise<void>;
 }
 
-export class CinderlinkProtocolPlugin<
-  Events extends PluginEventDef = PluginEventDef
-> implements
-    PluginInterface<
-      ProtocolEvents,
-      CinderlinkClientInterface<Events & ProtocolEvents>
-    >
+export class CinderlinkProtocolPlugin
+  implements PluginInterface<ProtocolEvents>
 {
   id = "cinderlink";
 
-  constructor(
-    public client: CinderlinkClientInterface<Events & ProtocolEvents>
-  ) {}
+  constructor(public client: CinderlinkClientInterface<ProtocolEvents>) {}
 
   p2p = {
     "/cinderlink/handshake/request": this.onHandshakeRequest,
@@ -82,7 +75,11 @@ export class CinderlinkProtocolPlugin<
   }
   async stop() {}
 
-  async initializeProtocol(stream: Stream, connection: Connection) {
+  async initializeProtocol(
+    stream: Stream,
+    connection: Connection,
+    force = false
+  ) {
     if (
       !connection.remotePeer?.toString() ||
       (this.client.peerId && connection.remotePeer.equals(this.client.peerId))
@@ -93,10 +90,17 @@ export class CinderlinkProtocolPlugin<
       peer = this.client.peers.addPeer(connection.remotePeer, "peer");
     }
 
-    if (this.protocolHandlers[peer.peerId.toString()]) {
+    if (this.protocolHandlers[peer.peerId.toString()]?.connection && !force) {
       console.info(
         `protocol > already initialized protocol with ${readablePeer(peer)}`
       );
+      await this.client.send<ProtocolEvents>(peer.peerId.toString(), {
+        topic: "/cinderlink/handshake/request",
+        payload: {
+          did: this.client.id,
+        } as HandshakeRequest,
+      });
+      return;
     }
 
     try {
@@ -144,14 +148,6 @@ export class CinderlinkProtocolPlugin<
           did: this.client.id,
         } as HandshakeRequest,
       });
-
-      let interval = setInterval(async () => {
-        if (peer.connected) {
-          await this.client.ipfs.libp2p.ping(peer.peerId).catch(() => {});
-        } else {
-          clearInterval(interval);
-        }
-      }, 1000 * 10);
     } catch (e) {
       console.error(e);
     }
@@ -163,9 +159,6 @@ export class CinderlinkProtocolPlugin<
     }
 
     if (!this.protocolHandlers[peer.peerId.toString()]) {
-      console.info(
-        `peer/connect > dialing cinderlink protocol ${readablePeer(peer)}`
-      );
       const stream = await this.client.ipfs.libp2p.dialProtocol(
         peer.peerId,
         "/cinderlink/1.0.0"
@@ -180,7 +173,9 @@ export class CinderlinkProtocolPlugin<
       console.info(
         `peer/disconnect > closing cinderlink protocol ${readablePeer(peer)}`
       );
-      this.protocolHandlers[peer.peerId.toString()].buffer.end();
+      this.protocolHandlers[peer.peerId.toString()].buffer?.end();
+      this.protocolHandlers[peer.peerId.toString()].stream?.close();
+      this.protocolHandlers[peer.peerId.toString()].connection?.close();
       delete this.protocolHandlers[peer.peerId.toString()];
     }
   }
@@ -242,6 +237,9 @@ export class CinderlinkProtocolPlugin<
       }, data: `,
       event.payload
     );
+    if ((topic as string).includes("sync")) {
+      console.debug("sync", event.payload);
+    }
     await this.client.p2p.emit(
       topic as keyof ProtocolEvents["receive"],
       event as any
@@ -305,16 +303,7 @@ export class CinderlinkProtocolPlugin<
           peer.did ? peer.did : "N/A"
         })`
       );
-      return this.client.send<ProtocolEvents>(
-        message.peer.peerId.toString(),
-        {
-          topic: "/cinderlink/handshake/challenge",
-          payload: {
-            challenge: peer.challenge,
-          },
-        },
-        { sign: true } as EncodingOptions
-      );
+      return;
     }
 
     peer.did = message.payload.did;
@@ -405,6 +394,7 @@ export class CinderlinkProtocolPlugin<
         peer.did ? peer.did : "N/A"
       })`
     );
+    peer.did = message.peer.did || peer.did;
     peer.authenticated = true;
     peer.authenticatedAt = Date.now();
     peer.challengedAt = undefined;
@@ -454,7 +444,7 @@ export class CinderlinkProtocolPlugin<
     this.client.peers.updatePeer(peer.peerId.toString(), peer);
     console.info(`p2p/handshake/success > authenticated ${logId}`);
     this.client.pluginEvents.emit("/cinderlink/handshake/success", peer as any);
-    this.client.p2p.emit(`/${peer.role}/connect`, peer as any);
+    this.client.emit(`/${peer.role}/connect`, peer as any);
   }
 
   async sendHandshakeError(peerId: string, error: string) {

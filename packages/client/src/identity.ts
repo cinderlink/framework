@@ -176,6 +176,10 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
       console.warn(`client/identity/save > identity has not been resolved`);
       return;
     }
+    if (!this.client.ipfs.isOnline) {
+      console.warn(`client/identity/save > ipfs is offline`);
+      return;
+    }
     this.cid = cid;
     this.document = document;
     console.info(`client/identity/save`, {
@@ -184,7 +188,7 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
       servers: this.client.peers.getServers(),
     });
     await localforage.setItem("rootCID", cid).catch(() => {});
-    await this.client.ipfs.pin.add(cid, { recursive: true });
+    await this.client.ipfs.pin.add(cid, { recursive: true }).catch(() => {});
     await this.client.ipfs.name
       .publish(cid, { timeout: 1000, allowOffline: true })
       .catch(() => {});

@@ -6,6 +6,7 @@ import {
   CinderlinkClientInterface,
   CinderlinkClientEvents,
   EncodingOptions,
+  ReceiveEventHandlers,
 } from "@cinderlink/core-types";
 import { Schema } from "@cinderlink/ipld-database";
 import { IdentityServerEvents } from "./types";
@@ -22,11 +23,7 @@ export type IdentityPinsRecord = {
 };
 
 export class IdentityServerPlugin
-  implements
-    PluginInterface<
-      IdentityServerEvents,
-      CinderlinkClientInterface<IdentityServerEvents>
-    >
+  implements PluginInterface<IdentityServerEvents>
 {
   id = "identityServer";
   constructor(
@@ -75,7 +72,7 @@ export class IdentityServerPlugin
   async stop() {
     console.info(`${logPrefix}: social server plugin stopped`);
   }
-  p2p = {
+  p2p: ReceiveEventHandlers<IdentityServerEvents> = {
     "/identity/set/request": this.onSetRequest,
     "/identity/resolve/request": this.onResolveRequest,
   };

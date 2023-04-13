@@ -53,14 +53,15 @@ export class CinderlinkClient<
   public hasServerConnection = false;
 
   public plugins: Record<PluginInterface["id"], PluginInterface> & {
-    cinderlink?: CinderlinkProtocolPlugin<PluginEvents & ProtocolEvents>;
+    cinderlink?: CinderlinkProtocolPlugin;
   };
   public pluginEvents: Emittery<PluginEvents["emit"]> = new Emittery();
   public peers: PeerStoreInterface = new Peerstore();
   public subscriptions: string[] = [];
 
   public pubsub: Emittery<SubscribeEvents<PluginEvents>> = new Emittery();
-  public p2p: Emittery<ReceiveEvents<PluginEvents>> = new Emittery();
+  public p2p: Emittery<ReceiveEvents<PluginEvents & CinderlinkClientEvents>> =
+    new Emittery();
 
   public ipfs: IPFSWithLibP2P;
   public did: DID;
@@ -96,15 +97,17 @@ export class CinderlinkClient<
     this.plugins = {};
   }
 
-  async addPlugin<
-    Plugin extends PluginInterface<any, any> = PluginInterface<any, any>
-  >(plugin: Plugin) {
+  async addPlugin<Plugin extends PluginInterface = PluginInterface>(
+    plugin: Plugin
+  ) {
     this.plugins[plugin.id] = plugin;
+    if (this.running) {
+      await this.startPlugin(plugin.id);
+    }
   }
 
   async startPlugin(id: string) {
     const plugin = this.getPlugin(id);
-    await plugin.start?.();
     console.info(`/plugin/${plugin.id} > registering event handlers...`);
     Object.entries(plugin.pubsub).forEach(([topic, handler]) => {
       this.pubsub.on(topic, (handler as PluginEventHandler).bind(plugin));
@@ -130,11 +133,11 @@ export class CinderlinkClient<
           (handler as PluginEventHandler).bind(plugin)
         );
       });
+
+    await plugin.start?.();
   }
 
-  getPlugin<T extends PluginInterface<any> = PluginInterface<any>>(
-    id: string
-  ): T {
+  getPlugin<T extends PluginInterface>(id: string): T {
     return this.plugins[id] as T;
   }
 
@@ -187,10 +190,9 @@ export class CinderlinkClient<
     });
 
     const protocol = new CinderlinkProtocolPlugin(this as any);
-    this.addPlugin(protocol as any);
+    await this.addPlugin(protocol as any);
     console.info("starting protocol plugin");
-    this.startPlugin(protocol.id);
-    console.info("connecting to nodes");
+    await this.startPlugin(protocol.id);
     this.connectToNodes();
     console.info("loading");
     await this.load();
@@ -252,6 +254,10 @@ export class CinderlinkClient<
     if (!this.identity.hasResolved || this.identity.resolving) {
       return;
     }
+    if (!this.ipfs.isOnline()) {
+      console.warn(`client/save > ipfs is offline`);
+      return;
+    }
     const savedSchemas: Record<string, JWE | SavedSchema> = {};
     await Promise.all(
       Object.entries(this.schemas).map(async ([name, schema]) => {
@@ -269,7 +275,9 @@ export class CinderlinkClient<
       updatedAt: Date.now(),
     };
     console.info(`client/save > encrypting root document`, rootDoc);
-    const rootCID = await this.dag.storeEncrypted(rootDoc);
+    const rootCID = await this.dag
+      .storeEncrypted(rootDoc)
+      .catch(() => undefined);
     if (rootCID && rootCID.toString() !== this.identity.cid?.toString()) {
       console.log(
         `client/save > saved root document with CID ${rootCID.toString()}`
@@ -364,13 +372,22 @@ export class CinderlinkClient<
     } else {
       peer = this.peers.getPeer(peerId.toString());
     }
-    if (
-      !(await this.ipfs.libp2p.peerStore.get(peerId)).protocols.includes(
-        "/cinderlink/1.0.0"
-      )
-    ) {
-      await this.plugins.cinderlink?.onPeerConnect(peer);
+    const addr = await this.ipfs.libp2p.peerStore.addressBook.get(peer.peerId);
+    if (addr[0]) {
+      console.warn(
+        `plugin/social/client > discovered peer ${peer.peerId} (address: ${addr[0].multiaddr})`,
+        addr
+      );
+    } else {
+      const relayAddr = `${this.relayAddresses[0]}/p2p-circuit/p2p/${peer.peerId}`;
+      console.warn(
+        `plugin/social/client > discovered peer ${peer.peerId} without address, attempting relay (relay: ${relayAddr})`
+      );
+      await this.ipfs.libp2p.peerStore.addressBook.set(peer.peerId, [
+        multiaddr(relayAddr),
+      ]);
     }
+    await this.ipfs.swarm.connect(peer.peerId);
   }
 
   async onConnect(peerId: PeerId) {
@@ -543,7 +560,11 @@ export class CinderlinkClient<
       `pubsub/publish > topic "${topic as string}" (length: ${bytes.length})`
     );
     // console.debug(`pubsub/publish > topic: ${topic}, message:`, message)
-    await this.ipfs.libp2p.pubsub.publish(topic as string, bytes);
+    try {
+      await this.ipfs.libp2p.pubsub.publish(topic as string, bytes);
+    } catch (e) {
+      console.warn("pubsub/publish > error:", e);
+    }
   }
 
   async request<
@@ -558,7 +579,6 @@ export class CinderlinkClient<
   ): Promise<IncomingP2PMessage<Events, InTopic, Encoding> | undefined> {
     const peer = this.peers.getPeer(peerId);
     if (!peer) {
-      console.info("!!!PEERS!!!", this.peers.getPeers());
       throw new Error(`peer does not exist: ${peerId}`);
     }
 

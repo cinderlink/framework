@@ -25,7 +25,7 @@ interface TestClientEvents extends PluginEventDef {
     "/test/response": { message: string };
   };
 }
-export class TestClientPlugin implements PluginInterface<TestClientEvents> {
+export class TestClientPlugin implements PluginInterface {
   id = "test-client-plugin";
   constructor(public client: CinderlinkClientInterface) {}
 
@@ -54,7 +54,7 @@ interface TestServerEvents extends PluginEventDef {
     "/test/request": { message: string };
   };
 }
-export class TestServerPlugin implements PluginInterface<TestServerEvents> {
+export class TestServerPlugin implements PluginInterface {
   id = "test-server-plugin";
   constructor(public client: CinderlinkClientInterface<TestServerEvents>) {}
 
