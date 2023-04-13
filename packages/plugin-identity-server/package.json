@@ -19,15 +19,22 @@
   },
   "scripts": {
     "build": "tsup",
-    "watch": "tsup --watch"
+    "watch": "tsup --watch",
+    "test": "vitest run"
   },
   "dependencies": {
     "@cinderlink/core-types": "workspace:../core-types",
     "@cinderlink/ipld-database": "workspace:../ipld-database"
   },
   "devDependencies": {
+    "@cinderlink/identifiers": "workspace:^0.0.1",
+    "@cinderlink/test-adapters": "workspace:^0.0.3",
     "@cinderlink/tsconfig": "workspace:../tsconfig",
+    "@ipld/car": "^5.1.1",
     "@types/node": "^18.15.11",
+    "ethers": "^5.7.2",
+    "it-all": "^3.0.1",
+    "multiformats": "^11.0.2",
     "tsup": "^6.7.0",
     "typescript": "^5.0.3",
     "vitest": "^0.28.5"

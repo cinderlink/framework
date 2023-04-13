@@ -28,7 +28,7 @@ export interface CinderlinkClientInterface<
   }
 > extends Emittery<CinderlinkClientEvents["emit"] & ProtocolEvents["emit"]> {
   plugins: Record<PluginInterface["id"], PluginInterface<any>>;
-  started: boolean;
+  running: boolean;
   hasServerConnection: boolean;
   peers: PeerStoreInterface;
   subscriptions: string[];

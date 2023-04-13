@@ -17,7 +17,7 @@
     "watch": "turbo watch --filter='./packages/*' --parallel --concurrency 24",
     "build": "turbo build --filter='./packages/*' --concurrency 8",
     "dev": "turbo dev",
-    "test": "pnpm --parallel --stream --filter=./packages/* -r test"
+    "test": "pnpm --filter=./packages/* -r test"
   },
   "keywords": [],
   "author": "Drew Ewing",

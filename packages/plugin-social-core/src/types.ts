@@ -104,7 +104,8 @@ export interface SocialUsersPinRequest {
 
 export interface SocialUsersPinResponse {
   requestId: string;
-  pin: SocialUserPin;
+  pin?: SocialUserPin;
+  error?: string;
 }
 
 export interface SocialUsersGetRequest {

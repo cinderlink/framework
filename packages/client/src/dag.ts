@@ -4,9 +4,9 @@ import type {
   PluginEventDef,
 } from "@cinderlink/core-types";
 import { DIDDag } from "./did/dag";
-import * as json from "multiformats/codecs/json";
 import { CID } from "multiformats";
 import { GetOptions } from "ipfs-core-types/src/root";
+import { removeUndefined } from "./did/util";
 
 export class ClientDag<Plugins extends PluginEventDef = PluginEventDef>
   implements DAGInterface
@@ -15,15 +15,18 @@ export class ClientDag<Plugins extends PluginEventDef = PluginEventDef>
 
   async store<T>(
     data: T,
-    inputCodec = "dag-json",
+    storeCodec = "dag-json",
     hashAlg = "sha2-256"
   ): Promise<CID> {
-    const encoded = json.encode(data);
-    const cid = await this.client.ipfs.dag.put(encoded, {
-      inputCodec,
-      hashAlg,
-      pin: true,
-    });
+    // if data is an object
+    const cid = await this.client.ipfs.dag.put(
+      removeUndefined(data as Record<string, unknown>),
+      {
+        storeCodec,
+        hashAlg,
+        pin: true,
+      }
+    );
     return cid;
   }
 

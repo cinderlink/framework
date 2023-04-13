@@ -1,4 +1,6 @@
+import { base58btc } from "multiformats/bases/base58";
 import { IncomingP2PMessage } from "@cinderlink/core-types/src/p2p";
+import all from "it-all";
 import {
   PluginInterface,
   CinderlinkClientInterface,
@@ -42,23 +44,21 @@ export class IdentityServerPlugin
             encrypted: true,
             aggregate: {},
             indexes: {
-              name: {
-                fields: ["name"],
-              },
               did: {
                 unique: true,
                 fields: ["did"],
               },
+              name: {
+                fields: ["cid"],
+              },
             },
             rollup: 1000,
             searchOptions: {
-              fields: ["name"],
+              fields: ["cid", "did"],
             },
             schema: {
               type: "object",
               properties: {
-                name: { type: "string" },
-                avatar: { type: "string" },
                 did: { type: "string" },
                 cid: { type: "string" },
               },
@@ -108,11 +108,24 @@ export class IdentityServerPlugin
       `${logPrefix}/set: setting identity for peer`,
       message.payload
     );
+
+    if (message.payload.buffer) {
+      const buffer = base58btc.decode(message.payload.buffer);
+      const result = await all(
+        this.client.ipfs.dag.import(
+          (async function* () {
+            yield buffer;
+          })(),
+          { pinRoots: true }
+        )
+      );
+      console.info("import", { result, buffer });
+    }
+
     await this.client
       .getSchema("identity")
       ?.getTable<IdentityPinsRecord>("pins")
-      .upsert({ did: message.peer.did }, message.payload);
-    await this.client.ipfs.pin.add(message.payload.cid, { recursive: true });
+      .upsert({ did: message.peer.did }, { cid: message.payload.cid });
 
     return this.client.send(message.peer.peerId.toString(), {
       topic: "/identity/set/response",

@@ -1,4 +1,6 @@
+import { JWE } from "did-jwt";
 import { ProtocolRequest } from "./../protocol/types";
+import { SavedSchema } from "../database";
 export interface IdentityResolveRequest extends ProtocolRequest {
   requestId: string;
   since: number;
@@ -14,6 +16,7 @@ export interface IdentityResolveResponse extends ProtocolRequest {
 export interface IdentitySetRequest extends ProtocolRequest {
   requestId: string;
   cid: string;
+  buffer?: string;
 }
 
 export interface IdentitySetResponse extends ProtocolRequest {
@@ -24,6 +27,9 @@ export interface IdentitySetResponse extends ProtocolRequest {
 
 export interface IdentityDocument {
   updatedAt?: number;
+  schemas?: {
+    [key: string]: JWE | SavedSchema;
+  };
   [key: string]: unknown;
 }
 

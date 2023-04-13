@@ -3,6 +3,7 @@ import { JWE } from "did-jwt";
 import { DID } from "dids";
 import { CID } from "multiformats";
 import { DAGInterface, DIDDagInterface } from "@cinderlink/core-types";
+import { removeUndefined } from "./util";
 
 export class DIDDag implements DIDDagInterface {
   constructor(public did: DID, private dag: DAGInterface) {}
@@ -36,12 +37,15 @@ export class DIDDag implements DIDDagInterface {
     data: Data,
     recipients: string[] = [this.did.id]
   ): Promise<CID | undefined> {
-    const jwe = await this.did.createDagJWE(data, recipients);
+    const jwe = await this.did.createDagJWE(
+      removeUndefined(data),
+      recipients || [this.did.id]
+    );
     if (!jwe) {
       throw new Error("Unable to create JWE");
     }
     console.info(`client/did/dag/storeEncrypted:`, { jwe });
-    return this.dag.store(jwe);
+    return this.dag.store(jwe, "dag-jose", "sha2-256");
   }
 
   async loadEncrypted(
