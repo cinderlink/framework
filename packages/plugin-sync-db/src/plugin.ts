@@ -371,7 +371,9 @@ export class SyncDBPlugin<
         //   message.peer.did
         // );
         save = false;
-        errors[row.uid] = "not allowed";
+        // errors[row.uid] = "not allowed";
+        // just ignore them
+        saved.push(row.uid);
       } else if (!existing && !allowNew) {
         // console.info(
         //   `${logPrefix} > skipping new (not allowed)`,
@@ -379,7 +381,7 @@ export class SyncDBPlugin<
         //   message.peer.did
         // );
         save = false;
-        errors[row.uid] = "not allowed";
+        errors[row.uid] = "not allowed to insert";
       } else if ((existing?.updatedAt || 0) >= (row.updatedAt || 0)) {
         // console.info(
         //   `${logPrefix} > skipping update (older)`,
@@ -387,7 +389,9 @@ export class SyncDBPlugin<
         //   message.peer.did
         // );
         save = false;
-        errors[row.uid] = "outdated";
+        // ignore them
+        saved.push(row.uid);
+        // errors[row.uid] = "outdated";
       }
       if (save) {
         saved.push(row.uid);
