@@ -51,7 +51,7 @@ const didRowDef: TableDefinition<DidRow> = {
 };
 
 const didRowSyncConfig: SyncConfig<DidRow> = {
-  syncInterval: 20,
+  syncInterval: 100,
   query(table: TableInterface<DidRow>, params) {
     return table
       .query()
@@ -150,10 +150,12 @@ describe("TableSync", () => {
 
     vi.spyOn(client, "send");
     vi.spyOn(client.p2p, "emit");
+    vi.spyOn(server.p2p, "emit");
+    vi.spyOn(clientSyncPlugin, "syncTableRows");
   });
 
   afterEach(async () => {
-    vi.restoreAllMocks();
+    vi.resetAllMocks();
     try {
       await client.stop().catch(() => {});
       await server.stop().catch(() => {});
@@ -180,8 +182,7 @@ describe("TableSync", () => {
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
-    vi.spyOn(clientSyncPlugin, "syncTableRows");
-    await new Promise((resolve) => setTimeout(resolve, 400));
+    await new Promise((resolve) => setTimeout(resolve, 201));
     expect(clientSyncPlugin.syncTableRows).toHaveBeenCalledTimes(2);
 
     expect(client.send).toHaveBeenCalledWith(server.peerId?.toString(), {
@@ -202,6 +203,32 @@ describe("TableSync", () => {
         ],
       },
     });
+
+    expect(server.p2p.emit).toHaveBeenCalledWith(
+      "/cinderlink/sync/save/request",
+      {
+        topic: "/cinderlink/sync/save/request",
+        peer: expect.any(Object),
+        encrypted: false,
+        signed: false,
+        recipients: undefined,
+        payload: {
+          requestId: expect.any(String),
+          schemaId: "test",
+          tableId: "didRows",
+          rows: [
+            {
+              id: 1,
+              uid: expect.any(String),
+              did: server.id,
+              content: "test",
+              createdAt: expect.any(Number),
+              updatedAt: expect.any(Number),
+            },
+          ],
+        },
+      }
+    );
   });
 
   it("should not send sync messages if the row is not configured to be sent", async () => {
@@ -213,7 +240,7 @@ describe("TableSync", () => {
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
-    await new Promise((resolve) => setTimeout(resolve, 400));
+    await new Promise((resolve) => setTimeout(resolve, 201));
     expect(client.send).not.toHaveBeenCalled();
   });
 
@@ -228,7 +255,7 @@ describe("TableSync", () => {
     };
     const uid = await clientSchema.getTable<DidRow>("didRows").insert(row);
     const saved = await clientSchema.getTable<DidRow>("didRows").getByUid(uid);
-    await new Promise((resolve) => setTimeout(resolve, 400));
+    await new Promise((resolve) => setTimeout(resolve, 201));
     const serverRow = await serverSchema
       .getTable<DidRow>("didRows")
       .getByUid(uid);
@@ -245,7 +272,7 @@ describe("TableSync", () => {
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
-    await new Promise((resolve) => setTimeout(resolve, 400));
+    await new Promise((resolve) => setTimeout(resolve, 201));
     expect(client.p2p.emit).toHaveBeenCalledWith(
       "/cinderlink/sync/save/response",
       {
