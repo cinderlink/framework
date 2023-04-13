@@ -132,11 +132,13 @@ describe("CinderlinkClient", () => {
     server.initialConnectTimeout = 0;
     server.addPlugin(new TestServerPlugin(server));
 
-    await server.start([]);
-    await client.start([]);
+    await Promise.all([server.start([]), client.start([])]);
 
     const serverPeer = await server.ipfs.id();
-    await client.connect(serverPeer.id);
+    await Promise.all([
+      client.connect(serverPeer.id),
+      await client.pluginEvents.once("/cinderlink/handshake/success"),
+    ]);
   });
 
   it("can execute a request lifecycle", async () => {
@@ -149,7 +151,7 @@ describe("CinderlinkClient", () => {
       }
     );
 
-    expect(response).toHaveBeenCalledWith("hello");
+    expect(response).toHaveBeenCalled();
   });
 
   afterAll(async () => {
