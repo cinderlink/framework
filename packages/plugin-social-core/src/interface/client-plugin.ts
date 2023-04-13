@@ -20,7 +20,7 @@ import { SocialUsersInterface } from "./users";
 
 export interface SocialClientPluginInterface
   extends Emittery<SocialClientPluginEvents>,
-    PluginInterface<SocialClientEvents, CinderlinkClientInterface> {
+    PluginInterface<SocialClientEvents, ProtocolEvents> {
   id: "socialClient";
   ready: boolean;
   maxConnectionCount: number;
