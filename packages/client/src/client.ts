@@ -27,6 +27,7 @@ import type {
   ProtocolRequest,
   DecodedProtocolPayload,
   EncodedProtocolPayload,
+  PluginBaseInterface,
 } from "@cinderlink/core-types";
 import type { OfflineSyncClientPluginInterface } from "@cinderlink/plugin-offline-sync-core";
 import Emittery from "emittery";
@@ -97,9 +98,7 @@ export class CinderlinkClient<
     this.plugins = {};
   }
 
-  async addPlugin<Plugin extends PluginInterface = PluginInterface>(
-    plugin: Plugin
-  ) {
+  async addPlugin<Plugin extends PluginBaseInterface>(plugin: Plugin) {
     this.plugins[plugin.id] = plugin;
     if (this.running) {
       await this.startPlugin(plugin.id);
@@ -137,7 +136,7 @@ export class CinderlinkClient<
     await plugin.start?.();
   }
 
-  getPlugin<T extends PluginInterface>(id: string): T {
+  getPlugin<T extends PluginBaseInterface>(id: string): T {
     return this.plugins[id] as T;
   }
 
@@ -190,7 +189,7 @@ export class CinderlinkClient<
     });
 
     const protocol = new CinderlinkProtocolPlugin(this as any);
-    await this.addPlugin(protocol as any);
+    await this.addPlugin(protocol);
     console.info("starting protocol plugin");
     await this.startPlugin(protocol.id);
     this.connectToNodes();
@@ -552,7 +551,7 @@ export class CinderlinkClient<
         ? PluginEvents["publish"][K]
         : never,
       typeof options
-    >(message as any, { ...options, did: this.did });
+    >(message, { ...options, did: this.did });
 
     const bytes = json.encode(encoded);
 

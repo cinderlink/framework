@@ -11,6 +11,8 @@ import {
   Peer,
   HandshakeRequest,
   PluginEventDef,
+  PluginBaseInterface,
+  ReceiveEventHandlers,
 } from "@cinderlink/core-types";
 import { Connection, Stream } from "@libp2p/interface-connection";
 import * as json from "multiformats/codecs/json";
@@ -31,20 +33,30 @@ export interface ProtocolHandler {
   in: Promise<void>;
 }
 
-export class CinderlinkProtocolPlugin
-  implements PluginInterface<ProtocolEvents>
+export class CinderlinkProtocolPlugin<
+  PeerEvents extends PluginEventDef = {
+    send: {};
+    receive: {};
+    emit: {};
+    subscribe: {};
+    publish: {};
+  }
+> implements PluginBaseInterface, PluginInterface<ProtocolEvents>
 {
   id = "cinderlink";
 
-  constructor(public client: CinderlinkClientInterface<ProtocolEvents>) {}
+  constructor(
+    public client: CinderlinkClientInterface<ProtocolEvents & PeerEvents>
+  ) {}
 
-  p2p = {
+  p2p: ReceiveEventHandlers<ProtocolEvents> = {
     "/cinderlink/handshake/request": this.onHandshakeRequest,
     "/cinderlink/handshake/challenge": this.onHandshakeChallenge,
     "/cinderlink/handshake/complete": this.onHandshakeComplete,
     "/cinderlink/handshake/success": this.onHandshakeSuccess,
     "/cinderlink/handshake/error": this.onHandshakeError,
   };
+
   pubsub = {};
   coreEvents = {
     "/peer/connect": this.onPeerConnect,

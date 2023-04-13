@@ -20,20 +20,27 @@ export interface PluginEventDef {
   emit: PluginEventPayloads;
 }
 
+export interface PluginBaseInterface {
+  id: string;
+  client: CinderlinkClientInterface<any>;
+  start?(): Promise<void>;
+  stop?(): Promise<void>;
+  pubsub: SubscribeEventHandlers<any>;
+  p2p: ReceiveEventHandlers<any>;
+  coreEvents?: Partial<PluginEventHandlers<CinderlinkClientEvents["emit"]>>;
+  pluginEvents?: PluginEventHandlers<any>;
+}
+
 export interface PluginInterface<
   Events extends PluginEventDef = any,
   PeerEvents extends PluginEventDef = any,
   Client extends CinderlinkClientInterface<
     Events & PeerEvents
   > = CinderlinkClientInterface<any>
-> {
-  id: string;
+> extends PluginBaseInterface {
   client: Client;
-  start?(): Promise<void>;
-  stop?(): Promise<void>;
   pubsub: SubscribeEventHandlers<Events>;
   p2p: ReceiveEventHandlers<Events>;
-  coreEvents?: Partial<PluginEventHandlers<CinderlinkClientEvents["emit"]>>;
   pluginEvents?: PluginEventHandlers<PeerEvents["emit"]>;
 }
 export default PluginInterface;

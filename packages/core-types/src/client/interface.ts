@@ -1,5 +1,9 @@
 import type Emittery from "emittery";
-import type { PluginInterface, PluginEventDef } from "../plugin/types";
+import type {
+  PluginInterface,
+  PluginEventDef,
+  PluginBaseInterface,
+} from "../plugin/types";
 import type {
   IncomingP2PMessage,
   OutgoingP2PMessage,
@@ -51,9 +55,9 @@ export interface CinderlinkClientInterface<
 
   get id(): string;
 
-  addPlugin(plugin: PluginInterface): Promise<void>;
+  addPlugin<T extends PluginBaseInterface>(plugin: T): Promise<void>;
 
-  getPlugin<T extends PluginInterface>(id: string): T;
+  getPlugin<T extends PluginBaseInterface>(id: string): T;
 
   hasPlugin(id: string): boolean;
 

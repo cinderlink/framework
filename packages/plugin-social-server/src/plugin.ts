@@ -40,7 +40,7 @@ export type SocialServerEvents = {
 
 export class SocialServerPlugin<
   Client extends CinderlinkClientInterface<SocialServerEvents> = CinderlinkClientInterface<SocialServerEvents>
-> implements PluginInterface<SocialServerEvents, Client>
+> implements PluginInterface<SocialServerEvents>
 {
   id = "socialServer";
   constructor(

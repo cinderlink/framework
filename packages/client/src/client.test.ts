@@ -13,6 +13,7 @@ import {
   ProtocolEvents,
   EncodingOptions,
   IncomingP2PMessage,
+  ReceiveEventHandlers,
 } from "@cinderlink/core-types";
 import * as ethers from "ethers";
 
@@ -29,7 +30,7 @@ export class TestClientPlugin implements PluginInterface {
   id = "test-client-plugin";
   constructor(public client: CinderlinkClientInterface) {}
 
-  p2p = {
+  p2p: ReceiveEventHandlers<TestClientEvents> = {
     "/test/response": this.onTestResponse,
   };
   pubsub = {};
@@ -58,7 +59,7 @@ export class TestServerPlugin implements PluginInterface {
   id = "test-server-plugin";
   constructor(public client: CinderlinkClientInterface<TestServerEvents>) {}
 
-  p2p = {
+  p2p: ReceiveEventHandlers<TestServerEvents> = {
     "/test/request": this.onTestRequest,
   };
   pubsub = {};
@@ -102,7 +103,7 @@ describe("CinderlinkClient", () => {
       },
     });
     client.initialConnectTimeout = 0;
-    client.addPlugin(new TestClientPlugin(client) as any);
+    client.addPlugin(new TestClientPlugin(client));
 
     const serverWallet = ethers.Wallet.createRandom();
     const serverDID = await createDID(await createSeed("test server"));
@@ -129,7 +130,7 @@ describe("CinderlinkClient", () => {
       },
     });
     server.initialConnectTimeout = 0;
-    server.addPlugin(new TestServerPlugin(server) as any);
+    server.addPlugin(new TestServerPlugin(server));
 
     await server.start([]);
     await client.start([]);

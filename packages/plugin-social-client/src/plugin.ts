@@ -93,7 +93,7 @@ export class SocialClientPlugin<
     this.emit("ready", undefined);
 
     console.info(`${logPrefix} > registering sync config`);
-    const syncDb: SyncDBPlugin = this.client.getPlugin("sync") as any;
+    const syncDb: SyncDBPlugin = this.client.getPlugin("sync");
     if (syncDb) {
       Object.entries(SocialSyncConfig).map(([table, config]) => {
         syncDb.addTableSync("social", table, config);

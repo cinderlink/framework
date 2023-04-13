@@ -25,7 +25,7 @@ export type P2PCoreEvents = {
 };
 
 export type ReceiveEvents<
-  PluginEvents extends PluginEventDef = PluginEventDef,
+  PluginEvents extends PluginEventDef = any,
   Encoding extends EncodingOptions = EncodingOptions
 > = {
   [K in keyof PluginEvents["receive"]]: IncomingP2PMessage<
@@ -35,18 +35,17 @@ export type ReceiveEvents<
   >;
 };
 
-export type ReceiveEventHandlers<
-  PluginEvents extends PluginEventDef = PluginEventDef
-> = PluginEventHandlers<ReceiveEvents<PluginEvents>>;
+export type ReceiveEventHandlers<PluginEvents extends PluginEventDef = any> =
+  PluginEventHandlers<ReceiveEvents<PluginEvents>>;
 
 export type OutgoingP2PMessage<
-  PluginEvents extends PluginEventDef = PluginEventDef,
+  PluginEvents extends PluginEventDef = any,
   Topic extends keyof PluginEvents["send"] = keyof PluginEvents["send"],
   Encoding extends EncodingOptions = { sign: false; encrypt: false }
 > = ProtocolMessage<PluginEvents["send"][Topic], Topic, Encoding>;
 
 export type IncomingP2PMessage<
-  PluginEvents extends PluginEventDef = PluginEventDef,
+  PluginEvents extends PluginEventDef = any,
   Topic extends keyof PluginEvents["receive"] = keyof PluginEvents["receive"],
   Encoding extends EncodingOptions = { sign: false; encrypt: false }
 > = ProtocolMessage<PluginEvents["receive"][Topic], Topic, Encoding> & {

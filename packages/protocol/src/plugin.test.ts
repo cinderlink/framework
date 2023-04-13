@@ -61,8 +61,8 @@ describe("handleProtocol", () => {
       },
     });
     server.initialConnectTimeout = 0;
-    // await client.addPlugin(new ProtocolPlugin(client) as any);
-    // await server.addPlugin(new ProtocolPlugin(server) as any);
+    // await client.addPlugin(new ProtocolPlugin(client));
+    // await server.addPlugin(new ProtocolPlugin(server));
   });
 
   it("should handshake on connect", async () => {
