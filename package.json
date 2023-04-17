@@ -8,8 +8,7 @@
   "workspaces": [
     "./packages/*",
     "./examples/*",
-    "../social-dapp/",
-    "../ui-kit/",
+    "./apps/*",
     "../registry/frontend/",
     "../registry/contracts/"
   ],
@@ -26,6 +25,6 @@
     "@changesets/cli": "^2.26.1",
     "chokidar": "^3.5.3",
     "minimist": "^1.2.8",
-    "turbo": "^1.8.8"
+    "turbo": "^1.9.1"
   }
 }
