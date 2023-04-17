@@ -155,9 +155,6 @@ export class SyncDBPlugin<
 
     for (const did of syncDids) {
       const lastSyncedAt = await this.getLastSyncedAt(schemaId, tableId, did);
-      console.info(
-        `${logPrefix} > last synced ${schemaId}.${tableId}/${did} at ${lastSyncedAt}`
-      );
       const query = sync.query(
         table,
         { did, since: Number(lastSyncedAt) },
@@ -165,17 +162,8 @@ export class SyncDBPlugin<
       );
       const rows = await query.execute().then((r) => r.all());
       if (!rows.length) {
-        console.info(`${logPrefix} > no rows to sync`, {
-          schemaId,
-          tableId,
-          did,
-          rows,
-          instructions: query.instructions,
-        });
         continue;
       }
-      console.info("syncing rows", rows);
-
       await this.sendSyncRows(schemaId, tableId, did, rows);
     }
   }
