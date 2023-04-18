@@ -135,6 +135,7 @@ export interface TableInterface<
   awaitUnlock(): Promise<void>;
   serialize(): Promise<BlockData<Row> | undefined>;
   deserialize(cache: BlockData<Row, Def>): Promise<void>;
+  hasChanges(): boolean;
 }
 
 export type TableUnwindEvent<

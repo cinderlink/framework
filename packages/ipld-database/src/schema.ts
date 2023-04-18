@@ -53,6 +53,10 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
     delete this.tables[name];
   }
 
+  hasChanges() {
+    return Object.values(this.tables).some((table) => table.hasChanges());
+  }
+
   getTable<
     Row extends TableRow = TableRow,
     Def extends TableDefinition<Row> = TableDefinition<Row>

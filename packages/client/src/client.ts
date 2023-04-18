@@ -249,6 +249,10 @@ export class CinderlinkClient<
     );
   }
 
+  hasUnsavedChanges() {
+    return Object.values(this.schemas).some((schema) => schema.hasChanges());
+  }
+
   async save(forceRemote = false) {
     if (!this.identity.hasResolved || this.identity.resolving) {
       return;

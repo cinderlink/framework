@@ -23,6 +23,7 @@ import { SocialPosts } from "./features/posts";
 import { SocialProfiles } from "./features/profiles";
 import { SocialUsers } from "./features/users";
 import { SocialNotifications } from "./features/notifications";
+import { SocialSettings } from "./features/settings";
 
 const logPrefix = `plugin/social/client`;
 
@@ -45,6 +46,7 @@ export class SocialClientPlugin<
   profiles: SocialProfiles;
   users: SocialUsers;
   notifications: SocialNotifications;
+  settings: SocialSettings;
 
   pubsub: SubscribeEventHandlers<SocialClientEvents>;
   p2p: ReceiveEventHandlers<SocialClientEvents>;
@@ -60,6 +62,8 @@ export class SocialClientPlugin<
     this.profiles = new SocialProfiles(this);
     this.users = new SocialUsers(this);
     this.notifications = new SocialNotifications(this);
+    this.settings = new SocialSettings(this);
+
     this.pubsub = {
       "/social/users/announce": this.users.onAnnounce.bind(this.users),
     };
