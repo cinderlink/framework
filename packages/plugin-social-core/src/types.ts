@@ -135,6 +135,12 @@ export interface SocialUsersGetResponse {
   user: SocialUser;
 }
 
+export interface SocialSetting extends TableRow {
+  section: string;
+  key: string;
+  value: unknown;
+}
+
 export type SocialConnectionFilter = "in" | "out" | "mutual" | "all";
 
 export interface SocialClientEvents extends PluginEventDef {

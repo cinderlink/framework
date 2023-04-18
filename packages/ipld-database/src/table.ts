@@ -272,6 +272,10 @@ export class Table<
     this.setBlock(block);
   }
 
+  hasChanges() {
+    return this.currentBlock.changed;
+  }
+
   async unwind(
     next: (event: TableUnwindEvent<Row, Def>) => Promise<void> | void
   ) {

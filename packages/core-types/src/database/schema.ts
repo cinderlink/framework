@@ -47,6 +47,7 @@ export interface SchemaInterface extends Emittery<SchemaEvents> {
   serialize(): Promise<SavedSchema | undefined>;
   export(): Promise<JWE | SavedSchema | undefined>;
   save(): Promise<CID | undefined>;
+  hasChanges(): boolean;
 }
 
 export interface SchemaClass {
