@@ -26,7 +26,7 @@
     "@cinderlink/identifiers": "workspace:../identifiers",
     "@cinderlink/plugin-social-client": "workspace:../plugin-social-client",
     "@cinderlink/plugin-social-core": "workspace:../plugin-social-core",
-    "@cinderlink/plugin-sync-db": "workspace:^0.0.7",
+    "@cinderlink/plugin-sync-db": "workspace:../plugin-sync-db",
     "@cinderlink/tsconfig": "workspace:../tsconfig",
     "did-jwt": "^6.11.5",
     "dids": "^3.4.0",
@@ -38,7 +38,7 @@
     "@cinderlink/identifiers": "workspace:../identifiers",
     "@cinderlink/plugin-social-client": "workspace:../plugin-social-client",
     "@cinderlink/plugin-social-core": "workspace:../plugin-social-core",
-    "@cinderlink/plugin-sync-db": "workspace:^0.0.7",
+    "@cinderlink/plugin-sync-db": "workspace:../plugin-sync-db",
     "did-jwt": "^6.11.0",
     "dids": "^3.4.0"
   }
