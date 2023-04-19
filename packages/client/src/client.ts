@@ -181,7 +181,13 @@ export class CinderlinkClient<
       const peer = this.peers.getPeer(peerId);
       console.info(`client > peer:disconnect`, peer);
       this.emit("/peer/disconnect", peer);
-      this.peers.updatePeer(peerId, { connected: false, authenticated: false });
+      this.peers.updatePeer(peerId, {
+        connected: false,
+        authenticated: false,
+        authenticatedAt: undefined,
+        authenticatedWith: false,
+        authenticatedWithAt: undefined,
+      });
     });
 
     this.ipfs.libp2p.pubsub.addEventListener("subscription-change", () => {

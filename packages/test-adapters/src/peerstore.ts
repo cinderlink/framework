@@ -21,6 +21,9 @@ export class Peerstore implements PeerStoreInterface {
       metadata: {},
       connected: false,
       authenticated: false,
+      authenticatedAt: undefined,
+      authenticatedWith: false,
+      authenticatedWithAt: undefined,
     };
     return this.peers[peerId.toString()];
   }
