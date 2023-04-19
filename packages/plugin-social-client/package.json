@@ -2,7 +2,7 @@
   "name": "@cinderlink/plugin-social-client",
   "description": "Social client plugin for cinderlink enabling following and unfollowing of other users & posting of messages to the social network",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -42,6 +42,13 @@
     "vitest": "^0.28.5"
   },
   "peerDependencies": {
+    "@cinderlink/client": "workspace:../client",
+    "@cinderlink/identifiers": "workspace:../identifiers",
+    "@cinderlink/ipld-database": "workspace:../ipld-database",
+    "@cinderlink/plugin-offline-sync-core": "workspace:../plugin-offline-sync-core",
+    "@cinderlink/plugin-social-core": "workspace:../plugin-social-core",
+    "@cinderlink/plugin-sync-db": "workspace:../plugin-sync-db",
+    "@cinderlink/protocol": "workspace:../protocol",
     "@multiformats/multiaddr": "^11.4.0",
     "did-jwt": "^6.11.0",
     "dids": "^3.4.0",

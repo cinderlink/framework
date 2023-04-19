@@ -2,7 +2,7 @@
   "name": "@cinderlink/ipld-database",
   "description": "IPLD database for @cinderlink/client",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -29,6 +29,9 @@
     "@cinderlink/tsconfig": "workspace:../tsconfig",
     "@types/ajv": "^1.0.0",
     "@types/node": "^18.15.11",
+    "ajv": "^8.12.0",
+    "emittery": "^1.0.1",
+    "minisearch": "^6.0.1",
     "did-jwt": "^6.11.5",
     "dids": "^3.4.0",
     "ethers": "^5.7.2",
@@ -43,13 +46,16 @@
     "vitest": "^0.28.5"
   },
   "peerDependencies": {
-    "dids": "^3.4.0",
-    "multiformats": "^11.0.2"
-  },
-  "dependencies": {
+    "@cinderlink/identifiers": "workspace:../identifiers",
     "ajv": "^8.12.0",
     "emittery": "^1.0.1",
     "minisearch": "^6.0.1",
+    "did-jwt": "^6.11.5",
+    "dids": "^3.4.0",
+    "ethers": "^5.7.2",
+    "multiformats": "^11.0.2"
+  },
+  "dependencies": {
     "object-sizeof": "^2.6.1"
   }
 }

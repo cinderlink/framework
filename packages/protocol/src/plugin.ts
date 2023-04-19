@@ -63,7 +63,7 @@ export class CinderlinkProtocolPlugin<
     "/peer/disconnect": this.onPeerDisconnect,
   };
   ProtocolEvents = {};
-
+  handshakeInterval: NodeJS.Timeout | undefined;
   protocolHandlers: Record<string, ProtocolHandler> = {};
 
   async start() {
@@ -84,8 +84,27 @@ export class CinderlinkProtocolPlugin<
         maxOutboundStreams: 128,
       }
     );
+
+    this.handshakeInterval = setInterval(
+      this.handshakeIntervalHandler.bind(this),
+      3000
+    );
   }
   async stop() {}
+
+  async handshakeIntervalHandler() {
+    console.info(`protocol > sending handshake requests`);
+    for (const peer of this.client.peers.getPeers()) {
+      if (peer.connected && !peer.authenticatedWith) {
+        await this.client.send<ProtocolEvents>(peer.peerId.toString(), {
+          topic: "/cinderlink/handshake/request",
+          payload: {
+            did: this.client.id,
+          } as HandshakeRequest,
+        });
+      }
+    }
+  }
 
   async initializeProtocol(
     stream: Stream,
@@ -452,6 +471,8 @@ export class CinderlinkProtocolPlugin<
       return;
     }
 
+    peer.authenticatedWith = true;
+    peer.authenticatedWithAt = Date.now();
     peer.connected = true;
     this.client.peers.updatePeer(peer.peerId.toString(), peer);
     console.info(`p2p/handshake/success > authenticated ${logId}`);

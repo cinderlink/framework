@@ -13,6 +13,8 @@ export type Peer = {
   challengedAt?: number;
   authenticated: boolean;
   authenticatedAt?: number;
+  authenticatedWith?: boolean;
+  authenticatedWithAt?: number;
 };
 
 export type PeerRole = "server" | "peer";

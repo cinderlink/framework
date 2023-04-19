@@ -1,6 +1,6 @@
 {
   "name": "@cinderlink/protocol",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "",
   "scripts": {
     "test": "vitest run",
@@ -50,5 +50,13 @@
     "typescript": "^5.0.3",
     "uuid": "^9.0.0",
     "vitest": "^0.28.5"
+  },
+  "peerDependencies": {
+    "@cinderlink/identifiers": "workspace:../identifiers",
+    "did-jwt": "^6.11.5",
+    "dids": "^3.4.0",
+    "emittery": "^1.0.1",
+    "libp2p": "^0.42.2",
+    "multiformats": "^11.0.2"
   }
 }

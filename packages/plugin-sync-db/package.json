@@ -2,7 +2,7 @@
   "name": "@cinderlink/plugin-sync-db",
   "description": "Database sync plugin for the Cinderlink framework",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -35,7 +35,13 @@
     "multiformats": "^11.0.2",
     "tsup": "^6.7.0",
     "typescript": "^5.0.3",
-    "uuid": "^9.0.0",
     "vitest": "^0.29.8"
+  },
+  "peerDependencies": {
+    "@cinderlink/identifiers": "workspace:../identifiers",
+    "@cinderlink/ipld-database": "workspace:../ipld-database",
+    "@cinderlink/test-adapters": "workspace:../test-adapters",
+    "emittery": "^1.0.1",
+    "multiformats": "^11.0.2"
   }
 }

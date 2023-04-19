@@ -2,7 +2,7 @@
   "name": "@cinderlink/plugin-identity-server",
   "description": "Identity server plugin for Cinderlink",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -22,18 +22,22 @@
     "watch": "tsup --watch",
     "test": "vitest run"
   },
-  "dependencies": {
+  "peerDependencies": {
     "@cinderlink/core-types": "workspace:../core-types",
-    "@cinderlink/ipld-database": "workspace:../ipld-database"
+    "@cinderlink/ipld-database": "workspace:../ipld-database",
+    "@cinderlink/identifiers": "workspace:../identifiers",
+    "multiformats": "^11.0.2"
   },
   "devDependencies": {
+    "@cinderlink/core-types": "workspace:../core-types",
+    "@cinderlink/ipld-database": "workspace:../ipld-database",
     "@cinderlink/identifiers": "workspace:../identifiers",
     "@cinderlink/test-adapters": "workspace:../test-adapters",
     "@cinderlink/tsconfig": "workspace:../tsconfig",
     "@ipld/car": "^5.1.1",
     "@types/node": "^18.15.11",
-    "ethers": "^5.7.2",
     "it-all": "^3.0.1",
+    "ethers": "^5.7.2",
     "multiformats": "^11.0.2",
     "tsup": "^6.7.0",
     "typescript": "^5.0.3",

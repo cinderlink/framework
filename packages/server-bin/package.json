@@ -2,7 +2,7 @@
   "name": "@cinderlink/server-bin",
   "description": "Cinderlink server binary",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "main": "dist/bin.js",
   "type": "module",
   "module": "./dist/bin.js",
@@ -31,7 +31,12 @@
     "minimist": "^1.2.8"
   },
   "peerDependencies": {
-    "@cinderlink/client": "workspace:../client"
+    "@cinderlink/client": "workspace:../client",
+    "@cinderlink/identifiers": "workspace:../identifiers",
+    "@cinderlink/plugin-identity-server": "workspace:../plugin-identity-server",
+    "@cinderlink/plugin-offline-sync-server": "workspace:../plugin-offline-sync-server",
+    "@cinderlink/plugin-social-server": "workspace:../plugin-social-server",
+    "@cinderlink/protocol": "workspace:../protocol"
   },
   "devDependencies": {
     "@cinderlink/identifiers": "workspace:../identifiers",

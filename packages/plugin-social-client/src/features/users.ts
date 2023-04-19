@@ -88,7 +88,7 @@ export class SocialUsers {
 
     this.userStatusInterval = setInterval(
       this.updateUserStatuses.bind(this),
-      10000
+      3000
     );
 
     this.localUser.status === "online";
@@ -141,7 +141,7 @@ export class SocialUsers {
       .table<SocialUser>("users")
       .query()
       .where("did", "=", did)
-      .update({ status })
+      .update({ status, updatedAt: Date.now() })
       .execute();
   }
 
@@ -434,7 +434,7 @@ export class SocialUsers {
         addressVerification: message.payload.addressVerification,
         name: message.payload.name,
         bio: message.payload.bio,
-        status: message.payload.status,
+        status: "online",
         avatar: message.payload.avatar,
         did: message.payload.did,
         updatedAt: message.payload.updatedAt,
