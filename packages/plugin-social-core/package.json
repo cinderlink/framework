@@ -2,7 +2,7 @@
   "name": "@cinderlink/plugin-social-core",
   "description": "Core types and utilities for the Cinderlink social client plugin",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -21,6 +21,10 @@
     "build": "tsup",
     "watch": "tsup --watch"
   },
+  "peerDependencies": {
+    "@cinderlink/ipld-database": "workspace:../ipld-database",
+    "emittery": "^1.0.1"
+  },
   "devDependencies": {
     "@cinderlink/core-types": "workspace:../core-types",
     "@cinderlink/ipld-database": "workspace:../ipld-database",
@@ -28,7 +32,7 @@
     "@types/node": "^18.15.11",
     "emittery": "^1.0.1",
     "tsup": "^6.7.0",
-    "typescript": "^5.0.3",
-    "vitest": "^0.28.5"
+    "typescript": "^5.0.4",
+    "vitest": "^0.30.1"
   }
 }

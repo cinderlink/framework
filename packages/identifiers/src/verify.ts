@@ -1,10 +1,10 @@
-import { ethers } from "ethers";
+import { type Signer, verifyMessage } from "ethers";
 import { createAddressVerificationMessage } from "./create";
 
 export async function signAddressVerification(
   app: string,
   did: string,
-  signer: ethers.Signer
+  signer: Signer
 ) {
   const address = await signer.getAddress();
   const message = createAddressVerificationMessage(app, did, address);
@@ -18,6 +18,6 @@ export async function checkAddressVerification(
   signature: string
 ) {
   const message = createAddressVerificationMessage(app, did, address);
-  const signer = ethers.utils.verifyMessage(message, signature);
+  const signer = verifyMessage(message, signature);
   return signer === address;
 }

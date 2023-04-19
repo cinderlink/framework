@@ -2,7 +2,7 @@
   "name": "@cinderlink/plugin-social-server",
   "description": "Social network server plugin for Cinderlink",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -26,17 +26,20 @@
     "@cinderlink/identifiers": "workspace:../identifiers",
     "@cinderlink/plugin-social-client": "workspace:../plugin-social-client",
     "@cinderlink/plugin-social-core": "workspace:../plugin-social-core",
-    "@cinderlink/plugin-sync-db": "workspace:^0.0.7",
+    "@cinderlink/plugin-sync-db": "workspace:../plugin-sync-db",
     "@cinderlink/tsconfig": "workspace:../tsconfig",
-    "did-jwt": "^6.11.5",
-    "dids": "^3.4.0",
+    "did-jwt": "^7.0.0",
+    "dids": "^4.0.0",
     "tsup": "^6.7.0",
-    "typescript": "^5.0.3",
-    "vitest": "^0.28.5"
+    "typescript": "^5.0.4",
+    "vitest": "^0.30.1"
   },
   "peerDependencies": {
+    "@cinderlink/identifiers": "workspace:../identifiers",
+    "@cinderlink/plugin-social-client": "workspace:../plugin-social-client",
+    "@cinderlink/plugin-social-core": "workspace:../plugin-social-core",
+    "@cinderlink/plugin-sync-db": "workspace:../plugin-sync-db",
     "did-jwt": "^6.11.0",
-    "dids": "^3.4.0",
-    "@cinderlink/plugin-sync-db": "workspace:^0.0.7"
+    "dids": "^3.4.0"
   }
 }

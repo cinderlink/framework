@@ -2,7 +2,7 @@ import minimist from "minimist";
 import fs from "fs";
 import path from "path";
 import chalk from "chalk";
-import { ethers } from "ethers";
+import { Wallet } from "ethers";
 import { createServer } from "@cinderlink/server";
 import {
   createSignerDID,
@@ -38,12 +38,12 @@ if (command === "init") {
   console.log(
     `initializing ${chalk.cyan("cinderlink")} at ${chalk.yellow(configPath)}`
   );
-  const wallet = ethers.Wallet.createRandom();
+  const wallet = Wallet.createRandom();
   fs.writeFileSync(
     configPath,
     `export default {
         app: "candor.social",
-        mnemonic: "${wallet.mnemonic.phrase}",
+        mnemonic: "${wallet.mnemonic?.phrase}",
         accountNonce: 0,
         plugins: [
           ["@cinderlink/protocol"],
@@ -84,7 +84,7 @@ if (command !== "start") {
     process.exit(1);
   }
 
-  const wallet = ethers.Wallet.fromMnemonic(config.mnemonic);
+  const wallet = Wallet.fromPhrase(config.mnemonic);
   if (!wallet) {
     console.error(`invalid mnemonic in ${chalk.yellow(configPath)}`);
     process.exit(1);
