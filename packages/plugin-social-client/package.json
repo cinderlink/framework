@@ -31,15 +31,15 @@
     "@cinderlink/plugin-sync-db": "workspace:../plugin-sync-db",
     "@cinderlink/protocol": "workspace:../protocol",
     "@cinderlink/tsconfig": "workspace:../tsconfig",
-    "@multiformats/multiaddr": "^11.6.1",
+    "@multiformats/multiaddr": "^12.1.2",
     "@types/uuid": "^9.0.1",
-    "did-jwt": "^6.11.5",
-    "dids": "^3.4.0",
+    "did-jwt": "^7.0.0",
+    "dids": "^4.0.0",
     "emittery": "^1.0.1",
     "multiformats": "^11.0.2",
     "tsup": "^6.7.0",
-    "typescript": "^5.0.3",
-    "vitest": "^0.28.5"
+    "typescript": "^5.0.4",
+    "vitest": "^0.30.1"
   },
   "peerDependencies": {
     "@cinderlink/client": "workspace:../client",

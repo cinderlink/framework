@@ -32,7 +32,7 @@
     "@types/node": "^18.15.11",
     "emittery": "^1.0.1",
     "tsup": "^6.7.0",
-    "typescript": "^5.0.3",
-    "vitest": "^0.28.5"
+    "typescript": "^5.0.4",
+    "vitest": "^0.30.1"
   }
 }

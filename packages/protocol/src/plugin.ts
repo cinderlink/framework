@@ -140,10 +140,10 @@ export class CinderlinkProtocolPlugin<
       this.protocolHandlers[peer.peerId.toString()] = {
         buffer,
         stream,
-        out: pipe(buffer, lp.encode(), stream.sink),
+        out: pipe(buffer, lp.encode, stream.sink),
         in: pipe(
           stream.source,
-          lp.decode(),
+          lp.decode,
           (source) => {
             return map(source, (buf) => {
               return json.decode<
