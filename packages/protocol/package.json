@@ -40,7 +40,7 @@
     "did-jwt": "^7.0.0",
     "dids": "^4.0.0",
     "emittery": "^1.0.1",
-    "ethers": "^6.3.0",
+    "ethers": "^5.7.2",
     "it-length-prefixed": "^9.0.1",
     "it-map": "^3.0.2",
     "it-pipe": "^3.0.1",
