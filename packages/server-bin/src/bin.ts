@@ -84,7 +84,7 @@ if (command !== "start") {
     process.exit(1);
   }
 
-  const wallet = Wallet.fromPhrase(config.mnemonic);
+  const wallet = Wallet.fromMnemonic(config.mnemonic);
   if (!wallet) {
     console.error(`invalid mnemonic in ${chalk.yellow(configPath)}`);
     process.exit(1);

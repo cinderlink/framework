@@ -48,7 +48,7 @@
     "@types/minimist": "^1.2.2",
     "@types/node": "^18.15.11",
     "chalk": "^5.2.0",
-    "ethers": "^6.3.0",
+    "ethers": "^5.7.2",
     "ts-node": "^10.9.1",
     "tsup": "^6.7.0",
     "typescript": "^5.0.4",
