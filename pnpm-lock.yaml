@@ -16,17 +16,17 @@ importers:
 
   apps/social-dapp:
     specifiers:
-      '@cinderlink/client': workspace:^0.0.10
-      '@cinderlink/core-types': workspace:^0.0.5
-      '@cinderlink/identifiers': workspace:^0.0.2
-      '@cinderlink/ipld-database': workspace:^0.0.8
-      '@cinderlink/plugin-offline-sync-client': workspace:^0.0.7
-      '@cinderlink/plugin-offline-sync-core': workspace:^0.0.5
-      '@cinderlink/plugin-social-client': workspace:^0.0.9
-      '@cinderlink/plugin-social-core': workspace:^0.0.8
-      '@cinderlink/plugin-sync-db': workspace:^0.0.8
-      '@cinderlink/protocol': workspace:^0.0.6
-      '@cinderlink/ui-kit': workspace:^0.0.17
+      '@cinderlink/client': ^0.0.10
+      '@cinderlink/core-types': ^0.0.5
+      '@cinderlink/identifiers': ^0.0.3
+      '@cinderlink/ipld-database': ^0.0.8
+      '@cinderlink/plugin-offline-sync-client': ^0.0.7
+      '@cinderlink/plugin-offline-sync-core': ^0.0.5
+      '@cinderlink/plugin-social-client': ^0.0.9
+      '@cinderlink/plugin-social-core': ^0.0.8
+      '@cinderlink/plugin-sync-db': ^0.0.8
+      '@cinderlink/protocol': ^0.0.6
+      '@cinderlink/ui-kit': ^0.0.17
       '@iconify-json/logos': ^1.1.25
       '@iconify-json/mdi': ^1.1.50
       '@iconify-json/tabler': ^1.1.73
@@ -52,6 +52,7 @@ importers:
       ethers: ^5.7.2
       ipfs-core: ^0.18.0
       localforage: ^1.10.0
+      minisearch: ^6.0.1
       multiformats: ^11.0.2
       prettier: ^2.8.7
       prettier-plugin-svelte: ^2.10.0
@@ -60,7 +61,7 @@ importers:
       stream-browserify: ^3.0.0
       svelte: ^3.58.0
       svelte-check: ^3.2.0
-      swagmi: workspace:^0.0.15
+      swagmi: ^0.0.15
       tslib: ^2.5.0
       typescript: ^5.0.4
       unocss: ^0.51.5
@@ -104,6 +105,7 @@ importers:
       ethers: 5.7.2
       ipfs-core: 0.18.0
       localforage: 1.10.0
+      minisearch: 6.0.1
       multiformats: 11.0.2
       prettier: 2.8.7
       prettier-plugin-svelte: 2.10.0_ur5pqdgn24bclu6l6i7qojopk4
