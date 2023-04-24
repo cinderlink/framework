@@ -63,12 +63,14 @@ if (command === "init") {
   fs.writeFileSync(
     configPath,
     `import { SocialSyncConfig } from "@cinderlink/plugin-social-core";
+import dotenv from "dotenv";
+dotenv.config({ path: "${typeof env === "string" ? env : ".env"}" });
 export default {
   app: "candor.social",
   ${
     usePkey
-      ? `privateKey: ${JSON.stringify(process.env.CINDERLINK_PRIVATE_KEY)}`
-      : `mnemonic: ${JSON.stringify(process.env.CINDERLINK_MNEMONIC)}`
+      ? `privateKey: process.env.CINDERLINK_PRIVATE_KEY`
+      : `mnemonic: process.env.CINDERLINK_MNEMONIC`
   },
   accountNonce: 0,
   plugins: [
