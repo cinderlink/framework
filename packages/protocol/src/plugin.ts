@@ -93,7 +93,6 @@ export class CinderlinkProtocolPlugin<
   async stop() {}
 
   async handshakeIntervalHandler() {
-    console.info(`protocol > sending handshake requests`);
     for (const peer of this.client.peers.getPeers()) {
       if (peer.connected && !peer.authenticatedWith) {
         await this.client.send<ProtocolEvents>(peer.peerId.toString(), {
