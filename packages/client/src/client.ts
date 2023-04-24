@@ -66,7 +66,7 @@ export class CinderlinkClient<
 
   public ipfs: IPFSWithLibP2P;
   public did: DID;
-  public address: string;
+  public address: `0x${string}`;
   public addressVerification: string;
   public peerId?: PeerId;
   public dag: ClientDIDDag;

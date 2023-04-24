@@ -45,7 +45,7 @@ export interface CinderlinkClientInterface<
   ipfs: IPFSWithLibP2P;
   files: FilesInterface;
   did: DID;
-  address: string;
+  address: `0x${string}`;
   addressVerification: string;
   peerId?: PeerId;
   dag: DIDDagInterface;

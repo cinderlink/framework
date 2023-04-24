@@ -6,7 +6,7 @@ import { CinderlinkServer } from "./server";
 
 export interface CreateServerOptions {
   did: DID;
-  address: string;
+  address: `0x${string}`;
   addressVerification: string;
   plugins?: [PluginConstructor<any>, Record<string, unknown>][];
   nodes?: string[];

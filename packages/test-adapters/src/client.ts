@@ -32,7 +32,7 @@ export class TestClient<PluginEvents extends PluginEventDef>
   p2p = new Emittery<ReceiveEvents<PluginEvents & CinderlinkClientEvents>>();
   ipfs = {} as any;
   files = {} as any;
-  address = "test";
+  address = "0x12345" as `0x${string}`;
   addressVerification = "test";
   dag: DIDDagInterface;
   schemas: Record<string, SchemaInterface> = {};

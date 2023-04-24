@@ -18,7 +18,7 @@ export class SocialUsers {
     name: "",
     avatar: "",
     bio: "",
-    address: "",
+    address: undefined,
     addressVerification: "",
     status: "online",
     updatedAt: 0,
