@@ -11,7 +11,7 @@ import { DID } from "dids";
 
 export interface CreateClientOptions {
   did: DID;
-  address: string;
+  address: `0x${string}`;
   addressVerification: string;
   nodes?: string[];
   options?: Partial<Options>;

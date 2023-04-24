@@ -133,7 +133,7 @@ if (command !== "start") {
   );
   const server = await createServer({
     did,
-    address: wallet.address,
+    address: wallet.address as `0x${string}`,
     addressVerification,
     plugins,
     nodes: config.nodes,

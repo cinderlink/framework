@@ -10,7 +10,7 @@ export interface SocialConnection extends TableRow {
 }
 
 export interface SocialUser extends TableRow {
-  address?: string;
+  address?: `0x${string}`;
   addressVerification?: string;
   name: string;
   bio: string;

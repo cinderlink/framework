@@ -15,7 +15,7 @@ import { ProtocolRequest } from "../protocol";
 export type CinderlinkConstructorOptions = {
   ipfs: IPFSWithLibP2P;
   did: DID;
-  address: string;
+  address: `0x${string}`;
   addressVerification: string;
   role: PeerRole;
 };
