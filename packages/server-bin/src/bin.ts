@@ -63,6 +63,8 @@ if (command === "init") {
   fs.writeFileSync(
     configPath,
     `import { SocialSyncConfig } from "@cinderlink/plugin-social-core";
+import dotenv from "dotenv";
+dotenv.config({ path: "${typeof env === "string" ? env : ".env"}" });
 export default {
   app: "candor.social",
   ${
