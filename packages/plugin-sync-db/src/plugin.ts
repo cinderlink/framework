@@ -144,12 +144,6 @@ export class SyncDBPlugin<
     }
 
     if (!syncDids.length) {
-      console.info(`${logPrefix} > no peers to sync to`, {
-        schemaId,
-        tableId,
-        syncTo,
-        peers,
-      });
       return;
     }
 
