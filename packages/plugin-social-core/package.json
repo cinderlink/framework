@@ -2,7 +2,7 @@
   "name": "@cinderlink/plugin-social-core",
   "description": "Core types and utilities for the Cinderlink social client plugin",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
