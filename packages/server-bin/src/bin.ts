@@ -11,6 +11,7 @@ import {
 import { HttpApi } from "ipfs-http-server";
 import { HttpGateway } from "ipfs-http-gateway";
 import events from "events";
+import dotenv from "dotenv";
 
 events.setMaxListeners(1024);
 
@@ -34,34 +35,72 @@ ${chalk.yellow("options")}:
   process.exit(0);
 }
 
+const initEnv = () => {
+  const envPath = argv.file || ".env";
+  const usePkey = argv.pkey;
+  const wallet = Wallet.createRandom();
+  console.log(
+    `initializing ${chalk.cyan("cinderlink")} .env at ${chalk.yellow(envPath)}`
+  );
+  fs.writeFileSync(
+    envPath,
+    usePkey
+      ? `CINDERLINK_PRIVATE_KEY=${wallet.privateKey}`
+      : `CINDERLINK_MNEMONIC=${wallet.mnemonic.phrase}`
+  );
+};
+
 if (command === "init") {
+  const usePkey = argv.pkey;
+  const env = argv.env;
+  if (env) {
+    initEnv();
+  }
+
   console.log(
     `initializing ${chalk.cyan("cinderlink")} at ${chalk.yellow(configPath)}`
   );
-  const wallet = Wallet.createRandom();
   fs.writeFileSync(
     configPath,
-    `export default {
-        app: "candor.social",
-        mnemonic: "${wallet.mnemonic?.phrase}",
-        accountNonce: 0,
-        plugins: [
-          ["@cinderlink/protocol"],
-          ["@cinderlink/plugin-social-server"],
-          ["@cinderlink/plugin-identity-server"],
-        ],
-        ipfs: {
-          config: {
-            Addresses: {
-              Swarm: ["/ip4/127.0.0.1/tcp/4001", "/ip4/127.0.0.1/tcp/4002/ws"],
-              API: ["/ip4/127.0.0.1/tcp/5001"],
-              Gateway: ["/ip4/127.0.0.1/tcp/8080"],
-            },
-            Bootstrap: [],
-          },
+    `import { SocialSyncConfig } from "@cinderlink/plugin-social-core";
+export default {
+  app: "candor.social",
+  ${
+    usePkey
+      ? `privateKey: ${JSON.stringify(process.env.CINDERLINK_PRIVATE_KEY)}`
+      : `mnemonic: ${JSON.stringify(process.env.CINDERLINK_MNEMONIC)}`
+  },
+  accountNonce: 0,
+  plugins: [
+    [
+      "@cinderlink/plugin-sync-db",
+      {
+        syncing: {
+          social: SocialSyncConfig,
         },
-      };`
+      },
+    ],
+    ["@cinderlink/plugin-social-server"],
+    ["@cinderlink/plugin-identity-server"],
+    ["@cinderlink/plugin-offline-sync-server"],
+  ],
+  ipfs: {
+    config: {
+      Addresses: {
+        Swarm: ["/ip4/127.0.0.1/tcp/4001", "/ip4/127.0.0.1/tcp/4002/ws"],
+        API: ["/ip4/127.0.0.1/tcp/5001"],
+        Gateway: ["/ip4/127.0.0.1/tcp/8080"],
+      },
+      Bootstrap: [],
+    },
+  },
+};`
   );
+  process.exit(0);
+}
+
+if (command === "env") {
+  initEnv();
   process.exit(0);
 }
 
@@ -69,7 +108,11 @@ if (command !== "start") {
   console.error(`unknown command ${chalk.yellow(command)}`);
   process.exit(1);
 }
+
 (async () => {
+  const env = argv.env;
+  dotenv.config({ path: env || ".env" });
+
   const resolvedConfigPath = path.resolve(process.cwd(), configPath);
 
   if (!fs.existsSync(resolvedConfigPath)) {
@@ -79,14 +122,23 @@ if (command !== "start") {
 
   console.info("resolved config", resolvedConfigPath);
   const { default: config } = await import(resolvedConfigPath);
-  if (!config.mnemonic) {
-    console.error(`no mnemonic found in ${chalk.yellow(configPath)}`);
+  let wallet: Wallet;
+
+  if (config.privateKey) {
+    wallet = new Wallet(config.privateKey);
+  } else if (config.mnemonic) {
+    wallet = Wallet.fromMnemonic(config.mnemonic);
+  } else {
+    console.error(
+      `no mnemonic or private key found in ${chalk.yellow(configPath)}`
+    );
     process.exit(1);
   }
 
-  const wallet = Wallet.fromMnemonic(config.mnemonic);
   if (!wallet) {
-    console.error(`invalid mnemonic in ${chalk.yellow(configPath)}`);
+    console.error(
+      `invalid mnemonic or private key in ${chalk.yellow(configPath)}`
+    );
     process.exit(1);
   }
 
