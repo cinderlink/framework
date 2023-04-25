@@ -102,7 +102,7 @@ export class SyncDBPlugin<
 
     this.client.pluginEvents.on(
       "/cinderlink/handshake/success",
-      this.onHandshakeSuccess
+      this.onHandshakeSuccess.bind(this)
     );
   }
 
