@@ -1,10 +1,12 @@
 import {
+  SocialClientEvents,
   SocialComment,
   SocialPost,
   SocialReaction,
 } from "@cinderlink/plugin-social-core";
 import { OfflineSyncClientPluginInterface } from "@cinderlink/plugin-offline-sync-core";
 import SocialClientPlugin from "../plugin";
+import { IncomingPubsubMessage } from "@cinderlink/core-types";
 
 export class SocialPosts {
   constructor(private plugin: SocialClientPlugin) {}
@@ -42,6 +44,12 @@ export class SocialPosts {
       .catch(() => {});
 
     return saved as SocialPost;
+  }
+
+  async onCreate(
+    message: IncomingPubsubMessage<SocialClientEvents, "/social/posts/create">
+  ) {
+    console.info("received post", { message });
   }
 
   async getPost(postUid: string) {

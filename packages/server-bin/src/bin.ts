@@ -166,8 +166,17 @@ if (command !== "start") {
             console.info(`importing plugin from ${chalk.yellow(pathname)}`);
             const Plugin = await import(pathname);
             return [Plugin.default, options];
+          } else {
+            console.error(
+              chalk.red(
+                `plugin ${chalk.yellow(pathname)} not found at ${chalk.yellow(
+                  dirname
+                )}`
+              )
+            );
+
+            process.exit(1);
           }
-          return undefined;
         }
       )
     )

@@ -58,7 +58,8 @@ export class SocialUsers {
     });
 
     this.plugin.client.on("/peer/disconnect", async (peer: Peer) => {
-      if (peer.role === "peer") {
+      console.info(`plugin/social/client > peer:disconnect`, peer);
+      if (peer.role === "peer" && peer.did) {
         await this.setUserStatus(peer.did as string, "offline");
       }
     });
@@ -100,7 +101,15 @@ export class SocialUsers {
   async updateUserStatuses() {
     const peers = this.plugin.client.peers
       .getPeers()
-      .filter((p) => p.did && p.connected);
+      .filter((p) => p.did && p.connected && p.authenticated);
+
+    if (!peers?.length) {
+      await this.plugin
+        .table<SocialUser>("users")
+        .query()
+        .update({ status: "offline" })
+        .execute();
+    }
 
     await this.plugin
       .table<SocialUser>("users")
@@ -137,12 +146,9 @@ export class SocialUsers {
   }
 
   async setUserStatus(did: string, status: SocialUserStatus) {
-    await this.plugin
-      .table<SocialUser>("users")
-      .query()
-      .where("did", "=", did)
-      .update({ status, updatedAt: Date.now() })
-      .execute();
+    const table = this.plugin.table<SocialUser>("users");
+    console.info(`plugin/social/client > setUserStatus`, did, status);
+    await table.query().where("did", "=", did).update({ status }).execute();
   }
 
   async announce(to: string | undefined = undefined) {
@@ -401,7 +407,7 @@ export class SocialUsers {
       message.payload.did,
       message.payload.address,
       message.payload.addressVerification
-    );
+    ).catch(() => undefined);
     if (!verified) {
       console.warn(
         `plugin/social/client > received secial announce message from peer with invalid address verification (did: ${message.peer.did})`,

@@ -93,10 +93,11 @@ export interface CinderlinkClientInterface<
   unsubscribe(topic: keyof PluginEvents["subscribe"]): Promise<void>;
 
   publish<
-    Topic extends keyof PluginEvents["publish"] = keyof PluginEvents["publish"]
+    Events extends PluginEventDef = PluginEvents,
+    Topic extends keyof Events["publish"] = keyof Events["publish"]
   >(
     topic: Topic,
-    message: PluginEvents["publish"][Topic],
+    message: Events["publish"][Topic],
     options?: EncodingOptions
   ): Promise<void>;
 

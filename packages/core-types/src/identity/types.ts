@@ -37,3 +37,14 @@ export interface IdentityResolved {
   cid: string | undefined;
   document: IdentityDocument | undefined;
 }
+
+export interface PeerDisconnectMessage {
+  peerId: string;
+  did: string;
+  reason: string;
+}
+
+export interface PeerConnectMessage {
+  peerId: string;
+  did: string;
+}

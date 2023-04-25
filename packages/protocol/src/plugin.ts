@@ -267,9 +267,6 @@ export class CinderlinkProtocolPlugin<
       }, data: `,
       event.payload
     );
-    if ((topic as string).includes("sync")) {
-      console.debug("sync", event.payload);
-    }
     await this.client.p2p.emit(
       topic as keyof ProtocolEvents["receive"],
       event as any

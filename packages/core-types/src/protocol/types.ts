@@ -127,6 +127,10 @@ export interface ProtocolEvents<
     "/cinderlink/handshake/success": HandshakeSuccess;
     "/cinderlink/handshake/error": HandshakeError;
   };
+  publish: {
+    "/cinderlink/peer/connect": Peer;
+    "/cinderlink/peer/disconnect": Peer;
+  };
   emit: {
     "/cinderlink/handshake/success": Peer;
   } & {

@@ -31,7 +31,6 @@ export async function createServer({
   });
   await Promise.all(
     plugins.map(async ([Plugin, pluginOptions]) => {
-      console.info("adding plugin", Plugin);
       await client.addPlugin(new Plugin(client, pluginOptions));
     })
   );

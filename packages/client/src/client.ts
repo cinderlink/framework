@@ -60,7 +60,9 @@ export class CinderlinkClient<
   public peers: PeerStoreInterface = new Peerstore();
   public subscriptions: string[] = [];
 
-  public pubsub: Emittery<SubscribeEvents<PluginEvents>> = new Emittery();
+  public pubsub: Emittery<
+    SubscribeEvents<PluginEvents & CinderlinkClientEvents>
+  > = new Emittery();
   public p2p: Emittery<ReceiveEvents<PluginEvents & CinderlinkClientEvents>> =
     new Emittery();
 
@@ -170,24 +172,17 @@ export class CinderlinkClient<
         peer = this.peers.getPeer(peerIdString);
       }
 
-      if (!peer.connected) {
-        await this.onConnect(peerId);
-      }
+      await this.onPeerConnect(peer);
     });
 
     this.ipfs.libp2p.addEventListener("peer:disconnect", (connection) => {
       const peerId = connection.detail.remotePeer.toString();
-      if (!this.peers.hasPeer(peerId)) return;
+      if (!this.peers.hasPeer(peerId)) {
+        console.info(`client > peer:disconnect > peer not found`, peerId);
+        return;
+      }
       const peer = this.peers.getPeer(peerId);
-      console.info(`client > peer:disconnect`, peer);
-      this.emit("/peer/disconnect", peer);
-      this.peers.updatePeer(peerId, {
-        connected: false,
-        authenticated: false,
-        authenticatedAt: undefined,
-        authenticatedWith: false,
-        authenticatedWithAt: undefined,
-      });
+      return this.onPeerDisconnect(peer);
     });
 
     this.ipfs.libp2p.pubsub.addEventListener("subscription-change", () => {
@@ -199,12 +194,32 @@ export class CinderlinkClient<
     console.info("starting protocol plugin");
     await this.startPlugin(protocol.id);
     this.connectToNodes();
+
     console.info("loading");
     await this.load();
     this.nodeReconnectTimer = setInterval(
       this.connectToNodes.bind(this),
       15000
     );
+
+    await Promise.all([
+      this.subscribe("/peer/connect"),
+      this.subscribe("/peer/disconnect"),
+    ]);
+
+    this.pubsub.on("/peer/connect", (message) => {
+      console.info("client/peer -> received pubsub connect", message);
+      if (message.peer) {
+        this.onPeerConnect(message.peer);
+      }
+    });
+
+    this.pubsub.on("/peer/disconnect", (message) => {
+      console.info("client/peer -> received pubsub disconnect", message);
+      if (message.peer) {
+        this.onPeerDisconnect(message.peer);
+      }
+    });
 
     console.info(
       `plugins > ${
@@ -219,9 +234,42 @@ export class CinderlinkClient<
       })
     );
 
+    console.info("client/peer -> sending connect");
+    await this.publish<CinderlinkClientEvents, "/peer/connect">(
+      "/peer/connect",
+      {
+        did: this.id,
+        peerId: this.peerId.toString(),
+      }
+    );
+
     console.info(`client > ready`);
     this.running = true;
     this.emit("/client/ready", {});
+  }
+
+  async onPeerConnect(peer: Peer) {
+    console.info(`client > peer:connect`, peer);
+    this.emit("/peer/connect", peer);
+    this.peers.updatePeer(peer.peerId.toString(), {
+      connected: true,
+      authenticated: false,
+      authenticatedAt: undefined,
+      authenticatedWith: false,
+      authenticatedWithAt: undefined,
+    });
+  }
+  async onPeerDisconnect(peer: Peer) {
+    console.info(`client > peer:disconnect`, peer);
+    await this.peers.updatePeer(peer.peerId.toString(), {
+      connected: false,
+      authenticated: false,
+      authenticatedAt: undefined,
+      authenticatedWith: false,
+      authenticatedWithAt: undefined,
+    });
+    console.info(`client > peer:disconnect, emitting /peer/disconnect`, peer);
+    await this.emit("/peer/disconnect", peer);
   }
 
   async connectToNodes() {
@@ -399,13 +447,6 @@ export class CinderlinkClient<
     await this.ipfs.swarm.connect(peer.peerId);
   }
 
-  async onConnect(peerId: PeerId) {
-    const peer = this.peers.getPeer(peerId.toString());
-    console.info(`peer/connect > connected to ${peerId.toString()}`, peer);
-    this.peers.updatePeer(peerId.toString(), { connected: true });
-    this.emit(`/peer/connect`, peer);
-  }
-
   async onPubsubMessage<Encoding extends EncodingOptions = EncodingOptions>(
     evt: CustomEvent
   ) {
@@ -417,7 +458,9 @@ export class CinderlinkClient<
       >
     >;
     const peerId = message.detail.from;
-    if (peerId === this.ipfs.libp2p.peerId) return;
+    if (peerId === this.ipfs.libp2p.peerId) {
+      return;
+    }
 
     let peer = this.peers.getPeer(peerId.toString());
     if (!peer) {
@@ -455,6 +498,7 @@ export class CinderlinkClient<
       }
     }
 
+    console.info(`pubsub/in > ${incoming.topic as string}`, incoming);
     this.pubsub.emit(incoming.topic, incoming);
   }
 
@@ -505,6 +549,11 @@ export class CinderlinkClient<
       await this.plugins.cinderlink.protocolHandlers[
         peer.peerId.toString()
       ].buffer.push(json.encode({ ...message, ...encoded }));
+    } else {
+      console.warn(
+        `p2p/out > no protocol handler for peer ${peerId}, cannot send message`,
+        message
+      );
     }
   }
 
@@ -515,20 +564,30 @@ export class CinderlinkClient<
   }
 
   async stop() {
+    if (!this.running) return;
     console.info(`client/stop > shutting down...`);
-    // await this.save();
-    await Promise.all(
-      Object.values(this.plugins).map(async (plugin) => {
-        await plugin.stop?.();
-        Object.entries(plugin.pubsub).forEach(([topic, handler]) => {
-          this.unsubscribe(topic);
-          this.pubsub.off(topic, (handler as PluginEventHandler).bind(plugin));
-        });
-      })
-    );
-
     this.running = false;
-    await this.ipfs.stop().catch(() => {});
+
+    console.info(`client/peer > publishing disconnect event`);
+    await Promise.all([
+      this.publish<CinderlinkClientEvents, "/peer/disconnect">(
+        "/peer/disconnect",
+        {
+          did: this.id,
+          peerId: this.peerId?.toString() || "",
+          reason: "client shutting down",
+        }
+      ),
+
+      this.save(),
+      Promise.all(
+        Object.values(this.plugins).map(async (plugin) => {
+          await plugin.stop?.();
+        })
+      ),
+    ]).then(async () => {
+      await this.ipfs.stop().catch(() => {});
+    });
   }
 
   get id() {
@@ -550,15 +609,16 @@ export class CinderlinkClient<
   }
 
   async publish<
-    K extends keyof PluginEvents["publish"] = keyof PluginEvents["publish"]
+    P extends PluginEventDef = PluginEventDef,
+    K extends keyof P["publish"] = keyof P["publish"]
   >(
     topic: K,
-    message: PluginEvents["publish"][K],
+    message: P["publish"][K],
     options: EncodingOptions = { sign: false, encrypt: false }
   ) {
     const encoded = await encodePayload<
-      PluginEvents["publish"][K] extends string | Record<string, unknown>
-        ? PluginEvents["publish"][K]
+      P["publish"][K] extends string | Record<string, unknown>
+        ? P["publish"][K]
         : never,
       typeof options
     >(message, { ...options, did: this.did });

@@ -76,9 +76,14 @@ export class SocialServerPlugin<
 
   pubsub = {
     "/social/users/announce": this.onAnnounce,
+    "/social/posts/create": this.onPostCreate,
+    "/social/connections/create": this.onConnectionCreate,
   };
 
   events = {};
+
+  async onPostCreate() {}
+  async onConnectionCreate() {}
 
   get db() {
     const schema = this.client.getSchema("social");
@@ -180,7 +185,7 @@ export class SocialServerPlugin<
       message.peer.did,
       message.payload.address,
       message.payload.addressVerification
-    );
+    ).catch(() => undefined);
     if (!verified) {
       console.warn(
         `${logPrefix} > received social announce message with invalid peer address verification`

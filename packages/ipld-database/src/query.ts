@@ -400,6 +400,9 @@ export class TableQuery<
                 match
               );
             });
+            if (this.terminator === "update") {
+              this.table.emit("/record/updated", match);
+            }
           } else {
             // console.warn(`No update function or values provided to update`);
           }
@@ -523,7 +526,6 @@ export class TableQuery<
       // console.info(`table/${this.table.tableId}/query > unlocking table`);
       this.table.unlock();
       if (this.terminator === "delete") {
-        console.log("emitting delete event");
         this.table.emit("/record/deleted", {} as Row);
       }
     }
