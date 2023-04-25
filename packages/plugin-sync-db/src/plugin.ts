@@ -387,7 +387,7 @@ export class SyncDBPlugin<
         if (!data.updatedAt) {
           data.updatedAt = Date.now();
         }
-        // console.info(`${logPrefix} > saving row`, row.uid, data);
+        console.info(`${logPrefix} > saving row`, row.uid, data);
         await table.upsert({ uid: row.uid }, data).catch(() => {});
       }
     }

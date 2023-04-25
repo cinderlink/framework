@@ -8,6 +8,8 @@ import {
   IdentityResolveResponse,
   IdentitySetRequest,
   IdentitySetResponse,
+  PeerConnectMessage,
+  PeerDisconnectMessage,
 } from "../identity/types";
 import { IncomingPubsubMessage } from "../pubsub";
 import { ProtocolRequest } from "../protocol";
@@ -35,6 +37,10 @@ export interface CinderlinkClientEvents<
     "/identity/resolve/response": IdentityResolveResponse;
     "/identity/set/response": IdentitySetResponse;
   };
+  publish: {
+    "/peer/connect": PeerConnectMessage;
+    "/peer/disconnect": PeerDisconnectMessage;
+  }
   emit: {
     "/client/ready": ProtocolRequest;
     "/peer/connect": Peer;

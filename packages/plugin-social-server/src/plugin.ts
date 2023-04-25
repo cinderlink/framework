@@ -180,7 +180,7 @@ export class SocialServerPlugin<
       message.peer.did,
       message.payload.address,
       message.payload.addressVerification
-    );
+    ).catch(() => undefined);
     if (!verified) {
       console.warn(
         `${logPrefix} > received social announce message with invalid peer address verification`

@@ -185,7 +185,6 @@ export class Table<
         .returning()
         .execute()
     ).first() as Row;
-    this.emit("/record/updated", updated);
     cache.invalidateTable(this.tableId);
     return updated;
   }
