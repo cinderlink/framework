@@ -66,6 +66,10 @@ export class SocialClientPlugin<
 
     this.pubsub = {
       "/social/users/announce": this.users.onAnnounce.bind(this.users),
+      "/social/posts/create": this.posts.onCreate.bind(this.posts),
+      "/social/connections/create": this.connections.onCreate.bind(
+        this.connections
+      ),
     };
 
     this.p2p = {

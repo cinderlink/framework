@@ -1,8 +1,10 @@
 import {
+  SocialClientEvents,
   SocialConnection,
   SocialConnectionFilter,
 } from "@cinderlink/plugin-social-core";
 import SocialClientPlugin from "../plugin";
+import { IncomingPubsubMessage } from "@cinderlink/core-types";
 
 const logPrefix = `plugin/social/client`;
 
@@ -31,6 +33,15 @@ export class SocialConnections {
       connection
     );
     await this.sendConnection(stored);
+  }
+
+  async onCreate(
+    message: IncomingPubsubMessage<
+      SocialClientEvents,
+      "/social/connections/create"
+    >
+  ) {
+    console.info("received connection", { message });
   }
 
   async sendConnection(connection: SocialConnection) {

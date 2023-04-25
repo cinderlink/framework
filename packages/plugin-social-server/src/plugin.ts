@@ -76,9 +76,14 @@ export class SocialServerPlugin<
 
   pubsub = {
     "/social/users/announce": this.onAnnounce,
+    "/social/posts/create": this.onPostCreate,
+    "/social/connections/create": this.onConnectionCreate,
   };
 
   events = {};
+
+  async onPostCreate() {}
+  async onConnectionCreate() {}
 
   get db() {
     const schema = this.client.getSchema("social");

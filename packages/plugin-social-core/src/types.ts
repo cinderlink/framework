@@ -160,9 +160,13 @@ export interface SocialClientEvents extends PluginEventDef {
   };
   publish: {
     "/social/users/announce": Partial<SocialUser>;
+    "/social/posts/create": SocialPost;
+    "/social/connections/create": SocialConnection;
   };
   subscribe: {
     "/social/users/announce": Partial<SocialUser>;
+    "/social/posts/create": SocialPost;
+    "/social/connections/create": SocialConnection;
   };
   emit: {};
 }
