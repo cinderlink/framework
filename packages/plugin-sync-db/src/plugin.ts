@@ -133,7 +133,7 @@ export class SyncDBPlugin<
       .limit(1)
       .select()
       .execute()
-      .then((r) => r.first().lastSyncedAt);
+      .then((r) => r.first()?.lastSyncedAt || 0);
 
     return Number(lastTableSync);
   }
