@@ -131,6 +131,7 @@ export class SyncDBPlugin<
       .where("did", "=", did)
       .orderBy("lastSyncedAt", "asc")
       .limit(1)
+      .select()
       .execute()
       .then((r) => r.first().lastSyncedAt);
 
