@@ -2,7 +2,7 @@
   "name": "@cinderlink/server-bin",
   "description": "Cinderlink server binary",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "main": "dist/bin.js",
   "type": "module",
   "module": "./dist/bin.js",
@@ -26,30 +26,25 @@
   },
   "dependencies": {
     "@cinderlink/server": "workspace:../server",
-    "dotenv": "^16.0.3",
-    "ipfs-http-gateway": "^0.13.0",
-    "ipfs-http-server": "^0.15.0",
-    "minimist": "^1.2.8"
-  },
-  "peerDependencies": {
-    "@cinderlink/client": "workspace:../client",
-    "@cinderlink/identifiers": "workspace:../identifiers",
-    "@cinderlink/plugin-identity-server": "workspace:../plugin-identity-server",
-    "@cinderlink/plugin-offline-sync-server": "workspace:../plugin-offline-sync-server",
-    "@cinderlink/plugin-social-server": "workspace:../plugin-social-server",
-    "@cinderlink/protocol": "workspace:../protocol"
-  },
-  "devDependencies": {
     "@cinderlink/identifiers": "workspace:../identifiers",
     "@cinderlink/plugin-identity-server": "workspace:../plugin-identity-server",
     "@cinderlink/plugin-offline-sync-server": "workspace:../plugin-offline-sync-server",
     "@cinderlink/plugin-social-server": "workspace:../plugin-social-server",
     "@cinderlink/protocol": "workspace:../protocol",
+    "chalk": "^5.2.0",
+    "dotenv": "^16.0.3",
+    "ethers": "^5.7.2",
+    "ipfs-http-gateway": "^0.13.0",
+    "ipfs-http-server": "^0.15.0",
+    "minimist": "^1.2.8"
+  },
+  "peerDependencies": {
+    "@cinderlink/client": "workspace:../client"
+  },
+  "devDependencies": {
     "@cinderlink/tsconfig": "workspace:../tsconfig",
     "@types/minimist": "^1.2.2",
     "@types/node": "^18.15.11",
-    "chalk": "^5.2.0",
-    "ethers": "^5.7.2",
     "ts-node": "^10.9.1",
     "tsup": "^6.7.0",
     "typescript": "^5.0.4",
