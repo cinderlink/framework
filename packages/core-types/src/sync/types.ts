@@ -102,18 +102,24 @@ export interface SyncFetchResponse {
   rows: TableRow[];
 }
 
+export interface SyncSinceRequest {
+  since: number;
+}
+
 export interface SyncPluginEvents extends PluginEventDef {
   send: {
     "/cinderlink/sync/save/request": SyncSaveRequest;
     "/cinderlink/sync/save/response": SyncSaveResponse;
     "/cinderlink/sync/fetch/request": SyncFetchRequest;
     "/cinderlink/sync/fetch/response": SyncFetchResponse;
+    "/cinderlink/sync/since": SyncSinceRequest;
   };
   receive: {
     "/cinderlink/sync/save/request": SyncSaveRequest;
     "/cinderlink/sync/save/response": SyncSaveResponse;
     "/cinderlink/sync/fetch/request": SyncFetchRequest;
     "/cinderlink/sync/fetch/response": SyncFetchResponse;
+    "/cinderlink/sync/since": SyncSinceRequest;
   };
   publish: {
     "/cinderlink/sync/save/request": SyncSaveRequest;

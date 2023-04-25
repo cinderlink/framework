@@ -5,6 +5,7 @@ import {
   EncodingOptions,
   IncomingP2PMessage,
   IncomingPubsubMessage,
+  Peer,
   PluginEventHandlers,
   PluginInterface,
   ProtocolEvents,
@@ -24,6 +25,23 @@ import { v4 as uuid } from "uuid";
 
 const logPrefix = `plugin/sync`;
 
+/**
+ * SyncDBPlugin
+ * @class
+ * @extends Emittery<SyncPluginEvents>
+ * @implements PluginInterface<SyncPluginEvents>
+ * @param client
+ * @param options
+ * @returns SyncDBPlugin
+ * @example
+ * ```typescript
+ * import { SyncDBPlugin } from "@cinderlink/plugin-sync";
+ * import { CinderlinkClient } from "@cinderlink/client";
+ *
+ * const client = new CinderlinkClient();
+ * const syncPlugin = new SyncDBPlugin(client);
+ * ```
+ */
 export class SyncDBPlugin<
     Client extends CinderlinkClientInterface<
       SyncPluginEvents & ProtocolEvents
@@ -50,6 +68,7 @@ export class SyncDBPlugin<
     "/cinderlink/sync/save/response": this.onSyncSaveResponse,
     "/cinderlink/sync/fetch/request": this.onSyncFetchRequest,
     "/cinderlink/sync/fetch/response": this.onSyncFetchResponse,
+    "/cinderlink/sync/since": this.onSyncSince,
   };
 
   constructor(
@@ -63,6 +82,10 @@ export class SyncDBPlugin<
   coreEvents = {};
   pluginEvents = {};
 
+  /**
+   * Start the plugin
+   * @returns void
+   */
   async start() {
     console.info(`${logPrefix} > initializing table watchers`);
     if (!this.client.hasSchema("sync")) {
@@ -76,8 +99,51 @@ export class SyncDBPlugin<
     this.syncTables = this.schema.getTable<SyncTablesRow>("tables");
 
     await this.syncRows.query().where("success", "=", true).delete().execute();
+
+    this.client.pluginEvents.on(
+      "/cinderlink/handshake/success",
+      this.onHandshakeSuccess
+    );
   }
 
+  /**
+   * On peer handshake success, notify the peer of the minimum lastSyncedAt value
+   * @param peer
+   */
+  async onHandshakeSuccess(peer: Peer) {
+    const minLastSyncedAt = await this.getMinLastSyncedAt(peer.did as string);
+    await this.client.send(peer.peerId.toString(), {
+      topic: "/cinderlink/sync/since",
+      payload: {
+        since: minLastSyncedAt,
+      },
+    });
+  }
+
+  /**
+   * Get the minimum lastSyncedAt value for a given DID
+   * @param did
+   * @returns number
+   */
+  async getMinLastSyncedAt(did: string) {
+    const lastTableSync = await this.syncTables
+      ?.query()
+      .where("did", "=", did)
+      .orderBy("lastSyncedAt", "asc")
+      .limit(1)
+      .execute()
+      .then((r) => r.first().lastSyncedAt);
+
+    return Number(lastTableSync);
+  }
+
+  /**
+   * Add a table sync configuration
+   * @param schemaId
+   * @param tableId
+   * @param config
+   * @returns void
+   */
   addTableSync<Row extends TableRow>(
     schemaId: string,
     tableId: string,
@@ -107,6 +173,12 @@ export class SyncDBPlugin<
     });
   }
 
+  /**
+   * Sync the pending rows for a given table
+   * @param schemaId
+   * @param tableId
+   * @returns
+   */
   async syncTableRows(schemaId: string, tableId: string) {
     const sync = this.syncing[schemaId]?.[tableId];
     if (!sync) {
@@ -162,6 +234,13 @@ export class SyncDBPlugin<
     }
   }
 
+  /**
+   * Get the timestamp of the last sync for a given table with a given peer
+   * @param schemaId
+   * @param tableId
+   * @param did
+   * @returns
+   */
   async getLastSyncedAt(
     schemaId: string,
     tableId: string,
@@ -178,6 +257,14 @@ export class SyncDBPlugin<
     return Number(table?.lastSyncedAt || 0);
   }
 
+  /**
+   * Fetch the rows of a given table that have been updated since a given timestamp
+   * @param schemaId
+   * @param tableId
+   * @param did
+   * @param rows
+   * @returns
+   */
   async fetchTableRows(
     schemaId: string,
     tableId: string,
@@ -234,6 +321,14 @@ export class SyncDBPlugin<
     }
   }
 
+  /**
+   * Send a request to a peer to fetch the rows of a given table that have been updated since a given timestamp
+   * @param schemaId
+   * @param tableId
+   * @param did
+   * @param since
+   * @returns
+   */
   async sendFetchRequest(
     schemaId: string,
     tableId: string,
@@ -257,6 +352,14 @@ export class SyncDBPlugin<
     });
   }
 
+  /**
+   * Send a request to a peer to save the given rows to a given table
+   * @param schemaId
+   * @param tableId
+   * @param did
+   * @param rows
+   * @returns
+   */
   async sendSyncRows(
     schemaId: string,
     tableId: string,
@@ -286,6 +389,11 @@ export class SyncDBPlugin<
     });
   }
 
+  /**
+   * Handle a sync save request from a peer
+   * @param message
+   * @returns
+   */
   async onSyncSaveRequest(
     message:
       | IncomingP2PMessage<
@@ -404,6 +512,11 @@ export class SyncDBPlugin<
     });
   }
 
+  /**
+   * Handle a sync save response from a peer
+   * @param message
+   * @returns
+   */
   async onSyncSaveResponse(
     message:
       | IncomingP2PMessage<
@@ -495,6 +608,11 @@ export class SyncDBPlugin<
     }
   }
 
+  /**
+   * Handle a sync fetch request from a peer
+   * @param message
+   * @returns
+   */
   async onSyncFetchRequest(
     message:
       | IncomingP2PMessage<
@@ -596,6 +714,11 @@ export class SyncDBPlugin<
     });
   }
 
+  /**
+   * Handle a sync fetch response from a peer
+   * @param message
+   * @returns
+   */
   async onSyncFetchResponse(
     message:
       | IncomingP2PMessage<
@@ -664,6 +787,50 @@ export class SyncDBPlugin<
         }
       );
     }
+  }
+
+  /**
+   * Handle a sync since request from a peer
+   * @param message
+   */
+  async onSyncSince(
+    message: IncomingP2PMessage<
+      SyncPluginEvents,
+      "/cinderlink/sync/since",
+      EncodingOptions
+    >
+  ) {
+    if (!message.peer.did) {
+      console.warn(
+        `${logPrefix} > received sync message from unauthenticated peer: \`${message.peer.peerId}\``
+      );
+      return;
+    }
+
+    const { since } = message.payload;
+    // update the last sync time of all tables for this peer
+    await this.syncTables
+      ?.query()
+      .where("did", "=", message.peer.did)
+      .update({
+        lastSyncedAt: since,
+      })
+      .execute();
+
+    // update the last sync time of all rows for this peer
+    await this.syncRows
+      ?.query()
+      .where("did", "=", message.peer.did)
+      .update({
+        lastSyncedAt: since,
+      })
+      .execute();
+
+    console.info(`${logPrefix} > updated sync times for peer`, {
+      peerId: message.peer.peerId,
+      did: message.peer.did,
+      since,
+    });
   }
 }
 export default SyncDBPlugin;
