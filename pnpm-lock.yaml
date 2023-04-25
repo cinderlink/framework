@@ -16,14 +16,14 @@ importers:
 
   apps/server-template:
     specifiers:
-      '@cinderlink/core-types': ^0.0.6
-      '@cinderlink/plugin-identity-server': workspace:^0.0.5
-      '@cinderlink/plugin-offline-sync-server': workspace:^0.0.7
-      '@cinderlink/plugin-social-core': workspace:^0.0.9
-      '@cinderlink/plugin-social-server': ^0.0.7
-      '@cinderlink/plugin-sync-db': workspace:^0.0.9
-      '@cinderlink/server-bin': ^0.0.11
-      '@cinderlink/tsconfig': workspace:^1.0.0
+      '@cinderlink/core-types': ^0.0.7
+      '@cinderlink/plugin-identity-server': ^0.0.6
+      '@cinderlink/plugin-offline-sync-server': ^0.0.7
+      '@cinderlink/plugin-social-core': ^0.0.9
+      '@cinderlink/plugin-social-server': ^0.0.8
+      '@cinderlink/plugin-sync-db': ^0.0.11
+      '@cinderlink/server-bin': ^0.0.13
+      '@cinderlink/tsconfig': ^1.0.0
       dotenv: ^16.0.3
       prettier: ^2.8.8
       tsup: ^6.7.0
@@ -33,12 +33,12 @@ importers:
       '@cinderlink/plugin-identity-server': link:../../packages/plugin-identity-server
       '@cinderlink/plugin-offline-sync-server': link:../../packages/plugin-offline-sync-server
       '@cinderlink/plugin-social-core': link:../../packages/plugin-social-core
-      '@cinderlink/plugin-social-server': 0.0.7_ld7h42d3hlimfz4wq7f5stjsyu
-      '@cinderlink/server-bin': 0.0.11_v44z2jrukcv2gtonbfbktn2zgm
+      '@cinderlink/plugin-social-server': link:../../packages/plugin-social-server
+      '@cinderlink/plugin-sync-db': link:../../packages/plugin-sync-db
+      '@cinderlink/server-bin': link:../../packages/server-bin
       dotenv: 16.0.3
     devDependencies:
-      '@cinderlink/core-types': 0.0.6
-      '@cinderlink/plugin-sync-db': link:../../packages/plugin-sync-db
+      '@cinderlink/core-types': 0.0.7
       '@cinderlink/tsconfig': link:../../packages/tsconfig
       prettier: 2.8.8
       tsup: 6.7.0_typescript@5.0.4
@@ -48,14 +48,14 @@ importers:
   apps/social-dapp:
     specifiers:
       '@cinderlink/client': ^0.0.12
-      '@cinderlink/core-types': ^0.0.7
+      '@cinderlink/core-types': ^0.0.8
       '@cinderlink/identifiers': ^0.0.3
       '@cinderlink/ipld-database': ^0.0.9
       '@cinderlink/plugin-offline-sync-client': ^0.0.7
       '@cinderlink/plugin-offline-sync-core': ^0.0.5
       '@cinderlink/plugin-social-client': ^0.0.11
       '@cinderlink/plugin-social-core': ^0.0.9
-      '@cinderlink/plugin-sync-db': ^0.0.9
+      '@cinderlink/plugin-sync-db': ^0.0.10
       '@cinderlink/protocol': ^0.0.7
       '@cinderlink/ui-kit': ^0.0.21
       '@iconify-json/logos': ^1.1.25
@@ -109,7 +109,7 @@ importers:
       '@cinderlink/plugin-offline-sync-core': link:../../packages/plugin-offline-sync-core
       '@cinderlink/plugin-social-client': link:../../packages/plugin-social-client
       '@cinderlink/plugin-social-core': link:../../packages/plugin-social-core
-      '@cinderlink/plugin-sync-db': link:../../packages/plugin-sync-db
+      '@cinderlink/plugin-sync-db': 0.0.10_vp66bdiekjny27lqhg7vi3xrk4
       '@cinderlink/protocol': link:../../packages/protocol
       '@cinderlink/ui-kit': link:../ui-kit
       '@iconify-json/logos': 1.1.25
@@ -271,7 +271,7 @@ importers:
       svelte-highlight: 7.2.1
       unocss: 0.51.8_vite@4.3.2
     devDependencies:
-      '@cinderlink/core-types': link:../../packages/core-types
+      '@cinderlink/core-types': 0.0.7_ajv@8.12.0+emittery@1.0.1
       '@cinderlink/protocol': link:../../packages/protocol
       '@esbuild-plugins/node-globals-polyfill': 0.2.3
       '@iconify-json/logos': 1.1.25
@@ -870,22 +870,22 @@ importers:
       typescript: ^5.0.4
       vitest: ^0.30.1
     dependencies:
-      '@cinderlink/server': link:../server
-      dotenv: 16.0.3
-      ipfs-http-gateway: 0.13.0
-      ipfs-http-server: 0.15.0
-      minimist: 1.2.8
-    devDependencies:
       '@cinderlink/identifiers': link:../identifiers
       '@cinderlink/plugin-identity-server': link:../plugin-identity-server
       '@cinderlink/plugin-offline-sync-server': link:../plugin-offline-sync-server
       '@cinderlink/plugin-social-server': link:../plugin-social-server
       '@cinderlink/protocol': link:../protocol
+      '@cinderlink/server': link:../server
+      chalk: 5.2.0
+      dotenv: 16.0.3
+      ethers: 5.7.2
+      ipfs-http-gateway: 0.13.0
+      ipfs-http-server: 0.15.0
+      minimist: 1.2.8
+    devDependencies:
       '@cinderlink/tsconfig': link:../tsconfig
       '@types/minimist': 1.2.2
       '@types/node': 18.15.11
-      chalk: 5.2.0
-      ethers: 5.7.2
       ts-node: 10.9.1_bhanhq442dy43ncydsavgi4jfi
       tsup: 6.7.0_pyqfhkbboucpxgvrs7ocxwodkm
       typescript: 5.0.4
@@ -2490,8 +2490,8 @@ packages:
       prettier: 2.8.8
     dev: true
 
-  /@cinderlink/core-types/0.0.6:
-    resolution: {integrity: sha512-bvhZYPOfGy8stmhTjgE4G1Q4kYDq4jq12mNfLpXL8crRHXg3sibdhzqeK8Vfi8HiEo28aOX4mpARlQxB6YlhaA==}
+  /@cinderlink/core-types/0.0.7:
+    resolution: {integrity: sha512-HedDlM/wDqErCNpiA8OOdFK+I9q3zs7h4sg3ZCon6dtxEXB/MabqH9TKjaEw9+Yy2WmzObpAsp2xaPFehlQVtw==}
     peerDependencies:
       ajv: ^8.12.0
       did-jwt: ^6.11.0
@@ -2503,53 +2503,35 @@ packages:
       multiformats: ^11.0.2
     dev: true
 
-  /@cinderlink/plugin-social-server/0.0.7_ld7h42d3hlimfz4wq7f5stjsyu:
-    resolution: {integrity: sha512-o2LWZyStE51FQc0AQT/vCO8edW6Dk0o/rvCCAE3GaNTW7W1x/9+R6hTJitm7SKEX7vbm374caVjqV/svqyEPoQ==}
+  /@cinderlink/core-types/0.0.7_ajv@8.12.0+emittery@1.0.1:
+    resolution: {integrity: sha512-HedDlM/wDqErCNpiA8OOdFK+I9q3zs7h4sg3ZCon6dtxEXB/MabqH9TKjaEw9+Yy2WmzObpAsp2xaPFehlQVtw==}
     peerDependencies:
-      '@cinderlink/identifiers': 0.0.2
-      '@cinderlink/plugin-social-client': 0.0.9
-      '@cinderlink/plugin-social-core': 0.0.8
-      '@cinderlink/plugin-sync-db': 0.0.8
+      ajv: ^8.12.0
       did-jwt: ^6.11.0
       dids: ^3.4.0
+      emittery: ^1.0.1
+      ipfs-core-types: ^0.13.0
+      libp2p: ^0.41.0
+      minisearch: ^6.0.1
+      multiformats: ^11.0.2
     dependencies:
-      '@cinderlink/plugin-social-core': link:packages/plugin-social-core
-      '@cinderlink/plugin-sync-db': link:packages/plugin-sync-db
-    dev: false
+      ajv: 8.12.0
+      emittery: 1.0.1
+    dev: true
 
-  /@cinderlink/server-bin/0.0.11_v44z2jrukcv2gtonbfbktn2zgm:
-    resolution: {integrity: sha512-bpEEMYmJh2/Dj7nlMx4dTaCNZm5Dr/6HCb2kOnWviydJ5+e7M5cMn/rrV7c8WkK17oC1en5ohnjTsyrSlehF+Q==}
-    hasBin: true
+  /@cinderlink/plugin-sync-db/0.0.10_vp66bdiekjny27lqhg7vi3xrk4:
+    resolution: {integrity: sha512-ZuB+OKINR6B3+3gJ3TRZJvXGG7tN8gnKdBCWT+be3Xltzjav8hKe3jmlqgL2f7EecZ6lpF5au5USCAlNekyuHA==}
     peerDependencies:
-      '@cinderlink/client': 0.0.11
       '@cinderlink/identifiers': 0.0.3
-      '@cinderlink/plugin-identity-server': 0.0.5
-      '@cinderlink/plugin-offline-sync-server': 0.0.7
-      '@cinderlink/plugin-social-server': 0.0.7
-      '@cinderlink/protocol': 0.0.6
+      '@cinderlink/ipld-database': 0.0.9
+      '@cinderlink/test-adapters': 0.0.6
+      emittery: ^1.0.1
+      multiformats: ^11.0.2
     dependencies:
-      '@cinderlink/plugin-identity-server': link:packages/plugin-identity-server
-      '@cinderlink/plugin-offline-sync-server': link:packages/plugin-offline-sync-server
-      '@cinderlink/plugin-social-server': 0.0.7_ld7h42d3hlimfz4wq7f5stjsyu
-      '@cinderlink/server': 0.0.8
-      dotenv: 16.0.3
-      ipfs-http-gateway: 0.13.0
-      ipfs-http-server: 0.15.0
-      minimist: 1.2.8
-    transitivePeerDependencies:
-      - dids
-      - encoding
-      - ipfs-core
-      - supports-color
-    dev: false
-
-  /@cinderlink/server/0.0.8:
-    resolution: {integrity: sha512-hLw3Jts9i43QgtyHGuJkct7loW0PNrnLQc2bLKIwgf+sPb6XLJMhM8m1MNbb2zChsF9oDCNJW0sWI6tRSGxkMw==}
-    peerDependencies:
-      '@cinderlink/client': 0.0.11
-      dids: ^3.4.0
-      ipfs-core: ^0.18.0
-    dev: false
+      '@cinderlink/identifiers': link:packages/identifiers
+      '@cinderlink/ipld-database': link:packages/ipld-database
+      multiformats: 11.0.2
+    dev: true
 
   /@coinbase/wallet-sdk/3.6.6:
     resolution: {integrity: sha512-vX+epj/Ttjo7XRwlr3TFUUfW5GTRMvORpERPwiu7z2jl3DSVL4rXLmHt5y6LDPlUVreas2gumdcFbu0fLRG9Jg==}
@@ -7187,16 +7169,6 @@ packages:
       load-tsconfig: 0.2.5
     dev: true
 
-  /bundle-require/4.0.1_esbuild@0.17.17:
-    resolution: {integrity: sha512-9NQkRHlNdNpDBGmLpngF3EFDcwodhMUuLz9PaWYciVcQF9SE4LFjM2DB/xV1Li5JiuDMv7ZUWuC3rGbqR0MAXQ==}
-    engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
-    peerDependencies:
-      esbuild: '>=0.17'
-    dependencies:
-      esbuild: 0.17.17
-      load-tsconfig: 0.2.5
-    dev: true
-
   /bundle-require/4.0.1_esbuild@0.17.18:
     resolution: {integrity: sha512-9NQkRHlNdNpDBGmLpngF3EFDcwodhMUuLz9PaWYciVcQF9SE4LFjM2DB/xV1Li5JiuDMv7ZUWuC3rGbqR0MAXQ==}
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
@@ -7374,7 +7346,6 @@ packages:
   /chalk/5.2.0:
     resolution: {integrity: sha512-ree3Gqw/nazQAPuJJEy+avdl7QfZMcUvmHIKgEZkGL+xOBzRvup5Hxo6LHuMceSxOabuJLJm5Yp/92R9eMmMvA==}
     engines: {node: ^12.17.0 || ^14.13 || >=16.0.0}
-    dev: true
 
   /change-case/4.1.2:
     resolution: {integrity: sha512-bSxY2ws9OtviILG1EiY5K7NNxkqg/JnRnFxLtKQ96JaviiIxi7djMrSd0ECT9AC+lttClmYwKw53BWpOMblo7A==}
@@ -14945,17 +14916,17 @@ packages:
       typescript:
         optional: true
     dependencies:
-      bundle-require: 4.0.1_esbuild@0.17.17
+      bundle-require: 4.0.1_esbuild@0.17.18
       cac: 6.7.14
       chokidar: 3.5.3
       debug: 4.3.4
-      esbuild: 0.17.17
+      esbuild: 0.17.18
       execa: 5.1.1
       globby: 11.1.0
       joycon: 3.1.1
       postcss-load-config: 3.1.4_ts-node@10.9.1
       resolve-from: 5.0.0
-      rollup: 3.20.6
+      rollup: 3.21.0
       source-map: 0.8.0-beta.0
       sucrase: 3.32.0
       tree-kill: 1.2.2
