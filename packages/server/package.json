@@ -22,9 +22,7 @@
     "dist"
   ],
   "dependencies": {
-    "@cinderlink/client": "workspace:../client",
-    "ipfs-http-gateway": "^0.13.0",
-    "ipfs-http-server": "^0.15.0"
+    "@cinderlink/client": "workspace:../client"
   },
   "devDependencies": {
     "@cinderlink/core-types": "workspace:../core-types",

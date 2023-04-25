@@ -16,15 +16,15 @@ importers:
 
   apps/server-template:
     specifiers:
-      '@cinderlink/core-types': ^0.0.8
-      '@cinderlink/identifiers': ^0.0.4
-      '@cinderlink/plugin-identity-server': ^0.0.6
-      '@cinderlink/plugin-offline-sync-server': ^0.0.8
-      '@cinderlink/plugin-social-core': ^0.0.9
-      '@cinderlink/plugin-social-server': ^0.0.8
-      '@cinderlink/plugin-sync-db': ^0.0.12
-      '@cinderlink/server-bin': ^0.0.13
-      '@cinderlink/tsconfig': ^1.0.0
+      '@cinderlink/core-types': workspace:^0.0.8
+      '@cinderlink/identifiers': workspace:^0.0.4
+      '@cinderlink/plugin-identity-server': workspace:^0.0.6
+      '@cinderlink/plugin-offline-sync-server': workspace:^0.0.8
+      '@cinderlink/plugin-social-core': workspace:^0.0.9
+      '@cinderlink/plugin-social-server': workspace:^0.0.8
+      '@cinderlink/plugin-sync-db': workspace:^0.0.14
+      '@cinderlink/server-bin': workspace:^0.0.14
+      '@cinderlink/tsconfig': workspace:^1.0.0
       dotenv: ^16.0.3
       prettier: ^2.8.8
       tsup: ^6.7.0
@@ -36,7 +36,7 @@ importers:
       '@cinderlink/plugin-offline-sync-server': link:../../packages/plugin-offline-sync-server
       '@cinderlink/plugin-social-core': link:../../packages/plugin-social-core
       '@cinderlink/plugin-social-server': link:../../packages/plugin-social-server
-      '@cinderlink/plugin-sync-db': 0.0.12_c6kp52i72ze6gm5cawereacj7y
+      '@cinderlink/plugin-sync-db': link:../../packages/plugin-sync-db
       '@cinderlink/server-bin': link:../../packages/server-bin
       dotenv: 16.0.3
     devDependencies:
@@ -833,15 +833,11 @@ importers:
       dids: ^4.0.0
       ipfs-core: ^0.18.0
       ipfs-core-types: ^0.14.0
-      ipfs-http-gateway: ^0.13.0
-      ipfs-http-server: ^0.15.0
       tsup: ^6.7.0
       typescript: ^5.0.4
       vitest: ^0.30.1
     dependencies:
       '@cinderlink/client': link:../client
-      ipfs-http-gateway: 0.13.0
-      ipfs-http-server: 0.15.0
     devDependencies:
       '@cinderlink/core-types': link:../core-types
       '@cinderlink/tsconfig': link:../tsconfig
@@ -2561,18 +2557,6 @@ packages:
       '@cinderlink/ipld-database': 0.0.9_a7djw42tgeocs24k3ebrgz3uci
       multiformats: 11.0.2
     dev: true
-
-  /@cinderlink/plugin-sync-db/0.0.12_c6kp52i72ze6gm5cawereacj7y:
-    resolution: {integrity: sha512-HW3y1rSlgyIBv3XnWWHbpjrmlff/e0Fp8VW5Elj1k4rEeFKUlvr/nkcuyv2l51VeUqR8tX6Yjq6IfW+jasAZ6w==}
-    peerDependencies:
-      '@cinderlink/identifiers': 0.0.4
-      '@cinderlink/ipld-database': 0.0.9
-      '@cinderlink/test-adapters': 0.0.6
-      emittery: ^1.0.1
-      multiformats: ^11.0.2
-    dependencies:
-      '@cinderlink/identifiers': link:packages/identifiers
-    dev: false
 
   /@coinbase/wallet-sdk/3.6.6:
     resolution: {integrity: sha512-vX+epj/Ttjo7XRwlr3TFUUfW5GTRMvORpERPwiu7z2jl3DSVL4rXLmHt5y6LDPlUVreas2gumdcFbu0fLRG9Jg==}
