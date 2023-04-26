@@ -45,7 +45,7 @@ export interface TableBlockInterface<
   violatesUniqueConstraints(row: Partial<Row>): Promise<boolean>;
   assertUniqueConstraints(row: Partial<Row>): Promise<void>;
   addRecord(row: Row): Promise<void>;
-  updateRecord(id: number, update: Partial<Row>): Promise<void>;
+  updateRecord(id: number, update: Partial<Row>): Promise<Row | undefined>;
   deleteRecord(id: number): Promise<void>;
   toJSON(): BlockData<Row>;
   serialize(): Promise<BlockData<Row> | undefined>;

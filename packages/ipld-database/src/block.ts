@@ -431,7 +431,10 @@ export class TableBlock<
     this.changed = true;
   }
 
-  async updateRecord(id: number, update: Partial<Row>) {
+  async updateRecord(
+    id: number,
+    update: Partial<Row>
+  ): Promise<Row | undefined> {
     this.table.assertValid(update);
     await this.assertUniqueConstraints(update as Row, id);
     const records = await this.records();
@@ -458,6 +461,7 @@ export class TableBlock<
     };
     this.cache.records = records;
     this.changed = true;
+    return records[id];
   }
 
   async deleteRecord(id: number) {
