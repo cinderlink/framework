@@ -394,14 +394,16 @@ export class TableQuery<
             )) {
               change[key as keyof Row] = value;
             }
-            await event.block.updateRecord(match.id, change).catch(() => {
-              console.error(
-                `table/${this.table.tableId}/update: failed to update record (unique key constraint violation)`,
-                match
-              );
-            });
+            const updated = await event.block
+              .updateRecord(match.id, change)
+              .catch(() => {
+                console.error(
+                  `table/${this.table.tableId}/update: failed to update record (unique key constraint violation)`,
+                  match
+                );
+              });
             if (this.terminator === "update") {
-              this.table.emit("/record/updated", match);
+              this.table.emit("/record/updated", updated as Row);
             }
           } else {
             // console.warn(`No update function or values provided to update`);
