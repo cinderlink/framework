@@ -2,7 +2,7 @@
   "name": "@cinderlink/plugin-social-client",
   "description": "Social client plugin for cinderlink enabling following and unfollowing of other users & posting of messages to the social network",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
