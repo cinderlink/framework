@@ -8,3 +8,4 @@ export * from "./sync";
 export * from "./database";
 export * from "./identity";
 export * from "./protocol";
+export * from "./logger";

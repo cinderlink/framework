@@ -21,6 +21,7 @@ import { SubscribeEvents } from "../pubsub";
 import { EncodingOptions, ProtocolEvents } from "../protocol";
 import { CinderlinkClientEvents } from "./types";
 import { FilesInterface } from "../files/interface";
+import { LoggerInterface } from "../logger";
 
 export interface CinderlinkClientInterface<
   PluginEvents extends PluginEventDef = {
@@ -38,6 +39,7 @@ export interface CinderlinkClientInterface<
   subscriptions: string[];
   relayAddresses: string[];
   pluginEvents: Emittery<PluginEvents["emit"]>;
+  logger: LoggerInterface;
 
   pubsub: Emittery<SubscribeEvents<PluginEvents>>;
   p2p: Emittery<ReceiveEvents<PluginEvents & CinderlinkClientEvents>>;

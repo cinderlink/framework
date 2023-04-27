@@ -38,7 +38,7 @@ export const SocialSyncConfig: Record<string, SyncConfig<any>> = {
     outgoingRateLimit: 5000,
   },
   chat_messages: {
-    syncInterval: 1000,
+    syncInterval: 3000,
     query(table: TableInterface<SocialChatMessage>, params) {
       return table
         .query()
