@@ -380,13 +380,18 @@ export class TableQuery<
         ) as UpdateInstruction<Row>;
         for (const match of matches) {
           if (updateInstruction.fn) {
-            const updated = updateInstruction.fn(match);
-            await event.block.updateRecord(match.id, updated).catch(() => {
-              console.error(
-                "Failed to update record (unique key constraint violation)",
-                match
-              );
-            });
+            const change = updateInstruction.fn(match);
+            const updated = await event.block
+              .updateRecord(match.id, change)
+              .catch(() => {
+                console.error(
+                  "Failed to update record (unique key constraint violation)",
+                  match
+                );
+              });
+            if (updated?.uid && this.terminator === "update") {
+              this.table.emit("/record/updated", updated as Row);
+            }
           } else if (updateInstruction.values) {
             const change = { ...match };
             for (const [key, value] of Object.entries(
@@ -402,7 +407,7 @@ export class TableQuery<
                   match
                 );
               });
-            if (this.terminator === "update") {
+            if (updated?.uid && this.terminator === "update") {
               this.table.emit("/record/updated", updated as Row);
             }
           } else {
