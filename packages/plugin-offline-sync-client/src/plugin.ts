@@ -25,7 +25,7 @@ import {
   OfflineSyncRecord,
 } from "@cinderlink/plugin-offline-sync-core";
 import { CinderlinkProtocolPlugin } from "@cinderlink/protocol";
-const logPurpose = `plugins/offline-sync-client`;
+const logPurpose = `plugin-offline-sync-client`;
 export class OfflineSyncClientPlugin<
     Client extends CinderlinkClientInterface<
       OfflineSyncClientEvents & ProtocolEvents

@@ -11,7 +11,7 @@ import {
 import { Schema } from "@cinderlink/ipld-database";
 import { IdentityServerEvents } from "./types";
 
-const logPurpose = `plugins/identity-server`;
+const logPurpose = `plugin-identity-server`;
 
 export type IdentityPinsRecord = {
   id: number;
