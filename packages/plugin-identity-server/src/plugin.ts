@@ -11,7 +11,7 @@ import {
 import { Schema } from "@cinderlink/ipld-database";
 import { IdentityServerEvents } from "./types";
 
-const logPrefix = `/plugin/identityServer`;
+const logPurpose = `plugins/identity-server`;
 
 export type IdentityPinsRecord = {
   id: number;
@@ -31,7 +31,7 @@ export class IdentityServerPlugin
     public options: Record<string, unknown> = {}
   ) {}
   async start() {
-    console.info(`${logPrefix}: social server plugin started`);
+    this.client.logger.info(logPurpose, "start: starting social server plugin");
     if (!this.client.hasSchema("identity")) {
       const schema = new Schema(
         "identity",
@@ -66,11 +66,14 @@ export class IdentityServerPlugin
       );
       await this.client.addSchema("identity", schema);
     } else {
-      console.info(`${logPrefix}: identity schema already exists`);
+      this.client.logger.info(
+        logPurpose,
+        "start: identity schema already exists"
+      );
     }
   }
   async stop() {
-    console.info(`${logPrefix}: social server plugin stopped`);
+    this.client.logger.info(logPurpose, "stop: social server plugin stopped");
   }
   p2p: ReceiveEventHandlers<IdentityServerEvents> = {
     "/identity/set/request": this.onSetRequest,
@@ -87,7 +90,10 @@ export class IdentityServerPlugin
     >
   ) {
     if (!message.peer.did) {
-      console.warn(`${logPrefix}/set: refusing unauthenticated peer`);
+      this.client.logger.warn(
+        logPurpose,
+        "onSetRequest: refusing unauthenticated peer"
+      );
       return this.client.send<IdentityServerEvents, "/identity/set/response">(
         message.peer.peerId.toString(),
         {
@@ -100,9 +106,9 @@ export class IdentityServerPlugin
         }
       );
     }
-
-    console.info(
-      `${logPrefix}/set: setting identity for peer`,
+    this.client.logger.info(
+      logPurpose,
+      "onSetRequest: setting identity for peer",
       message.payload
     );
 
@@ -116,7 +122,10 @@ export class IdentityServerPlugin
           { pinRoots: true }
         )
       );
-      console.info("import", { result, buffer });
+      this.client.logger.info(logPurpose, "onSetRequest: import", {
+        result,
+        buffer,
+      });
     }
 
     await this.client
@@ -141,7 +150,10 @@ export class IdentityServerPlugin
     >
   ) {
     if (!message.peer.did) {
-      console.warn(`${logPrefix}/resolve: refusing unauthenticated peer`);
+      this.client.logger.warn(
+        logPurpose,
+        "onResolveRequest: refusing unauthenticated peer"
+      );
       return this.client.send(message.peer.peerId.toString(), {
         topic: "/identity/resolve/response",
         payload: {
@@ -160,11 +172,12 @@ export class IdentityServerPlugin
       .execute()
       .then((r) => r.first());
 
-    console.info(
-      `${logPrefix}/resolve: resolving identity for peer`,
-      message.payload,
-      identity
+    this.client.logger.info(
+      logPurpose,
+      "onResolveRequest: resolving identity for peer",
+      { payload: message.payload, identity }
     );
+
     return this.client.send<CinderlinkClientEvents>(
       message.peer.peerId.toString(),
       {
