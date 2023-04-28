@@ -153,11 +153,6 @@ export const SocialSyncConfig: Record<string, SyncConfig<any>> = {
             ).filter((did) => !!did)
           : validPeers
       ) as string[];
-      client.logger.info("plugins", "social-core/syncTo: posts sync", {
-        syncPeers,
-        validPeers,
-        peers,
-      });
       return syncPeers;
     },
     async allowNewFrom() {

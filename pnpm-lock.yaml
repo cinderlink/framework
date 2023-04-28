@@ -20,12 +20,12 @@ importers:
       '@cinderlink/core-types': workspace:^0.0.9
       '@cinderlink/identifiers': workspace:^0.0.4
       '@cinderlink/ipld-database': workspace:^0.0.12
-      '@cinderlink/plugin-identity-server': ^0.0.6
+      '@cinderlink/plugin-identity-server': workspace:^0.0.7
       '@cinderlink/plugin-offline-sync-server': workspace:^0.0.8
-      '@cinderlink/plugin-social-core': ^0.0.9
-      '@cinderlink/plugin-social-server': ^0.0.8
-      '@cinderlink/plugin-sync-db': ^0.0.14
-      '@cinderlink/server-bin': ^0.0.14
+      '@cinderlink/plugin-social-core': workspace:^0.0.10
+      '@cinderlink/plugin-social-server': workspace:^0.0.9
+      '@cinderlink/plugin-sync-db': workspace:^0.0.15
+      '@cinderlink/server-bin': workspace:^0.0.16
       '@cinderlink/tsconfig': workspace:^1.0.0
       dotenv: ^16.0.3
       minisearch: ^6.0.1
@@ -37,12 +37,12 @@ importers:
       '@cinderlink/client': link:../../packages/client
       '@cinderlink/identifiers': link:../../packages/identifiers
       '@cinderlink/ipld-database': link:../../packages/ipld-database
-      '@cinderlink/plugin-identity-server': 0.0.6_vmflahpbnyad76uy54svi5sowe
+      '@cinderlink/plugin-identity-server': link:../../packages/plugin-identity-server
       '@cinderlink/plugin-offline-sync-server': link:../../packages/plugin-offline-sync-server
-      '@cinderlink/plugin-social-core': 0.0.9_t7frj4rboogxzyr2yybedutxmu
-      '@cinderlink/plugin-social-server': 0.0.8_gmjhpdxmmugaeps3roowm2ev54
-      '@cinderlink/plugin-sync-db': 0.0.14_5wc4bmngwrp2lkzhisjlgp27oe
-      '@cinderlink/server-bin': 0.0.14_jnq7zs34rsrezunlwtju3ifrt4
+      '@cinderlink/plugin-social-core': link:../../packages/plugin-social-core
+      '@cinderlink/plugin-social-server': link:../../packages/plugin-social-server
+      '@cinderlink/plugin-sync-db': link:../../packages/plugin-sync-db
+      '@cinderlink/server-bin': link:../../packages/server-bin
       dotenv: 16.0.3
       minisearch: 6.0.1
     devDependencies:
@@ -2528,350 +2528,6 @@ packages:
       prettier: 2.8.8
     dev: true
 
-  /@cinderlink/client/0.0.12_h5igeqqwkmk565wrrkosczxfbm:
-    resolution: {integrity: sha512-QgTcjZg/b5qboYbFAoKhiCEQinQrkxyKcHsDtg9GUXFlE9AgOE6L9a+7QqhyNwlKFtETSp0YillHRx/PmEop8Q==}
-    peerDependencies:
-      '@chainsafe/libp2p-gossipsub': ^5.3.0
-      '@chainsafe/libp2p-noise': ^10.2.0
-      '@libp2p/crypto': ^1.0.10
-      '@libp2p/peer-id': ^2.0.1
-      '@libp2p/peer-id-factory': ^2.0.1
-      '@libp2p/websockets': ^5.0.2
-      '@multiformats/multiaddr': ^11.1.4
-      '@stablelib/ed25519': ^1.0.3
-      libp2p: ^0.41.0
-    dependencies:
-      '@cinderlink/core-types': 0.0.7_v333zsvpnr5ploif6wep444bwu
-      '@cinderlink/identifiers': 0.0.3_zlcrqzy4mcwumivlw3o24hptja
-      '@cinderlink/ipld-database': 0.0.9_7kimywh43tyyznsfpqquk73wua
-      '@cinderlink/protocol': 0.0.7_upl5co6jhstwbsgkdmrulypj4a
-      '@libp2p/mplex': 8.0.1
-      ajv: 8.12.0
-      did-jwt: 7.0.0
-      did-resolver: 4.1.0
-      dids: 4.0.1
-      emittery: 1.0.1
-      ipfs-core: 0.18.0
-      it-length-prefixed: 9.0.1
-      it-map: 3.0.2
-      it-pipe: 3.0.1
-      key-did-provider-ed25519: 3.0.1
-      key-did-resolver: 3.0.0
-      localforage: 1.10.0
-      microbundle: 0.15.1
-      multiformats: 11.0.2
-      uint8arrays: 4.0.3
-      uuid: 9.0.0
-    transitivePeerDependencies:
-      - '@types/babel__core'
-      - bufferutil
-      - did
-      - encoding
-      - ethers
-      - ipfs-core-types
-      - minisearch
-      - prom-client
-      - supports-color
-      - ts-node
-      - utf-8-validate
-    dev: false
-
-  /@cinderlink/core-types/0.0.7_v333zsvpnr5ploif6wep444bwu:
-    resolution: {integrity: sha512-HedDlM/wDqErCNpiA8OOdFK+I9q3zs7h4sg3ZCon6dtxEXB/MabqH9TKjaEw9+Yy2WmzObpAsp2xaPFehlQVtw==}
-    peerDependencies:
-      ajv: ^8.12.0
-      did-jwt: ^6.11.0
-      dids: ^3.4.0
-      emittery: ^1.0.1
-      ipfs-core-types: ^0.13.0
-      libp2p: ^0.41.0
-      minisearch: ^6.0.1
-      multiformats: ^11.0.2
-    dependencies:
-      ajv: 8.12.0
-      did-jwt: 7.0.0
-      dids: 4.0.1
-      emittery: 1.0.1
-      minisearch: 6.0.1
-      multiformats: 11.0.2
-    dev: false
-
-  /@cinderlink/identifiers/0.0.3_zlcrqzy4mcwumivlw3o24hptja:
-    resolution: {integrity: sha512-lx3PeSh/ybC+3NcXJrwoo9VUijLoTUrSzSw4PHnBYeCeaoQPQZR8yOgILYzvJI+ieZpCsplXN1gRESjEqg5akQ==}
-    peerDependencies:
-      did: ^0.5.0
-      did-jwt: ^6.11.5
-      did-resolver: ^4.1.0
-      dids: ^3.4.0
-      ethers: ^5.7.2
-      key-did-provider-ed25519: ^2.0.1
-      key-did-resolver: ^2.3.0
-      multiformats: ^11.0.2
-    dependencies:
-      did-jwt: 7.0.0
-      did-resolver: 4.1.0
-      dids: 4.0.1
-      ethers: 5.7.2
-      key-did-provider-ed25519: 3.0.1
-      key-did-resolver: 3.0.0
-      multiformats: 11.0.2
-    dev: false
-
-  /@cinderlink/identifiers/0.0.4:
-    resolution: {integrity: sha512-FlZR74V1u8p7xfKcl0bJQNtkqg/rOmW9Wwjo4242kn//tswLVTqa/CPoh97kAiTXXZoT+nVSKjBoXsr/G3HUWQ==}
-    dependencies:
-      did: 0.5.0
-      did-jwt: 7.0.0
-      did-resolver: 4.1.0
-      dids: 4.0.1
-      ethers: 5.7.2
-      key-did-provider-ed25519: 3.0.1
-      key-did-resolver: 3.0.0
-      multiformats: 11.0.2
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
-    dev: false
-
-  /@cinderlink/ipld-database/0.0.9_7kimywh43tyyznsfpqquk73wua:
-    resolution: {integrity: sha512-G+63O1lFCPvYYj6/Da9PDqwi58SjgRo4ZUjhWEQni8NXBLUcdeq3W4utDkWVZDksB1WDamU+GsrF8ZWlqGtZiA==}
-    peerDependencies:
-      '@cinderlink/identifiers': 0.0.3
-      ajv: ^8.12.0
-      did-jwt: ^6.11.5
-      dids: ^3.4.0
-      emittery: ^1.0.1
-      ethers: ^5.7.2
-      minisearch: ^6.0.1
-      multiformats: ^11.0.2
-    dependencies:
-      '@cinderlink/identifiers': 0.0.3_zlcrqzy4mcwumivlw3o24hptja
-      ajv: 8.12.0
-      did-jwt: 7.0.0
-      dids: 4.0.1
-      emittery: 1.0.1
-      ethers: 5.7.2
-      minisearch: 6.0.1
-      multiformats: 11.0.2
-      object-sizeof: 2.6.1
-    dev: false
-
-  /@cinderlink/plugin-identity-server/0.0.6_ukhwtdmpqylfafwsw65hie6ifa:
-    resolution: {integrity: sha512-i+PRMynmA/uSpVmnK+kYXrpfdlZRtvusPUKcNiOFiXua9OpXgOf4/KE439EVfbm2arzRt/pZP98PQT6gIvKPwA==}
-    peerDependencies:
-      '@cinderlink/core-types': 0.0.7
-      '@cinderlink/identifiers': 0.0.3
-      '@cinderlink/ipld-database': 0.0.9
-      multiformats: ^11.0.2
-    dependencies:
-      '@cinderlink/core-types': link:packages/core-types
-      '@cinderlink/identifiers': 0.0.4
-      '@cinderlink/ipld-database': link:packages/ipld-database
-    dev: false
-
-  /@cinderlink/plugin-identity-server/0.0.6_vmflahpbnyad76uy54svi5sowe:
-    resolution: {integrity: sha512-i+PRMynmA/uSpVmnK+kYXrpfdlZRtvusPUKcNiOFiXua9OpXgOf4/KE439EVfbm2arzRt/pZP98PQT6gIvKPwA==}
-    peerDependencies:
-      '@cinderlink/core-types': 0.0.7
-      '@cinderlink/identifiers': 0.0.3
-      '@cinderlink/ipld-database': 0.0.9
-      multiformats: ^11.0.2
-    dependencies:
-      '@cinderlink/core-types': link:packages/core-types
-      '@cinderlink/identifiers': link:packages/identifiers
-      '@cinderlink/ipld-database': link:packages/ipld-database
-    dev: false
-
-  /@cinderlink/plugin-offline-sync-core/0.0.5_cbboh6fbcgyf6etfibqiaria5q:
-    resolution: {integrity: sha512-jxhlFP3pS3giOfbMsx3VTdSgH0KDeaasQLaPaZ0edr66a4HV9W7nQ4wmslBqrjAPulUF8gRVWLaZcXVssCz81A==}
-    peerDependencies:
-      '@cinderlink/core-types': 0.0.5
-      '@cinderlink/ipld-database': 0.0.8
-    dependencies:
-      '@cinderlink/core-types': link:packages/core-types
-      '@cinderlink/ipld-database': link:packages/ipld-database
-    dev: false
-
-  /@cinderlink/plugin-offline-sync-server/0.0.8_mzuaurbdmkvx3izs5gritlv6pa:
-    resolution: {integrity: sha512-UmGoOOMNeWx8GGUENAZsN2SFh8XP1Ifgcloin5aBXZDY1asKWbFQjSm/5X9faEi+FU9SqTTJjb4Od+hnSvqW5w==}
-    peerDependencies:
-      '@cinderlink/core-types': 0.0.8
-      '@cinderlink/plugin-offline-sync-client': 0.0.7
-      '@cinderlink/protocol': 0.0.7
-      did-jwt: ^6.11.0
-      dids: ^3.4.0
-    dependencies:
-      '@cinderlink/core-types': link:packages/core-types
-      '@cinderlink/plugin-offline-sync-core': 0.0.5_cbboh6fbcgyf6etfibqiaria5q
-      '@cinderlink/protocol': 0.0.7_ztrehqo273leywh72fld2ig3yq
-    transitivePeerDependencies:
-      - '@cinderlink/ipld-database'
-    dev: false
-
-  /@cinderlink/plugin-social-core/0.0.9_t7frj4rboogxzyr2yybedutxmu:
-    resolution: {integrity: sha512-Ym2nzgDSy4fGssCzF7KjGyzpcOD689hNlAFkuiEQJ3WsyViv6MqHA78unV9gpHSzPUM6Cg3cHodctTpTiDfMnw==}
-    peerDependencies:
-      '@cinderlink/ipld-database': 0.0.8
-      emittery: ^1.0.1
-    dependencies:
-      '@cinderlink/ipld-database': link:packages/ipld-database
-    dev: false
-
-  /@cinderlink/plugin-social-server/0.0.8_gmjhpdxmmugaeps3roowm2ev54:
-    resolution: {integrity: sha512-l7Lj3R0DGzFKG5yyqrKQExvVCL6dZVI53orUR367fp/6g4ro3fSm6apa39CqGuL8nsudswRPoUZCZho3l+4Gwg==}
-    peerDependencies:
-      '@cinderlink/identifiers': 0.0.3
-      '@cinderlink/plugin-social-client': 0.0.11
-      '@cinderlink/plugin-social-core': 0.0.9
-      '@cinderlink/plugin-sync-db': 0.0.9
-      did-jwt: ^6.11.0
-      dids: ^3.4.0
-    dependencies:
-      '@cinderlink/identifiers': link:packages/identifiers
-      '@cinderlink/plugin-social-core': 0.0.9_t7frj4rboogxzyr2yybedutxmu
-      '@cinderlink/plugin-sync-db': 0.0.14_5wc4bmngwrp2lkzhisjlgp27oe
-    dev: false
-
-  /@cinderlink/plugin-social-server/0.0.8_qw3w55yntn52wg4i5b3hvzrezq:
-    resolution: {integrity: sha512-l7Lj3R0DGzFKG5yyqrKQExvVCL6dZVI53orUR367fp/6g4ro3fSm6apa39CqGuL8nsudswRPoUZCZho3l+4Gwg==}
-    peerDependencies:
-      '@cinderlink/identifiers': 0.0.3
-      '@cinderlink/plugin-social-client': 0.0.11
-      '@cinderlink/plugin-social-core': 0.0.9
-      '@cinderlink/plugin-sync-db': 0.0.9
-      did-jwt: ^6.11.0
-      dids: ^3.4.0
-    dependencies:
-      '@cinderlink/identifiers': 0.0.4
-      '@cinderlink/plugin-social-core': 0.0.9_t7frj4rboogxzyr2yybedutxmu
-      '@cinderlink/plugin-sync-db': 0.0.14_5wc4bmngwrp2lkzhisjlgp27oe
-    dev: false
-
-  /@cinderlink/plugin-sync-db/0.0.14_5wc4bmngwrp2lkzhisjlgp27oe:
-    resolution: {integrity: sha512-SmYKWFg+Cx4YC/LgtXQVNcO68uZsls1XOlo7QTXRpa3Yu4AyRDNODr3B7zpn1TnVE4KD4NHjteBFKx44xRqLCw==}
-    peerDependencies:
-      '@cinderlink/identifiers': 0.0.4
-      '@cinderlink/ipld-database': 0.0.10
-      '@cinderlink/test-adapters': 0.0.6
-      emittery: ^1.0.1
-      multiformats: ^11.0.2
-    dependencies:
-      '@cinderlink/identifiers': link:packages/identifiers
-      '@cinderlink/ipld-database': link:packages/ipld-database
-    dev: false
-
-  /@cinderlink/protocol/0.0.7_upl5co6jhstwbsgkdmrulypj4a:
-    resolution: {integrity: sha512-nTwrQGCBxmiDyr8d/gvJe/WOmx2cdyaQ/dVwe13Z7/gH8Nu2yKlnlfj1IIzrWt8qr/OtUnIbjTJOR1NEKDcm3w==}
-    peerDependencies:
-      '@cinderlink/identifiers': 0.0.3
-      did-jwt: ^6.11.5
-      dids: ^3.4.0
-      emittery: ^1.0.1
-      libp2p: ^0.42.2
-      multiformats: ^11.0.2
-    dependencies:
-      '@cinderlink/identifiers': 0.0.3_zlcrqzy4mcwumivlw3o24hptja
-      did-jwt: 7.0.0
-      dids: 4.0.1
-      emittery: 1.0.1
-      multiformats: 11.0.2
-    dev: false
-
-  /@cinderlink/protocol/0.0.7_ztrehqo273leywh72fld2ig3yq:
-    resolution: {integrity: sha512-nTwrQGCBxmiDyr8d/gvJe/WOmx2cdyaQ/dVwe13Z7/gH8Nu2yKlnlfj1IIzrWt8qr/OtUnIbjTJOR1NEKDcm3w==}
-    peerDependencies:
-      '@cinderlink/identifiers': 0.0.3
-      did-jwt: ^6.11.5
-      dids: ^3.4.0
-      emittery: ^1.0.1
-      libp2p: ^0.42.2
-      multiformats: ^11.0.2
-    dependencies:
-      '@cinderlink/identifiers': 0.0.4
-    dev: false
-
-  /@cinderlink/server-bin/0.0.14_jnq7zs34rsrezunlwtju3ifrt4:
-    resolution: {integrity: sha512-XGDQS5sLhuJmfkbtUggGrB76pBFDEEDbhbNH84KYZCOdRN08HGW6/0edJLsBzMUpQ1P8BUXH2iJyqxS7vWx9UA==}
-    hasBin: true
-    peerDependencies:
-      '@cinderlink/client': 0.0.12
-    dependencies:
-      '@cinderlink/client': link:packages/client
-      '@cinderlink/identifiers': 0.0.4
-      '@cinderlink/plugin-identity-server': 0.0.6_ukhwtdmpqylfafwsw65hie6ifa
-      '@cinderlink/plugin-offline-sync-server': 0.0.8_mzuaurbdmkvx3izs5gritlv6pa
-      '@cinderlink/plugin-social-server': 0.0.8_qw3w55yntn52wg4i5b3hvzrezq
-      '@cinderlink/protocol': 0.0.7_ztrehqo273leywh72fld2ig3yq
-      '@cinderlink/server': 0.0.10_h5igeqqwkmk565wrrkosczxfbm
-      chalk: 5.2.0
-      dotenv: 16.0.3
-      ethers: 5.7.2
-      ipfs-http-gateway: 0.13.0
-      ipfs-http-server: 0.15.0
-      minimist: 1.2.8
-    transitivePeerDependencies:
-      - '@chainsafe/libp2p-gossipsub'
-      - '@chainsafe/libp2p-noise'
-      - '@cinderlink/core-types'
-      - '@cinderlink/ipld-database'
-      - '@cinderlink/plugin-offline-sync-client'
-      - '@cinderlink/plugin-social-client'
-      - '@cinderlink/plugin-social-core'
-      - '@cinderlink/plugin-sync-db'
-      - '@libp2p/crypto'
-      - '@libp2p/peer-id'
-      - '@libp2p/peer-id-factory'
-      - '@libp2p/websockets'
-      - '@multiformats/multiaddr'
-      - '@stablelib/ed25519'
-      - '@types/babel__core'
-      - bufferutil
-      - did
-      - did-jwt
-      - dids
-      - emittery
-      - encoding
-      - ipfs-core
-      - ipfs-core-types
-      - libp2p
-      - minisearch
-      - multiformats
-      - prom-client
-      - supports-color
-      - ts-node
-      - utf-8-validate
-    dev: false
-
-  /@cinderlink/server/0.0.10_h5igeqqwkmk565wrrkosczxfbm:
-    resolution: {integrity: sha512-NsQ66pgN9EiEo69O86vPpSKp8tYE0IZcip8YMOO0hjxdsS/5kD6YEr1XzRBjozZPnqejPN3faki6S1KMSFi6ng==}
-    peerDependencies:
-      dids: ^3.4.0
-      ipfs-core: ^0.18.0
-    dependencies:
-      '@cinderlink/client': 0.0.12_h5igeqqwkmk565wrrkosczxfbm
-    transitivePeerDependencies:
-      - '@chainsafe/libp2p-gossipsub'
-      - '@chainsafe/libp2p-noise'
-      - '@libp2p/crypto'
-      - '@libp2p/peer-id'
-      - '@libp2p/peer-id-factory'
-      - '@libp2p/websockets'
-      - '@multiformats/multiaddr'
-      - '@stablelib/ed25519'
-      - '@types/babel__core'
-      - bufferutil
-      - did
-      - encoding
-      - ethers
-      - ipfs-core-types
-      - libp2p
-      - minisearch
-      - prom-client
-      - supports-color
-      - ts-node
-      - utf-8-validate
-    dev: false
-
   /@coinbase/wallet-sdk/3.6.6:
     resolution: {integrity: sha512-vX+epj/Ttjo7XRwlr3TFUUfW5GTRMvORpERPwiu7z2jl3DSVL4rXLmHt5y6LDPlUVreas2gumdcFbu0fLRG9Jg==}
     engines: {node: '>= 10.0.0'}
@@ -2933,6 +2589,7 @@ packages:
       '@stablelib/random': 1.0.2
       caip: 1.1.0
       uint8arrays: 4.0.3
+    dev: true
 
   /@esbuild-plugins/node-globals-polyfill/0.2.3:
     resolution: {integrity: sha512-r3MIryXDeXDOZh7ih1l/yE9ZLORCd5e8vWg02azWRGj5SPTuoh69A2AIyn0Z31V/kHBfZ4HgWJ+OK3GTTwLmnw==}
@@ -7544,7 +7201,7 @@ packages:
     hasBin: true
     dependencies:
       caniuse-lite: 1.0.30001481
-      electron-to-chromium: 1.4.376
+      electron-to-chromium: 1.4.377
       node-releases: 2.0.10
       update-browserslist-db: 1.0.11_browserslist@4.21.5
     dev: false
@@ -8596,6 +8253,7 @@ packages:
       multiformats: 11.0.2
       rpc-utils: 0.6.2
       uint8arrays: 4.0.3
+    dev: true
 
   /diff/4.0.2:
     resolution: {integrity: sha512-58lmxKSA4BNyLz+HHMUzlOEpg09FV+ev6ZMe3vJihgdxzgcwZ8VoEEPmALCZG9LmqfVoNMMKpttIYTVG6uDY7A==}
@@ -8756,8 +8414,8 @@ packages:
     dependencies:
       encoding: 0.1.13
 
-  /electron-to-chromium/1.4.376:
-    resolution: {integrity: sha512-TFeOKd98TpJzRHkr4Aorn16QkMnuCQuGAE6IZ0wYF+qkbSfMPqjplvRppR02tMUpVxZz8nyBNvVm9lIZsqrbPQ==}
+  /electron-to-chromium/1.4.377:
+    resolution: {integrity: sha512-H3BYG6DW5Z+l0xcfXaicJGxrpA4kMlCxnN71+iNX+dBLkRMOdVJqFJiAmbNZZKA1zISpRg17JR03qGifXNsJtw==}
     dev: false
 
   /elliptic/6.5.4:
@@ -11673,18 +11331,6 @@ packages:
       '@stablelib/ed25519': 1.0.3
       did-jwt: 6.11.6
       dids: 4.0.0
-      fast-json-stable-stringify: 2.1.0
-      rpc-utils: 0.6.2
-      uint8arrays: 4.0.3
-    dev: false
-
-  /key-did-provider-ed25519/3.0.1:
-    resolution: {integrity: sha512-4sn1OT6mG1GFhRR4G4UO+GEZhIeimqKp2CY903INE29N+/ZQ1Q/Y1jH+J8Yi1Kll21IA6opNMJ2TIhvRNEfNjQ==}
-    engines: {node: '>=14.14'}
-    dependencies:
-      '@stablelib/ed25519': 1.0.3
-      did-jwt: 7.0.0
-      dids: 4.0.1
       fast-json-stable-stringify: 2.1.0
       rpc-utils: 0.6.2
       uint8arrays: 4.0.3
