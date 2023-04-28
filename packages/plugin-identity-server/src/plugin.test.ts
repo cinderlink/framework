@@ -5,11 +5,8 @@ import {
   createSeed,
   createDID,
   signAddressVerification,
-} from "@cinderlink/identifiers";
-import {
-  CinderlinkClientInterface,
-  ProtocolEvents,
-} from "@cinderlink/core-types";
+} from "../../identifiers";
+import { CinderlinkClientInterface, ProtocolEvents } from "../../core-types";
 import * as ethers from "ethers";
 import IdentityServerPlugin from "./plugin";
 import { IdentityServerEvents } from "./types";

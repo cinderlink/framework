@@ -18,7 +18,7 @@ import {
 import { createClient } from "../../client";
 import { rmSync } from "fs";
 import SyncDBPlugin from "./plugin";
-import { Schema } from "@cinderlink/ipld-database";
+import { Schema } from "../../ipld-database";
 
 interface DidRow extends TableRow {
   did: string;
@@ -283,7 +283,7 @@ describe("TableSync", () => {
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
-    await new Promise((resolve) => setTimeout(resolve, 201));
+    await new Promise((resolve) => setTimeout(resolve, 200));
     expect(client.p2p.emit).toHaveBeenCalledWith(
       "/cinderlink/sync/save/response",
       {

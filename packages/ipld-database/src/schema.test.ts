@@ -1,10 +1,9 @@
-import { TestDIDDag } from "@cinderlink/test-adapters/src/dag";
-import { TestLogger } from "@cinderlink/test-adapters/src/client";
+import { TestDIDDag, TestLogger } from "../../test-adapters";
 import type { DID } from "dids";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { Schema } from "./schema";
-import { TableDefinition } from "@cinderlink/core-types";
-import { createSeed, createDID } from "@cinderlink/identifiers";
+import { TableDefinition } from "../../core-types";
+import { createSeed, createDID } from "../../identifiers";
 
 const tableDefinition: TableDefinition<{
   id: number;
