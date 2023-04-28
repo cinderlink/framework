@@ -25,6 +25,7 @@ export class ClientDag<Plugins extends PluginEventDef = PluginEventDef>
         storeCodec,
         hashAlg,
         pin: true,
+        timeout: 3000,
       }
     );
     return cid;
@@ -37,7 +38,7 @@ export class ClientDag<Plugins extends PluginEventDef = PluginEventDef>
   ): Promise<T> {
     const stored = await this.client.ipfs.dag.get(
       typeof cid === "string" ? CID.parse(cid) : cid,
-      { path, ...options }
+      { path, ...options, timeout: 3000 }
     );
     return stored.value as T;
   }

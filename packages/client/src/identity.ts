@@ -16,6 +16,7 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
   hasResolved = false;
   lastSavedAt = 0;
   resolving?: Promise<IdentityResolved>;
+  saveDebounce?: NodeJS.Timeout;
   constructor(public client: CinderlinkClientInterface<PluginEvents>) {}
 
   async resolve(): Promise<IdentityResolved> {
@@ -169,10 +170,12 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
     cid,
     document,
     forceRemote,
+    forceImmediate,
   }: {
     cid: string;
     document: Record<string, unknown>;
     forceRemote?: boolean;
+    forceImmediate?: boolean;
   }) {
     if (!this.hasResolved || !cid) {
       this.client.logger.error("identity", "identity has not been resolved");
@@ -185,6 +188,29 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
       );
       return;
     }
+
+    if (forceImmediate === true) {
+      return this._save({ cid, document, forceRemote });
+    }
+
+    if (this.saveDebounce) {
+      clearTimeout(this.saveDebounce);
+    }
+
+    this.saveDebounce = setTimeout(() => {
+      this._save({ cid, document, forceRemote });
+    }, 10000);
+  }
+
+  async _save({
+    cid,
+    document,
+    forceRemote,
+  }: {
+    cid: string;
+    document: Record<string, unknown>;
+    forceRemote?: boolean;
+  }) {
     this.cid = cid;
     this.document = document;
     this.client.logger.info("identity", "saving identity", {
@@ -194,16 +220,19 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
     });
 
     await localforage.setItem("rootCID", cid).catch(() => {});
-    await this.client.ipfs.pin.add(cid, { recursive: true }).catch(() => {});
-    await this.client.ipfs.name
-      .publish(cid, { timeout: 1000, allowOffline: true })
+    await this.client.ipfs.pin
+      .add(cid, { recursive: true, timeout: 3000 })
       .catch(() => {});
-    if (forceRemote || Date.now() - this.lastSavedAt > 30000) {
+    await this.client.ipfs.name
+      .publish(cid, {
+        timeout: 3000,
+        allowOffline: true,
+        lifetime: "14d",
+        ttl: "1m",
+      })
+      .catch(() => {});
+    if (forceRemote || Date.now() - this.lastSavedAt > 10000) {
       this.lastSavedAt = Date.now();
-      const buffer = await toBuffer(
-        this.client.ipfs.dag.export(CID.parse(cid))
-      );
-      const bufferStr = base58btc.encode(buffer);
       await Promise.all(
         this.client.peers.getServers().map(async (server) => {
           if (server.did) {
@@ -215,7 +244,7 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
               server.peerId.toString(),
               {
                 topic: "/identity/set/request",
-                payload: { requestId: uuid(), cid, buffer: bufferStr },
+                payload: { requestId: uuid(), cid },
               }
             );
           } else {
@@ -226,5 +255,7 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
         })
       );
     }
+
+    await this.client.ipfs.repo.gc();
   }
 }

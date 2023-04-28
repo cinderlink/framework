@@ -113,19 +113,12 @@ export class IdentityServerPlugin
       message.payload
     );
 
-    if (message.payload.buffer) {
-      const buffer = base58btc.decode(message.payload.buffer);
-      const result = await all(
-        this.client.ipfs.dag.import(
-          (async function* () {
-            yield buffer;
-          })(),
-          { pinRoots: true }
-        )
-      );
-      this.client.logger.info(logPurpose, "onSetRequest: import", {
-        result,
-        buffer,
+    if (message.payload.cid) {
+      const resolved = await this.client.ipfs.dag.resolve(message.payload.cid, {
+        timeout: 5000,
+      });
+      this.client.logger.info(logPurpose, "onSetRequest: resolve", {
+        resolved,
       });
     }
 

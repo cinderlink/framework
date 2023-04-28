@@ -47,7 +47,7 @@ export default OfflineSyncSchemaDef;
 export async function loadOfflineSyncSchema(
   client: CinderlinkClientInterface<any>
 ) {
-  client.logger.info("offline-sync", "loading offline sync schema");
+  client.logger?.info("offline-sync", "loading offline sync schema");
   if (!client.schemas["offlineSync"]) {
     const schema = new Schema(
       "offlineSync",

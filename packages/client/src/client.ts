@@ -191,6 +191,8 @@ export class CinderlinkClient<
       this.logger.debug("pubsub", "subscription change", { event });
     });
 
+    await this.ipfs.repo.gc();
+
     const protocol = new CinderlinkProtocolPlugin(this as any);
     await this.addPlugin(protocol);
     await this.startPlugin(protocol.id);
