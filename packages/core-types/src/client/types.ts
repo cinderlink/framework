@@ -13,6 +13,7 @@ import {
 } from "../identity/types";
 import { IncomingPubsubMessage } from "../pubsub";
 import { ProtocolRequest } from "../protocol";
+import { LoggerInterface } from "../logger";
 
 export type CinderlinkConstructorOptions = {
   ipfs: IPFSWithLibP2P;
@@ -20,6 +21,7 @@ export type CinderlinkConstructorOptions = {
   address: `0x${string}`;
   addressVerification: string;
   role: PeerRole;
+  logger?: LoggerInterface;
 };
 
 export interface CinderlinkClientEvents<
@@ -40,7 +42,7 @@ export interface CinderlinkClientEvents<
   publish: {
     "/peer/connect": PeerConnectMessage;
     "/peer/disconnect": PeerDisconnectMessage;
-  }
+  };
   emit: {
     "/client/ready": ProtocolRequest;
     "/peer/connect": Peer;

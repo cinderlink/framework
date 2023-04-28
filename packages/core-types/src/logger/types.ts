@@ -1,8 +1,9 @@
 export interface Log {
   data?: Record<string, unknown>;
   message: string;
-  purpose: string;
+  module: string;
   severity: LogSeverity;
+  expand?: boolean;
 }
 
 export type LogSeverity = "info" | "warn" | "error" | "debug" | "trace";

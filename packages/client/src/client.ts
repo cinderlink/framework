@@ -90,6 +90,7 @@ export class CinderlinkClient<
     address,
     addressVerification,
     role,
+    logger,
   }: CinderlinkConstructorOptions) {
     super();
     this.ipfs = ipfs;
@@ -101,7 +102,7 @@ export class CinderlinkClient<
     this.files = new Files<PluginEvents>(this);
     this.role = role;
     this.plugins = {};
-    this.logger = new Logger();
+    this.logger = logger || new Logger();
   }
 
   async addPlugin<Plugin extends PluginBaseInterface>(plugin: Plugin) {
@@ -372,7 +373,7 @@ export class CinderlinkClient<
     }
     this.logger.debug("identity", "resolving root document");
     const { cid, document } = await this.identity.resolve();
-    this.logger.info("identity", "resolved root document", { cid, document });
+    this.logger.info("identity", "resolved root document", { cid });
     if (cid && document?.schemas) {
       this.logger.debug("identity", "importing schemas", {
         schemas: document.schemas,

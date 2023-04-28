@@ -6,8 +6,15 @@ import {
   SubLoggerInterface,
 } from "@cinderlink/core-types";
 
+export interface LogFilter {
+  offset?: number;
+  limit?: number;
+  module?: string[] | string;
+  severity?: LogSeverity[] | LogSeverity;
+}
+
 export class Logger implements LoggerInterface {
-  private _logs: Record<string, Log[]> = {};
+  public logs: Record<string, Log[]> = {};
   public maxLength: number;
   public prefix: string;
 
@@ -16,48 +23,48 @@ export class Logger implements LoggerInterface {
     this.prefix = options.prefix || "";
   }
 
-  private _prefixed(purpose: string) {
-    return this.prefix ? `${this.prefix}/${purpose}` : purpose;
+  get modules() {
+    return Object.keys(this.logs);
   }
 
-  public clear(purpose: string = "default") {
-    this._logs[purpose] = [];
+  private _prefixed(module: string) {
+    return this.prefix ? `${this.prefix}/${module}` : module;
+  }
+
+  public clear(module: string = "default") {
+    this.logs[module] = [];
   }
 
   public debug(
-    purpose: string,
+    module: string,
     message: string,
     data?: Record<string, unknown>
   ) {
-    this.log(purpose, "debug", message, data);
+    this.log(module, "debug", message, data);
   }
 
   public error(
-    purpose: string,
+    module: string,
     message: string,
     data?: Record<string, unknown>
   ) {
-    this.log(purpose, "error", message, data);
+    this.log(module, "error", message, data);
   }
 
-  public getLogCount(purpose: string): number {
-    return this._logs[purpose]?.length || 0;
+  public getLogCount(module: string): number {
+    return this.logs[module]?.length || 0;
   }
 
-  public getLogs(purpose: string): Log[] {
-    return this._logs[purpose] || [];
+  public getLogs(module: string): Log[] {
+    return this.logs[module] || [];
   }
 
-  public info(
-    purpose: string,
-    message: string,
-    data?: Record<string, unknown>
-  ) {
-    this.log(purpose, "info", message, data);
+  public info(module: string, message: string, data?: Record<string, unknown>) {
+    this.log(module, "info", message, data);
   }
 
   public log(
-    purpose: string,
+    module: string,
     severity: LogSeverity,
     message: string,
     data?: Record<string, unknown>
@@ -65,62 +72,58 @@ export class Logger implements LoggerInterface {
     const log: Log = {
       data,
       message,
-      purpose: this._prefixed(purpose),
+      module: this._prefixed(module),
       severity,
     };
-    this._logs[purpose] = this._logs[purpose] || [];
-    this._logs[purpose].push(log);
-    while (this._logs[purpose].length > this.maxLength) {
-      this._logs[purpose].shift();
+    this.logs[module] = this.logs[module] || [];
+    this.logs[module].push(log);
+    while (this.logs[module].length > this.maxLength) {
+      this.logs[module].shift();
     }
   }
 
-  public purpose(id: string): SubLoggerInterface {
+  public module(id: string): SubLoggerInterface {
     return new SubLogger(this, id);
   }
 
   public trace(
-    purpose: string,
+    module: string,
     message: string,
     data?: Record<string, unknown>
   ) {
-    this.log(purpose, "trace", message, data);
+    this.log(module, "trace", message, data);
   }
 
-  public warn(
-    purpose: string,
-    message: string,
-    data?: Record<string, unknown>
-  ) {
-    this.log(purpose, "warn", message, data);
+  public warn(module: string, message: string, data?: Record<string, unknown>) {
+    this.log(module, "warn", message, data);
   }
 }
 
-class SubLogger implements SubLoggerInterface {
-  constructor(public logger: Logger, public purpose: string) {}
+export class SubLogger implements SubLoggerInterface {
+  constructor(public logger: LoggerInterface, public module: string) {}
 
   public clear() {
-    this.logger.clear(this.purpose);
+    this.logger.clear(this.module);
   }
 
   public debug(message: string, data?: Record<string, unknown>) {
-    this.logger.debug(this.purpose, message, data);
+    this.logger.debug(this.module, message, data);
   }
 
   public error(message: string, data?: Record<string, unknown>) {
-    this.logger.error(this.purpose, message, data);
+    this.logger.error(this.module, message, data);
   }
 
   public getLogCount(): number {
-    return this.logger.getLogCount(this.purpose);
+    return this.logger.getLogCount(this.module);
   }
 
   public getLogs(): Log[] {
-    return this.logger.getLogs(this.purpose);
+    return this.logger.getLogs(this.module);
   }
 
   public info(message: string, data?: Record<string, unknown>) {
-    this.logger.info(this.purpose, message, data);
+    this.logger.info(this.module, message, data);
   }
 
   public log(
@@ -128,15 +131,15 @@ class SubLogger implements SubLoggerInterface {
     message: string,
     data?: Record<string, unknown>
   ) {
-    this.logger.log(this.purpose, severity, message, data);
+    this.logger.log(this.module, severity, message, data);
   }
 
   public trace(message: string, data?: Record<string, unknown>) {
-    this.logger.trace(this.purpose, message, data);
+    this.logger.trace(this.module, message, data);
   }
 
   public warn(message: string, data?: Record<string, unknown>) {
-    this.logger.warn(this.purpose, message, data);
+    this.logger.warn(this.module, message, data);
   }
 }
 

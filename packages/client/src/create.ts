@@ -1,5 +1,6 @@
 import type {
   CinderlinkClientInterface,
+  LoggerInterface,
   PeerRole,
   PluginEventDef,
 } from "@cinderlink/core-types";
@@ -16,6 +17,7 @@ export interface CreateClientOptions {
   nodes?: string[];
   options?: Partial<Options>;
   role: PeerRole;
+  logger?: LoggerInterface;
 }
 
 export async function createClient<
@@ -27,6 +29,7 @@ export async function createClient<
   nodes,
   options,
   role,
+  logger,
 }: CreateClientOptions) {
   const ipfs = await createIPFS(nodes, options);
   const client: CinderlinkClientInterface<PluginEvents> =
@@ -35,6 +38,7 @@ export async function createClient<
       did,
       address,
       addressVerification,
+      logger,
       role,
     });
 

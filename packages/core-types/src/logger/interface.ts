@@ -1,21 +1,22 @@
 import { Log, LogSeverity } from "./types";
 
 export interface LoggerInterface {
-  clear(): void;
-  debug(purpose: string, message: string, data?: Record<string, unknown>): void;
-  error(purpose: string, message: string, data?: Record<string, unknown>): void;
-  getLogCount(purpose: string): number;
-  getLogs(purpose: string): Log[];
-  info(purpose: string, message: string, data?: Record<string, unknown>): void;
+  clear(module?: string): void;
+  debug(module: string, message: string, data?: Record<string, unknown>): void;
+  error(module: string, message: string, data?: Record<string, unknown>): void;
+  getLogCount(module: string): number;
+  getLogs(module: string): Log[];
+  info(module: string, message: string, data?: Record<string, unknown>): void;
   log(
-    purpose: string,
+    module: string,
     severity: LogSeverity,
     message: string,
-    data: Record<string, unknown>
+    data?: Record<string, unknown>
   ): void;
-  purpose(id: string): SubLoggerInterface;
-  trace(purpose: string, message: string, data?: Record<string, unknown>): void;
-  warn(purpose: string, message: string, data?: Record<string, unknown>): void;
+  modules: string[];
+  module(id: string): SubLoggerInterface;
+  trace(module: string, message: string, data?: Record<string, unknown>): void;
+  warn(module: string, message: string, data?: Record<string, unknown>): void;
 }
 
 export interface SubLoggerInterface {
@@ -28,9 +29,8 @@ export interface SubLoggerInterface {
   log(
     severity: LogSeverity,
     message: string,
-    data: Record<string, unknown>
+    data?: Record<string, unknown>
   ): void;
-
   trace(message: string, data?: Record<string, unknown>): void;
   warn(message: string, data?: Record<string, unknown>): void;
 }
