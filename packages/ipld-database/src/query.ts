@@ -6,6 +6,7 @@ import {
   InstructionType,
   OrderByInstruction,
   QueryBuilderInterface,
+  SubLoggerInterface,
   TableDefinition,
 } from "@cinderlink/core-types";
 import {
@@ -302,7 +303,8 @@ export class TableQuery<
 {
   constructor(
     public table: TableInterface<Row, Def>,
-    instructions: QueryInstruction<Row>[] = []
+    instructions: QueryInstruction<Row>[] = [],
+    public logger: SubLoggerInterface
   ) {
     super(instructions);
   }
@@ -337,7 +339,6 @@ export class TableQuery<
       return cache.getQuery<Row, Def>(this) as TableQueryResult<Row>;
     }
 
-    // console.info(`table/${this.table.tableId}/query > locking table`);
     await this.table.awaitLock();
 
     let terminator = this.terminator;
@@ -349,7 +350,22 @@ export class TableQuery<
     const unwound: TableBlockInterface<Row, Def>[] = [];
     let returning: Row[] = [];
 
-    // console.info(`table/${this.table.tableId}/query > unwinding table`);
+    if (this.terminator === "update") {
+      const updateInstruction = this.instructions.find(
+        (i) => i.instruction === "update"
+      ) as UpdateInstruction<Row>;
+      if (
+        !updateInstruction ||
+        (!updateInstruction.fn && !updateInstruction.values)
+      ) {
+        this.logger.error(`no update values or function provided`, {
+          query: this.instructions,
+        });
+        throw new Error("no update values or function provided");
+      }
+    }
+
+    // this.logger.debug(`unwinding table blocks`);
     await this.table.unwind(async (event) => {
       await event.block.headers();
       // we need to make sure the block is aggregated before we can use it
@@ -383,10 +399,10 @@ export class TableQuery<
             const change = updateInstruction.fn(match);
             const updated = await event.block
               .updateRecord(match.id, change)
-              .catch(() => {
-                console.error(
-                  "Failed to update record (unique key constraint violation)",
-                  match
+              .catch((error) => {
+                this.logger.error(
+                  "failed to update record (unique key constraint violation)",
+                  { match, change, error }
                 );
               });
             if (updated?.uid && this.terminator === "update") {
@@ -401,17 +417,16 @@ export class TableQuery<
             }
             const updated = await event.block
               .updateRecord(match.id, change)
-              .catch(() => {
-                console.error(
-                  `table/${this.table.tableId}/update: failed to update record (unique key constraint violation)`,
-                  match
+              .catch((error) => {
+                this.logger.error(
+                  `failed to update record (unique key constraint violation)`,
+                  { match, change, error }
                 );
               });
             if (updated?.uid && this.terminator === "update") {
               this.table.emit("/record/updated", updated as Row);
             }
           } else {
-            // console.warn(`No update function or values provided to update`);
           }
         }
       } else if (this.terminator === "delete") {
@@ -463,74 +478,75 @@ export class TableQuery<
         event.resolved = true;
       }
     });
-    // console.info(`table/${this.table.tableId}/query > unwinding completed`);
+    // this.logger.debug(`table unwind complete`);
 
     if (returning.length >= limit) {
       returning = returning.slice(0, limit);
     }
 
-    // console.info(
-    //   `table/${this.table.tableId}/query > checking unwound`,
-    //   unwound.length
-    // );
     if (unwound.length && changed) {
       let writeStarted = false;
       let rewriteBlock: TableBlockInterface<Row, Def> | undefined;
       let prevCID: string | undefined;
-      console.info(`table/${this.table.tableId}/query > rewriting table`);
+      // this.logger.debug(`rewriting ${unwound.length} blocks`);
       for (const block of unwound.reverse()) {
         if (!writeStarted && block.changed) {
           writeStarted = true;
           const headers = await block.headers();
           prevCID = await block.prevCID();
-          rewriteBlock = new TableBlock<Row, Def>(this.table, undefined, {
-            prevCID,
-            headers,
-            filters: {
-              indexes: {} as BlockIndexes<Row, Def>,
-              aggregates: {} as BlockAggregates<Row>,
+          rewriteBlock = new TableBlock<Row, Def>(
+            this.table,
+            undefined,
+            {
+              prevCID,
+              headers,
+              filters: {
+                indexes: {} as BlockIndexes<Row, Def>,
+                aggregates: {} as BlockAggregates<Row>,
+              },
             },
-          });
+            this.table.logger
+          );
         }
 
         if (writeStarted && rewriteBlock) {
           const records = await block.records();
-          // console.info(
-          //   `ipld-database/table-query: rewriting block ${block.cid}`,
-          //   records
-          // );
+          // this.logger.debug(`rewriting block ${block.cid}`, records);
           for (const [, record] of Object.entries(records)) {
             await rewriteBlock.addRecord(record);
           }
           if (rewriteBlock.needsRollup) {
             prevCID = (await rewriteBlock.save())?.toString();
             const headers = rewriteBlock.cache?.headers as BlockHeaders;
-            // console.info(
-            //   `ipld-database/table-query: block rewritten. old CID: ${block.cid}, new CID: ${prevCID}, range: [${headers.recordsFrom}, ${headers.recordsTo}]`
+            // this.logger.debug(
+            //   `block rewritten. old CID: ${block.cid}, new CID: ${prevCID}, range: [${headers.recordsFrom}, ${headers.recordsTo}]`
             // );
-            rewriteBlock = new TableBlock<Row, Def>(this.table, undefined, {
-              prevCID: prevCID?.toString(),
-              headers: {
-                ...headers,
-                recordsFrom: headers.recordsTo,
-                recordsTo: headers.recordsTo + 1,
+            rewriteBlock = new TableBlock<Row, Def>(
+              this.table,
+              undefined,
+              {
+                prevCID: prevCID?.toString(),
+                headers: {
+                  ...headers,
+                  recordsFrom: headers.recordsTo,
+                  recordsTo: headers.recordsTo + 1,
+                },
+                filters: {
+                  indexes: {} as BlockIndexes<Row, Def>,
+                  aggregates: {} as BlockAggregates<Row>,
+                },
               },
-              filters: {
-                indexes: {} as BlockIndexes<Row, Def>,
-                aggregates: {} as BlockAggregates<Row>,
-              },
-            });
+              this.logger
+            );
           }
         }
       }
 
-      // console.info(`table/${this.table.tableId}/query > setting block`);
       if (rewriteBlock) {
         rewriteBlock.changed = true;
         this.table.setBlock(rewriteBlock);
         cache.invalidateTable(this.table.tableId);
       }
-      // console.info(`table/${this.table.tableId}/query > unlocking table`);
       this.table.unlock();
       if (this.terminator === "delete") {
         this.table.emit("/record/deleted", {} as Row);

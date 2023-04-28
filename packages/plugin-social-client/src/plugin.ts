@@ -133,7 +133,7 @@ export class SocialClientPlugin<
   }
 
   async stop() {
-    console.info(`${logPurpose}: stopping`);
+    this.client.logger.info(logPurpose, "stop: stopping social client plugin");
     await this.users.stop();
   }
 }

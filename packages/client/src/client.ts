@@ -97,12 +97,12 @@ export class CinderlinkClient<
     this.did = did;
     this.address = address;
     this.addressVerification = addressVerification;
+    this.logger = logger || new Logger();
+    this.role = role;
+    this.plugins = {};
     this.dag = new ClientDIDDag<PluginEvents>(this);
     this.identity = new Identity<PluginEvents>(this);
     this.files = new Files<PluginEvents>(this);
-    this.role = role;
-    this.plugins = {};
-    this.logger = logger || new Logger();
   }
 
   async addPlugin<Plugin extends PluginBaseInterface>(plugin: Plugin) {
@@ -311,8 +311,9 @@ export class CinderlinkClient<
   hasUnsavedChanges() {
     return Object.values(this.schemas).some((schema) => {
       if (schema.schemaId !== "sync" && schema.hasChanges()) {
-        console.info("schema has changes", schema.schemaId);
+        return true;
       }
+      return false;
     });
   }
 
@@ -428,7 +429,11 @@ export class CinderlinkClient<
 
           if (saved) {
             this.logger.debug("identity", "hydrating schema", { name, schema });
-            this.schemas[name] = await Schema.fromSavedSchema(saved, this.dag);
+            this.schemas[name] = await Schema.fromSavedSchema(
+              saved,
+              this.dag,
+              this.logger.module("db").submodule(`schema:${name}`)
+            );
           }
         })
       );

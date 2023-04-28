@@ -89,7 +89,12 @@ export class SyncDBPlugin<
   async start() {
     this.client.logger.info("sync", `initializing table watchers`);
     if (!this.client.hasSchema("sync")) {
-      this.schema = new Schema("sync", SyncSchemaDef, this.client.dag);
+      this.schema = new Schema(
+        "sync",
+        SyncSchemaDef,
+        this.client.dag,
+        this.client.logger.module("db").submodule(`schema:sync`)
+      );
       this.client.addSchema("sync", this.schema as SchemaInterface);
     } else {
       this.schema = this.client.getSchema("sync") as Schema;

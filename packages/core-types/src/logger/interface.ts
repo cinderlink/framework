@@ -20,6 +20,7 @@ export interface LoggerInterface {
 }
 
 export interface SubLoggerInterface {
+  prefix?: string;
   clear(): void;
   debug(message: string, data?: Record<string, unknown>): void;
   error(message: string, data?: Record<string, unknown>): void;
@@ -33,4 +34,5 @@ export interface SubLoggerInterface {
   ): void;
   trace(message: string, data?: Record<string, unknown>): void;
   warn(message: string, data?: Record<string, unknown>): void;
+  submodule(id: string): SubLoggerInterface;
 }

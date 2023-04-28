@@ -59,10 +59,6 @@ export async function createIPFS(
       Bootstrap: nodes,
     },
   };
-  console.info(options);
   const ipfs = await create(options);
-
-  console.info(await ipfs.version());
-
   return ipfs as unknown as IPFSWithLibP2P;
 }

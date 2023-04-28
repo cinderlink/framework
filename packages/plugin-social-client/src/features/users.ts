@@ -32,24 +32,21 @@ export class SocialUsers {
 
   async start() {
     await this.loadLocalUser();
-    this.plugin.client.pluginEvents.on(
-      "/cinderlink/handshake/success",
-      async (peer) => {
-        if (peer.role === "server") {
-          this.hasServerConnection = true;
-        } else {
-          await this.setUserStatus(peer.did as string, "online");
-        }
-
-        if (
-          this.localUser?.name &&
-          this.localUser.name !== "guest" &&
-          this.plugin.client.addressVerification
-        ) {
-          await this.announce(peer.peerId.toString());
-        }
+    this.plugin.client.on("/cinderlink/handshake/success", async (peer) => {
+      if (peer.role === "server") {
+        this.hasServerConnection = true;
+      } else {
+        await this.setUserStatus(peer.did as string, "online");
       }
-    );
+
+      if (
+        this.localUser?.name &&
+        this.localUser.name !== "guest" &&
+        this.plugin.client.addressVerification
+      ) {
+        await this.announce(peer.peerId.toString());
+      }
+    });
 
     this.plugin.client.on("/peer/connect", async (peer: Peer) => {
       if (peer.role === "peer" && peer.did) {
@@ -80,7 +77,7 @@ export class SocialUsers {
         "SocialUsers/start: announcing (pubsub, interval)"
       );
       await this.announce();
-    }, Number(this.plugin.options.announceInterval || 30000));
+    }, Number(this.plugin.options.announceInterval || 5000));
 
     const connections = await this.plugin.connections.getConnections(
       this.plugin.client.id,
@@ -94,53 +91,9 @@ export class SocialUsers {
       }
     }
 
-    this.userStatusInterval = setInterval(
-      this.updateUserStatuses.bind(this),
-      3000
-    );
-
     this.localUser.status === "online";
     await this.saveLocalUser();
-    await this.updateUserStatuses();
     await this.announce();
-  }
-
-  async updateUserStatuses() {
-    const peers = this.plugin.client.peers
-      .getPeers()
-      .filter((p) => p.did && p.connected && p.authenticated);
-
-    if (!peers?.length) {
-      await this.plugin
-        .table<SocialUser>("users")
-        .query()
-        .update({ status: "offline" })
-        .execute();
-    }
-
-    await this.plugin
-      .table<SocialUser>("users")
-      .query()
-      .where("status", "!=", "offline")
-      .where(
-        "did",
-        "!in",
-        peers.map((p) => p.did as string)
-      )
-      .update({ status: "offline" })
-      .execute();
-
-    await this.plugin
-      .table<SocialUser>("users")
-      .query()
-      .where("status", "!=", "online")
-      .where(
-        "did",
-        "in",
-        peers.map((p) => p.did as string)
-      )
-      .update({ status: "online" })
-      .execute();
   }
 
   async stop() {
@@ -156,10 +109,14 @@ export class SocialUsers {
     const table = this.plugin.table<SocialUser>("users");
     this.plugin.client.logger.info(
       logPurpose,
-      "SocialUsers/setUserStatus: setting user status",
+      `user ${did} status changed to '${status}'`,
       { did, status }
     );
-    await table.query().where("did", "=", did).update({ status }).execute();
+    await table
+      .query()
+      .where("did", "=", did)
+      .update({ status, updatedAt: Date.now() })
+      .execute();
   }
 
   async announce(to: string | undefined = undefined) {
@@ -199,6 +156,10 @@ export class SocialUsers {
         payload
       );
       await this.plugin.client.publish("/social/users/announce", payload);
+
+      for (let peer of this.plugin.client.peers.getAllPeers()) {
+        await this.plugin.client.ipfs.ping(peer.peerId);
+      }
     }
   }
 
@@ -266,6 +227,7 @@ export class SocialUsers {
       {
         ...this.localUser,
         did: this.plugin.client.id,
+        status: "online",
         updatedAt: Date.now(),
       }
     );

@@ -100,18 +100,22 @@ export class Logger implements LoggerInterface {
 }
 
 export class SubLogger implements SubLoggerInterface {
-  constructor(public logger: LoggerInterface, public module: string) {}
+  constructor(
+    public logger: LoggerInterface,
+    public module: string,
+    public prefix?: string
+  ) {}
 
   public clear() {
     this.logger.clear(this.module);
   }
 
   public debug(message: string, data?: Record<string, unknown>) {
-    this.logger.debug(this.module, message, data);
+    this.log("debug", message, data);
   }
 
   public error(message: string, data?: Record<string, unknown>) {
-    this.logger.error(this.module, message, data);
+    this.log("error", message, data);
   }
 
   public getLogCount(): number {
@@ -123,7 +127,7 @@ export class SubLogger implements SubLoggerInterface {
   }
 
   public info(message: string, data?: Record<string, unknown>) {
-    this.logger.info(this.module, message, data);
+    this.log("info", message, data);
   }
 
   public log(
@@ -131,15 +135,28 @@ export class SubLogger implements SubLoggerInterface {
     message: string,
     data?: Record<string, unknown>
   ) {
-    this.logger.log(this.module, severity, message, data);
+    this.logger.log(
+      this.module,
+      severity,
+      this.prefix ? `${this.prefix} - ${message}` : message,
+      data
+    );
   }
 
   public trace(message: string, data?: Record<string, unknown>) {
-    this.logger.trace(this.module, message, data);
+    this.log("trace", message, data);
   }
 
   public warn(message: string, data?: Record<string, unknown>) {
-    this.logger.warn(this.module, message, data);
+    this.log("warn", message, data);
+  }
+
+  public submodule(prefix: string): SubLoggerInterface {
+    return new SubLogger(
+      this.logger,
+      this.module,
+      this.prefix ? `${this.prefix}/${prefix}` : prefix
+    );
   }
 }
 

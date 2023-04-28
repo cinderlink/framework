@@ -62,7 +62,8 @@ export class IdentityServerPlugin
             },
           },
         },
-        this.client.dag
+        this.client.dag,
+        this.client.logger.module("db").submodule(`schema:identity`)
       );
       await this.client.addSchema("identity", schema);
     } else {

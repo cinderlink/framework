@@ -332,7 +332,12 @@ export default SocialSchemaDef;
 export async function loadSocialSchema(client: CinderlinkClientInterface<any>) {
   console.info(`plugin/social > preparing schema`);
   if (!client.schemas["social"]) {
-    const schema = new Schema("social", SocialSchemaDef as any, client.dag);
+    const schema = new Schema(
+      "social",
+      SocialSchemaDef as any,
+      client.dag,
+      client.logger.module("db").submodule(`schema:social`)
+    );
     await client.addSchema("social", schema as any);
   } else {
     client.schemas["social"].setDefs(SocialSchemaDef as any);

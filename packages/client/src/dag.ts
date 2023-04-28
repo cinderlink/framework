@@ -47,6 +47,6 @@ export class ClientDIDDag<
   Plugins extends PluginEventDef = PluginEventDef
 > extends DIDDag {
   constructor(client: CinderlinkClientInterface<Plugins>) {
-    super(client.did, new ClientDag(client));
+    super(client.did, new ClientDag(client), client.logger.module("dag"));
   }
 }

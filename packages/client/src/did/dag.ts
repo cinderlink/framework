@@ -2,15 +2,24 @@ import { GetOptions } from "ipfs-core-types/src/root";
 import { JWE } from "did-jwt";
 import { DID } from "dids";
 import { CID } from "multiformats";
-import { DAGInterface, DIDDagInterface } from "@cinderlink/core-types";
+import {
+  DAGInterface,
+  DIDDagInterface,
+  SubLoggerInterface,
+} from "@cinderlink/core-types";
 import { removeUndefined } from "./util";
 
 export class DIDDag implements DIDDagInterface {
-  constructor(public did: DID, private dag: DAGInterface) {}
+  constructor(
+    public did: DID,
+    private dag: DAGInterface,
+    public logger: SubLoggerInterface
+  ) {}
 
   async store<Data = unknown>(data: Data): Promise<CID | undefined> {
-    console.info(`client/did/dag/store:`, { data });
+    this.logger.debug("storing data", { data });
     return this.dag.store(data).catch((err: Error) => {
+      this.logger.error("failed to store data", { data, err });
       throw new Error("Client DAG failed to store data: " + err.message);
     });
   }
@@ -23,9 +32,16 @@ export class DIDDag implements DIDDagInterface {
     const loaded = await this.dag
       .load<Data>(cid, path, options)
       .catch((err: Error) => {
-        throw new Error("Client DAG failed to load data: " + err.message);
+        this.logger.error("error occurred during dag load", {
+          cid,
+          path,
+          options,
+          err,
+        });
+        throw new Error("DAG failed to load data: " + err.message);
       });
     if (!loaded) {
+      this.logger.error("failed to load data", { cid, path, options });
       throw new Error("Unable to load data");
     }
     return loaded;
@@ -42,9 +58,10 @@ export class DIDDag implements DIDDagInterface {
       recipients || [this.did.id]
     );
     if (!jwe) {
+      this.logger.error("failed to create jwe", { data, recipients });
       throw new Error("Unable to create JWE");
     }
-    console.info(`client/did/dag/storeEncrypted:`, { jwe });
+    this.logger.debug("storing encrypted data", { jwe });
     return this.dag.store(jwe, "dag-jose", "sha2-256");
   }
 
@@ -55,6 +72,11 @@ export class DIDDag implements DIDDagInterface {
   ): Promise<JWE> {
     const encrypted = await this.dag.load<JWE>(cid, path, options);
     if (!encrypted) {
+      this.logger.error("failed to load encrypted data", {
+        cid,
+        path,
+        options,
+      });
       throw new Error("Unable to load encrypted data");
     }
     return encrypted;
@@ -67,6 +89,11 @@ export class DIDDag implements DIDDagInterface {
   ): Promise<Data | undefined> {
     const jwe = await this.loadEncrypted(cid, path, options);
     if (!jwe) {
+      this.logger.error("failed to load encrypted data", {
+        cid,
+        path,
+        options,
+      });
       throw new Error("Unable to load JWE");
     }
     const decrypted = await this.did.decryptDagJWE(jwe);

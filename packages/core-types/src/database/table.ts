@@ -14,6 +14,7 @@ import {
   BlockAggregates,
   BlockAggregator,
 } from "./block";
+import { SubLoggerInterface } from "../logger";
 
 export interface TableRow {
   id: number;
@@ -97,6 +98,7 @@ export interface TableInterface<
   dag: DIDDagInterface;
   writing: boolean;
   writeStartAt: number;
+  logger: SubLoggerInterface;
 
   createBlock(prevCID: string | undefined): TableBlockInterface<Row, Def>;
   setBlock(block: TableBlockInterface<Row, Def>): void;
