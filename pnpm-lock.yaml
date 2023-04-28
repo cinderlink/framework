@@ -16,15 +16,15 @@ importers:
 
   apps/server-template:
     specifiers:
-      '@cinderlink/client': workspace:^0.0.13
-      '@cinderlink/core-types': workspace:^0.0.9
+      '@cinderlink/client': workspace:^0.0.14
+      '@cinderlink/core-types': workspace:^0.0.10
       '@cinderlink/identifiers': workspace:^0.0.4
-      '@cinderlink/ipld-database': workspace:^0.0.12
-      '@cinderlink/plugin-identity-server': workspace:^0.0.7
-      '@cinderlink/plugin-offline-sync-server': workspace:^0.0.8
-      '@cinderlink/plugin-social-core': workspace:^0.0.10
-      '@cinderlink/plugin-social-server': workspace:^0.0.9
-      '@cinderlink/plugin-sync-db': workspace:^0.0.15
+      '@cinderlink/ipld-database': workspace:^0.0.13
+      '@cinderlink/plugin-identity-server': workspace:^0.0.8
+      '@cinderlink/plugin-offline-sync-server': workspace:^0.0.9
+      '@cinderlink/plugin-social-core': workspace:^0.0.11
+      '@cinderlink/plugin-social-server': workspace:^0.0.10
+      '@cinderlink/plugin-sync-db': workspace:^0.0.16
       '@cinderlink/server-bin': workspace:^0.0.16
       '@cinderlink/tsconfig': workspace:^1.0.0
       dotenv: ^16.0.3
@@ -55,15 +55,15 @@ importers:
 
   apps/social-dapp:
     specifiers:
-      '@cinderlink/client': workspace:^0.0.13
-      '@cinderlink/core-types': workspace:^0.0.9
+      '@cinderlink/client': workspace:^0.0.14
+      '@cinderlink/core-types': workspace:^0.0.10
       '@cinderlink/identifiers': workspace:^0.0.4
-      '@cinderlink/ipld-database': workspace:^0.0.12
-      '@cinderlink/plugin-offline-sync-client': workspace:^0.0.8
-      '@cinderlink/plugin-offline-sync-core': workspace:^0.0.6
-      '@cinderlink/plugin-social-client': workspace:^0.0.12
-      '@cinderlink/plugin-social-core': workspace:^0.0.10
-      '@cinderlink/plugin-sync-db': workspace:^0.0.15
+      '@cinderlink/ipld-database': workspace:^0.0.13
+      '@cinderlink/plugin-offline-sync-client': workspace:^0.0.9
+      '@cinderlink/plugin-offline-sync-core': workspace:^0.0.7
+      '@cinderlink/plugin-social-client': workspace:^0.0.13
+      '@cinderlink/plugin-social-core': workspace:^0.0.11
+      '@cinderlink/plugin-sync-db': workspace:^0.0.16
       '@cinderlink/protocol': workspace:^0.0.7
       '@cinderlink/ui-kit': workspace:^0.0.26
       '@iconify-json/logos': ^1.1.25
@@ -284,7 +284,7 @@ importers:
       svelte-highlight: 7.2.1
       unocss: 0.51.8_vite@4.3.3
     devDependencies:
-      '@cinderlink/core-types': link:../../packages/core-types
+      '@cinderlink/core-types': 0.0.9_ajv@8.12.0+emittery@1.0.1
       '@cinderlink/protocol': link:../../packages/protocol
       '@esbuild-plugins/node-globals-polyfill': 0.2.3
       '@iconify-json/logos': 1.1.25
@@ -2526,6 +2526,22 @@ packages:
       fs-extra: 7.0.1
       human-id: 1.0.2
       prettier: 2.8.8
+    dev: true
+
+  /@cinderlink/core-types/0.0.9_ajv@8.12.0+emittery@1.0.1:
+    resolution: {integrity: sha512-FwqzJoCYT5knrG5IOHAFNPC9xlaxBsZ0l1UizTiEh2FbqPS+qgCF9cy6yg/Xcud0Ltvoz6tSUm02om45ko2NXA==}
+    peerDependencies:
+      ajv: ^8.12.0
+      did-jwt: ^6.11.0
+      dids: ^3.4.0
+      emittery: ^1.0.1
+      ipfs-core-types: ^0.13.0
+      libp2p: ^0.41.0
+      minisearch: ^6.0.1
+      multiformats: ^11.0.2
+    dependencies:
+      ajv: 8.12.0
+      emittery: 1.0.1
     dev: true
 
   /@coinbase/wallet-sdk/3.6.6:
