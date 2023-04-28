@@ -114,7 +114,7 @@ export class CinderlinkClient<
 
   async startPlugin(id: string) {
     const plugin = this.getPlugin(id);
-    this.logger.info("plugins", "starting plugin", { id: plugin.id });
+    this.logger.info("plugins", `starting ${plugin.id} plugin`);
     Object.entries(plugin.pubsub).forEach(([topic, handler]) => {
       this.pubsub.on(topic, (handler as PluginEventHandler).bind(plugin));
       this.subscribe(topic);
@@ -193,7 +193,6 @@ export class CinderlinkClient<
 
     const protocol = new CinderlinkProtocolPlugin(this as any);
     await this.addPlugin(protocol);
-    this.logger.debug("plugins", "starting protocol plugin");
     await this.startPlugin(protocol.id);
     this.connectToNodes();
 
@@ -229,7 +228,6 @@ export class CinderlinkClient<
     await Promise.all(
       Object.values(this.plugins).map(async (plugin) => {
         if (plugin.id === protocol.id) return;
-        this.logger.info("plugins", "starting plugin", { id: plugin.id });
         await this.startPlugin(plugin.id);
       })
     );
@@ -249,7 +247,9 @@ export class CinderlinkClient<
   }
 
   async onPeerConnect(peer: Peer) {
-    this.logger.info("p2p", "peer connected", { peer });
+    this.logger.info("p2p", `peer connected ${this.peerReadable(peer)}`, {
+      peer,
+    });
     this.emit("/peer/connect", peer);
     this.peers.updatePeer(peer.peerId.toString(), {
       connected: true,
@@ -260,7 +260,9 @@ export class CinderlinkClient<
     });
   }
   async onPeerDisconnect(peer: Peer) {
-    this.logger.info("p2p", "peer disconnected", { peer });
+    this.logger.info("p2p", `peer disconnected ${this.peerReadable(peer)}`, {
+      peer,
+    });
     await this.peers.updatePeer(peer.peerId.toString(), {
       connected: false,
       authenticated: false,
@@ -608,18 +610,14 @@ export class CinderlinkClient<
 
   async subscribe(topic: keyof PluginEvents["subscribe"]) {
     if (this.subscriptions.includes(topic as string)) return;
-    this.logger.debug("pubsub", "subscribing to topic", {
-      topic: topic as string,
-    });
+    this.logger.debug("pubsub", `subscribing to topic: ${topic as string}`);
     await this.ipfs.libp2p.pubsub.subscribe(topic as string);
     this.subscriptions.push(topic as string);
   }
 
   async unsubscribe(topic: keyof PluginEvents["subscribe"]) {
     if (!this.subscriptions.includes(topic as string)) return;
-    this.logger.debug("pubsub", "unsubscribing from topic", {
-      topic: topic as string,
-    });
+    this.logger.debug("pubsub", `unsubscribing from topic: ${topic as string}`);
     await this.ipfs.libp2p.pubsub.unsubscribe(topic as string);
     this.subscriptions = this.subscriptions.filter((t) => t !== topic);
   }
@@ -640,10 +638,13 @@ export class CinderlinkClient<
     >(message, { ...options, did: this.did });
 
     const bytes = json.encode(encoded);
-    this.logger.debug("pubsub", "publishing message", {
-      topic: topic as string,
-      length: bytes.length,
-    });
+    this.logger.debug(
+      "pubsub",
+      `publishing message on topic: ${topic as string} (length: ${
+        bytes.length
+      })`,
+      { message, options }
+    );
     try {
       await this.ipfs.libp2p.pubsub.publish(topic as string, bytes);
     } catch (e) {

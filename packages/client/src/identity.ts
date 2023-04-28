@@ -21,19 +21,13 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
   async resolve(): Promise<IdentityResolved> {
     if (this.resolving) return this.resolving;
     this.resolving = new Promise(async (resolve) => {
-      this.client.logger.info(
-        "client/identity/resolve",
-        "resolving local identity"
-      );
+      this.client.logger.info("identity", "resolving local identity");
       const emptyResult: IdentityResolved = {
         cid: undefined,
         document: undefined,
       };
       let resolved = await this.resolveLocal().catch(() => emptyResult);
-      this.client.logger.info(
-        "client/identity/resolve",
-        "resolving ipns identity"
-      );
+      this.client.logger.info("identity", "resolving ipns identity");
       const ipns = await this.resolveIPNS().catch(() => emptyResult);
       if (
         !Object.keys(resolved.document?.schemas || {}).length ||
@@ -44,10 +38,7 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
       ) {
         resolved = ipns;
       }
-      this.client.logger.info(
-        "client/identity/resolve",
-        "resolving server identity"
-      );
+      this.client.logger.info("identity", "resolving server identity");
       const server = await this.resolveServer().catch(() => emptyResult);
       if (
         !Object.keys(resolved.document?.schemas || {}).length ||
@@ -61,7 +52,7 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
       this.cid = resolved?.cid;
       this.document = resolved?.document;
 
-      this.client.logger.info("client/identity/resolve", "identity resolved", {
+      this.client.logger.info("identity", "identity resolved", {
         cid: this.cid,
         document: this.document,
       });
@@ -166,7 +157,7 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
       }
     }
 
-    this.client.logger.info("client/identity", "server identity resolved", {
+    this.client.logger.info("identity", "server identity resolved", {
       cid,
       document,
     });
@@ -184,19 +175,19 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
     forceRemote?: boolean;
   }) {
     if (!this.hasResolved || !cid) {
-      this.client.logger.error(
-        "client/identity/save",
-        "identity has not been resolved"
-      );
+      this.client.logger.error("identity", "identity has not been resolved");
       return;
     }
     if (!this.client.ipfs.isOnline) {
-      this.client.logger.error("client/identity/save", "ipfs is offline");
+      this.client.logger.error(
+        "identity",
+        "failed to save identity, ipfs is offline"
+      );
       return;
     }
     this.cid = cid;
     this.document = document;
-    this.client.logger.info("client/identity/save", "saving identity", {
+    this.client.logger.info("identity", "saving identity", {
       cid,
       document,
       servers: this.client.peers.getServers(),
@@ -216,13 +207,9 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
       await Promise.all(
         this.client.peers.getServers().map(async (server) => {
           if (server.did) {
-            this.client.logger.info(
-              "client/identity/save",
-              "sending identity to server",
-              {
-                server,
-              }
-            );
+            this.client.logger.info("identity", "sending identity to server", {
+              server,
+            });
 
             await this.client.send<CinderlinkClientEvents>(
               server.peerId.toString(),
@@ -232,13 +219,9 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
               }
             );
           } else {
-            this.client.logger.warn(
-              "client/identity/save",
-              "no did for server",
-              {
-                server,
-              }
-            );
+            this.client.logger.warn("identity", "no did for server", {
+              server,
+            });
           }
         })
       );
