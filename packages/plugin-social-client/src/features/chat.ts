@@ -4,7 +4,8 @@ import { ProtocolRequest } from "@cinderlink/core-types";
 import { encodePayload } from "@cinderlink/protocol";
 import { v4 as uuid } from "uuid";
 import SocialClientPlugin from "../plugin";
-const logPurpose = `plugin-social-client`;
+const logModule = "plugins";
+const pluginName = "social-client";
 export class SocialChat {
   constructor(private plugin: SocialClientPlugin) {}
 
@@ -23,8 +24,8 @@ export class SocialChat {
       ...message,
     };
     this.plugin.client.logger.info(
-      logPurpose,
-      "SocialChat/sendChatMessage: sending chat message"
+      logModule,
+      `${pluginName}/sendChatMessage: sending chat message`
     );
 
     const cid = await this.plugin.client.dag.storeEncrypted(chatMessage, [
@@ -38,8 +39,8 @@ export class SocialChat {
       recursive: true,
     });
     this.plugin.client.logger.info(
-      logPurpose,
-      "SocialChat/sendChatMessage: message pinned",
+      logModule,
+      `${pluginName}/sendChatMessage: message pinned`,
       { pinned: pinned.toString() }
     );
 
@@ -61,8 +62,8 @@ export class SocialChat {
           "offlineSync"
         );
       this.plugin.client.logger.info(
-        logPurpose,
-        "SocialChat/sendChatMessage: sending chat message to offline sync",
+        logModule,
+        `${pluginName}/sendChatMessage: sending chat message to offline sync`,
         {
           to: message.to,
           message: savedMessage,

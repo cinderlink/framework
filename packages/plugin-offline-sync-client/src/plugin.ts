@@ -25,7 +25,8 @@ import {
   OfflineSyncRecord,
 } from "@cinderlink/plugin-offline-sync-core";
 import { CinderlinkProtocolPlugin } from "@cinderlink/protocol";
-const logPurpose = `plugin-offline-sync-client`;
+const logModule = `plugins`;
+const pluginName = `offline-sync-client`;
 export class OfflineSyncClientPlugin<
     Client extends CinderlinkClientInterface<
       OfflineSyncClientEvents & ProtocolEvents
@@ -62,26 +63,24 @@ export class OfflineSyncClientPlugin<
 
   async start() {
     this.client.logger.info(
-      logPurpose,
-      "start: starting offline sync client plugin"
+      logModule,
+      `${pluginName}/start: starting offline sync client plugin`
     );
 
     await loadOfflineSyncSchema(this.client);
     this.client.logger.info(
-      logPurpose,
-      "start: loaded offline-sync-client schema"
+      logModule,
+      `${pluginName}/start: loaded offline-sync-client schema`
     );
 
     this.ready = true;
-    this.client.logger.info(logPurpose, "start: plugin is ready");
+    this.client.logger.info(logModule, `${pluginName}/start: plugin is ready`);
+
     this.emit("ready", {});
   }
 
   async stop() {
-    this.client.logger.info(
-      logPurpose,
-      "stop: stopping offline-sync-client plugin"
-    );
+    this.client.logger.info(logModule, `${pluginName}/stop: stopping plugin`);
   }
 
   async sendMessage<
@@ -97,8 +96,8 @@ export class OfflineSyncClientPlugin<
     let saved = false;
     for (const server of servers) {
       this.client.logger.info(
-        logPurpose,
-        "sendMessage: sending offline message to server",
+        logModule,
+        `${pluginName}/sendMessage: sending offline message to server`,
         {
           server: server.did,
           recipient,
@@ -132,8 +131,8 @@ export class OfflineSyncClientPlugin<
 
   async onPeerConnect(peer: Peer) {
     this.client.logger.info(
-      logPurpose,
-      "onPeerConnect: asking new peer for offline messages",
+      logModule,
+      `${pluginName}/onPeerConnect: asking new peer for offline messages`,
       {
         peerId: peer.peerId.toString(),
       }
@@ -147,8 +146,8 @@ export class OfflineSyncClientPlugin<
       },
     });
     this.client.logger.info(
-      logPurpose,
-      "onPeerConnect: /offline/get/request sent",
+      logModule,
+      `${pluginName}/onPeerConnect: /offline/get/request sent`,
       {
         to: peer.peerId.toString(),
       }
@@ -165,17 +164,21 @@ export class OfflineSyncClientPlugin<
     const { requestId, saved, error } = message.payload;
     if (!saved) {
       this.client.logger.error(
-        logPurpose,
-        "onSendResponse: server failed to save message",
+        logModule,
+        `${pluginName}/onSendResponse: server failed to save message`,
         {
           requestId,
         }
       );
 
       if (error)
-        this.client.logger.error(logPurpose, "onSendResponse: error", {
-          error,
-        });
+        this.client.logger.error(
+          logModule,
+          `${pluginName}/onSendResponse: error`,
+          {
+            error,
+          }
+        );
       return;
     }
 
@@ -190,26 +193,30 @@ export class OfflineSyncClientPlugin<
     >
   ) {
     const { requestId, limit } = message.payload;
-    this.client.logger.info(logPurpose, "onGetRequest: handling request", {
-      from: message.peer.did,
-      requestId,
-    });
+    this.client.logger.info(
+      logModule,
+      `${pluginName}/onGetRequest: handling request`,
+      {
+        from: message.peer.did,
+        requestId,
+      }
+    );
 
     const table = this.client
       .getSchema("offlineSync")
       ?.getTable<OfflineSyncRecord>("messages");
     if (!table) {
       this.client.logger.error(
-        logPurpose,
-        "onGetRequest: no offline-sync table found"
+        logModule,
+        `${pluginName}/onGetRequest: no offline-sync table found`
       );
       return;
     }
 
     if (!message.peer.did) {
       this.client.logger.error(
-        logPurpose,
-        "onGetRequest: no did found for peer",
+        logModule,
+        `${pluginName}/onGetRequest: no did found for peer`,
         { peerId: message.peer.peerId }
       );
 
@@ -225,8 +232,8 @@ export class OfflineSyncClientPlugin<
       .then((res) => res.all());
 
     this.client.logger.info(
-      logPurpose,
-      `onGetRequest: sending ${messages.length} messages to ${message.peer.did}`,
+      logModule,
+      `${pluginName}/onGetRequest: sending ${messages.length} messages to ${message.peer.did}`,
       { requestId }
     );
 
@@ -252,8 +259,8 @@ export class OfflineSyncClientPlugin<
     const { requestId, messages } = response.payload;
     if (!messages.length) {
       this.client.logger.info(
-        logPurpose,
-        "onGetResponse: server has no offline messages",
+        logModule,
+        `${pluginName}/onGetResponse: server has no offline messages`,
         { requestId }
       );
 
@@ -261,8 +268,8 @@ export class OfflineSyncClientPlugin<
     }
 
     this.client.logger.info(
-      logPurpose,
-      `onGetResponse: server has ${messages.length} offline messages`,
+      logModule,
+      `${pluginName}/onGetResponse: server has ${messages.length} offline messages`,
       { requestId }
     );
     let saved: number[] = [];
@@ -272,8 +279,8 @@ export class OfflineSyncClientPlugin<
     for (const record of messages) {
       const { message, sender, createdAt = 0 } = record;
       this.client.logger.info(
-        logPurpose,
-        `onGetResponse: handling cinderlink message from ${sender}`,
+        logModule,
+        `${pluginName}/onGetResponse: handling cinderlink message from ${sender}`,
         { record, date: formatRelative(createdAt, new Date()) }
       );
 
@@ -326,24 +333,28 @@ export class OfflineSyncClientPlugin<
     const { requestId, saved, errors } = response.payload;
     if (saved.length) {
       this.client.logger.info(
-        logPurpose,
-        `onGetConfirmation: server saved ${saved.length} messages`,
+        logModule,
+        `${pluginName}/onGetConfirmation: server saved ${saved.length} messages`,
         { requestId }
       );
     }
 
     if (errors && Object.keys(errors).length) {
       this.client.logger.error(
-        logPurpose,
-        `onGetConfirmation: server failed to save ${
+        logModule,
+        `${pluginName}/onGetConfirmation: server failed to save ${
           Object.keys(errors).length
         } messages`,
         { requestId }
       );
 
-      this.client.logger.error(logPurpose, `onGetConfirmation: errors`, {
-        errors,
-      });
+      this.client.logger.error(
+        logModule,
+        `${pluginName}/onGetConfirmation: errors`,
+        {
+          errors,
+        }
+      );
     }
 
     // delete the saved messages from the database
@@ -352,8 +363,8 @@ export class OfflineSyncClientPlugin<
       ?.getTable<OfflineSyncRecord>("messages");
     if (!table) {
       this.client.logger.error(
-        logPurpose,
-        "onGetConfirmation: no offline-sync table found"
+        logModule,
+        `${pluginName}/onGetConfirmation: no offline-sync table found`
       );
       return;
     }

@@ -12,7 +12,8 @@ import {
 } from "@cinderlink/plugin-social-core";
 import { checkAddressVerification } from "@cinderlink/identifiers";
 import SocialClientPlugin from "../plugin";
-const logPurpose = `plugin-social-client`;
+const logModule = "plugins";
+const pluginName = "social-client";
 export class SocialUsers {
   localUser: Partial<SocialUser> = {
     name: "",
@@ -56,8 +57,8 @@ export class SocialUsers {
 
     this.plugin.client.on("/peer/disconnect", async (peer: Peer) => {
       this.plugin.client.logger.info(
-        logPurpose,
-        "SocialUsers/start: peer disconnected",
+        logModule,
+        `${pluginName}/start: peer disconnected`,
         { peer }
       );
       if (peer.role === "peer" && peer.did) {
@@ -73,8 +74,8 @@ export class SocialUsers {
       )
         return;
       this.plugin.client.logger.info(
-        logPurpose,
-        "SocialUsers/start: announcing (pubsub, interval)"
+        logModule,
+        `${pluginName}/start: announcing (pubsub, interval)`
       );
       await this.announce();
     }, Number(this.plugin.options.announceInterval || 5000));
@@ -108,7 +109,7 @@ export class SocialUsers {
   async setUserStatus(did: string, status: SocialUserStatus) {
     const table = this.plugin.table<SocialUser>("users");
     this.plugin.client.logger.info(
-      logPurpose,
+      logModule,
       `user ${did} status changed to '${status}'`,
       { did, status }
     );
@@ -138,8 +139,8 @@ export class SocialUsers {
     };
     if (to) {
       this.plugin.client.logger.info(
-        logPurpose,
-        "SocialUsers/announce annoucing (p2p)",
+        logModule,
+        `${pluginName}/announce annoucing (p2p)`,
         {
           topic: "/social/users/announce",
           payload,
@@ -151,8 +152,8 @@ export class SocialUsers {
       });
     } else {
       this.plugin.client.logger.info(
-        logPurpose,
-        "SocialUsers/announce annoucing (pubsub)",
+        logModule,
+        `${pluginName}/announce annoucing (pubsub)`,
         payload
       );
       await this.plugin.client.publish("/social/users/announce", payload);
@@ -219,8 +220,8 @@ export class SocialUsers {
 
   async saveLocalUser() {
     this.plugin.client.logger.info(
-      logPurpose,
-      "SocialUsers/saveLocalUser: saving local user"
+      logModule,
+      `${pluginName}/saveLocalUser: saving local user`
     );
     const user = await this.plugin.table<SocialUser>("users").upsert(
       { did: this.plugin.client.id },
@@ -232,8 +233,8 @@ export class SocialUsers {
       }
     );
     this.plugin.client.logger.info(
-      logPurpose,
-      "SocialUsers/saveLocalUser: saved local user",
+      logModule,
+      `${pluginName}/saveLocalUser: saved local user`,
       { user, localUser: this.localUser }
     );
 
@@ -241,8 +242,8 @@ export class SocialUsers {
     // .findByIndex("did", this.plugin.client.id);
     if (!user?.id) {
       this.plugin.client.logger.error(
-        logPurpose,
-        "SocialUsers/saveLocalUser: failed to save local user, user not found after upsert",
+        logModule,
+        `${pluginName}/saveLocalUser: failed to save local user, user not found after upsert`,
         { did: this.plugin.client.id }
       );
 
@@ -253,8 +254,8 @@ export class SocialUsers {
   async loadLocalUser() {
     if (!this.plugin.client.identity.hasResolved) {
       this.plugin.client.logger.info(
-        logPurpose,
-        "SocialUsers/loadLocalUser: identity not resolved, waiting..."
+        logModule,
+        `${pluginName}/loadLocalUser: identity not resolved, waiting...`
       );
       return;
     } else if (this.loadingLocalUser) {
@@ -263,8 +264,8 @@ export class SocialUsers {
 
     this.loadingLocalUser = true;
     this.plugin.client.logger.info(
-      logPurpose,
-      "SocialUsers/loadLocalUser: loading local user..."
+      logModule,
+      `${pluginName}/loadLocalUser: loading local user...`
     );
     const user = (
       await this.plugin
@@ -276,8 +277,8 @@ export class SocialUsers {
     )?.first();
     if (!user) {
       this.plugin.client.logger.warn(
-        logPurpose,
-        "SocialUsers/loadLocalUser: local user not found, returning..."
+        logModule,
+        `${pluginName}/loadLocalUser: local user not found, returning...`
       );
       return;
     }
@@ -289,8 +290,8 @@ export class SocialUsers {
       status: "online",
     };
     this.plugin.client.logger.info(
-      logPurpose,
-      "SocialUsers/loadLocalUser: local user loaded",
+      logModule,
+      `${pluginName}/loadLocalUser: local user loaded`,
       this.localUser
     );
   }
@@ -380,8 +381,8 @@ export class SocialUsers {
   ) {
     if (!message.payload.address) {
       this.plugin.client.logger.warn(
-        logPurpose,
-        "SocialUsers/onAnnounce: received social announce message from peer without address",
+        logModule,
+        `${pluginName}/onAnnounce: received social announce message from peer without address`,
         { did: message.peer.did }
       );
 
@@ -390,8 +391,8 @@ export class SocialUsers {
 
     if (!message.payload.addressVerification) {
       this.plugin.client.logger.warn(
-        logPurpose,
-        "SocialUsers/onAnnounce: received social announce message from peer without address verification",
+        logModule,
+        `${pluginName}/onAnnounce: received social announce message from peer without address verification`,
         { did: message.peer.did }
       );
 
@@ -400,8 +401,8 @@ export class SocialUsers {
 
     if (!message.payload.did || !message.payload.did.length) {
       this.plugin.client.logger.warn(
-        logPurpose,
-        "SocialUsers/onAnnounce: received social announce message from peer without did",
+        logModule,
+        `${pluginName}/onAnnounce: received social announce message from peer without did`,
         { did: message.peer.did }
       );
 
@@ -416,8 +417,8 @@ export class SocialUsers {
     ).catch(() => undefined);
     if (!verified) {
       this.plugin.client.logger.warn(
-        logPurpose,
-        "SocialUsers/onAnnounce: received secial announce message from peer with invalid address verification",
+        logModule,
+        `${pluginName}/onAnnounce: received secial announce message from peer with invalid address verification`,
         { did: message.peer.did }
       );
 
@@ -438,8 +439,8 @@ export class SocialUsers {
     }
 
     this.plugin.client.logger.info(
-      logPurpose,
-      "SocialUsers/onAnnounce: received social announce message",
+      logModule,
+      `${pluginName}/onAnnounce: received social announce message`,
       {
         did: message.payload.did,
         connected: message.peer.connected,
@@ -470,8 +471,8 @@ export class SocialUsers {
             ?.connected)
       ) {
         this.plugin.client.logger.info(
-          logPurpose,
-          "SocialUsers/onAnnounce: connecting to peer",
+          logModule,
+          `${pluginName}/onAnnounce: connecting to peer`,
           { peerId: message.peer.peerId }
         );
 
@@ -479,8 +480,8 @@ export class SocialUsers {
       }
     } catch (e) {
       this.plugin.client.logger.error(
-        logPurpose,
-        "SocialUsers/onAnnounce: failed to connect to peer",
+        logModule,
+        `${pluginName}/onAnnounce: failed to connect to peer`,
         {
           peerId: message.peer.peerId,
           error: e,
@@ -499,8 +500,8 @@ export class SocialUsers {
     >
   ) {
     this.plugin.client.logger.info(
-      logPurpose,
-      "SocialUsers/onPinResponse: received social pin response",
+      logModule,
+      `${pluginName}/onPinResponse: received social pin response`,
       { did: message.peer.did, payload: message.payload }
     );
   }
@@ -513,8 +514,8 @@ export class SocialUsers {
     >
   ) {
     this.plugin.client.logger.info(
-      logPurpose,
-      "SocialUsers/onGetResponse: received social users get response",
+      logModule,
+      `${pluginName}/onGetResponse: received social users get response`,
       { did: message.peer.did, payload: message.payload }
     );
   }
@@ -527,8 +528,8 @@ export class SocialUsers {
     >
   ) {
     this.plugin.client.logger.info(
-      logPurpose,
-      "SocialUsers/onSearchResponse: received user search response",
+      logModule,
+      `${pluginName}/onSearchResponse: received user search response`,
       { did: message.peer.did, payload: message.payload }
     );
 

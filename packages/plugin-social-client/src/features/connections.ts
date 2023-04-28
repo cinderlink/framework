@@ -6,7 +6,8 @@ import {
 import SocialClientPlugin from "../plugin";
 import { IncomingPubsubMessage } from "@cinderlink/core-types";
 
-const logPurpose = `plugin-social-client`;
+const logModule = "plugins";
+const pluginName = "social-client";
 
 export class SocialConnections {
   constructor(private plugin: SocialClientPlugin) {}
@@ -24,8 +25,8 @@ export class SocialConnections {
       .upsert({ from: connection.from, to: connection.to }, connection);
     if (!stored) {
       this.plugin.client.logger.warn(
-        logPurpose,
-        "SocialConnections/createConnection: failed to create connection",
+        logModule,
+        `${pluginName}/createConnection: failed to create connection`,
         {
           from: this.plugin.client.id,
           to,
@@ -36,8 +37,8 @@ export class SocialConnections {
     }
 
     this.plugin.client.logger.info(
-      logPurpose,
-      "SocialConnections/createConnection: connection created",
+      logModule,
+      `${pluginName}/createConnection: connection created`,
       {
         from: this.plugin.client.id,
         to,
@@ -53,8 +54,8 @@ export class SocialConnections {
     >
   ) {
     this.plugin.client.logger.info(
-      logPurpose,
-      "SocialConnections/onCreate: connection received",
+      logModule,
+      `${pluginName}/onCreate: connection received`,
       { message }
     );
   }
@@ -79,8 +80,8 @@ export class SocialConnections {
       .then((result) => result.first());
 
     this.plugin.client.logger.info(
-      logPurpose,
-      "SocialConnections/deleteConnection: deleting connection",
+      logModule,
+      `${pluginName}/deleteConnection: deleting connection`,
       { from: this.plugin.client.id, to, connection }
     );
 
@@ -94,8 +95,8 @@ export class SocialConnections {
       .then((result) => result.first());
     if (!deleted) {
       this.plugin.client.logger.error(
-        logPurpose,
-        "SocialConnections/deleteConnection: failed to delete connection",
+        logModule,
+        `${pluginName}/deleteConnection: failed to delete connection`,
         { from: this.plugin.client.id, to }
       );
 
@@ -103,8 +104,8 @@ export class SocialConnections {
     }
 
     this.plugin.client.logger.info(
-      logPurpose,
-      "SocialConnections/deleteConnection: connection deleted",
+      logModule,
+      `${pluginName}/deleteConnection: connection deleted`,
       { from: this.plugin.client.id, to }
     );
 
@@ -143,8 +144,8 @@ export class SocialConnections {
     const results = (await query.execute()).all();
 
     this.plugin.client.logger.info(
-      logPurpose,
-      "SocialConnections/getConnections: get connections",
+      logModule,
+      `${pluginName}/getConnections: get connections`,
       { filter, results }
     );
     if (filter === "mutual") {
