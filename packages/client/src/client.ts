@@ -319,7 +319,7 @@ export class CinderlinkClient<
     });
   }
 
-  async save(forceRemote = false) {
+  async save(forceRemote = false, forceImmediate = false) {
     if (!this.identity.hasResolved || this.identity.resolving) {
       return;
     }
@@ -356,6 +356,7 @@ export class CinderlinkClient<
         cid: rootCID.toString(),
         document: rootDoc,
         forceRemote,
+        forceImmediate,
       });
     }
   }
