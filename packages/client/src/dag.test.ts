@@ -1,15 +1,12 @@
 import { rmSync } from "fs";
 import { describe, beforeAll, it, expect, afterAll } from "vitest";
-import {
-  CinderlinkClientInterface,
-  ProtocolEvents,
-} from "@cinderlink/core-types";
+import { CinderlinkClientInterface, ProtocolEvents } from "../../core-types";
 import * as ethers from "ethers";
 import {
   createDID,
   createSeed,
   signAddressVerification,
-} from "@cinderlink/identifiers";
+} from "../../identifiers";
 import { createClient } from "./create";
 
 let client: CinderlinkClientInterface<ProtocolEvents>;
@@ -25,7 +22,7 @@ describe("@cinderlink/client/dag", () => {
     );
     client = await createClient<ProtocolEvents>({
       did: clientDID,
-      address: clientWallet.address,
+      address: clientWallet.address as `0x${string}`,
       addressVerification: clientAV,
       role: "peer",
       options: {

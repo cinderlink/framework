@@ -4,6 +4,8 @@ import {
   SocialNotificationType,
 } from "@cinderlink/plugin-social-core";
 import { Operation } from "@cinderlink/core-types";
+const logModule = "plugins";
+const pluginName = "social-client";
 export class SocialNotifications {
   constructor(private plugin: SocialClientPlugin) {}
 
@@ -19,7 +21,10 @@ export class SocialNotifications {
     if (Notification.permission !== "denied") {
       Notification.requestPermission().then((permission) => {
         if (permission === "granted") {
-          console.log("Notification permission granted.");
+          this.plugin.client.logger.info(
+            logModule,
+            `${pluginName}/askForBrowserPermission: permission granted`
+          );
         }
       });
     }

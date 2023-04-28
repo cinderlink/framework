@@ -1,7 +1,6 @@
 import { v4 as uuid } from "uuid";
 import localforage from "localforage";
 import { CID } from "multiformats";
-import toBuffer from "it-to-buffer";
 import type {
   CinderlinkClientEvents,
   CinderlinkClientInterface,
@@ -9,25 +8,25 @@ import type {
   IdentityResolved,
   PluginEventDef,
 } from "@cinderlink/core-types";
-import { base58btc } from "multiformats/bases/base58";
 export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
   cid: string | undefined = undefined;
   document: Record<string, unknown> | undefined = undefined;
   hasResolved = false;
   lastSavedAt = 0;
   resolving?: Promise<IdentityResolved>;
+  saveDebounce?: NodeJS.Timeout;
   constructor(public client: CinderlinkClientInterface<PluginEvents>) {}
 
   async resolve(): Promise<IdentityResolved> {
     if (this.resolving) return this.resolving;
     this.resolving = new Promise(async (resolve) => {
-      console.info(`client/identity/resolve > resolving local identity`);
+      this.client.logger.info("identity", "resolving local identity");
       const emptyResult: IdentityResolved = {
         cid: undefined,
         document: undefined,
       };
       let resolved = await this.resolveLocal().catch(() => emptyResult);
-      console.info(`client/identity/resolve > resolving ipns identity`);
+      this.client.logger.info("identity", "resolving ipns identity");
       const ipns = await this.resolveIPNS().catch(() => emptyResult);
       if (
         !Object.keys(resolved.document?.schemas || {}).length ||
@@ -38,7 +37,7 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
       ) {
         resolved = ipns;
       }
-      console.info(`client/identity/resolve > resolving server identity`);
+      this.client.logger.info("identity", "resolving server identity");
       const server = await this.resolveServer().catch(() => emptyResult);
       if (
         !Object.keys(resolved.document?.schemas || {}).length ||
@@ -52,10 +51,11 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
       this.cid = resolved?.cid;
       this.document = resolved?.document;
 
-      console.info(`client/identity/resolve > identity resolved`, {
+      this.client.logger.info("identity", "identity resolved", {
         cid: this.cid,
         document: this.document,
       });
+
       this.client.emit("/identity/resolved", {
         cid: this.cid,
         document: this.document,
@@ -98,7 +98,7 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
         { recursive: true, timeout: 3000 }
       )) {
         const cid = link.split("/").pop();
-        console.info("IPNS resolve", { link, cid });
+        this.client.logger.info("IPNS", "resolve IPNS", { link, cid });
         if (cid) {
           const document = await this.client.dag
             .loadDecrypted<IdentityDocument>(CID.parse(cid), undefined, {
@@ -156,14 +156,51 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
       }
     }
 
-    console.info(`client/identity/resolve > server identity resolved`, {
+    this.client.logger.info("identity", "server identity resolved", {
       cid,
       document,
     });
+
     return { cid, document };
   }
 
   async save({
+    cid,
+    document,
+    forceRemote,
+    forceImmediate,
+  }: {
+    cid: string;
+    document: Record<string, unknown>;
+    forceRemote?: boolean;
+    forceImmediate?: boolean;
+  }) {
+    if (!this.hasResolved || !cid) {
+      this.client.logger.error("identity", "identity has not been resolved");
+      return;
+    }
+    if (!this.client.ipfs.isOnline) {
+      this.client.logger.error(
+        "identity",
+        "failed to save identity, ipfs is offline"
+      );
+      return;
+    }
+
+    if (forceImmediate === true) {
+      return this._save({ cid, document, forceRemote });
+    }
+
+    if (this.saveDebounce) {
+      clearTimeout(this.saveDebounce);
+    }
+
+    this.saveDebounce = setTimeout(() => {
+      this._save({ cid, document, forceRemote });
+    }, 10000);
+  }
+
+  async _save({
     cid,
     document,
     forceRemote,
@@ -172,52 +209,51 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
     document: Record<string, unknown>;
     forceRemote?: boolean;
   }) {
-    if (!this.hasResolved || !cid) {
-      console.warn(`client/identity/save > identity has not been resolved`);
-      return;
-    }
-    if (!this.client.ipfs.isOnline) {
-      console.warn(`client/identity/save > ipfs is offline`);
-      return;
-    }
     this.cid = cid;
     this.document = document;
-    console.info(`client/identity/save`, {
+    this.client.logger.info("identity", "saving identity", {
       cid,
       document,
       servers: this.client.peers.getServers(),
     });
+
     await localforage.setItem("rootCID", cid).catch(() => {});
-    await this.client.ipfs.pin.add(cid, { recursive: true }).catch(() => {});
-    await this.client.ipfs.name
-      .publish(cid, { timeout: 1000, allowOffline: true })
+    await this.client.ipfs.pin
+      .add(cid, { recursive: true, timeout: 3000 })
       .catch(() => {});
-    if (forceRemote || Date.now() - this.lastSavedAt > 30000) {
+    await this.client.ipfs.name
+      .publish(cid, {
+        timeout: 3000,
+        allowOffline: true,
+        lifetime: "14d",
+        ttl: "1m",
+      })
+      .catch(() => {});
+    if (forceRemote || Date.now() - this.lastSavedAt > 10000) {
       this.lastSavedAt = Date.now();
-      const buffer = await toBuffer(
-        this.client.ipfs.dag.export(CID.parse(cid))
-      );
-      const bufferStr = base58btc.encode(buffer);
       await Promise.all(
         this.client.peers.getServers().map(async (server) => {
           if (server.did) {
-            console.info(`client/identity/save > sending identity to server`, {
+            this.client.logger.info("identity", "sending identity to server", {
               server,
             });
+
             await this.client.send<CinderlinkClientEvents>(
               server.peerId.toString(),
               {
                 topic: "/identity/set/request",
-                payload: { requestId: uuid(), cid, buffer: bufferStr },
+                payload: { requestId: uuid(), cid },
               }
             );
           } else {
-            console.info(`client/identity/save > no did for server`, {
+            this.client.logger.warn("identity", "no did for server", {
               server,
             });
           }
         })
       );
     }
+
+    await this.client.ipfs.repo.gc();
   }
 }

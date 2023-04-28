@@ -5,6 +5,7 @@ import {
   BlockFilters,
   BlockHeaders,
   BlockIndexes,
+  SubLoggerInterface,
   TableBlockInterface,
   TableDefinition,
   TableInterface,
@@ -27,9 +28,14 @@ export class TableBlock<
   constructor(
     public table: TableInterface<Row, Def>,
     public cid: CID | undefined,
-    public cache: Partial<BlockData<Row, Def>> = {}
+    public cache: Partial<BlockData<Row, Def>> = {},
+    public logger: SubLoggerInterface
   ) {
     this.buildSearchIndex();
+  }
+
+  get logPrefix() {
+    return `table/${this.table.tableId}/block/${this.cid?.toString() || "new"}`;
   }
 
   buildSearchIndex() {
@@ -39,11 +45,8 @@ export class TableBlock<
           this.cache.filters.search,
           this.table.def.searchOptions
         );
-      } catch (e) {
-        console.warn(
-          `table/${this.table.tableId} > invalid search index`,
-          this.cache.filters?.search
-        );
+      } catch (error) {
+        this.logger.warn(`failed to load search index from cache`, { error });
         this.index = new Minisearch(this.table.def.searchOptions);
         this.index.addAll(Object.values(this.cache.records || {}));
       }
@@ -112,7 +115,6 @@ export class TableBlock<
         this.cid!,
         "/filters"
       ).catch(() => undefined)) as BlockFilters<Row, Def> | undefined;
-      console.info("filters", this.cache.filters);
       this.buildSearchIndex();
     }
 
@@ -133,9 +135,7 @@ export class TableBlock<
 
   async records() {
     if (!this.cache.records && this.cid) {
-      console.info(
-        `ipld-database/block: loading records from ${this.cid || "new block"}`
-      );
+      this.logger.debug(`loading records from ${this.cid || "new block"}`);
       this.cache.records = await this.loadData<Row[]>(
         this.cid!,
         "/records"
@@ -145,18 +145,15 @@ export class TableBlock<
     }
 
     if (!this.cache.records) {
-      console.info(
-        `ipld-database/block: creating empty records object for ${
-          this.cid || "new block"
-        }`
+      this.logger.debug(
+        `creating empty records object for ${this.cid || "new block"}`
       );
       this.cache.records = {};
     }
 
     if (!this.cache.records) {
-      throw new Error(
-        `Block records not found: ${this.cid || "new block"}/records`
-      );
+      this.logger.error(`block records not found: ${this.cid || "new block"}`);
+      throw new Error(`Block records not found: ${this.cid || "new block"}`);
     }
 
     return this.cache.records;
@@ -370,12 +367,18 @@ export class TableBlock<
     for (const [name, index] of Object.entries(this.table.def.indexes)) {
       const values = index.fields.map((f) => row[f] as Row[keyof Row]);
       if (index.unique && (await this.hasIndexValues(name, values, id))) {
-        console.error(
-          `ipld-database/block: Unique index violation: ${this.table.def.schemaId}.${this.table.tableId}.${name}`,
-          { index, row }
+        this.logger.error(
+          `unique index violation: ${this.table.def.schemaId}.${this.table.tableId}.${name}`,
+          {
+            schema: this.table.def.schemaId,
+            table: this.table.tableId,
+            index,
+            row,
+            values,
+          }
         );
         throw new Error(
-          `ipld-database/block: Unique index violation: ${this.table.def.schemaId}.${this.table.tableId}.${name}`
+          `unique index violation: ${this.table.def.schemaId}.${this.table.tableId}.${name}`
         );
       }
     }
@@ -384,22 +387,17 @@ export class TableBlock<
   async addRecord(row: Row) {
     await this.assertUniqueConstraints(row, row.id);
     if (!this.cache.headers) {
-      console.error(
-        `ipld-database/block: cannot set record ${row.id} without headers`
-      );
-      throw new Error(
-        `ipld-database/block: cannot set record ${row.id} without headers`
-      );
+      this.logger.error(`cannot set record ${row.id} without headers`);
+      throw new Error(`Cannot set record ${row.id} without headers`);
     }
 
     if (row.id > this.cache.headers!.recordsTo + 1) {
-      console.error(
-        `ipld-database/block: record id ${row.id} is too high for this block`
-      );
+      this.logger.error(`record id ${row.id} out of bounds`, {
+        row,
+        headers: this.cache.headers,
+      });
       throw new Error(
-        `ipld-database/block: Record id ${
-          row.id
-        } is too high for this block (max: ${
+        `Record id ${row.id} out of bounds (max: ${
           this.cache.headers!.recordsTo + 1
         })`
       );
@@ -440,16 +438,15 @@ export class TableBlock<
     const records = await this.records();
     const hasChanged = Object.entries(update).some(([key, value]) => {
       const changed = records[id][key as keyof Row] !== value;
-      if (changed) {
-        console.info(
-          `ipld-database/block/${
-            this.table.tableId
-          }: change detected on record ${id} (${key}: ${
+      if (changed && key !== "updatedAt") {
+        this.logger.debug(
+          `change detected on record ${id} (${key}: ${
             records[id][key as keyof Row]
           } !== ${value})`
         );
+        return true;
       }
-      return changed;
+      return false;
     });
     if (!hasChanged) {
       return;
@@ -465,7 +462,7 @@ export class TableBlock<
   }
 
   async deleteRecord(id: number) {
-    console.info(`ipld-database/block: deleting record ${id}`);
+    this.logger.debug(`deleting record ${id}`);
     // delete from indexes
     const indexes = this.table.def.indexes;
     for (const [name, index] of Object.entries(indexes)) {
@@ -476,16 +473,16 @@ export class TableBlock<
       );
     }
     delete this.cache!.records![id];
-    console.info(
-      `ipld-database/block: deleted record ${id}`,
-      this.cache.records
-    );
+    this.logger.debug(`deleted record ${id}`);
     this.changed = true;
   }
 
   async search(query: string): Promise<Row[]> {
     const results = this.index?.search(query, { fuzzy: 0.2 }) || [];
-    console.info(`ipld-database/block: search results for ${query}`, results);
+    this.logger.info(`${results.length} search results for ${query}`, {
+      query,
+      results,
+    });
     const records: Row[] = [];
     for (const result of results) {
       const record = await this.recordById(result.id);
@@ -499,6 +496,14 @@ export class TableBlock<
 
   async load(force = false) {
     if (this.changed && !force) {
+      this.logger.error(
+        `block has unsaved changes, refusing to load without [force=true]`,
+        {
+          schemaId: this.table.def.schemaId,
+          tableId: this.table.tableId,
+          block: this.cid?.toString() || "new",
+        }
+      );
       throw new Error(
         "Block has unsaved changes, refusing to load without [force=true]"
       );
@@ -513,9 +518,9 @@ export class TableBlock<
     ]);
     cache.cacheBlock(this);
     if (this.cache.filters?.search) {
-      console.info(
-        `ipld-database/block: loading search index for ${this.cid}`,
-        this.cache.filters?.search
+      this.logger.info(
+        `loading search index for ${this.cid?.toString() || "new block"}`,
+        { search: this.cache.filters?.search, block: this.cid?.toString() }
       );
       this.buildSearchIndex();
     }
@@ -527,16 +532,17 @@ export class TableBlock<
     }
 
     if (Object.keys(this.cache?.records || {}).length === 0) {
-      console.warn(
-        `ipld-database/block: no records in block ${this.cid}, skipping save...`
+      this.logger.warn(
+        `no records in block (${
+          this.cid?.toString() || "new"
+        }), skipping save...`
       );
       return undefined;
     }
 
-    console.info(
-      `ipld-database/block: saving block ${this.cid}`,
-      Object.keys(this.cache?.records || {}).map(Number)
-    );
+    this.logger.info(`saving block (${this.cid?.toString() || "new"})`, {
+      ids: Object.keys(this.cache?.records || {}).map(Number),
+    });
 
     let recordsFrom =
       Math.min(...Object.keys(this.cache.records || {}).map(Number)) || 1;
@@ -554,29 +560,37 @@ export class TableBlock<
       Number(recordsFrom) !==
       Number(this.cache.headers!.recordsFrom || 0) + 1
     ) {
+      this.logger.error(
+        `header index out of bounds: ${recordsFrom} (min id) !== ${
+          this.cache.headers!.recordsFrom + 1
+        } (headers)`,
+        {
+          recordsFrom,
+          recordsTo,
+          headers: this.cache.headers,
+        }
+      );
       throw new Error(
-        `ipld/block: recordsFrom mismatch: ${recordsFrom} (min id) !== ${
+        `header index out of bounds: ${recordsFrom} (min id) !== ${
           this.cache.headers!.recordsFrom + 1
         } (headers)`
       );
     }
     if (Number(recordsTo) !== Number(this.cache.headers!.recordsTo)) {
-      console.warn(
-        `ipld/block: cache invalid'`,
-        Number(recordsTo),
-        Number(this.cache.headers!.recordsTo || 0),
-        this.cache
+      this.logger.warn(
+        `header index out of bounds: ${recordsTo} (max id) !== ${
+          this.cache.headers!.recordsTo
+        } (headers)'`,
+        { recordsFrom, recordsTo, headers: this.cache.headers }
       );
       throw new Error(
-        `ipld/block: recordsTo mismatch: ${recordsTo} (max id) !== ${
+        `header index out of bounds: ${recordsTo} (max id) !== ${
           this.cache.headers!.recordsTo
         } (headers)`
       );
     }
 
-    console.warn(
-      `ipld-database/block: preparing block data for table ${this.table.tableId}`
-    );
+    this.logger.debug(`preparing block (${this.cid?.toString() || "new"})`);
 
     await Promise.all([
       this.prevCID(),
@@ -588,23 +602,14 @@ export class TableBlock<
 
     const data = this.toJSON();
 
-    console.warn(
-      `ipld-database/block: saving block (${this.cid}) for table ${this.table.tableId}`,
-      data.filters
-    );
+    this.logger.debug(`saving block (${this.cid?.toString() || "new"})`);
 
-    this.cid = await this.table.dag.store(data).catch(() => {
-      console.warn(
-        `ipld-database/block: failed to save block (probably contains an undefined value)`,
-        JSON.stringify(data, null, 2)
-      );
+    this.cid = await this.table.dag.store(data).catch((error) => {
+      this.logger.error(`failed to save block`, { data, error });
       return undefined;
     });
 
-    console.warn(
-      `ipld-database/block: saved block (${this.cid}) for table ${this.table.tableId}`,
-      data
-    );
+    this.logger.info(`saved block (${this.cid})`);
 
     cache.invalidateTable(this.table.tableId);
     this.changed = false;
@@ -626,7 +631,12 @@ export class TableBlock<
 
   toJSON() {
     if (!this.cache) {
-      throw new Error("Block not loaded");
+      this.logger.error(
+        `block (${
+          this.cid?.toString() || "new"
+        }) not loaded, cannot call toJSON`
+      );
+      throw new Error("toJSON error: block not loaded");
     }
     return TableBlock.pruneObject({
       ...this.cache,
@@ -673,7 +683,7 @@ export class TableBlock<
     T extends TableRow = TableRow,
     D extends TableDefinition<T> = TableDefinition<T>
   >(table: TableInterface<T, D>, cache: BlockData<T, D>, cid?: CID) {
-    return new TableBlock<T, D>(table, cid, cache);
+    return new TableBlock<T, D>(table, cid, cache, table.logger);
   }
 
   static fromString<
@@ -683,7 +693,8 @@ export class TableBlock<
     return new TableBlock<Row, Def>(
       table,
       cid,
-      TableBlock.deserializeValue(value) as BlockData<Row, Def>
+      TableBlock.deserializeValue(value) as BlockData<Row, Def>,
+      table.logger
     );
   }
 

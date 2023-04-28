@@ -12,7 +12,8 @@ import {
 } from "@cinderlink/plugin-social-core";
 import { checkAddressVerification } from "@cinderlink/identifiers";
 import SocialClientPlugin from "../plugin";
-
+const logModule = "plugins";
+const pluginName = "social-client";
 export class SocialUsers {
   localUser: Partial<SocialUser> = {
     name: "",
@@ -32,24 +33,21 @@ export class SocialUsers {
 
   async start() {
     await this.loadLocalUser();
-    this.plugin.client.pluginEvents.on(
-      "/cinderlink/handshake/success",
-      async (peer) => {
-        if (peer.role === "server") {
-          this.hasServerConnection = true;
-        } else {
-          await this.setUserStatus(peer.did as string, "online");
-        }
-
-        if (
-          this.localUser?.name &&
-          this.localUser.name !== "guest" &&
-          this.plugin.client.addressVerification
-        ) {
-          await this.announce(peer.peerId.toString());
-        }
+    this.plugin.client.on("/cinderlink/handshake/success", async (peer) => {
+      if (peer.role === "server") {
+        this.hasServerConnection = true;
+      } else {
+        await this.setUserStatus(peer.did as string, "online");
       }
-    );
+
+      if (
+        this.localUser?.name &&
+        this.localUser.name !== "guest" &&
+        this.plugin.client.addressVerification
+      ) {
+        await this.announce(peer.peerId.toString());
+      }
+    });
 
     this.plugin.client.on("/peer/connect", async (peer: Peer) => {
       if (peer.role === "peer" && peer.did) {
@@ -58,7 +56,11 @@ export class SocialUsers {
     });
 
     this.plugin.client.on("/peer/disconnect", async (peer: Peer) => {
-      console.info(`plugin/social/client > peer:disconnect`, peer);
+      this.plugin.client.logger.info(
+        logModule,
+        `${pluginName}/start: peer disconnected`,
+        { peer }
+      );
       if (peer.role === "peer" && peer.did) {
         await this.setUserStatus(peer.did as string, "offline");
       }
@@ -71,9 +73,12 @@ export class SocialUsers {
         this.localUser.name === "guest"
       )
         return;
-      console.info(`plugin/social/client > announcing (pubsub, interval)`);
+      this.plugin.client.logger.info(
+        logModule,
+        `${pluginName}/start: announcing (pubsub, interval)`
+      );
       await this.announce();
-    }, Number(this.plugin.options.announceInterval || 30000));
+    }, Number(this.plugin.options.announceInterval || 5000));
 
     const connections = await this.plugin.connections.getConnections(
       this.plugin.client.id,
@@ -87,53 +92,9 @@ export class SocialUsers {
       }
     }
 
-    this.userStatusInterval = setInterval(
-      this.updateUserStatuses.bind(this),
-      3000
-    );
-
     this.localUser.status === "online";
     await this.saveLocalUser();
-    await this.updateUserStatuses();
     await this.announce();
-  }
-
-  async updateUserStatuses() {
-    const peers = this.plugin.client.peers
-      .getPeers()
-      .filter((p) => p.did && p.connected && p.authenticated);
-
-    if (!peers?.length) {
-      await this.plugin
-        .table<SocialUser>("users")
-        .query()
-        .update({ status: "offline" })
-        .execute();
-    }
-
-    await this.plugin
-      .table<SocialUser>("users")
-      .query()
-      .where("status", "!=", "offline")
-      .where(
-        "did",
-        "!in",
-        peers.map((p) => p.did as string)
-      )
-      .update({ status: "offline" })
-      .execute();
-
-    await this.plugin
-      .table<SocialUser>("users")
-      .query()
-      .where("status", "!=", "online")
-      .where(
-        "did",
-        "in",
-        peers.map((p) => p.did as string)
-      )
-      .update({ status: "online" })
-      .execute();
   }
 
   async stop() {
@@ -147,8 +108,16 @@ export class SocialUsers {
 
   async setUserStatus(did: string, status: SocialUserStatus) {
     const table = this.plugin.table<SocialUser>("users");
-    console.info(`plugin/social/client > setUserStatus`, did, status);
-    await table.query().where("did", "=", did).update({ status }).execute();
+    this.plugin.client.logger.info(
+      logModule,
+      `user ${did} status changed to '${status}'`,
+      { did, status }
+    );
+    await table
+      .query()
+      .where("did", "=", did)
+      .update({ status, updatedAt: Date.now() })
+      .execute();
   }
 
   async announce(to: string | undefined = undefined) {
@@ -161,11 +130,7 @@ export class SocialUsers {
     if (!this.plugin.client.did) {
       throw new Error("client did not set");
     }
-    console.info(
-      `plugin/social/client > address`,
-      this.plugin.client.address,
-      this.plugin.client.addressVerification
-    );
+
     const payload: Partial<SocialUser> = {
       ...this.localUser,
       status: "online",
@@ -173,14 +138,29 @@ export class SocialUsers {
       addressVerification: this.plugin.client.addressVerification,
     };
     if (to) {
-      console.info(`plugin/social/client > announcing (p2p)`, payload);
+      this.plugin.client.logger.info(
+        logModule,
+        `${pluginName}/announce annoucing (p2p)`,
+        {
+          topic: "/social/users/announce",
+          payload,
+        }
+      );
       await this.plugin.client.send<SocialClientEvents>(to, {
         topic: "/social/users/announce",
         payload,
       });
     } else {
-      console.info(`plugin/social/client > announcing (pubsub)`, payload);
+      this.plugin.client.logger.info(
+        logModule,
+        `${pluginName}/announce annoucing (pubsub)`,
+        payload
+      );
       await this.plugin.client.publish("/social/users/announce", payload);
+
+      for (let peer of this.plugin.client.peers.getAllPeers()) {
+        await this.plugin.client.ipfs.ping(peer.peerId);
+      }
     }
   }
 
@@ -239,40 +219,54 @@ export class SocialUsers {
   }
 
   async saveLocalUser() {
-    console.info(`plugin/social/client > saving local user`);
+    this.plugin.client.logger.info(
+      logModule,
+      `${pluginName}/saveLocalUser: saving local user`
+    );
     const user = await this.plugin.table<SocialUser>("users").upsert(
       { did: this.plugin.client.id },
       {
         ...this.localUser,
         did: this.plugin.client.id,
+        status: "online",
         updatedAt: Date.now(),
       }
     );
-    console.info(
-      `plugin/social/client > saved local user`,
-      user,
-      this.localUser
+    this.plugin.client.logger.info(
+      logModule,
+      `${pluginName}/saveLocalUser: saved local user`,
+      { user, localUser: this.localUser }
     );
+
     this.localUser = user;
     // .findByIndex("did", this.plugin.client.id);
     if (!user?.id) {
-      console.error(
-        `plugin/social/client > failed to save local user, user not found after upsert (did: ${this.plugin.client.id}))`
+      this.plugin.client.logger.error(
+        logModule,
+        `${pluginName}/saveLocalUser: failed to save local user, user not found after upsert`,
+        { did: this.plugin.client.id }
       );
+
       return;
     }
   }
 
   async loadLocalUser() {
     if (!this.plugin.client.identity.hasResolved) {
-      console.info("plugin/social/client > identity not resolved, waiting...");
+      this.plugin.client.logger.info(
+        logModule,
+        `${pluginName}/loadLocalUser: identity not resolved, waiting...`
+      );
       return;
     } else if (this.loadingLocalUser) {
       return;
     }
 
     this.loadingLocalUser = true;
-    console.info("plugin/social/client > loading local user...");
+    this.plugin.client.logger.info(
+      logModule,
+      `${pluginName}/loadLocalUser: loading local user...`
+    );
     const user = (
       await this.plugin
         .table<SocialUser>("users")
@@ -282,7 +276,10 @@ export class SocialUsers {
         .execute()
     )?.first();
     if (!user) {
-      console.info("plugin/social/client > local user not found, returning...");
+      this.plugin.client.logger.warn(
+        logModule,
+        `${pluginName}/loadLocalUser: local user not found, returning...`
+      );
       return;
     }
 
@@ -292,7 +289,11 @@ export class SocialUsers {
       addressVerification: this.plugin.client.addressVerification,
       status: "online",
     };
-    console.info("plugin/social/client > local user loaded", this.localUser);
+    this.plugin.client.logger.info(
+      logModule,
+      `${pluginName}/loadLocalUser: local user loaded`,
+      this.localUser
+    );
   }
 
   async getUserFromServer(did: string): Promise<SocialUser | undefined> {
@@ -379,26 +380,32 @@ export class SocialUsers {
         >
   ) {
     if (!message.payload.address) {
-      console.warn(
-        `plugin/social/client > received social announce message from peer without address (did: ${message.peer.did})`,
-        message
+      this.plugin.client.logger.warn(
+        logModule,
+        `${pluginName}/onAnnounce: received social announce message from peer without address`,
+        { did: message.peer.did }
       );
+
       return;
     }
 
     if (!message.payload.addressVerification) {
-      console.warn(
-        `plugin/social/client > received social announce message from peer without address verification (did: ${message.peer.did})`,
-        message
+      this.plugin.client.logger.warn(
+        logModule,
+        `${pluginName}/onAnnounce: received social announce message from peer without address verification`,
+        { did: message.peer.did }
       );
+
       return;
     }
 
     if (!message.payload.did || !message.payload.did.length) {
-      console.warn(
-        `plugin/social/client > received social announce message from peer without did (did: ${message.peer.did})`,
-        message
+      this.plugin.client.logger.warn(
+        logModule,
+        `${pluginName}/onAnnounce: received social announce message from peer without did`,
+        { did: message.peer.did }
       );
+
       return;
     }
 
@@ -409,10 +416,12 @@ export class SocialUsers {
       message.payload.addressVerification
     ).catch(() => undefined);
     if (!verified) {
-      console.warn(
-        `plugin/social/client > received secial announce message from peer with invalid address verification (did: ${message.peer.did})`,
-        message
+      this.plugin.client.logger.warn(
+        logModule,
+        `${pluginName}/onAnnounce: received secial announce message from peer with invalid address verification`,
+        { did: message.peer.did }
       );
+
       return;
     }
 
@@ -429,10 +438,16 @@ export class SocialUsers {
       });
     }
 
-    console.info(
-      `plugin/social/client > received social announce message (did: ${message.payload.did}, connected: ${message.peer.connected})`,
-      message.payload
+    this.plugin.client.logger.info(
+      logModule,
+      `${pluginName}/onAnnounce: received social announce message`,
+      {
+        did: message.payload.did,
+        connected: message.peer.connected,
+        payload: message.payload,
+      }
     );
+
     await this.plugin.table<SocialUser>("users")?.upsert(
       { did: message.payload.did },
       {
@@ -455,16 +470,24 @@ export class SocialUsers {
           !this.plugin.client.peers.getPeer(message.peer.peerId.toString())
             ?.connected)
       ) {
-        console.info(
-          `plugin/social/client > connecting to peer ${message.peer.peerId}`
+        this.plugin.client.logger.info(
+          logModule,
+          `${pluginName}/onAnnounce: connecting to peer`,
+          { peerId: message.peer.peerId }
         );
+
         await this.plugin.client.connect(message.peer.peerId);
       }
     } catch (e) {
-      console.warn(
-        `plugin/social/client > failed to connect to peer ${message.peer.peerId}`,
-        e
+      this.plugin.client.logger.error(
+        logModule,
+        `${pluginName}/onAnnounce: failed to connect to peer`,
+        {
+          peerId: message.peer.peerId,
+          error: e,
+        }
       );
+
       this.plugin.client.ipfs.libp2p.peerStore.delete(message.peer.peerId);
     }
   }
@@ -476,9 +499,10 @@ export class SocialUsers {
       EncodingOptions
     >
   ) {
-    console.info(
-      `plugin/social/client > received social pin response (did: ${message.peer.did})`,
-      message.payload
+    this.plugin.client.logger.info(
+      logModule,
+      `${pluginName}/onPinResponse: received social pin response`,
+      { did: message.peer.did, payload: message.payload }
     );
   }
 
@@ -489,9 +513,10 @@ export class SocialUsers {
       EncodingOptions
     >
   ) {
-    console.info(
-      `plugin/social/client > received social users get response (did: ${message.peer.did})`,
-      message.payload
+    this.plugin.client.logger.info(
+      logModule,
+      `${pluginName}/onGetResponse: received social users get response`,
+      { did: message.peer.did, payload: message.payload }
     );
   }
 
@@ -502,10 +527,12 @@ export class SocialUsers {
       EncodingOptions
     >
   ) {
-    console.info(
-      `plugin/social/client > received user search response (did: ${message.peer.did})`,
-      message.payload
+    this.plugin.client.logger.info(
+      logModule,
+      `${pluginName}/onSearchResponse: received user search response`,
+      { did: message.peer.did, payload: message.payload }
     );
+
     // insert users we don't have
     await Promise.all(
       message.payload.results.map(async (user) => {

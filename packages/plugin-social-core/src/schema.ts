@@ -244,6 +244,10 @@ export const SocialSchemaDef = {
         unique: false,
         fields: ["from", "to"],
       },
+      message: {
+        unique: true,
+        fields: ["from", "to", "message", "createdAt"],
+      },
     },
     rollup: 1000,
     searchOptions: {
@@ -326,9 +330,17 @@ export const SocialSchemaDef = {
 export default SocialSchemaDef;
 
 export async function loadSocialSchema(client: CinderlinkClientInterface<any>) {
-  console.info(`plugin/social > preparing schema`);
+  client.logger.info(
+    "plugins",
+    "social-core/loadSocialSchema: preparing schema"
+  );
   if (!client.schemas["social"]) {
-    const schema = new Schema("social", SocialSchemaDef as any, client.dag);
+    const schema = new Schema(
+      "social",
+      SocialSchemaDef as any,
+      client.dag,
+      client.logger.module("db").submodule(`schema:social`)
+    );
     await client.addSchema("social", schema as any);
   } else {
     client.schemas["social"].setDefs(SocialSchemaDef as any);

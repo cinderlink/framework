@@ -40,7 +40,8 @@ export type SocialServerEvents = {
   emit: {};
 };
 
-const logPrefix = `plugin/social/server`;
+const logModule = "plugins";
+const pluginName = "social-server";
 
 export class SocialServerPlugin<
   Client extends CinderlinkClientInterface<SocialServerEvents> = CinderlinkClientInterface<SocialServerEvents>
@@ -52,10 +53,13 @@ export class SocialServerPlugin<
     public options: Record<string, unknown> = {}
   ) {}
   async start() {
-    console.info(`${logPrefix} > loading schema`);
+    this.client.logger.info(logModule, `${pluginName}/start: loading schema`);
     await loadSocialSchema(this.client);
 
-    console.info(`${logPrefix} > registering sync config`);
+    this.client.logger.info(
+      logModule,
+      `${pluginName}/start: registering sync config`
+    );
     const syncDb: SyncDBPlugin = this.client.getPlugin("sync");
     if (syncDb) {
       Object.entries(SocialSyncConfig).map(([table, config]) => {
@@ -64,7 +68,7 @@ export class SocialServerPlugin<
     }
   }
   async stop() {
-    console.info("social server plugin stopped");
+    this.client.logger.info(logModule, `${pluginName}/stop: plugin stopped`);
   }
 
   p2p = {
@@ -88,7 +92,7 @@ export class SocialServerPlugin<
   get db() {
     const schema = this.client.getSchema("social");
     if (!schema) {
-      throw new Error(`${logPrefix} > failed to get schema`);
+      throw new Error(`${logModule} > failed to get schema`);
     }
     return schema;
   }
@@ -99,7 +103,7 @@ export class SocialServerPlugin<
   >(name: string) {
     const table = this.db.getTable<Row, Def>(name);
     if (!table) {
-      throw new Error(`${logPrefix} > failed to get table ${name}`);
+      throw new Error(`${logModule} > failed to get table ${name}`);
     }
     return table;
   }
@@ -131,16 +135,20 @@ export class SocialServerPlugin<
   ) {
     if (this.client.hasPlugin("socialClient")) return;
     if (!message.peer.did) {
-      console.warn(
-        `${logPrefix} > received announce message from unauthorized peer`
+      this.client.logger.warn(
+        logModule,
+        `${pluginName}/onAnnounce: received announce message from unauthorized peer`
       );
+
       return;
     }
 
-    console.info(
-      `${logPrefix} > received pubsub announce message (did: ${message.peer.did})`,
+    this.client.logger.info(
+      logModule,
+      `${pluginName}/onAnnounce: received pubsub announce message`,
       message
     );
+
     return this.saveUser(message.peer.did, {
       address: message.payload.address,
       addressVerification: message.payload.addressVerification,
@@ -162,21 +170,27 @@ export class SocialServerPlugin<
   ) {
     if (this.client.hasPlugin("socialClient")) return;
     if (!message.peer.did) {
-      console.warn(
-        `${logPrefix} > received social announce message without peer did`
+      this.client.logger.warn(
+        logModule,
+        `${pluginName}/onPeerAnnounce: received social announce message without peer did`
       );
+
       return;
     }
     if (!message.payload.address) {
-      console.warn(
-        `${logPrefix} > received social announce message without peer address`
+      this.client.logger.warn(
+        logModule,
+        `${pluginName}/onPeerAnnounce: received social announce message without peer address`
       );
+
       return;
     }
     if (!message.payload.addressVerification) {
-      console.warn(
-        `${logPrefix} > received social announce message without peer address verification`
+      this.client.logger.warn(
+        logModule,
+        `${pluginName}/onPeerAnnounce: received social announce message without peer address verification`
       );
+
       return;
     }
 
@@ -187,16 +201,20 @@ export class SocialServerPlugin<
       message.payload.addressVerification
     ).catch(() => undefined);
     if (!verified) {
-      console.warn(
-        `${logPrefix} > received social announce message with invalid peer address verification`
+      this.client.logger.warn(
+        logModule,
+        `${pluginName}/onPeerAnnounce: received social announce message with invalid peer address verification`
       );
+
       return;
     }
 
-    console.info(
-      `${logPrefix} > received peer announce message (did: ${message.peer.did})`,
-      message?.payload
+    this.client.logger.info(
+      logModule,
+      `${pluginName}/onPeerAnnounce: received peer announce message`,
+      message
     );
+
     // get the existing user
     const existing = await this.getUserByDID(message.peer.did);
     if (
@@ -232,22 +250,30 @@ export class SocialServerPlugin<
       EncodingOptions
     >
   ) {
-    console.info(
-      `${logPrefix} > received user search request: ${message.payload.query}`
+    this.client.logger.info(
+      logModule,
+      `${pluginName}/onUserSearchRequest: received user search request`,
+      { query: message.payload.query }
     );
+
     const table = this.client
       .getSchema("social")
       ?.getTable<SocialUser>("users");
 
     if (!table) {
-      console.warn(`${logPrefix} > users table not found`);
+      this.client.logger.warn(
+        logModule,
+        `${pluginName}/onUserSearchRequest: users table not found`
+      );
       return;
     }
 
     const results = ((await table.search(message.payload.query, 20)) ||
       []) as SocialUser[];
-    console.info(
-      `${logPrefix} > found ${results.length} matches (index: ${table.currentIndex})`
+    this.client.logger.info(
+      logModule,
+      `${pluginName}/onUserSearchRequest: found ${results.length} matches`,
+      { index: table.currentIndex }
     );
 
     await this.client.send(message.peer.peerId.toString(), {
@@ -266,15 +292,21 @@ export class SocialServerPlugin<
       EncodingOptions
     >
   ) {
-    console.info(
-      `${logPrefix} > received user get request: ${message.payload.did}`
+    this.client.logger.info(
+      logModule,
+      `${pluginName}/onUserGetRequest: received user get request`,
+      { did: message.payload.did }
     );
+
     const table = this.client
       .getSchema("social")
       ?.getTable<SocialUser>("users");
 
     if (!table) {
-      console.warn(`${logPrefix} > users table not found`);
+      this.client.logger.warn(
+        logModule,
+        `${pluginName}/onUserGetRequest: users table not found`
+      );
       return;
     }
 
@@ -303,14 +335,19 @@ export class SocialServerPlugin<
   ) {
     const table = await this.table<SocialUserPin>("user_pins");
     if (!table) {
-      console.warn(`${logPrefix} > user_pins table not found`);
+      this.client.logger.warn(
+        logModule,
+        `${pluginName}/onUserPinRequest: user_pins table not found`
+      );
       return;
     }
 
     if (!message.peer.did) {
-      console.warn(
-        `${logPrefix} > received social pin request message without peer did`
+      this.client.logger.warn(
+        logModule,
+        `${pluginName}/onUserPinRequest: received social pin request message without peer did`
       );
+
       return;
     }
 
@@ -356,14 +393,20 @@ export class SocialServerPlugin<
   }
 
   async saveUser(did: string, user: Omit<Omit<SocialUser, "id">, "uid">) {
-    console.info(`${logPrefix} > saving user (did: ${did})`, user);
+    this.client.logger.info(logModule, `${pluginName}/saveUser: saving user`, {
+      did,
+      user,
+    });
 
     const table = await this.client
       .getSchema("social")
       ?.getTable<SocialUser>("users");
 
     if (!table) {
-      console.warn(`${logPrefix} > users table not found`);
+      this.client.logger.warn(
+        logModule,
+        `${pluginName}/saveUser: users table not found`
+      );
       return;
     }
 

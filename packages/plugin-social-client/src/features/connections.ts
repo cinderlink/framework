@@ -6,7 +6,8 @@ import {
 import SocialClientPlugin from "../plugin";
 import { IncomingPubsubMessage } from "@cinderlink/core-types";
 
-const logPrefix = `plugin/social/client`;
+const logModule = "plugins";
+const pluginName = "social-client";
 
 export class SocialConnections {
   constructor(private plugin: SocialClientPlugin) {}
@@ -23,14 +24,25 @@ export class SocialConnections {
       .table<SocialConnection>("connections")
       .upsert({ from: connection.from, to: connection.to }, connection);
     if (!stored) {
-      console.warn(
-        `${logPrefix} > failed to create connection (from: ${this.plugin.client}, to: ${to})`
+      this.plugin.client.logger.warn(
+        logModule,
+        `${pluginName}/createConnection: failed to create connection`,
+        {
+          from: this.plugin.client.id,
+          to,
+        }
       );
+
       return;
     }
-    console.info(
-      `${logPrefix} > created connection (from: ${this.plugin.client}, to: ${to})`,
-      connection
+
+    this.plugin.client.logger.info(
+      logModule,
+      `${pluginName}/createConnection: connection created`,
+      {
+        from: this.plugin.client.id,
+        to,
+      }
     );
     await this.sendConnection(stored);
   }
@@ -41,7 +53,11 @@ export class SocialConnections {
       "/social/connections/create"
     >
   ) {
-    console.info("received connection", { message });
+    this.plugin.client.logger.info(
+      logModule,
+      `${pluginName}/onCreate: connection received`,
+      { message }
+    );
   }
 
   async sendConnection(connection: SocialConnection) {
@@ -62,10 +78,13 @@ export class SocialConnections {
       .select()
       .execute()
       .then((result) => result.first());
-    console.info(
-      `${logPrefix} > deleting connection (from: ${this.plugin.client}, to: ${to})`,
-      connection
+
+    this.plugin.client.logger.info(
+      logModule,
+      `${pluginName}/deleteConnection: deleting connection`,
+      { from: this.plugin.client.id, to, connection }
     );
+
     const deleted = await connections
       .query()
       .where("from", "=", from)
@@ -75,14 +94,21 @@ export class SocialConnections {
       .execute()
       .then((result) => result.first());
     if (!deleted) {
-      console.warn(
-        `${logPrefix} > failed to delete connection (from: ${this.plugin.client}, to: ${to})`
+      this.plugin.client.logger.error(
+        logModule,
+        `${pluginName}/deleteConnection: failed to delete connection`,
+        { from: this.plugin.client.id, to }
       );
+
       return;
     }
-    console.info(
-      `${logPrefix} > deleted connection (from: ${this.plugin.client}, to: ${to})`
+
+    this.plugin.client.logger.info(
+      logModule,
+      `${pluginName}/deleteConnection: connection deleted`,
+      { from: this.plugin.client.id, to }
     );
+
     await this.sendConnection({ ...connection, follow: false });
   }
 
@@ -117,7 +143,11 @@ export class SocialConnections {
 
     const results = (await query.execute()).all();
 
-    console.info(`${logPrefix} > getConnections`, { filter, results });
+    this.plugin.client.logger.info(
+      logModule,
+      `${pluginName}/getConnections: get connections`,
+      { filter, results }
+    );
     if (filter === "mutual") {
       return results
         .filter((row) => row.to === user)

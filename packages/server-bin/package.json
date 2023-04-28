@@ -2,7 +2,7 @@
   "name": "@cinderlink/server-bin",
   "description": "Cinderlink server binary",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "0.0.15",
+  "version": "0.0.16",
   "main": "dist/bin.js",
   "type": "module",
   "module": "./dist/bin.js",

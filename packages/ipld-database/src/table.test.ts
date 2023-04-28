@@ -93,7 +93,7 @@ describe("@cinderlink/ipld-database/table", () => {
     const seed = await createSeed("test seed");
     const did = await createDID(seed);
     const wallet = ethers.Wallet.createRandom();
-    const address = wallet.address;
+    const address = wallet.address as `0x${string}`;
     const addressVerification = await signAddressVerification(
       "test",
       did.id,
@@ -121,12 +121,28 @@ describe("@cinderlink/ipld-database/table", () => {
   });
 
   it("should create a current block", () => {
-    const table = new Table<TestRow>("test", validDefinition, client.dag);
+    const table = new Table<TestRow>(
+      "test",
+      validDefinition,
+      client.dag,
+      client.logger
+        .module(`db`)
+        .submodule(`schema:test`)
+        .submodule(`table:test`)
+    );
     expect(table.currentBlock).not.toBeUndefined();
   });
 
   it("should validate records", () => {
-    const table = new Table<TestRow>("test", validDefinition, client.dag);
+    const table = new Table<TestRow>(
+      "test",
+      validDefinition,
+      client.dag,
+      client.logger
+        .module(`db`)
+        .submodule(`schema:test`)
+        .submodule(`table:test`)
+    );
     expect(() => table.assertValid({ name: "foo", count: 1 })).not.toThrow();
     // @ts-ignore
     expect(() => table.assertValid({ name: "foo", count: "1" })).toThrow();
@@ -135,7 +151,15 @@ describe("@cinderlink/ipld-database/table", () => {
   });
 
   it("should insert records", async () => {
-    const table = new Table<TestRow>("test", validDefinition, client.dag);
+    const table = new Table<TestRow>(
+      "test",
+      validDefinition,
+      client.dag,
+      client.logger
+        .module(`db`)
+        .submodule(`schema:test`)
+        .submodule(`table:test`)
+    );
     const uid = await table.insert({ name: "foo", count: 1 });
     expect(Object.values(table.currentBlock.cache?.records || {}).length).toBe(
       1
@@ -171,7 +195,15 @@ describe("@cinderlink/ipld-database/table", () => {
 
   // should delete record
   it("should delete records", async () => {
-    const table = new Table<TestRow>("test", validDefinition, client.dag);
+    const table = new Table<TestRow>(
+      "test",
+      validDefinition,
+      client.dag,
+      client.logger
+        .module(`db`)
+        .submodule(`schema:test`)
+        .submodule(`table:test`)
+    );
     const res1 = await table.query().select().execute();
     expect(res1).toMatchInlineSnapshot(`
       TableQueryResult {
@@ -289,13 +321,29 @@ describe("@cinderlink/ipld-database/table", () => {
   });
 
   it("should index records", async () => {
-    const table = new Table<TestRow>("test", validDefinition, client.dag);
+    const table = new Table<TestRow>(
+      "test",
+      validDefinition,
+      client.dag,
+      client.logger
+        .module(`db`)
+        .submodule(`schema:test`)
+        .submodule(`table:test`)
+    );
     await table.insert({ name: "foo", count: 1 });
     expect(table.currentBlock.cache?.filters?.indexes).toMatchSnapshot();
   });
 
   it("should search records", async () => {
-    const table = new Table<TestRow>("test", validDefinition, client.dag);
+    const table = new Table<TestRow>(
+      "test",
+      validDefinition,
+      client.dag,
+      client.logger
+        .module(`db`)
+        .submodule(`schema:test`)
+        .submodule(`table:test`)
+    );
     await table.insert({ name: "foo", count: 1 });
     await table.insert({ name: "bar", count: 1 });
     await table.insert({ name: "baz", count: 1 });
@@ -313,7 +361,15 @@ describe("@cinderlink/ipld-database/table", () => {
   });
 
   it("should rollup records", async () => {
-    const table = new Table<TestRow>("test", validDefinition, client.dag);
+    const table = new Table<TestRow>(
+      "test",
+      validDefinition,
+      client.dag,
+      client.logger
+        .module(`db`)
+        .submodule(`schema:test`)
+        .submodule(`table:test`)
+    );
     for (let i = 0; i < 11; i++) {
       await table.insert({ name: `test #${i}`, count: i });
     }
@@ -322,7 +378,15 @@ describe("@cinderlink/ipld-database/table", () => {
   });
 
   it("should aggregate records", async () => {
-    const table = new Table<TestRow>("test", validDefinition, client.dag);
+    const table = new Table<TestRow>(
+      "test",
+      validDefinition,
+      client.dag,
+      client.logger
+        .module(`db`)
+        .submodule(`schema:test`)
+        .submodule(`table:test`)
+    );
     for (let i = 0; i < 11; i++) {
       await table.insert({ name: `test #${i}`, count: i });
     }
@@ -337,7 +401,15 @@ describe("@cinderlink/ipld-database/table", () => {
   });
 
   it("should rollup records with indexes", async () => {
-    const table = new Table<TestRow>("test", validDefinition, client.dag);
+    const table = new Table<TestRow>(
+      "test",
+      validDefinition,
+      client.dag,
+      client.logger
+        .module(`db`)
+        .submodule(`schema:test`)
+        .submodule(`table:test`)
+    );
     for (let i = 0; i < 11; i++) {
       await table.insert({ name: `test #${i}`, count: i });
     }
@@ -348,7 +420,15 @@ describe("@cinderlink/ipld-database/table", () => {
   });
 
   it("should rollup records with aggregates", async () => {
-    const table = new Table<TestRow>("test", validDefinition, client.dag);
+    const table = new Table<TestRow>(
+      "test",
+      validDefinition,
+      client.dag,
+      client.logger
+        .module(`db`)
+        .submodule(`schema:test`)
+        .submodule(`table:test`)
+    );
     for (let i = 0; i < 11; i++) {
       await table.insert({ name: `test #${i}`, count: i });
     }
@@ -363,7 +443,15 @@ describe("@cinderlink/ipld-database/table", () => {
   });
 
   it("should rollup records with search", async () => {
-    const table = new Table<TestRow>("test", validDefinition, client.dag);
+    const table = new Table<TestRow>(
+      "test",
+      validDefinition,
+      client.dag,
+      client.logger
+        .module(`db`)
+        .submodule(`schema:test`)
+        .submodule(`table:test`)
+    );
     for (let i = 0; i < 11; i++) {
       await table.insert({ name: `test #${i}`, count: i });
     }
@@ -381,7 +469,15 @@ describe("@cinderlink/ipld-database/table", () => {
   });
 
   it("should rewrite previous blocks to update", async () => {
-    const table = new Table<TestRow>("test", validDefinition, client.dag);
+    const table = new Table<TestRow>(
+      "test",
+      validDefinition,
+      client.dag,
+      client.logger
+        .module(`db`)
+        .submodule(`schema:test`)
+        .submodule(`table:test`)
+    );
     const uids: string[] = [];
     for (let i = 1; i < 11; i++) {
       uids.push(await table.insert({ name: `test #${i}`, count: i }));
@@ -410,7 +506,15 @@ describe("@cinderlink/ipld-database/table", () => {
 
   describe("upsert", () => {
     it("should update inserted records", async () => {
-      const table = new Table<TestRow>("test", validDefinition, client.dag);
+      const table = new Table<TestRow>(
+        "test",
+        validDefinition,
+        client.dag,
+        client.logger
+          .module(`db`)
+          .submodule(`schema:test`)
+          .submodule(`table:test`)
+      );
       for (let i = 1; i < 11; i++) {
         await table.insert({ name: `test #${i}`, count: i });
       }
@@ -438,7 +542,15 @@ describe("@cinderlink/ipld-database/table", () => {
     });
 
     it("should insert new records", async () => {
-      const table = new Table<TestRow>("test", validDefinition, client.dag);
+      const table = new Table<TestRow>(
+        "test",
+        validDefinition,
+        client.dag,
+        client.logger
+          .module(`db`)
+          .submodule(`schema:test`)
+          .submodule(`table:test`)
+      );
       for (let i = 0; i < 11; i++) {
         await table.upsert({ name: `test #${i}` }, { count: i });
       }
@@ -453,7 +565,15 @@ describe("@cinderlink/ipld-database/table", () => {
     });
 
     it("should insert records with unique indexes", async () => {
-      const users = new Table<UsersRow>("users", usersDef, client.dag);
+      const users = new Table<UsersRow>(
+        "users",
+        usersDef,
+        client.dag,
+        client.logger
+          .module(`db`)
+          .submodule(`schema:users`)
+          .submodule(`table:users`)
+      );
       const returned = await users.upsert({ did: "foo:bar" }, { name: "bar" });
       expect(returned).toMatchObject({
         createdAt: expect.any(Number),
@@ -481,7 +601,15 @@ describe("@cinderlink/ipld-database/table", () => {
     });
 
     it("should update records with unique indexes", async () => {
-      const users = new Table<UsersRow>("users", usersDef, client.dag);
+      const users = new Table<UsersRow>(
+        "users",
+        usersDef,
+        client.dag,
+        client.logger
+          .module(`db`)
+          .submodule(`schema:users`)
+          .submodule(`table:users`)
+      );
       const inserted = await users.insert({
         did: "foo:bar",
         name: "bar",
@@ -519,7 +647,15 @@ describe("@cinderlink/ipld-database/table", () => {
     });
 
     it("should create distinct unique identifiers for records with unique indexes", async () => {
-      const users = new Table<UsersRow>("users", usersDef, client.dag);
+      const users = new Table<UsersRow>(
+        "users",
+        usersDef,
+        client.dag,
+        client.logger
+          .module(`db`)
+          .submodule(`schema:users`)
+          .submodule(`table:users`)
+      );
       const inserted = await users.insert({
         did: "foo:bar",
         name: "bar",
@@ -559,7 +695,11 @@ describe("@cinderlink/ipld-database/table", () => {
       const nonUnique = new Table<NonUniqueRow>(
         "nonUnique",
         nonUniqueDef,
-        client.dag
+        client.dag,
+        client.logger
+          .module(`db`)
+          .submodule(`schema:nonUnique`)
+          .submodule(`table:nonUnique`)
       );
       const recordA = {
         did: "foo:bar",
@@ -583,9 +723,17 @@ describe("@cinderlink/ipld-database/table", () => {
     });
 
     it("should respect the lock status of a table", async () => {
-      const table = new Table<TestRow>("test", validDefinition, client.dag);
+      const table = new Table<TestRow>(
+        "test",
+        validDefinition,
+        client.dag,
+        client.logger
+          .module(`db`)
+          .submodule(`schema:test`)
+          .submodule(`table:test`)
+      );
       table.lock();
-      expect(() => table.lock()).toThrow("Table is already writing");
+      expect(() => table.lock()).toThrow("Table lock exists");
       table.unlock();
       await expect(() =>
         table.upsert({ id: 1 }, { name: "test" })
@@ -594,7 +742,15 @@ describe("@cinderlink/ipld-database/table", () => {
   });
 
   it("should allow waiting for a table to be unlocked", async () => {
-    const table = new Table<TestRow>("test", validDefinition, client.dag);
+    const table = new Table<TestRow>(
+      "test",
+      validDefinition,
+      client.dag,
+      client.logger
+        .module(`db`)
+        .submodule(`schema:test`)
+        .submodule(`table:test`)
+    );
     table.lock();
     const promise = table.awaitUnlock();
     table.unlock();
@@ -602,7 +758,15 @@ describe("@cinderlink/ipld-database/table", () => {
   });
 
   it("should allow waiting for a lock on a table", async () => {
-    const table = new Table<TestRow>("test", validDefinition, client.dag);
+    const table = new Table<TestRow>(
+      "test",
+      validDefinition,
+      client.dag,
+      client.logger
+        .module(`db`)
+        .submodule(`schema:test`)
+        .submodule(`table:test`)
+    );
     table.lock();
     const promise = table.awaitLock();
     table.unlock();
@@ -610,7 +774,15 @@ describe("@cinderlink/ipld-database/table", () => {
   });
 
   it("should support multiple pending locks", async () => {
-    const table = new Table<TestRow>("test", validDefinition, client.dag);
+    const table = new Table<TestRow>(
+      "test",
+      validDefinition,
+      client.dag,
+      client.logger
+        .module(`db`)
+        .submodule(`schema:test`)
+        .submodule(`table:test`)
+    );
     table.lock();
     const promise1 = table.awaitLock().then(() => {
       table.unlock();
@@ -626,7 +798,15 @@ describe("@cinderlink/ipld-database/table", () => {
   });
 
   it("should properly support OR queries", async () => {
-    const table = new Table<TestRow>("test", validDefinition, client.dag);
+    const table = new Table<TestRow>(
+      "test",
+      validDefinition,
+      client.dag,
+      client.logger
+        .module(`db`)
+        .submodule(`schema:test`)
+        .submodule(`table:test`)
+    );
     await table.insert({ name: "foo", count: 0 });
     await table.insert({ name: "bar", count: 1 });
     await table.insert({ name: "baz", count: 2 });

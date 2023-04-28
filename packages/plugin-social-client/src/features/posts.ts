@@ -7,7 +7,8 @@ import {
 import { OfflineSyncClientPluginInterface } from "@cinderlink/plugin-offline-sync-core";
 import SocialClientPlugin from "../plugin";
 import { IncomingPubsubMessage } from "@cinderlink/core-types";
-
+const logModule = "plugins";
+const pluginName = "social-client";
 export class SocialPosts {
   constructor(private plugin: SocialClientPlugin) {}
 
@@ -16,10 +17,14 @@ export class SocialPosts {
   async createPost(
     post: Omit<Omit<Omit<Omit<SocialPost, "id">, "uid">, "cid">, "did">
   ): Promise<SocialPost> {
-    console.info("storing post", { post });
+    this.plugin.client.logger.info(
+      logModule,
+      `${pluginName}/createPost: creating post`,
+      { post }
+    );
     const cid = await this.plugin.client.dag.store(post);
     if (!cid) {
-      throw new Error("failed to store post");
+      throw new Error(`${logModule}: failed to store post`);
     }
 
     const table = this.plugin.table<SocialPost>("posts");
@@ -35,7 +40,11 @@ export class SocialPosts {
     }
 
     // publish the post
-    console.info(`plugin/social/client > publishing post`, { post: saved });
+    this.plugin.client.logger.info(
+      logModule,
+      `${pluginName}/createPost: publishing post`,
+      { post: saved }
+    );
     await this.plugin.client
       .publish("/social/posts/create", saved, {
         sign: true,
@@ -49,7 +58,7 @@ export class SocialPosts {
   async onCreate(
     message: IncomingPubsubMessage<SocialClientEvents, "/social/posts/create">
   ) {
-    console.info("received post", { message });
+    this.plugin.client.logger.info(logModule, "received post", { message });
   }
 
   async getPost(postUid: string) {

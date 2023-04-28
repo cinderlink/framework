@@ -4,7 +4,8 @@ import { ProtocolRequest } from "@cinderlink/core-types";
 import { encodePayload } from "@cinderlink/protocol";
 import { v4 as uuid } from "uuid";
 import SocialClientPlugin from "../plugin";
-
+const logModule = "plugins";
+const pluginName = "social-client";
 export class SocialChat {
   constructor(private plugin: SocialClientPlugin) {}
 
@@ -22,7 +23,10 @@ export class SocialChat {
       from: this.plugin.client.id,
       ...message,
     };
-    console.info("sending chat message");
+    this.plugin.client.logger.info(
+      logModule,
+      `${pluginName}/sendChatMessage: sending chat message`
+    );
 
     const cid = await this.plugin.client.dag.storeEncrypted(chatMessage, [
       message.to,
@@ -34,9 +38,12 @@ export class SocialChat {
     const pinned = await this.plugin.client.ipfs.pin.add(cid, {
       recursive: true,
     });
-    console.info(`/plugin/social/chat/message/send > pinned`, {
-      pinned: pinned.toString(),
-    });
+    this.plugin.client.logger.info(
+      logModule,
+      `${pluginName}/sendChatMessage: message pinned`,
+      { pinned: pinned.toString() }
+    );
+
     const savedMessage: SocialChatMessage = await this.plugin
       .table<SocialChatMessage>("chat_messages")
       .upsert(
@@ -54,10 +61,14 @@ export class SocialChat {
         this.plugin.client.getPlugin<OfflineSyncClientPluginInterface>(
           "offlineSync"
         );
-      console.info("sending chat message to offline sync", {
-        to: message.to,
-        message: savedMessage,
-      });
+      this.plugin.client.logger.info(
+        logModule,
+        `${pluginName}/sendChatMessage: sending chat message to offline sync`,
+        {
+          to: message.to,
+          message: savedMessage,
+        }
+      );
 
       const encoded = await encodePayload(savedMessage as any, {
         did: this.plugin.client.did,

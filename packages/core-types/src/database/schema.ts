@@ -4,6 +4,7 @@ import type { DIDDagInterface } from "../dag";
 import type { TableDefinition, TableInterface, TableRow } from "./table";
 import { JWE } from "did-jwt";
 import { BlockData } from "./block";
+import { SubLoggerInterface } from "../logger";
 
 export type SchemaDef = {
   schemaId: string;
@@ -26,6 +27,7 @@ export interface SchemaInterface extends Emittery<SchemaEvents> {
   defs: Record<string, TableDefinition<any>>;
   dag: DIDDagInterface;
   encrypted: boolean;
+  logger: SubLoggerInterface;
 
   createTable<Def extends TableDefinition<any> = TableDefinition<any>>(
     name: string,
@@ -55,11 +57,13 @@ export interface SchemaClass {
   load(
     cid: string | CID,
     dag: DIDDagInterface,
+    logger: SubLoggerInterface,
     encrypted: boolean
   ): Promise<SchemaInterface>;
   fromSavedSchema(
     data: SavedSchema,
     dag: DIDDagInterface,
+    logger: SubLoggerInterface,
     encrypted: boolean
   ): Promise<SchemaInterface>;
 }

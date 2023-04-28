@@ -3,6 +3,7 @@ import * as json from "multiformats/codecs/json";
 import type {
   BlockData,
   DIDDagInterface,
+  SubLoggerInterface,
   TableBlockInterface,
 } from "@cinderlink/core-types";
 import { CID } from "multiformats";
@@ -39,7 +40,8 @@ export class Table<
   constructor(
     public tableId: string,
     public def: Def,
-    public dag: DIDDagInterface
+    public dag: DIDDagInterface,
+    public logger: SubLoggerInterface
   ) {
     super();
     this.encrypted = def.encrypted;
@@ -47,17 +49,22 @@ export class Table<
   }
 
   createBlock(prevCID: string | undefined): TableBlockInterface<Row, Def> {
-    return new TableBlock<Row, Def>(this, undefined, {
-      prevCID,
-      headers: {
-        table: this.tableId,
-        schema: this.def.schemaId,
-        recordsFrom: this.currentIndex,
-        recordsTo: this.currentIndex,
-        encrypted: this.encrypted,
-        index: this.currentBlockIndex,
+    return new TableBlock<Row, Def>(
+      this,
+      undefined,
+      {
+        prevCID,
+        headers: {
+          table: this.tableId,
+          schema: this.def.schemaId,
+          recordsFrom: this.currentIndex,
+          recordsTo: this.currentIndex,
+          encrypted: this.encrypted,
+          index: this.currentBlockIndex,
+        },
       },
-    });
+      this.logger
+    );
   }
 
   setBlock(block: TableBlockInterface<Row, Def>) {
@@ -69,7 +76,7 @@ export class Table<
 
   async insert(data: Omit<Omit<Row, "id">, "uid">) {
     this.assertValid(data as Partial<Row>);
-    // console.info(`${this.tableId} > locking to insert`, data);
+    this.logger.info(`locking (insert)`, data);
     await this.awaitLock();
     const id = this.currentIndex + 1;
     this.currentIndex = id + 0;
@@ -93,10 +100,10 @@ export class Table<
       }
     }
     cache.invalidateTable(this.tableId);
-    // console.info(`${this.tableId} > unlocking from insert`, data);
+    this.logger.info(`unlocking (insert)`, data);
     this.unlock();
     this.emit("/record/inserted", { ...data, uid, id } as Row);
-    // console.info(`table/${this.tableId} > inserted record ${id}`, data);
+    this.logger.info(`inserted record ${id}`, data);
     return uid;
   }
 
@@ -150,6 +157,11 @@ export class Table<
     check: Record<Index, Row[Index]>,
     data: Partial<Row>
   ) {
+    if (!data) {
+      this.logger.error(`upsert failed: no data provided`);
+      throw new Error(`upsert failed: no data provided`);
+    }
+
     this.assertValid(data);
     const existing = check["id" as Index]
       ? await this.getById(check["id" as Index] as number)
@@ -165,12 +177,13 @@ export class Table<
           .execute()
           .then((r) => r.first());
 
-    // console.info(`table/${this.tableId} > upserting record`, existing, data);
+    this.logger.debug(`upserting record`, { existing, data });
 
     if (existing?.uid) {
       return this.update(existing.uid, data as Row);
     } else if (data.id) {
-      throw new Error(`Failed upsert with id ${data.id}, record not found`);
+      this.logger.error(`upsert failed: id ${data.id} not found`);
+      throw new Error(`Upsert failed: id ${data.id} not found`);
     }
     return this.insert({ ...check, ...data } as Omit<Row, "id">).then((id) =>
       this.getByUid(id)
@@ -178,6 +191,10 @@ export class Table<
   }
 
   async update(uid: string, update: Partial<Row>) {
+    if (!update) {
+      this.logger.error(`update failed: no data provided`);
+      throw new Error(`update failed: no data provided`);
+    }
     const updated = (
       await this.query()
         .where("uid", "=", uid)
@@ -220,10 +237,7 @@ export class Table<
       if (!event.block.index) {
         event.block.buildSearchIndex();
       }
-      // console.info(
-      //   `block index loaded for ${event.block.cid}`,
-      //   event.block.index
-      // );
+      this.logger.info(`index loaded for block (${event.block.cid || "new"})`);
       const searchResults = (await event.block.search(
         query,
         limit - results.length
@@ -238,19 +252,13 @@ export class Table<
     if (!this.currentBlock.changed) {
       return this.currentBlock.cid;
     }
-
-    // console.info(
-    //   `table/${this.tableId} > locking for save (${this.currentBlock.cid})`
-    // );
+    this.logger.debug(`locking (save, ${this.currentBlock.cid})`);
     await this.awaitLock();
-    console.info(`table/${this.tableId} > saving`, this.currentBlock.cid);
+    this.logger.debug(`saving`, { currentBlock: this.currentBlock.cid });
     await this.currentBlock.save();
     cache.invalidateTable(this.tableId);
-    // console.info(`table/${this.tableId} > saved`, this.currentBlock.cid);
-
-    // console.info(
-    //   `table/${this.tableId} > unlocking for save (${this.currentBlock.cid})`
-    // );
+    this.logger.info(`saved`, { currentBlock: this.currentBlock.cid });
+    this.logger.debug(`unlocking (save, ${this.currentBlock.cid})`);
     this.unlock();
     return this.currentBlock.cid;
   }
@@ -266,7 +274,7 @@ export class Table<
   }
 
   async load(cid: CID) {
-    const block = new TableBlock<Row, Def>(this, cid);
+    const block = new TableBlock<Row, Def>(this, cid, undefined, this.logger);
     await block.load();
     this.setBlock(block);
   }
@@ -286,9 +294,9 @@ export class Table<
     while (!event.resolved && event.block) {
       await Promise.resolve(next(event)).catch((e: Error) => {
         event.resolved = true;
-        console.warn(`ipld-database/table/unwind: error in unwind callback`);
-        console.warn(e);
-        console.warn(e.stack);
+        this.logger.error(`error in unwind callback: ${e.message}`, {
+          stack: e.stack,
+        });
       });
 
       const prevCID = await event.block?.prevCID();
@@ -296,7 +304,12 @@ export class Table<
       if (!event.cid) {
         event.resolved = true;
       } else {
-        event.block = new TableBlock<Row, Def>(this, CID.parse(event.cid));
+        event.block = new TableBlock<Row, Def>(
+          this,
+          CID.parse(event.cid),
+          undefined,
+          this.logger
+        );
       }
     }
   }
@@ -305,6 +318,7 @@ export class Table<
     const validate = ajv.compile(this.def.schema);
     const valid = validate(data);
     if (!valid) {
+      this.logger.error(`invalid data`, { data, errors: validate.errors });
       throw new Error(
         `Invalid data: ${validate.errors?.map(
           (e) => `(${e.instancePath}: ${e.message})`
@@ -332,13 +346,15 @@ export class Table<
   }
 
   query(): TableQuery<Row, Def> {
-    return new TableQuery<Row, Def>(this);
+    return new TableQuery<Row, Def>(this, undefined, this.logger);
   }
 
   lock() {
-    // console.info(`table/${this.tableId} > locking table`);
     if (this.writing) {
-      throw new Error("Table is already writing?!");
+      this.logger.error(`table lock exists`, {
+        writeStartAt: this.writeStartAt,
+      });
+      throw new Error("Table lock exists");
     }
     this.writing = true;
     this.writeStartAt = Date.now();
@@ -349,7 +365,6 @@ export class Table<
     if (!this.writing) {
       return;
     }
-    // console.info(`table/${this.tableId} > unlocking table`);
     this.writing = false;
     this.writeStartAt = 0;
     const duration = Date.now() - this.writeStartAt;
@@ -360,17 +375,15 @@ export class Table<
     if (!this.writing) {
       return Promise.resolve();
     }
-    // console.info(`table/${this.tableId} > waiting for unlock`);
     return this.once("/write/finished").then(() => {});
   }
 
-  awaitLock(): Promise<void> {
-    try {
+  async awaitLock(): Promise<void> {
+    if (!this.writing) {
       return Promise.resolve(this.lock());
-    } catch (e) {
-      return this.once("/write/finished").then(() => {
-        return this.awaitLock();
-      });
     }
+    return this.once("/write/finished").then(() => {
+      return this.awaitLock();
+    });
   }
 }

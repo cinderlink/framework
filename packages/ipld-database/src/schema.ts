@@ -3,6 +3,7 @@ import Emittery from "emittery";
 import type {
   BlockData,
   DIDDagInterface,
+  SubLoggerInterface,
   TableRow,
 } from "@cinderlink/core-types";
 import { CID } from "multiformats";
@@ -23,12 +24,18 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
     public schemaId: string,
     public defs: Record<string, TableDefinition<any>>,
     public dag: DIDDagInterface,
+    public logger: SubLoggerInterface,
     public encrypted = true
   ) {
     super();
     Object.entries(defs).forEach(([tableId, def]) => {
-      // console.info(`Creating table "${tableId}"`);
-      this.tables[tableId] = new Table(tableId, def, this.dag);
+      this.logger.info(`creating table "${tableId}"`);
+      this.tables[tableId] = new Table(
+        tableId,
+        def,
+        this.dag,
+        this.logger.submodule(`table:${tableId}`)
+      );
     });
   }
 
@@ -36,17 +43,27 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
     this.defs = defs;
     Object.entries(defs).forEach(([tableId, def]) => {
       if (!this.tables[tableId]) {
-        this.tables[tableId] = new Table(tableId, def, this.dag);
+        this.tables[tableId] = new Table(
+          tableId,
+          def,
+          this.dag,
+          this.logger.submodule(`table:${tableId}`)
+        );
       } else {
-        console.warn(
-          `WARNING: table "${tableId}" already exists, migrations not yet supported`
+        this.logger.warn(
+          `table "${tableId}" already exists, migrations not yet supported`
         );
       }
     });
   }
 
   async createTable(tableId: string, def: TableDefinition<any>) {
-    this.tables[tableId] = new Table(tableId, def, this.dag);
+    this.tables[tableId] = new Table(
+      tableId,
+      def,
+      this.dag,
+      this.logger.submodule(`table:${tableId}`)
+    );
   }
 
   async dropTable(name: string) {
@@ -69,17 +86,17 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
     try {
       await Promise.all(
         Object.entries(this.tables).map(async ([name]) => {
-          // console.info(`ipld-database/schema/save: saving table ${name}`);
+          this.logger.debug(`serializing table ${name}`);
           const table = await this.tables[name].serialize();
           if (table) {
             tables[name] = table;
           }
         })
-      ).catch((err) => {
-        console.info(`ipld-database/schema/save: table save error: ${err}`);
+      ).catch((error) => {
+        this.logger.error(`table "${name}" serialize error`, { error });
       });
-    } catch (err) {
-      console.info(`ipld-database/schema/save: table save error: ${err}`);
+    } catch (error) {
+      this.logger.error(`table "${name}" serialize error`, { error });
     }
     if (!Object.keys(tables).length) return undefined;
 
@@ -105,28 +122,37 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
     if (!serialized) {
       throw new Error("failed to serialize schema: " + this.schemaId);
     }
-    console.info("serialized schema", serialized);
+    this.logger.debug("saving schema", serialized);
     return this.dag.store(serialized);
   }
 
-  static async load(cid: string | CID, dag: DIDDagInterface) {
+  static async load(
+    cid: string | CID,
+    dag: DIDDagInterface,
+    logger: SubLoggerInterface
+  ) {
     const data = await dag.load<SavedSchema>(cid);
-    if (!data) throw new Error("Invalid schema data");
-    return Schema.fromSavedSchema(data, dag);
+    if (!data) {
+      logger.error(`failed to load schema ${cid}`);
+      throw new Error("Failed to load schema");
+    }
+    return Schema.fromSavedSchema(data, dag, logger);
   }
 
   static async fromSavedSchema(
     data: SavedSchema,
     dag: DIDDagInterface,
+    logger: SubLoggerInterface,
     encrypted = true
   ): Promise<SchemaInterface> {
-    if (!data) throw new Error("Invalid schema data");
-    const schema = new Schema(data.schemaId, data.defs, dag, encrypted);
-    console.info("hydrating schema", data);
-    // console.info(`Loading schema "${data.schemaId}"`, data);
+    if (!data) {
+      throw new Error("Invalid schema data");
+    }
+    const schema = new Schema(data.schemaId, data.defs, dag, logger, encrypted);
+    logger.debug(`hydrating schema "${data.schemaId}"`);
     await Promise.all(
       Object.entries(data.tables).map(async ([name, tableData]) => {
-        // console.info(`Loading table "${name}" from ${tableCID}`);
+        logger.debug(`hydrating table "${name}"`);
         if (tableData) {
           await schema.tables[name]?.deserialize(tableData);
         }

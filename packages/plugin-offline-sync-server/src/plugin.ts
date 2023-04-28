@@ -16,6 +16,9 @@ import {
   OfflineSyncSendResponse,
 } from "@cinderlink/plugin-offline-sync-core";
 
+const logModule = "plugins";
+const pluginName = "offline-sync-server";
+
 export type OfflineSyncServerEvents = {
   publish: {};
   subscribe: {};
@@ -40,11 +43,11 @@ export class OfflineSyncServerPlugin
     public options: Record<string, unknown> = {}
   ) {}
   async start() {
-    console.info(`plugin/offlineSyncServer > loading schema`);
+    this.client.logger.info(logModule, `${pluginName}/start: loading schema`);
     await loadOfflineSyncSchema(this.client);
   }
   async stop() {
-    console.info("social server plugin stopped");
+    this.client.logger.info(logModule, `${pluginName}/stop: plugin stopped`);
   }
   p2p = {
     "/offline/get/request": this.onGetRequest,
@@ -78,18 +81,22 @@ export class OfflineSyncServerPlugin
     >
   ) {
     if (!message.peer.peerId) {
-      console.warn(
-        `plugin/offlineSync/server > onSendRequest > peer does not have peerId`,
+      this.client.logger.warn(
+        logModule,
+        `${pluginName}/onSendRequest: peer does not have peerId`,
         message.peer
       );
+
       return;
     }
 
     if (!message.peer.did) {
-      console.warn(
-        `plugin/offlineSync/server > onSendRequest > peer does not have did`,
+      this.client.logger.warn(
+        logModule,
+        `${pluginName}/onSendRequest: peer does not have did`,
         message.peer
       );
+
       return;
     }
 
@@ -99,8 +106,11 @@ export class OfflineSyncServerPlugin
         recursive: true,
       });
     }
-
-    console.info(`plugin/offlineSync/server > onSendRequest`, message.payload);
+    this.client.logger.info(
+      logModule,
+      `${pluginName}/onSendRequest:  payload`,
+      message.payload
+    );
     // if the recipient is online, just send the message
     if (this.client.peers.isDIDConnected(message.payload.recipient)) {
       const peer = this.client.peers.getPeerByDID(message.payload.recipient);
@@ -110,13 +120,15 @@ export class OfflineSyncServerPlugin
         (this.client.getPlugin("cinderlink") as CinderlinkProtocolPlugin)
           ?.protocolHandlers[peer.peerId.toString()]
       ) {
-        console.info(
-          `plugin/offlineSync/server > onSendRequest > received offline message for online peer, relaying`,
+        this.client.logger.info(
+          logModule,
+          `${pluginName}/onSendRequest: received offline message for online peer, relaying`,
           {
             peer,
             message: message.payload,
           }
         );
+
         this.client.send(peer.peerId.toString(), {
           topic: "/offline/get/response",
           payload: {
@@ -133,8 +145,9 @@ export class OfflineSyncServerPlugin
         });
         return;
       } else {
-        console.warn(
-          `plugin/offlineSync/server > onSendRequest > received offline message for online peer, but no protocol handler found`,
+        this.client.logger.warn(
+          logModule,
+          `${pluginName}/onSendRequest: received offline message for online peer, but no protocol handler found`,
           {
             peer,
             message: message.payload,
@@ -179,18 +192,22 @@ export class OfflineSyncServerPlugin
     >
   ) {
     if (!message.peer.did) {
-      console.warn(
-        `plugin/offlineSync/server > onGetRequest > peer does not have did`,
+      this.client.logger.warn(
+        logModule,
+        `${pluginName}/onGetRequest: peer does not have did`,
         message.peer
       );
+
       return;
     }
 
     if (!message.peer.peerId) {
-      console.warn(
-        `plugin/offlineSync/server > onGetRequest > peer does not have peerId`,
+      this.client.logger.warn(
+        logModule,
+        `${pluginName}/onGetRequest: peer does not have peerId`,
         message.peer
       );
+
       return;
     }
 
@@ -202,7 +219,9 @@ export class OfflineSyncServerPlugin
       .execute()
       .then((rows) => rows.all());
 
-    console.info(`plugin/offlineSync/server > onGetRequest`, messages);
+    this.client.logger.info(logModule, `${pluginName}/onGetRequest: messages`, {
+      messages,
+    });
 
     await this.client.send(message.peer.peerId.toString(), {
       topic: "/offline/get/response",
@@ -221,15 +240,21 @@ export class OfflineSyncServerPlugin
     >
   ) {
     if (!message.peer.did) {
-      console.warn("onGetConfirmation > peer does not have did", message.peer);
+      this.client.logger.warn(
+        logModule,
+        `${pluginName}/onGetConfirmation: peer does not have did`,
+        message.peer
+      );
       return;
     }
 
     if (!message.peer.peerId) {
-      console.warn(
-        "onGetConfirmation > peer does not have peerId",
+      this.client.logger.warn(
+        logModule,
+        `${pluginName}/onGetConfirmation: peer does not have peerId`,
         message.peer
       );
+
       return;
     }
 

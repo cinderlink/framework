@@ -5,7 +5,7 @@ import {
   createSeed,
   createDID,
   signAddressVerification,
-} from "@cinderlink/identifiers";
+} from "../../identifiers";
 import {
   CinderlinkClientInterface,
   PluginInterface,
@@ -14,7 +14,7 @@ import {
   EncodingOptions,
   IncomingP2PMessage,
   ReceiveEventHandlers,
-} from "@cinderlink/core-types";
+} from "../../core-types";
 import * as ethers from "ethers";
 
 const response = vi.fn();
@@ -95,7 +95,7 @@ describe("CinderlinkClient", () => {
     );
     client = await createClient<ProtocolEvents>({
       did: clientDID,
-      address: clientWallet.address,
+      address: clientWallet.address as `0x${string}`,
       addressVerification: clientAV,
       role: "peer",
       options: {
@@ -114,7 +114,7 @@ describe("CinderlinkClient", () => {
     );
     server = await createClient<ProtocolEvents>({
       did: serverDID,
-      address: serverWallet.address,
+      address: serverWallet.address as `0x${string}`,
       addressVerification: serverAV,
       role: "server",
       options: {

@@ -25,7 +25,8 @@ import { SocialUsers } from "./features/users";
 import { SocialNotifications } from "./features/notifications";
 import { SocialSettings } from "./features/settings";
 
-const logPrefix = `plugin/social/client`;
+const logModule = `plugins`;
+const pluginName = `social-client`;
 
 export class SocialClientPlugin<
     Client extends CinderlinkClientInterface<
@@ -87,11 +88,25 @@ export class SocialClientPlugin<
       await this.client.identity.resolve();
     }
 
-    console.info(`${logPrefix} > loading schema`);
+    this.client.logger.info(
+      logModule,
+      `${pluginName}/start: starting social client plugin`
+    );
     await loadSocialSchema(this.client);
+    this.client.logger.info(
+      logModule,
+      `${pluginName}/start: start: loaded social schema`
+    );
     await this.users.loadLocalUser();
 
-    console.info(`${logPrefix} > initializing features`);
+    this.client.logger.info(
+      logModule,
+      `${pluginName}/start: loaded local user`
+    );
+    this.client.logger.info(
+      logModule,
+      `${pluginName}/start: initializing features`
+    );
     await this.chat.start();
     await this.connections.start();
     await this.posts.start();
@@ -99,10 +114,14 @@ export class SocialClientPlugin<
     await this.users.start();
 
     this.ready = true;
-    console.info(`${logPrefix} > ready`);
+
+    this.client.logger.info(logModule, `${pluginName}/start: plugin is ready`);
     this.emit("ready", undefined);
 
-    console.info(`${logPrefix} > registering sync config`);
+    this.client.logger.info(
+      logModule,
+      `${pluginName}/start: registering sync config`
+    );
     const syncDb: SyncDBPlugin = this.client.getPlugin("sync");
     if (syncDb) {
       Object.entries(SocialSyncConfig).map(([table, config]) => {
@@ -114,7 +133,7 @@ export class SocialClientPlugin<
   get db() {
     const schema = this.client.getSchema("social");
     if (!schema) {
-      throw new Error(`${logPrefix} > failed to get schema`);
+      throw new Error(`${logModule}: failed to get schema`);
     }
     return schema;
   }
@@ -125,13 +144,16 @@ export class SocialClientPlugin<
   >(name: string) {
     const table = this.db.getTable<Row, Def>(name);
     if (!table) {
-      throw new Error(`${logPrefix} > failed to get table ${name}`);
+      throw new Error(`${logModule}: failed to get table ${name}`);
     }
     return table;
   }
 
   async stop() {
-    console.info(`${logPrefix} > stopping`);
+    this.client.logger.info(
+      logModule,
+      `${pluginName}/stop: stopping social client plugin`
+    );
     await this.users.stop();
   }
 }
