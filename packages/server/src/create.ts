@@ -1,5 +1,6 @@
 import type { Options } from "ipfs-core";
 import type {
+  LogSeverity,
   LoggerInterface,
   PluginConstructor,
   SubLoggerInterface,
@@ -7,7 +8,6 @@ import type {
 import type { DID } from "dids";
 import { SubLogger, createClient } from "@cinderlink/client";
 import { CinderlinkServer } from "./server";
-import { x } from "@cinderlink/core-types/dist/table-e4f791bb";
 
 export interface CreateServerOptions {
   did: DID;
@@ -46,7 +46,7 @@ export class ServerLogger implements LoggerInterface {
 
   log(
     module: string,
-    severity: x,
+    severity: LogSeverity,
     message: string,
     data?: Record<string, unknown> | undefined
   ): void {
