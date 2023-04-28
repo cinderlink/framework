@@ -2,7 +2,7 @@
   "name": "@cinderlink/plugin-social-server",
   "description": "Social network server plugin for Cinderlink",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",

@@ -2,7 +2,7 @@
   "name": "@cinderlink/plugin-identity-server",
   "description": "Identity server plugin for Cinderlink",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
