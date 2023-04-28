@@ -3,7 +3,7 @@
   "repository": "https://github.com/cinderlinksocial/core",
   "description": "Typescript client for the Cinderlink development toolkit",
   "authors": "Drew Ewing <drew@cinderlink.com>",
-  "version": "0.0.14",
+  "version": "0.0.15",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",

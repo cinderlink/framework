@@ -65,7 +65,7 @@ export interface CinderlinkClientInterface<
 
   start(connectTo: string[]): Promise<void>;
   stop(): Promise<void>;
-  save(): Promise<void>;
+  save(forceRemote?: boolean, forceImmediate?: boolean): Promise<void>;
   load(): Promise<void>;
   connect(peerId: PeerId, role?: PeerRole): Promise<void>;
 
