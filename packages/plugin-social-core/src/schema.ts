@@ -330,7 +330,10 @@ export const SocialSchemaDef = {
 export default SocialSchemaDef;
 
 export async function loadSocialSchema(client: CinderlinkClientInterface<any>) {
-  console.info(`plugin/social > preparing schema`);
+  client.logger.info(
+    "plugins",
+    "social-core/loadSocialSchema: preparing schema"
+  );
   if (!client.schemas["social"]) {
     const schema = new Schema(
       "social",

@@ -55,7 +55,6 @@ export const SocialSyncConfig: Record<string, SyncConfig<any>> = {
       const syncTo = peers
         .map((p) => p.did as string)
         .filter((did) => did === row.from || did === row.to);
-      // console.info("syncRowTo", row, syncTo);
       return syncTo;
     },
     async allowNewFrom() {
@@ -154,7 +153,11 @@ export const SocialSyncConfig: Record<string, SyncConfig<any>> = {
             ).filter((did) => !!did)
           : validPeers
       ) as string[];
-      console.info("posts sync", syncPeers, validPeers, peers);
+      client.logger.info("plugins", "social-core/syncTo: posts sync", {
+        syncPeers,
+        validPeers,
+        peers,
+      });
       return syncPeers;
     },
     async allowNewFrom() {
