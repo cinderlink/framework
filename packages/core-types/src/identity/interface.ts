@@ -11,5 +11,15 @@ export interface IdentityInterface<Document = any> {
   resolveLocal(): Promise<IdentityResolved>;
   resolveIPNS(): Promise<IdentityResolved>;
   resolveServer(): Promise<IdentityResolved>;
-  save({ cid, document }: { cid: string; document: Document }): Promise<void>;
+  save({
+    cid,
+    document,
+    forceRemote,
+    forceImmediate,
+  }: {
+    cid: string;
+    document: Document;
+    forceRemote?: boolean;
+    forceImmediate?: boolean;
+  }): Promise<void>;
 }

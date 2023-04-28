@@ -23,8 +23,6 @@ import {
 import SyncSchemaDef from "./schema";
 import { v4 as uuid } from "uuid";
 
-const logPrefix = `plugin/sync`;
-
 /**
  * SyncDBPlugin
  * @class

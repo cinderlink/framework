@@ -1,6 +1,4 @@
-import { base58btc } from "multiformats/bases/base58";
 import { IncomingP2PMessage } from "@cinderlink/core-types/src/p2p";
-import all from "it-all";
 import {
   PluginInterface,
   CinderlinkClientInterface,

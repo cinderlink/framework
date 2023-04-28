@@ -1,7 +1,6 @@
 import { v4 as uuid } from "uuid";
 import localforage from "localforage";
 import { CID } from "multiformats";
-import toBuffer from "it-to-buffer";
 import type {
   CinderlinkClientEvents,
   CinderlinkClientInterface,
@@ -9,7 +8,6 @@ import type {
   IdentityResolved,
   PluginEventDef,
 } from "@cinderlink/core-types";
-import { base58btc } from "multiformats/bases/base58";
 export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
   cid: string | undefined = undefined;
   document: Record<string, unknown> | undefined = undefined;

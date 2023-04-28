@@ -88,7 +88,7 @@ describe("TableSync", () => {
     );
     client = await createClient<SyncPluginEvents & ProtocolEvents>({
       did: clientDID,
-      address: clientWallet.address,
+      address: clientWallet.address as `0x${string}`,
       addressVerification: clientAV,
       role: "peer",
       options: {
@@ -105,7 +105,7 @@ describe("TableSync", () => {
     );
     server = await createClient<SyncPluginEvents & ProtocolEvents>({
       did: serverDID,
-      address: serverWallet.address,
+      address: serverWallet.address as `0x${string}`,
       addressVerification: serverAV,
       role: "server",
       options: {
@@ -133,12 +133,22 @@ describe("TableSync", () => {
     ]);
 
     if (!server.hasSchema("test")) {
-      serverSchema = new Schema("test", { didRows: didRowDef }, server.dag);
+      serverSchema = new Schema(
+        "test",
+        { didRows: didRowDef },
+        server.dag,
+        server.logger.module("db").submodule(`schema:test`)
+      );
       await server.addSchema("test", serverSchema);
     }
 
     if (!client.hasSchema("test")) {
-      clientSchema = new Schema("test", { didRows: didRowDef }, client.dag);
+      clientSchema = new Schema(
+        "test",
+        { didRows: didRowDef },
+        client.dag,
+        client.logger.module("db").submodule(`schema:test`)
+      );
       await client.addSchema("test", clientSchema);
     }
 
@@ -182,8 +192,9 @@ describe("TableSync", () => {
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
-    await new Promise((resolve) => setTimeout(resolve, 201));
-    expect(clientSyncPlugin.syncTableRows).toHaveBeenCalledTimes(2);
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    // called once immediately at startup
+    expect(clientSyncPlugin.syncTableRows).toHaveBeenCalledTimes(3);
 
     expect(client.send).toHaveBeenCalledWith(server.peerId?.toString(), {
       topic: "/cinderlink/sync/save/request",

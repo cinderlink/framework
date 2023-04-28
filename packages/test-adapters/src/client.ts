@@ -14,9 +14,129 @@ import {
   SubscribeEvents,
   OutgoingP2PMessage,
   PluginEventHandler,
+  LoggerInterface,
+  LogSeverity,
+  SubLoggerInterface,
+  Log,
 } from "@cinderlink/core-types";
 import { TestDIDDag } from "./dag";
 import { DID } from "dids";
+
+export class TestLogger implements LoggerInterface {
+  constructor(public prefix?: string) {}
+  clear() {
+    console.clear();
+  }
+
+  debug(module: string, message: string, data?: Record<string, unknown>) {
+    this.log(module, "debug", message, data);
+  }
+
+  error(module: string, message: string, data?: Record<string, unknown>) {
+    this.log(module, "error", message, data);
+  }
+
+  getLogCount(): number {
+    return 0;
+  }
+
+  getLogs() {
+    return [];
+  }
+
+  info(module: string, message: string, data?: Record<string, unknown>) {
+    this.log(module, "info", message, data);
+  }
+
+  log(
+    module: string,
+    severity: LogSeverity,
+    message: string,
+    data?: Record<string, unknown> | undefined
+  ): void {
+    console[severity](
+      `${
+        this.prefix ? `[${this.prefix}] ` : ""
+      }${module} ${severity}: ${message}`,
+      data
+    );
+  }
+
+  warn(module: string, message: string, data?: Record<string, unknown>) {
+    this.log(module, "warn", message, data);
+  }
+
+  trace(module: string, message: string, data?: Record<string, unknown>) {
+    this.log(module, "trace", message, data);
+  }
+
+  modules: string[] = [];
+
+  module(id: string): SubLoggerInterface {
+    return new TestSubLogger(this, id);
+  }
+}
+
+export class TestSubLogger implements SubLoggerInterface {
+  constructor(
+    public logger: LoggerInterface,
+    public module: string,
+    public prefix?: string
+  ) {}
+
+  public clear() {
+    this.logger.clear(this.module);
+  }
+
+  public debug(message: string, data?: Record<string, unknown>) {
+    this.log("debug", message, data);
+  }
+
+  public error(message: string, data?: Record<string, unknown>) {
+    this.log("error", message, data);
+  }
+
+  public getLogCount(): number {
+    return this.logger.getLogCount(this.module);
+  }
+
+  public getLogs(): Log[] {
+    return this.logger.getLogs(this.module);
+  }
+
+  public info(message: string, data?: Record<string, unknown>) {
+    this.log("info", message, data);
+  }
+
+  public log(
+    severity: LogSeverity,
+    message: string,
+    data?: Record<string, unknown>
+  ) {
+    this.logger.log(
+      this.module,
+      severity,
+      this.prefix ? `${this.prefix} - ${message}` : message,
+      data
+    );
+  }
+
+  public trace(message: string, data?: Record<string, unknown>) {
+    this.log("trace", message, data);
+  }
+
+  public warn(message: string, data?: Record<string, unknown>) {
+    this.log("warn", message, data);
+  }
+
+  public submodule(prefix: string): SubLoggerInterface {
+    return new TestSubLogger(
+      this.logger,
+      this.module,
+      this.prefix ? `${this.prefix}/${prefix}` : prefix
+    );
+  }
+}
 
 export class TestClient<PluginEvents extends PluginEventDef>
   extends Emittery<CinderlinkClientEvents["emit"] & ProtocolEvents["emit"]>
@@ -39,6 +159,7 @@ export class TestClient<PluginEvents extends PluginEventDef>
   identity = {} as any;
   plugins = {} as Record<string, PluginInterface<any, any>>;
   initialConnectTimeout = 1;
+  logger: LoggerInterface = new TestLogger();
 
   constructor(public readonly did: DID) {
     super();
