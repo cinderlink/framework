@@ -244,6 +244,10 @@ export const SocialSchemaDef = {
         unique: false,
         fields: ["from", "to"],
       },
+      message: {
+        unique: true,
+        fields: ["from", "to", "message", "createdAt"],
+      },
     },
     rollup: 1000,
     searchOptions: {

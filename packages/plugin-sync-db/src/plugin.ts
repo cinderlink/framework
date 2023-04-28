@@ -76,7 +76,7 @@ export class SyncDBPlugin<
     public options: Partial<SyncPluginOptions> = {}
   ) {
     super();
-    console.info(`${logPrefix} > initializing`, { options });
+    this.client.logger.info("sync", `initializing`, { options });
   }
 
   coreEvents = {};
@@ -87,7 +87,7 @@ export class SyncDBPlugin<
    * @returns void
    */
   async start() {
-    console.info(`${logPrefix} > initializing table watchers`);
+    this.client.logger.info("sync", `initializing table watchers`);
     if (!this.client.hasSchema("sync")) {
       this.schema = new Schema("sync", SyncSchemaDef, this.client.dag);
       this.client.addSchema("sync", this.schema as SchemaInterface);
@@ -145,7 +145,7 @@ export class SyncDBPlugin<
    * @param config
    * @returns void
    */
-  addTableSync<Row extends TableRow>(
+  async addTableSync<Row extends TableRow>(
     schemaId: string,
     tableId: string,
     config: SyncConfig<Row>
@@ -157,6 +157,7 @@ export class SyncDBPlugin<
         () => this.syncTableRows(schemaId, tableId),
         config.syncInterval || 1000 * 60 * 3
       );
+      await this.syncTableRows(schemaId, tableId);
     }
 
     if (config.fetchInterval || config.fetchFrom) {
@@ -164,9 +165,40 @@ export class SyncDBPlugin<
         () => this.fetchTableRows(schemaId, tableId),
         config.fetchInterval || 1000 * 60 * 3
       );
+      await this.fetchTableRows(schemaId, tableId);
     }
 
-    console.info(`${logPrefix} > table configured for syncing`, {
+    if (config.syncOnChange) {
+      const schema = this.client.getSchema(schemaId);
+      if (!schema) {
+        this.client.logger.warn("sync", `schema not found`, { schemaId });
+        return;
+      }
+
+      const table = schema.getTable(tableId);
+      if (!table) {
+        this.client.logger.warn("sync", `table not found`, {
+          schemaId,
+          tableId,
+        });
+        return;
+      }
+
+      table.on(
+        "/record/inserted",
+        this.onTableRecordInserted.bind(this, schemaId, tableId)
+      );
+      table.on(
+        "/record/updated",
+        this.onTableRecordUpdated.bind(this, schemaId, tableId)
+      );
+      table.on(
+        "/record/deleted",
+        this.onTableRecordDeleted.bind(this, schemaId, tableId)
+      );
+    }
+
+    this.client.logger.info("sync", `table configured for syncing`, {
       schemaId,
       tableId,
       fetchInterval: config.fetchInterval,
@@ -175,15 +207,109 @@ export class SyncDBPlugin<
   }
 
   /**
+   * Remove a table sync configuration & stop syncing
+   * @param schemaId
+   * @param tableId
+   * @returns
+   */
+  async removeTableSync(schemaId: string, tableId: string) {
+    delete this.syncing[schemaId]?.[tableId];
+    clearInterval(this.timers[`${schemaId}/${tableId}/sync`]);
+    clearInterval(this.timers[`${schemaId}/${tableId}/fetch`]);
+
+    const schema = this.client.getSchema(schemaId);
+    if (!schema) {
+      this.client.logger.warn("sync", `schema not found`, { schemaId });
+      return;
+    }
+
+    const table = schema.getTable(tableId);
+    if (!table) {
+      this.client.logger.warn("sync", `table not found`, { schemaId, tableId });
+      return;
+    }
+
+    table.off(
+      "/record/inserted",
+      this.onTableRecordInserted.bind(this, schemaId, tableId)
+    );
+    table.off(
+      "/record/updated",
+      this.onTableRecordUpdated.bind(this, schemaId, tableId)
+    );
+    table.off(
+      "/record/deleted",
+      this.onTableRecordDeleted.bind(this, schemaId, tableId)
+    );
+  }
+
+  /**
+   * Table record inserted event handler
+   * @param schemaId
+   * @param tableId
+   * @returns
+   */
+  async onTableRecordInserted(
+    schemaId: string,
+    tableId: string,
+    record: TableRow
+  ) {
+    this.client.logger.debug("sync", `syncing inserted subscription record`, {
+      schemaId,
+      tableId,
+      record,
+    });
+    await this.syncTableRows(schemaId, tableId, [record]);
+  }
+
+  /**
+   * Table record updated event handler
+   * @param schemaId
+   * @param tableId
+   * @param record
+   */
+  async onTableRecordUpdated(
+    schemaId: string,
+    tableId: string,
+    record: TableRow
+  ) {
+    this.client.logger.debug("sync", `syncing updated subscription record`, {
+      schemaId,
+      tableId,
+      record,
+    });
+    await this.syncTableRows(schemaId, tableId, [record]);
+  }
+
+  /**
+   * Table record deleted event handler
+   * @param schemaId
+   * @param tableId
+   * @param record
+   */
+  async onTableRecordDeleted(
+    schemaId: string,
+    tableId: string,
+    record: TableRow
+  ) {
+    this.client.logger.debug("sync", `syncing deleted subscription record`, {
+      schemaId,
+      tableId,
+      record,
+    });
+    await this.syncTableRows(schemaId, tableId, [record]);
+  }
+
+  /**
    * Sync the pending rows for a given table
    * @param schemaId
    * @param tableId
    * @returns
    */
-  async syncTableRows(schemaId: string, tableId: string) {
+  async syncTableRows(schemaId: string, tableId: string, toSync?: TableRow[]) {
     const sync = this.syncing[schemaId]?.[tableId];
     if (!sync) {
-      console.warn(`${logPrefix} > table not configured for syncing`, {
+      this.client.logger.warn("sync", `table not configured for syncing`, {
         schemaId,
         tableId,
       });
@@ -192,13 +318,13 @@ export class SyncDBPlugin<
 
     const schema = this.client.getSchema(schemaId);
     if (!schema) {
-      console.warn(`${logPrefix} > schema not found`, { schemaId });
+      this.client.logger.warn("sync", `schema not found`, { schemaId });
       return;
     }
 
     const table = schema.getTable(tableId);
     if (!table) {
-      console.warn(`${logPrefix} > table not found`, { schemaId, tableId });
+      this.client.logger.warn("sync", `table not found`, { schemaId, tableId });
       return;
     }
 
@@ -221,13 +347,18 @@ export class SyncDBPlugin<
     }
 
     for (const did of syncDids) {
-      const lastSyncedAt = await this.getLastSyncedAt(schemaId, tableId, did);
-      const query = sync.query(
-        table,
-        { did, since: Number(lastSyncedAt) },
-        this.client
-      );
-      const rows = await query.execute().then((r) => r.all());
+      let rows: TableRow[] = [];
+      if (!toSync) {
+        const lastSyncedAt = await this.getLastSyncedAt(schemaId, tableId, did);
+        const query = sync.query(
+          table,
+          { did, since: Number(lastSyncedAt) },
+          this.client
+        );
+        rows = await query.execute().then((r) => r.all());
+      } else {
+        rows = toSync;
+      }
       if (!rows.length) {
         continue;
       }
@@ -273,7 +404,7 @@ export class SyncDBPlugin<
   ) {
     const sync = this.syncing[schemaId]?.[tableId];
     if (!sync) {
-      console.warn(`${logPrefix} > table not configured for syncing`, {
+      this.client.logger.warn("sync", `table not configured for syncing`, {
         schemaId,
         tableId,
       });
@@ -293,7 +424,7 @@ export class SyncDBPlugin<
     }
 
     if (tableRow && tableRow.lastFetchedAt > since) {
-      console.warn(`${logPrefix} > table already fetched`, {
+      this.client.logger.warn("sync", `table already fetched`, {
         schemaId,
         tableId,
       });
@@ -302,7 +433,7 @@ export class SyncDBPlugin<
 
     const table = this.client.getSchema(schemaId)?.getTable(tableId);
     if (!table) {
-      console.warn(`${logPrefix} > table not found`, { schemaId, tableId });
+      this.client.logger.warn("sync", `table not found`, { schemaId, tableId });
       return;
     }
 
@@ -338,7 +469,7 @@ export class SyncDBPlugin<
   ) {
     const peer = this.client.peers.getPeerByDID(did);
     if (!peer) {
-      console.warn(`${logPrefix} > peer not found`, { did });
+      this.client.logger.warn("sync", `peer not found`, { did });
       return;
     }
 
@@ -369,11 +500,11 @@ export class SyncDBPlugin<
   ) {
     const peer = this.client.peers.getPeerByDID(did);
     if (!peer) {
-      console.warn(`${logPrefix} > peer not found`, { did });
+      this.client.logger.warn("sync", `peer not found`, { did });
       return;
     }
 
-    console.info(`${logPrefix} > sending sync rows`, {
+    this.client.logger.info("sync", `sending sync rows`, {
       schemaId,
       tableId,
       did,
@@ -409,8 +540,9 @@ export class SyncDBPlugin<
         >
   ) {
     if (!message.peer.did) {
-      console.warn(
-        `${logPrefix} > received sync message from unauthenticated peer: \`${message.peer.peerId}\``
+      this.client.logger.warn(
+        "sync",
+        `received sync message from unauthenticated peer: \`${message.peer.peerId}\``
       );
       return;
     }
@@ -418,16 +550,18 @@ export class SyncDBPlugin<
     const { schemaId, tableId, rows } = message.payload;
     // we have received a sync table message from another peer
     if (!this.syncing[schemaId]?.[tableId]) {
-      console.warn(
-        `${logPrefix} > received sync message for unknown table: \`${schemaId}\`.\`${tableId}\``
+      this.client.logger.warn(
+        "sync",
+        `received sync message for unknown table: \`${schemaId}\`.\`${tableId}\``
       );
       return;
     }
 
     const table = this.client.getSchema(schemaId)?.getTable(tableId);
     if (!table) {
-      console.warn(
-        `${logPrefix} > received sync message for unknown table: \`${schemaId}\`.\`${tableId}\``
+      this.client.logger.warn(
+        "sync",
+        `received sync message for unknown table: \`${schemaId}\`.\`${tableId}\``
       );
       return;
     }
@@ -441,7 +575,7 @@ export class SyncDBPlugin<
 
     for (const { id, ...row } of rows) {
       if (!row.uid) {
-        console.warn(`${logPrefix} > received row without uid, skipping`);
+        this.client.logger.warn("sync", `received row without uid, skipping`);
         continue;
       }
 
@@ -449,6 +583,7 @@ export class SyncDBPlugin<
       let save = true;
       if (
         existing &&
+        sync.allowUpdateFrom &&
         !(await sync.allowUpdateFrom?.(
           row,
           message.peer.did,
@@ -456,29 +591,34 @@ export class SyncDBPlugin<
           this.client
         ))
       ) {
-        // console.info(
-        //   `${logPrefix} > skipping update (not allowed)`,
-        //   row.uid,
-        //   message.peer.did
-        // );
+        this.client.logger.debug(
+          "sync",
+          `skipping update (peer not allowed to update)`,
+          {
+            row,
+            peer: message.peer.did,
+          }
+        );
         save = false;
         // errors[row.uid] = "not allowed";
         // just ignore them
         saved.push(row.uid);
       } else if (!existing && !allowNew) {
-        // console.info(
-        //   `${logPrefix} > skipping new (not allowed)`,
-        //   row.uid,
-        //   message.peer.did
-        // );
+        this.client.logger.warn(
+          "sync",
+          `skipping new (peer not allowed to insert)`,
+          {
+            row,
+            peer: message.peer.did,
+          }
+        );
         save = false;
         errors[row.uid] = "not allowed to insert";
       } else if ((existing?.updatedAt || 0) >= (row.updatedAt || 0)) {
-        // console.info(
-        //   `${logPrefix} > skipping update (older)`,
-        //   row.uid,
-        //   message.peer.did
-        // );
+        this.client.logger.debug("sync", `skipping update (older)`, {
+          row,
+          peer: message.peer.did,
+        });
         save = false;
         // ignore them
         saved.push(row.uid);
@@ -496,7 +636,7 @@ export class SyncDBPlugin<
         if (!data.updatedAt) {
           data.updatedAt = Date.now();
         }
-        console.info(`${logPrefix} > saving row`, row.uid, data);
+        this.client.logger.info("sync", `saving row`, data);
         await table.upsert({ uid: row.uid }, data).catch(() => {});
       }
     }
@@ -532,52 +672,51 @@ export class SyncDBPlugin<
         >
   ) {
     if (!message.peer.did) {
-      console.warn(
-        `${logPrefix} > received sync message from unauthenticated peer: \`${message.peer.peerId}\``
+      this.client.logger.warn(
+        "sync",
+        `received sync message from unauthenticated peer: \`${message.peer.peerId}\``
       );
       return;
     }
 
     const { tableId, schemaId, saved, errors } = message.payload;
     if (!this.syncing[schemaId]?.[tableId]) {
-      console.warn(
-        `${logPrefix} > received sync message for unknown table: \`${schemaId}\`.\`${tableId}\``
+      this.client.logger.warn(
+        "sync",
+        `received sync message for unknown table: \`${schemaId}\`.\`${tableId}\``
       );
       return;
     }
 
     const table = this.client.getSchema(schemaId)?.getTable(tableId);
     if (!table) {
-      console.warn(
-        `${logPrefix} > received sync message for unknown table: \`${schemaId}\`.\`${tableId}\``
+      this.client.logger.warn(
+        "sync",
+        `received sync message for unknown table: \`${schemaId}\`.\`${tableId}\``
       );
       return;
     }
 
     if (saved?.length) {
-      for (const uid of saved.filter((uid) => !!uid)) {
-        console.info(`${logPrefix} > marking row as synced`, {
-          schemaId,
-          tableId,
-          uid,
-          did: message.peer.did,
-        });
-        await this.syncRows?.upsert(
-          {
-            schemaId,
-            tableId,
-            rowUid: uid,
-            did: message.peer.did,
-          },
-          {
-            success: true,
-            lastSyncedAt: Date.now(),
-          }
-        );
-      }
+      await Promise.all(
+        saved.map((uid) =>
+          this.syncRows?.upsert(
+            {
+              schemaId,
+              tableId,
+              rowUid: uid,
+              did: message.peer.did as string,
+            },
+            {
+              success: true,
+              lastSyncedAt: Date.now(),
+            }
+          )
+        )
+      );
     }
 
-    console.info("saving sync table", {
+    this.client.logger.info("sync", "saving sync table", {
       schemaId,
       tableId,
       did: message.peer.did,
@@ -595,10 +734,14 @@ export class SyncDBPlugin<
 
     const errorEntries = Object.entries(errors || {});
     for (const [uid, error] of errorEntries) {
-      console.info(`${logPrefix}/${schemaId}/${tableId} > error syncing row`, {
-        uid,
-        error,
-      });
+      this.client.logger.error(
+        "sync",
+        `${schemaId}/${tableId} > error syncing row \`${uid}\`: ${error}`,
+        {
+          uid,
+          error,
+        }
+      );
       await this.syncRows?.upsert(
         { schemaId, tableId, rowUid: uid, did: message.peer.did },
         {
@@ -628,24 +771,27 @@ export class SyncDBPlugin<
         >
   ) {
     if (!message.peer.did) {
-      console.warn(
-        `${logPrefix} > received sync message from unauthenticated peer: \`${message.peer.peerId}\``
+      this.client.logger.warn(
+        "sync",
+        `received sync message from unauthenticated peer: \`${message.peer.peerId}\``
       );
       return;
     }
 
     const { schemaId, tableId } = message.payload;
     if (!this.syncing[schemaId]?.[tableId]) {
-      console.warn(
-        `${logPrefix} > received sync message for unknown table: \`${schemaId}\`.\`${tableId}\``
+      this.client.logger.warn(
+        "sync",
+        `received sync message for unknown table: \`${schemaId}\`.\`${tableId}\``
       );
       return;
     }
 
     const table = this.client.getSchema(schemaId)?.getTable(tableId);
     if (!table) {
-      console.warn(
-        `${logPrefix} > received sync message for unknown table: \`${schemaId}\`.\`${tableId}\``
+      this.client.logger.warn(
+        "sync",
+        `received sync message for unknown table: \`${schemaId}\`.\`${tableId}\``
       );
       return;
     }
@@ -656,8 +802,9 @@ export class SyncDBPlugin<
       (await sync.allowFetchFrom?.(message.peer.did, table, this.client)) ===
       false
     ) {
-      console.warn(
-        `${logPrefix} > fetch not allowed for peer: ${message.peer.did}`
+      this.client.logger.warn(
+        "sync",
+        `fetch not allowed for peer: ${message.peer.did}`
       );
       return;
     }
@@ -734,24 +881,27 @@ export class SyncDBPlugin<
         >
   ) {
     if (!message.peer.did) {
-      console.warn(
-        `${logPrefix} > received sync message from unauthenticated peer: \`${message.peer.peerId}\``
+      this.client.logger.warn(
+        "sync",
+        `received sync message from unauthenticated peer: \`${message.peer.peerId}\``
       );
       return;
     }
 
     const { tableId, schemaId, rows } = message.payload;
     if (!this.syncing[schemaId]?.[tableId]) {
-      console.warn(
-        `${logPrefix} > received sync message for unknown table: \`${schemaId}\`.\`${tableId}\``
+      this.client.logger.warn(
+        "sync",
+        `received sync message for unknown table: \`${schemaId}\`.\`${tableId}\``
       );
       return;
     }
 
     const table = this.client.getSchema(schemaId)?.getTable(tableId);
     if (!table) {
-      console.warn(
-        `${logPrefix} > received sync message for unknown table: \`${schemaId}\`.\`${tableId}\``
+      this.client.logger.warn(
+        "sync",
+        `received sync message for unknown table: \`${schemaId}\`.\`${tableId}\``
       );
       return;
     }
@@ -778,9 +928,13 @@ export class SyncDBPlugin<
 
       await table.upsert({ uid: row.uid }, row);
 
-      console.info(`${logPrefix}/${schemaId}/${tableId} > saving fetched row`, {
-        row,
-      });
+      this.client.logger.info(
+        "sync",
+        `${schemaId}/${tableId} > saving fetched row`,
+        {
+          row,
+        }
+      );
       await this.syncRows?.upsert(
         { schemaId, tableId, rowUid: row.uid, did: message.peer.did },
         {
@@ -802,8 +956,9 @@ export class SyncDBPlugin<
     >
   ) {
     if (!message.peer.did) {
-      console.warn(
-        `${logPrefix} > received sync message from unauthenticated peer: \`${message.peer.peerId}\``
+      this.client.logger.warn(
+        "sync",
+        `received sync message from unauthenticated peer: \`${message.peer.peerId}\``
       );
       return;
     }
@@ -827,7 +982,7 @@ export class SyncDBPlugin<
       })
       .execute();
 
-    console.info(`${logPrefix} > updated sync times for peer`, {
+    this.client.logger.info("sync", `updated sync times for peer`, {
       peerId: message.peer.peerId,
       did: message.peer.did,
       since,

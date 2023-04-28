@@ -440,7 +440,7 @@ export class TableBlock<
     const records = await this.records();
     const hasChanged = Object.entries(update).some(([key, value]) => {
       const changed = records[id][key as keyof Row] !== value;
-      if (changed) {
+      if (changed && key !== "updatedAt") {
         console.info(
           `ipld-database/block/${
             this.table.tableId
@@ -448,8 +448,9 @@ export class TableBlock<
             records[id][key as keyof Row]
           } !== ${value})`
         );
+        return true;
       }
-      return changed;
+      return false;
     });
     if (!hasChanged) {
       return;

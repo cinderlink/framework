@@ -24,6 +24,7 @@ export interface SyncRowsRow extends TableRow {
 }
 
 export interface SyncConfig<Row extends TableRow> {
+  syncOnChange?: boolean;
   query: (
     table: TableInterface<Row>,
     params: Record<string, any>,

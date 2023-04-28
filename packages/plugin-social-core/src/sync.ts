@@ -14,7 +14,8 @@ import {
 
 export const SocialSyncConfig: Record<string, SyncConfig<any>> = {
   users: {
-    syncInterval: 10000,
+    syncInterval: 30000,
+    syncOnChange: true,
     query(table: TableInterface<SocialUser>, params) {
       return table
         .query()
@@ -38,7 +39,8 @@ export const SocialSyncConfig: Record<string, SyncConfig<any>> = {
     outgoingRateLimit: 5000,
   },
   chat_messages: {
-    syncInterval: 3000,
+    syncInterval: 15000,
+    syncOnChange: true,
     query(table: TableInterface<SocialChatMessage>, params) {
       return table
         .query()
@@ -80,7 +82,8 @@ export const SocialSyncConfig: Record<string, SyncConfig<any>> = {
     outgoingRateLimit: 25000,
   },
   connections: {
-    syncInterval: 5000,
+    syncInterval: 15000,
+    syncOnChange: true,
     query(table: TableInterface<SocialChatMessage>, params) {
       return table
         .query()
@@ -121,7 +124,8 @@ export const SocialSyncConfig: Record<string, SyncConfig<any>> = {
     outgoingRateLimit: 5000,
   },
   posts: {
-    syncInterval: 10000,
+    syncInterval: 60000,
+    syncOnChange: true,
     query(table: TableInterface<SocialPost>, params) {
       return table
         .query()
@@ -177,7 +181,8 @@ export const SocialSyncConfig: Record<string, SyncConfig<any>> = {
     outgoingRateLimit: 5000,
   },
   comments: {
-    syncInterval: 15000,
+    syncInterval: 60000,
+    syncOnChange: true,
     query(table: TableInterface<SocialPost>, params) {
       return table
         .query()
@@ -232,7 +237,8 @@ export const SocialSyncConfig: Record<string, SyncConfig<any>> = {
     outgoingRateLimit: 5000,
   },
   reactions: {
-    syncInterval: 15000,
+    syncInterval: 120000,
+    syncOnChange: true,
     query(table: TableInterface<SocialPost>, params) {
       return table
         .query()

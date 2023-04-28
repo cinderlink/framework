@@ -309,11 +309,18 @@ export class CinderlinkClient<
   }
 
   hasUnsavedChanges() {
-    return Object.values(this.schemas).some((schema) => schema.hasChanges());
+    return Object.values(this.schemas).some((schema) => {
+      if (schema.schemaId !== "sync" && schema.hasChanges()) {
+        console.info("schema has changes", schema.schemaId);
+      }
+    });
   }
 
   async save(forceRemote = false) {
     if (!this.identity.hasResolved || this.identity.resolving) {
+      return;
+    }
+    if (!this.hasUnsavedChanges()) {
       return;
     }
     if (!this.ipfs.isOnline()) {
