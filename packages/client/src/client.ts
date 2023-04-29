@@ -193,7 +193,10 @@ export class CinderlinkClient<
 
     await this.ipfs.repo.gc();
 
-    const protocol = new CinderlinkProtocolPlugin(this as any);
+    const protocol = new CinderlinkProtocolPlugin(
+      this as any,
+      this.logger.module("plugins").submodule("protocol")
+    );
     await this.addPlugin(protocol);
     await this.startPlugin(protocol.id);
     this.connectToNodes();

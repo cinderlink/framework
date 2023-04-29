@@ -1,7 +1,7 @@
 import {
   OfflineSyncClientPlugin,
   plugin_default
-} from "./chunk-6IUNHHCT.js";
+} from "./chunk-NNWFWA4E.js";
 export {
   OfflineSyncClientPlugin,
   plugin_default as default

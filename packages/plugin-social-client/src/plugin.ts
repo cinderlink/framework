@@ -2,6 +2,7 @@ import { SyncDBPlugin } from "@cinderlink/plugin-sync-db";
 import {
   ProtocolEvents,
   ReceiveEventHandlers,
+  SubLoggerInterface,
   SubscribeEventHandlers,
 } from "@cinderlink/core-types";
 import type {
@@ -24,9 +25,6 @@ import { SocialProfiles } from "./features/profiles";
 import { SocialUsers } from "./features/users";
 import { SocialNotifications } from "./features/notifications";
 import { SocialSettings } from "./features/settings";
-
-const logModule = `plugins`;
-const pluginName = `social-client`;
 
 export class SocialClientPlugin<
     Client extends CinderlinkClientInterface<
@@ -54,15 +52,31 @@ export class SocialClientPlugin<
 
   constructor(
     public client: Client,
-    public options: Record<string, unknown> = {}
+    public options: Record<string, unknown> = {},
+    public logger: SubLoggerInterface
   ) {
     super();
-    this.chat = new SocialChat(this);
-    this.connections = new SocialConnections(this);
-    this.posts = new SocialPosts(this);
+    this.chat = new SocialChat(
+      this,
+      client.logger.module("plugins").submodule("social-chat")
+    );
+    this.connections = new SocialConnections(
+      this,
+      client.logger.module("plugins").submodule("social-connections")
+    );
+    this.posts = new SocialPosts(
+      this,
+      client.logger.module("plugins").submodule("social-posts")
+    );
     this.profiles = new SocialProfiles(this);
-    this.users = new SocialUsers(this);
-    this.notifications = new SocialNotifications(this);
+    this.users = new SocialUsers(
+      this,
+      client.logger.module("plugins").submodule("social-users")
+    );
+    this.notifications = new SocialNotifications(
+      this,
+      client.logger.module("plugins").submodule("social-notifications")
+    );
     this.settings = new SocialSettings(this);
 
     this.pubsub = {
@@ -88,25 +102,13 @@ export class SocialClientPlugin<
       await this.client.identity.resolve();
     }
 
-    this.client.logger.info(
-      logModule,
-      `${pluginName}/start: starting social client plugin`
-    );
+    this.logger.info(`start: starting social client plugin`);
     await loadSocialSchema(this.client);
-    this.client.logger.info(
-      logModule,
-      `${pluginName}/start: start: loaded social schema`
-    );
+    this.logger.info(`start: start: loaded social schema`);
     await this.users.loadLocalUser();
 
-    this.client.logger.info(
-      logModule,
-      `${pluginName}/start: loaded local user`
-    );
-    this.client.logger.info(
-      logModule,
-      `${pluginName}/start: initializing features`
-    );
+    this.logger.info(`start: loaded local user`);
+    this.logger.info(`start: initializing features`);
     await this.chat.start();
     await this.connections.start();
     await this.posts.start();
@@ -115,13 +117,10 @@ export class SocialClientPlugin<
 
     this.ready = true;
 
-    this.client.logger.info(logModule, `${pluginName}/start: plugin is ready`);
+    this.logger.info(`start: plugin is ready`);
     this.emit("ready", undefined);
 
-    this.client.logger.info(
-      logModule,
-      `${pluginName}/start: registering sync config`
-    );
+    this.logger.info(`start: registering sync config`);
     const syncDb: SyncDBPlugin = this.client.getPlugin("sync");
     if (syncDb) {
       Object.entries(SocialSyncConfig).map(([table, config]) => {
@@ -133,7 +132,7 @@ export class SocialClientPlugin<
   get db() {
     const schema = this.client.getSchema("social");
     if (!schema) {
-      throw new Error(`${logModule}: failed to get schema`);
+      throw new Error(`social-client: failed to get schema`);
     }
     return schema;
   }
@@ -144,16 +143,13 @@ export class SocialClientPlugin<
   >(name: string) {
     const table = this.db.getTable<Row, Def>(name);
     if (!table) {
-      throw new Error(`${logModule}: failed to get table ${name}`);
+      throw new Error(`social-client: failed to get table ${name}`);
     }
     return table;
   }
 
   async stop() {
-    this.client.logger.info(
-      logModule,
-      `${pluginName}/stop: stopping social client plugin`
-    );
+    this.logger.info(`stop: stopping social client plugin`);
     await this.users.stop();
   }
 }

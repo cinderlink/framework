@@ -4,6 +4,7 @@ import {
   IncomingP2PMessage,
   IncomingPubsubMessage,
   Peer,
+  SubLoggerInterface,
 } from "@cinderlink/core-types";
 import {
   SocialClientEvents,
@@ -12,8 +13,6 @@ import {
 } from "@cinderlink/plugin-social-core";
 import { checkAddressVerification } from "@cinderlink/identifiers";
 import SocialClientPlugin from "../plugin";
-const logModule = "plugins";
-const pluginName = "social-client";
 export class SocialUsers {
   localUser: Partial<SocialUser> = {
     name: "",
@@ -29,7 +28,10 @@ export class SocialUsers {
   hasServerConnection = false;
   loadingLocalUser = false;
 
-  constructor(private plugin: SocialClientPlugin) {}
+  constructor(
+    private plugin: SocialClientPlugin,
+    private logger: SubLoggerInterface
+  ) {}
 
   async start() {
     await this.loadLocalUser();
@@ -56,11 +58,7 @@ export class SocialUsers {
     });
 
     this.plugin.client.on("/peer/disconnect", async (peer: Peer) => {
-      this.plugin.client.logger.info(
-        logModule,
-        `${pluginName}/start: peer disconnected`,
-        { peer }
-      );
+      this.logger.info(`start: peer disconnected`, { peer });
       if (peer.role === "peer" && peer.did) {
         await this.setUserStatus(peer.did as string, "offline");
       }
@@ -73,10 +71,7 @@ export class SocialUsers {
         this.localUser.name === "guest"
       )
         return;
-      this.plugin.client.logger.info(
-        logModule,
-        `${pluginName}/start: announcing (pubsub, interval)`
-      );
+      this.logger.info(`start: announcing (pubsub, interval)`);
       await this.announce();
     }, Number(this.plugin.options.announceInterval || 5000));
 
@@ -108,10 +103,12 @@ export class SocialUsers {
 
   async setUserStatus(did: string, status: SocialUserStatus) {
     const table = this.plugin.table<SocialUser>("users");
-    this.plugin.client.logger.info(
-      logModule,
-      `user ${did} status changed to '${status}'`,
-      { did, status }
+    this.logger.info(
+      `setUserStatus: user ${did} status changed to '${status}'`,
+      {
+        did,
+        status,
+      }
     );
     await table
       .query()
@@ -138,24 +135,16 @@ export class SocialUsers {
       addressVerification: this.plugin.client.addressVerification,
     };
     if (to) {
-      this.plugin.client.logger.info(
-        logModule,
-        `${pluginName}/announce annoucing (p2p)`,
-        {
-          topic: "/social/users/announce",
-          payload,
-        }
-      );
+      this.logger.info(`announce: annoucing (p2p)`, {
+        topic: "/social/users/announce",
+        payload,
+      });
       await this.plugin.client.send<SocialClientEvents>(to, {
         topic: "/social/users/announce",
         payload,
       });
     } else {
-      this.plugin.client.logger.info(
-        logModule,
-        `${pluginName}/announce annoucing (pubsub)`,
-        payload
-      );
+      this.logger.info(`announce: annoucing (pubsub)`, payload);
       await this.plugin.client.publish("/social/users/announce", payload);
 
       for (let peer of this.plugin.client.peers.getAllPeers()) {
@@ -219,10 +208,7 @@ export class SocialUsers {
   }
 
   async saveLocalUser() {
-    this.plugin.client.logger.info(
-      logModule,
-      `${pluginName}/saveLocalUser: saving local user`
-    );
+    this.logger.info(`saveLocalUser: saving local user`);
     const user = await this.plugin.table<SocialUser>("users").upsert(
       { did: this.plugin.client.id },
       {
@@ -232,18 +218,16 @@ export class SocialUsers {
         updatedAt: Date.now(),
       }
     );
-    this.plugin.client.logger.info(
-      logModule,
-      `${pluginName}/saveLocalUser: saved local user`,
-      { user, localUser: this.localUser }
-    );
+    this.logger.info(`saveLocalUser: saved local user`, {
+      user,
+      localUser: this.localUser,
+    });
 
     this.localUser = user;
     // .findByIndex("did", this.plugin.client.id);
     if (!user?.id) {
-      this.plugin.client.logger.error(
-        logModule,
-        `${pluginName}/saveLocalUser: failed to save local user, user not found after upsert`,
+      this.logger.error(
+        `saveLocalUser: failed to save local user, user not found after upsert`,
         { did: this.plugin.client.id }
       );
 
@@ -253,20 +237,14 @@ export class SocialUsers {
 
   async loadLocalUser() {
     if (!this.plugin.client.identity.hasResolved) {
-      this.plugin.client.logger.info(
-        logModule,
-        `${pluginName}/loadLocalUser: identity not resolved, waiting...`
-      );
+      this.logger.info(`loadLocalUser: identity not resolved, waiting...`);
       return;
     } else if (this.loadingLocalUser) {
       return;
     }
 
     this.loadingLocalUser = true;
-    this.plugin.client.logger.info(
-      logModule,
-      `${pluginName}/loadLocalUser: loading local user...`
-    );
+    this.logger.info(`loadLocalUser: loading local user...`);
     const user = (
       await this.plugin
         .table<SocialUser>("users")
@@ -276,10 +254,7 @@ export class SocialUsers {
         .execute()
     )?.first();
     if (!user) {
-      this.plugin.client.logger.warn(
-        logModule,
-        `${pluginName}/loadLocalUser: local user not found, returning...`
-      );
+      this.logger.warn(`loadLocalUser: local user not found, returning...`);
       return;
     }
 
@@ -289,11 +264,7 @@ export class SocialUsers {
       addressVerification: this.plugin.client.addressVerification,
       status: "online",
     };
-    this.plugin.client.logger.info(
-      logModule,
-      `${pluginName}/loadLocalUser: local user loaded`,
-      this.localUser
-    );
+    this.logger.info(`loadLocalUser: local user loaded`, this.localUser);
   }
 
   async getUserFromServer(did: string): Promise<SocialUser | undefined> {
@@ -380,9 +351,8 @@ export class SocialUsers {
         >
   ) {
     if (!message.payload.address) {
-      this.plugin.client.logger.warn(
-        logModule,
-        `${pluginName}/onAnnounce: received social announce message from peer without address`,
+      this.logger.warn(
+        `onAnnounce: received social announce message from peer without address`,
         { did: message.peer.did }
       );
 
@@ -390,9 +360,8 @@ export class SocialUsers {
     }
 
     if (!message.payload.addressVerification) {
-      this.plugin.client.logger.warn(
-        logModule,
-        `${pluginName}/onAnnounce: received social announce message from peer without address verification`,
+      this.logger.warn(
+        `onAnnounce: received social announce message from peer without address verification`,
         { did: message.peer.did }
       );
 
@@ -400,9 +369,8 @@ export class SocialUsers {
     }
 
     if (!message.payload.did || !message.payload.did.length) {
-      this.plugin.client.logger.warn(
-        logModule,
-        `${pluginName}/onAnnounce: received social announce message from peer without did`,
+      this.logger.warn(
+        `onAnnounce: received social announce message from peer without did`,
         { did: message.peer.did }
       );
 
@@ -416,9 +384,8 @@ export class SocialUsers {
       message.payload.addressVerification
     ).catch(() => undefined);
     if (!verified) {
-      this.plugin.client.logger.warn(
-        logModule,
-        `${pluginName}/onAnnounce: received secial announce message from peer with invalid address verification`,
+      this.logger.warn(
+        `onAnnounce: received secial announce message from peer with invalid address verification`,
         { did: message.peer.did }
       );
 
@@ -438,15 +405,11 @@ export class SocialUsers {
       });
     }
 
-    this.plugin.client.logger.info(
-      logModule,
-      `${pluginName}/onAnnounce: received social announce message`,
-      {
-        did: message.payload.did,
-        connected: message.peer.connected,
-        payload: message.payload,
-      }
-    );
+    this.logger.info(`onAnnounce: received social announce message`, {
+      did: message.payload.did,
+      connected: message.peer.connected,
+      payload: message.payload,
+    });
 
     await this.plugin.table<SocialUser>("users")?.upsert(
       { did: message.payload.did },
@@ -470,23 +433,17 @@ export class SocialUsers {
           !this.plugin.client.peers.getPeer(message.peer.peerId.toString())
             ?.connected)
       ) {
-        this.plugin.client.logger.info(
-          logModule,
-          `${pluginName}/onAnnounce: connecting to peer`,
-          { peerId: message.peer.peerId }
-        );
+        this.logger.info(`onAnnounce: connecting to peer`, {
+          peerId: message.peer.peerId,
+        });
 
         await this.plugin.client.connect(message.peer.peerId);
       }
     } catch (e) {
-      this.plugin.client.logger.error(
-        logModule,
-        `${pluginName}/onAnnounce: failed to connect to peer`,
-        {
-          peerId: message.peer.peerId,
-          error: e,
-        }
-      );
+      this.logger.error(`onAnnounce: failed to connect to peer`, {
+        peerId: message.peer.peerId,
+        error: e,
+      });
 
       this.plugin.client.ipfs.libp2p.peerStore.delete(message.peer.peerId);
     }
@@ -499,11 +456,10 @@ export class SocialUsers {
       EncodingOptions
     >
   ) {
-    this.plugin.client.logger.info(
-      logModule,
-      `${pluginName}/onPinResponse: received social pin response`,
-      { did: message.peer.did, payload: message.payload }
-    );
+    this.logger.info(`onPinResponse: received social pin response`, {
+      did: message.peer.did,
+      payload: message.payload,
+    });
   }
 
   async onGetResponse(
@@ -513,11 +469,10 @@ export class SocialUsers {
       EncodingOptions
     >
   ) {
-    this.plugin.client.logger.info(
-      logModule,
-      `${pluginName}/onGetResponse: received social users get response`,
-      { did: message.peer.did, payload: message.payload }
-    );
+    this.logger.info(`onGetResponse: received social users get response`, {
+      did: message.peer.did,
+      payload: message.payload,
+    });
   }
 
   async onSearchResponse(
@@ -527,11 +482,10 @@ export class SocialUsers {
       EncodingOptions
     >
   ) {
-    this.plugin.client.logger.info(
-      logModule,
-      `${pluginName}/onSearchResponse: received user search response`,
-      { did: message.peer.did, payload: message.payload }
-    );
+    this.logger.info(`onSearchResponse: received user search response`, {
+      did: message.peer.did,
+      payload: message.payload,
+    });
 
     // insert users we don't have
     await Promise.all(

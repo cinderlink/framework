@@ -1,13 +1,15 @@
 import { OfflineSyncClientPluginInterface } from "@cinderlink/plugin-offline-sync-core";
 import { SocialChatMessage } from "@cinderlink/plugin-social-core";
-import { ProtocolRequest } from "@cinderlink/core-types";
+import { ProtocolRequest, SubLoggerInterface } from "@cinderlink/core-types";
 import { encodePayload } from "@cinderlink/protocol";
 import { v4 as uuid } from "uuid";
 import SocialClientPlugin from "../plugin";
-const logModule = "plugins";
-const pluginName = "social-client";
+
 export class SocialChat {
-  constructor(private plugin: SocialClientPlugin) {}
+  constructor(
+    private plugin: SocialClientPlugin,
+    private logger: SubLoggerInterface
+  ) {}
 
   async start() {}
 
@@ -23,10 +25,7 @@ export class SocialChat {
       from: this.plugin.client.id,
       ...message,
     };
-    this.plugin.client.logger.info(
-      logModule,
-      `${pluginName}/sendChatMessage: sending chat message`
-    );
+    this.logger.info(`sendChatMessage: sending chat message`);
 
     const cid = await this.plugin.client.dag.storeEncrypted(chatMessage, [
       message.to,
@@ -38,11 +37,9 @@ export class SocialChat {
     const pinned = await this.plugin.client.ipfs.pin.add(cid, {
       recursive: true,
     });
-    this.plugin.client.logger.info(
-      logModule,
-      `${pluginName}/sendChatMessage: message pinned`,
-      { pinned: pinned.toString() }
-    );
+    this.logger.info(`sendChatMessage: message pinned`, {
+      pinned: pinned.toString(),
+    });
 
     const savedMessage: SocialChatMessage = await this.plugin
       .table<SocialChatMessage>("chat_messages")
@@ -61,9 +58,8 @@ export class SocialChat {
         this.plugin.client.getPlugin<OfflineSyncClientPluginInterface>(
           "offlineSync"
         );
-      this.plugin.client.logger.info(
-        logModule,
-        `${pluginName}/sendChatMessage: sending chat message to offline sync`,
+      this.logger.info(
+        `sendChatMessage: sending chat message to offline sync`,
         {
           to: message.to,
           message: savedMessage,
