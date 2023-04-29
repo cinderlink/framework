@@ -2,7 +2,7 @@
   "name": "@cinderlink/server",
   "description": "Federated pinning & messaging server for Cinderlink networks",
   "authors": "Drew Ewing <drew@cinderlink.com>",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",

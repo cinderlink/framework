@@ -5,6 +5,7 @@ import type {
   IncomingP2PMessage,
   EncodingOptions,
   ProtocolEvents,
+  SubLoggerInterface,
 } from "@cinderlink/core-types";
 import {
   loadOfflineSyncSchema,
@@ -15,9 +16,6 @@ import {
   OfflineSyncSendRequest,
   OfflineSyncSendResponse,
 } from "@cinderlink/plugin-offline-sync-core";
-
-const logModule = "plugins";
-const pluginName = "offline-sync-server";
 
 export type OfflineSyncServerEvents = {
   publish: {};
@@ -37,17 +35,18 @@ export type OfflineSyncServerEvents = {
 export class OfflineSyncServerPlugin
   implements PluginInterface<OfflineSyncServerEvents, ProtocolEvents>
 {
-  id = "offlineSyncServer";
+  id = "offline-sync-server";
   constructor(
     public client: CinderlinkClientInterface<OfflineSyncServerEvents>,
-    public options: Record<string, unknown> = {}
+    public options: Record<string, unknown> = {},
+    public logger: SubLoggerInterface
   ) {}
   async start() {
-    this.client.logger.info(logModule, `${pluginName}/start: loading schema`);
+    this.logger.info(`start: loading schema`);
     await loadOfflineSyncSchema(this.client);
   }
   async stop() {
-    this.client.logger.info(logModule, `${pluginName}/stop: plugin stopped`);
+    this.logger.info(`stop: plugin stopped`);
   }
   p2p = {
     "/offline/get/request": this.onGetRequest,
@@ -81,9 +80,8 @@ export class OfflineSyncServerPlugin
     >
   ) {
     if (!message.peer.peerId) {
-      this.client.logger.warn(
-        logModule,
-        `${pluginName}/onSendRequest: peer does not have peerId`,
+      this.logger.warn(
+        `onSendRequest: peer does not have peerId`,
         message.peer
       );
 
@@ -91,11 +89,7 @@ export class OfflineSyncServerPlugin
     }
 
     if (!message.peer.did) {
-      this.client.logger.warn(
-        logModule,
-        `${pluginName}/onSendRequest: peer does not have did`,
-        message.peer
-      );
+      this.logger.warn(`onSendRequest: peer does not have did`, message.peer);
 
       return;
     }
@@ -106,11 +100,7 @@ export class OfflineSyncServerPlugin
         recursive: true,
       });
     }
-    this.client.logger.info(
-      logModule,
-      `${pluginName}/onSendRequest:  payload`,
-      message.payload
-    );
+    this.logger.info(`onSendRequest:  payload`, message.payload);
     // if the recipient is online, just send the message
     if (this.client.peers.isDIDConnected(message.payload.recipient)) {
       const peer = this.client.peers.getPeerByDID(message.payload.recipient);
@@ -120,9 +110,8 @@ export class OfflineSyncServerPlugin
         (this.client.getPlugin("cinderlink") as CinderlinkProtocolPlugin)
           ?.protocolHandlers[peer.peerId.toString()]
       ) {
-        this.client.logger.info(
-          logModule,
-          `${pluginName}/onSendRequest: received offline message for online peer, relaying`,
+        this.logger.info(
+          `onSendRequest: received offline message for online peer, relaying`,
           {
             peer,
             message: message.payload,
@@ -145,9 +134,8 @@ export class OfflineSyncServerPlugin
         });
         return;
       } else {
-        this.client.logger.warn(
-          logModule,
-          `${pluginName}/onSendRequest: received offline message for online peer, but no protocol handler found`,
+        this.logger.warn(
+          `onSendRequest: received offline message for online peer, but no protocol handler found`,
           {
             peer,
             message: message.payload,
@@ -192,21 +180,13 @@ export class OfflineSyncServerPlugin
     >
   ) {
     if (!message.peer.did) {
-      this.client.logger.warn(
-        logModule,
-        `${pluginName}/onGetRequest: peer does not have did`,
-        message.peer
-      );
+      this.logger.warn(`onGetRequest: peer does not have did`, message.peer);
 
       return;
     }
 
     if (!message.peer.peerId) {
-      this.client.logger.warn(
-        logModule,
-        `${pluginName}/onGetRequest: peer does not have peerId`,
-        message.peer
-      );
+      this.logger.warn(`onGetRequest: peer does not have peerId`, message.peer);
 
       return;
     }
@@ -219,7 +199,7 @@ export class OfflineSyncServerPlugin
       .execute()
       .then((rows) => rows.all());
 
-    this.client.logger.info(logModule, `${pluginName}/onGetRequest: messages`, {
+    this.logger.info(`onGetRequest: messages`, {
       messages,
     });
 
@@ -240,18 +220,16 @@ export class OfflineSyncServerPlugin
     >
   ) {
     if (!message.peer.did) {
-      this.client.logger.warn(
-        logModule,
-        `${pluginName}/onGetConfirmation: peer does not have did`,
+      this.logger.warn(
+        `onGetConfirmation: peer does not have did`,
         message.peer
       );
       return;
     }
 
     if (!message.peer.peerId) {
-      this.client.logger.warn(
-        logModule,
-        `${pluginName}/onGetConfirmation: peer does not have peerId`,
+      this.logger.warn(
+        `onGetConfirmation: peer does not have peerId`,
         message.peer
       );
 

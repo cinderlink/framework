@@ -2,6 +2,7 @@ import { EncodingOptions, ProtocolPayload } from "./../protocol/types";
 import { ReceiveEventHandlers } from "./../p2p/types";
 import { SubscribeEventHandlers } from "../pubsub";
 import { CinderlinkClientEvents, CinderlinkClientInterface } from "../client";
+import { SubLoggerInterface } from "../logger";
 
 export type PluginEventPayloads<T extends Record<string, unknown> = any> =
   Record<keyof T, ProtocolPayload<T[keyof T], EncodingOptions>>;
@@ -47,5 +48,6 @@ export default PluginInterface;
 
 export type PluginConstructor<
   Client extends CinderlinkClientInterface = CinderlinkClientInterface,
-  Options extends Record<string, unknown> = {}
-> = new (client: Client, options?: Options) => PluginInterface;
+  Options extends Record<string, unknown> = {},
+  Logger extends SubLoggerInterface = SubLoggerInterface
+> = new (client: Client, options?: Options, logger?: Logger) => PluginInterface;

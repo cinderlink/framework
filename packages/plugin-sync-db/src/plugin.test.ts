@@ -283,7 +283,7 @@ describe("TableSync", () => {
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
-    await new Promise((resolve) => setTimeout(resolve, 200));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
     expect(client.p2p.emit).toHaveBeenCalledWith(
       "/cinderlink/sync/save/response",
       {

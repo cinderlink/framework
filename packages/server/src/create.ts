@@ -92,7 +92,13 @@ export async function createServer({
   });
   await Promise.all(
     plugins.map(async ([Plugin, pluginOptions]) => {
-      await client.addPlugin(new Plugin(client, pluginOptions));
+      await client.addPlugin(
+        new Plugin(
+          client,
+          pluginOptions,
+          client.logger.module("plugins").submodule(Plugin.name)
+        )
+      );
     })
   );
   return new CinderlinkServer(client);

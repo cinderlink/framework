@@ -13,6 +13,7 @@ import {
   PluginEventDef,
   PluginBaseInterface,
   ReceiveEventHandlers,
+  SubLoggerInterface,
 } from "@cinderlink/core-types";
 import { Connection, Stream } from "@libp2p/interface-connection";
 import * as json from "multiformats/codecs/json";
@@ -46,7 +47,8 @@ export class CinderlinkProtocolPlugin<
   id = "cinderlink";
 
   constructor(
-    public client: CinderlinkClientInterface<ProtocolEvents & PeerEvents>
+    public client: CinderlinkClientInterface<ProtocolEvents & PeerEvents>,
+    public logger: SubLoggerInterface
   ) {}
 
   p2p: ReceiveEventHandlers<ProtocolEvents> = {
@@ -67,7 +69,7 @@ export class CinderlinkProtocolPlugin<
   protocolHandlers: Record<string, ProtocolHandler> = {};
 
   async start() {
-    console.info(`client > registering protocol /cinderlink/1.0.0`);
+    this.logger.info(`start: registering protocol /cinderlink/1.0.0`);
     await this.client.ipfs.libp2p.handle(
       "/cinderlink/1.0.0",
       async ({
@@ -121,9 +123,12 @@ export class CinderlinkProtocolPlugin<
     }
 
     if (this.protocolHandlers[peer.peerId.toString()]?.connection && !force) {
-      console.info(
-        `protocol > already initialized protocol with ${readablePeer(peer)}`
+      this.logger.info(
+        `initializeProtocol: already initialized protocol with ${readablePeer(
+          peer
+        )}`
       );
+
       await this.client.send<ProtocolEvents>(peer.peerId.toString(), {
         topic: "/cinderlink/handshake/request",
         payload: {
@@ -157,29 +162,35 @@ export class CinderlinkProtocolPlugin<
           async function (source) {
             try {
               for await (const encoded of source) {
-                console.info("protocol > received message", encoded);
+                self.logger.info(
+                  `initializeProtocol: received message`,
+                  encoded
+                );
                 await self.handleProtocolMessage(connection, encoded);
               }
-            } catch (e) {
-              console.error(e);
+            } catch (error) {
+              self.logger.error(`initializeProtocol: error`, { error });
             }
           }
         ),
       } as ProtocolHandler;
 
-      console.info(
-        `protocol > initialized protocol with ${readablePeer(
+      this.logger.info(
+        `initializeProtocol: initialized protocol with ${readablePeer(
           peer
         )}, sending handshake request`
       );
+
       await this.client.send<ProtocolEvents>(peer.peerId.toString(), {
         topic: "/cinderlink/handshake/request",
         payload: {
           did: this.client.id,
         } as HandshakeRequest,
       });
-    } catch (e) {
-      console.error(e);
+    } catch (error) {
+      this.logger.error(`initializeProtocol: error`, {
+        error,
+      });
     }
   }
 
@@ -200,9 +211,10 @@ export class CinderlinkProtocolPlugin<
 
   async onPeerDisconnect(peer: Peer) {
     if (this.protocolHandlers[peer.peerId.toString()]) {
-      console.info(
-        `peer/disconnect > closing cinderlink protocol ${readablePeer(peer)}`
+      this.logger.info(
+        `onPeerDisconnect:  closing cinderlink protocol ${readablePeer(peer)}`
       );
+
       this.protocolHandlers[peer.peerId.toString()].buffer?.end();
       this.protocolHandlers[peer.peerId.toString()].stream?.close();
       this.protocolHandlers[peer.peerId.toString()].connection?.close();
@@ -219,15 +231,18 @@ export class CinderlinkProtocolPlugin<
     encoded: ProtocolMessage<Events["receive"][Topic], Topic, Encoding>
   ) {
     if (!encoded?.topic) {
-      console.warn(
-        `p2p/in: ERROR: invalid topic > from ${connection.remotePeer}`,
-        encoded
-      );
+      this.logger.error(`handleProtocolMessage:  Error: invalid topic`, {
+        from: connection.remotePeer,
+        encoded,
+      });
+
       return;
     }
-    console.info(
-      `p2p/in:${encoded.topic as string} > from ${connection.remotePeer}`
-    );
+    this.logger.info(`handleProtocolMessage: p2p topic received`, {
+      from: connection.remotePeer,
+      topic: encoded.topic,
+    });
+
     const { topic } = encoded;
     if (!topic) {
       throw new Error('missing "topic" in encoded message');
@@ -261,12 +276,12 @@ export class CinderlinkProtocolPlugin<
       );
     }
 
-    console.debug(
-      `p2p/in:${topic as string} > from ${
-        event.peer.did || event.peer.peerId.toString()
-      }, data: `,
-      event.payload
-    );
+    this.logger.debug(`handleProtocolMessage: p2p topic payload`, {
+      from: connection.remotePeer,
+      topic: encoded.topic,
+      payload: event.payload,
+    });
+
     await this.client.p2p.emit(
       topic as keyof ProtocolEvents["receive"],
       event as any
@@ -303,33 +318,35 @@ export class CinderlinkProtocolPlugin<
   ) {
     const peer = message.peer;
     if (!peer) {
-      console.info(`p2p/handshake > unknown peer ${message.peer}`);
+      this.logger.info(`onHandshakeRequest: unknown peer`, {
+        peer: message.peer,
+      });
       return;
     }
 
     if (!message.payload?.did) {
-      console.info(
-        `p2p/handshake > missing did in request from ${peer.peerId}`
-      );
+      this.logger.info(`onHandshakeRequest: missing did in request`, {
+        peerId: peer.peerId,
+      });
+
       return;
     }
 
     if (peer.authenticated) {
-      console.info(
-        `p2p/handshake > already authenticated ${peer.peerId} (${
-          peer.did ? peer.did : "N/A"
-        })`
-      );
+      this.logger.info(`onHandshakeRequest: peer already authenticated`, {
+        did: peer.did || "N/A",
+      });
+
       return this.client.send<ProtocolEvents>(message.peer.peerId.toString(), {
         topic: "/cinderlink/handshake/success",
         payload: {},
       });
     } else if (peer.challengedAt && Date.now() - peer.challengedAt < 1000) {
-      console.warn(
-        `p2p/handshake > challenge already issued to ${peer.peerId} (${
-          peer.did ? peer.did : "N/A"
-        })`
+      this.logger.warn(
+        `onHandshakeRequest: challenge already issued for peer`,
+        { peer }
       );
+
       return;
     }
 
@@ -338,11 +355,7 @@ export class CinderlinkProtocolPlugin<
     peer.challengedAt = Date.now();
     this.client.peers.updatePeer(message.peer.peerId.toString(), peer);
 
-    console.info(
-      `p2p/handshake > sending challenge to ${peer.peerId} (${
-        peer.did ? peer.did : "N/A"
-      })`
-    );
+    this.logger.info(`onHandshakeRequest: sending challenge to peer`, { peer });
     await this.client.send<ProtocolEvents>(
       message.peer.peerId.toString(),
       {
@@ -366,13 +379,14 @@ export class CinderlinkProtocolPlugin<
     const peer = message.peer;
     const logId = readablePeer(peer);
     if (!peer) {
-      console.info(`p2p/handshake/challenge > unknown peer ${logId}`);
+      this.logger.info(`onHandshakeChallenge: unknown peer`, { logId });
       return;
     }
 
-    console.info(
-      `p2p/handshake/challenge > completing challenge for peer ${logId}`
-    );
+    this.logger.info(`onHandshakeChallenge: completing challenge for peer`, {
+      logId,
+    });
+
     await this.client.send<ProtocolEvents>(
       message.peer.peerId.toString(),
       {
@@ -394,33 +408,30 @@ export class CinderlinkProtocolPlugin<
   ) {
     const logId = readablePeer(message.peer);
     if (!message.signed) {
-      console.warn(
-        `p2p/handshake/complete > received unsigned message from ${logId}`
-      );
+      this.logger.warn(`onHandshakeComplete: received unasigned message`, {
+        from: logId,
+      });
+
       return;
     }
 
     const peer = message.peer;
     if (!peer) {
-      console.warn(`p2p/handshake/complete > unknown peer ${logId}`);
+      this.logger.warn(`onHandshakeComplete: unknown peer`, { logId });
       return;
     }
 
     if (message.payload?.challenge !== peer.challenge) {
-      console.warn(
-        `p2p/handshake/complete > invalid challenge response from ${readablePeer(
-          peer
-        )}: ${message.payload?.challenge} !== ${peer.challenge}`,
-        message
-      );
+      this.logger.warn(`onHandshakeComplete: invalid challenge response`, {
+        from: readablePeer(peer),
+        message,
+      });
+
       return;
     }
 
-    console.info(
-      `p2p/handshake/complete > authenticating! ${peer.peerId} (${
-        peer.did ? peer.did : "N/A"
-      })`
-    );
+    this.logger.info(`onHandshakeComplete: authenticating peer`, { peer });
+
     peer.did = message.peer.did || peer.did;
     peer.authenticated = true;
     peer.authenticatedAt = Date.now();
@@ -445,12 +456,9 @@ export class CinderlinkProtocolPlugin<
       EncodingOptions
     >
   ) {
-    console.warn(
-      `p2p/handshake/error > received handshake error from peer ${readablePeer(
-        message.peer
-      )}`,
-      message.payload?.error
-    );
+    this.logger.warn(`onHandshakeError: received handshake error from peer`, {
+      peer: message.peer,
+    });
   }
 
   async onHandshakeSuccess(
