@@ -27,11 +27,11 @@ export class SocialUsers {
   announceInterval: NodeJS.Timer | null = null;
   hasServerConnection = false;
   loadingLocalUser = false;
+  logger: SubLoggerInterface;
 
-  constructor(
-    private plugin: SocialClientPlugin,
-    private logger: SubLoggerInterface
-  ) {}
+  constructor(private plugin: SocialClientPlugin) {
+    this.logger = plugin.logger.submodule("users");
+  }
 
   async start() {
     await this.loadLocalUser();
@@ -58,7 +58,7 @@ export class SocialUsers {
     });
 
     this.plugin.client.on("/peer/disconnect", async (peer: Peer) => {
-      this.logger.info(`start: peer disconnected`, { peer });
+      this.logger.info(`peer disconnected`, { peer });
       if (peer.role === "peer" && peer.did) {
         await this.setUserStatus(peer.did as string, "offline");
       }
@@ -71,9 +71,9 @@ export class SocialUsers {
         this.localUser.name === "guest"
       )
         return;
-      this.logger.info(`start: announcing (pubsub, interval)`);
+      this.logger.info(`announcing (pubsub, interval)`);
       await this.announce();
-    }, Number(this.plugin.options.announceInterval || 5000));
+    }, Number(this.plugin.options.announceInterval || 180000));
 
     const connections = await this.plugin.connections.getConnections(
       this.plugin.client.id,
@@ -103,13 +103,10 @@ export class SocialUsers {
 
   async setUserStatus(did: string, status: SocialUserStatus) {
     const table = this.plugin.table<SocialUser>("users");
-    this.logger.info(
-      `setUserStatus: user ${did} status changed to '${status}'`,
-      {
-        did,
-        status,
-      }
-    );
+    this.logger.info(`user ${did} status changed to '${status}'`, {
+      did,
+      status,
+    });
     await table
       .query()
       .where("did", "=", did)
@@ -208,7 +205,7 @@ export class SocialUsers {
   }
 
   async saveLocalUser() {
-    this.logger.info(`saveLocalUser: saving local user`);
+    this.logger.info(`saving local user`);
     const user = await this.plugin.table<SocialUser>("users").upsert(
       { did: this.plugin.client.id },
       {
@@ -218,7 +215,7 @@ export class SocialUsers {
         updatedAt: Date.now(),
       }
     );
-    this.logger.info(`saveLocalUser: saved local user`, {
+    this.logger.info(`saved local user`, {
       user,
       localUser: this.localUser,
     });
@@ -227,7 +224,7 @@ export class SocialUsers {
     // .findByIndex("did", this.plugin.client.id);
     if (!user?.id) {
       this.logger.error(
-        `saveLocalUser: failed to save local user, user not found after upsert`,
+        `failed to save local user, user not found after upsert`,
         { did: this.plugin.client.id }
       );
 
@@ -237,14 +234,14 @@ export class SocialUsers {
 
   async loadLocalUser() {
     if (!this.plugin.client.identity.hasResolved) {
-      this.logger.info(`loadLocalUser: identity not resolved, waiting...`);
+      this.logger.info(`identity not resolved, waiting...`);
       return;
     } else if (this.loadingLocalUser) {
       return;
     }
 
     this.loadingLocalUser = true;
-    this.logger.info(`loadLocalUser: loading local user...`);
+    this.logger.info(`loading local user...`);
     const user = (
       await this.plugin
         .table<SocialUser>("users")
@@ -254,7 +251,7 @@ export class SocialUsers {
         .execute()
     )?.first();
     if (!user) {
-      this.logger.warn(`loadLocalUser: local user not found, returning...`);
+      this.logger.warn(`local user not found, returning...`);
       return;
     }
 
@@ -264,7 +261,7 @@ export class SocialUsers {
       addressVerification: this.plugin.client.addressVerification,
       status: "online",
     };
-    this.logger.info(`loadLocalUser: local user loaded`, this.localUser);
+    this.logger.info(`local user loaded`, this.localUser);
   }
 
   async getUserFromServer(did: string): Promise<SocialUser | undefined> {
@@ -352,7 +349,7 @@ export class SocialUsers {
   ) {
     if (!message.payload.address) {
       this.logger.warn(
-        `onAnnounce: received social announce message from peer without address`,
+        `received social announce message from peer without address`,
         { did: message.peer.did }
       );
 
@@ -361,7 +358,7 @@ export class SocialUsers {
 
     if (!message.payload.addressVerification) {
       this.logger.warn(
-        `onAnnounce: received social announce message from peer without address verification`,
+        `received social announce message from peer without address verification`,
         { did: message.peer.did }
       );
 
@@ -370,7 +367,7 @@ export class SocialUsers {
 
     if (!message.payload.did || !message.payload.did.length) {
       this.logger.warn(
-        `onAnnounce: received social announce message from peer without did`,
+        `received social announce message from peer without did`,
         { did: message.peer.did }
       );
 
@@ -385,7 +382,7 @@ export class SocialUsers {
     ).catch(() => undefined);
     if (!verified) {
       this.logger.warn(
-        `onAnnounce: received secial announce message from peer with invalid address verification`,
+        `received secial announce message from peer with invalid address verification`,
         { did: message.peer.did }
       );
 
@@ -405,7 +402,7 @@ export class SocialUsers {
       });
     }
 
-    this.logger.info(`onAnnounce: received social announce message`, {
+    this.logger.info(`received social announce message`, {
       did: message.payload.did,
       connected: message.peer.connected,
       payload: message.payload,
@@ -433,14 +430,14 @@ export class SocialUsers {
           !this.plugin.client.peers.getPeer(message.peer.peerId.toString())
             ?.connected)
       ) {
-        this.logger.info(`onAnnounce: connecting to peer`, {
+        this.logger.info(`connecting to peer`, {
           peerId: message.peer.peerId,
         });
 
         await this.plugin.client.connect(message.peer.peerId);
       }
     } catch (e) {
-      this.logger.error(`onAnnounce: failed to connect to peer`, {
+      this.logger.error(`failed to connect to peer`, {
         peerId: message.peer.peerId,
         error: e,
       });

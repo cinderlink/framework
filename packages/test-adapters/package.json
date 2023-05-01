@@ -16,7 +16,7 @@
     "@libp2p/interface-peer-id": "^2.0.1",
     "@libp2p/peer-id-factory": "^2.0.3",
     "did-jwt": "^7.0.0",
-    "dids": "^4.0.0",
+    "dids": "^4.0.1",
     "emittery": "^1.0.1",
     "multiformats": "^11.0.2",
     "tsup": "^6.7.0",

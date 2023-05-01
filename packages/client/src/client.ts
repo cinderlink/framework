@@ -193,10 +193,7 @@ export class CinderlinkClient<
 
     await this.ipfs.repo.gc();
 
-    const protocol = new CinderlinkProtocolPlugin(
-      this as any,
-      this.logger.module("plugins").submodule("protocol")
-    );
+    const protocol = new CinderlinkProtocolPlugin(this as any);
     await this.addPlugin(protocol);
     await this.startPlugin(protocol.id);
     this.connectToNodes();
@@ -356,7 +353,7 @@ export class CinderlinkClient<
     if (rootCID && rootCID.toString() !== this.identity.cid?.toString()) {
       this.logger.info("identity", "saved root document", { rootCID });
       await this.identity.save({
-        cid: rootCID.toString(),
+        cid: rootCID,
         document: rootDoc,
         forceRemote,
         forceImmediate,

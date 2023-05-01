@@ -1,16 +1,22 @@
 import { SocialSetting } from "@cinderlink/plugin-social-core";
 import SocialClientPlugin from "../plugin";
+import { SubLoggerInterface } from "@cinderlink/core-types";
 
 export class SocialSettings {
-  constructor(private plugin: SocialClientPlugin) {}
+  logger: SubLoggerInterface;
+  constructor(private plugin: SocialClientPlugin) {
+    this.logger = plugin.logger.submodule("settings");
+  }
 
   get table() {
     const schema = this.plugin.client.getSchema("social");
     if (!schema) {
+      this.logger.error(`social schema not loaded`);
       throw new Error("social schema not loaded");
     }
     const table = schema.getTable<SocialSetting>("settings");
     if (!table) {
+      this.logger.error(`social settings table not loaded`);
       throw new Error("social settings table not loaded");
     }
     return table;

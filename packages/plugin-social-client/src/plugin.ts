@@ -35,7 +35,7 @@ export class SocialClientPlugin<
   implements PluginInterface<SocialClientEvents>
 {
   id = "socialClient";
-  ready = false;
+  started = false;
 
   maxConnectionCount = 256;
 
@@ -46,37 +46,23 @@ export class SocialClientPlugin<
   users: SocialUsers;
   notifications: SocialNotifications;
   settings: SocialSettings;
+  logger: SubLoggerInterface;
 
   pubsub: SubscribeEventHandlers<SocialClientEvents>;
   p2p: ReceiveEventHandlers<SocialClientEvents>;
 
   constructor(
     public client: Client,
-    public options: Record<string, unknown> = {},
-    public logger: SubLoggerInterface
+    public options: Record<string, unknown> = {}
   ) {
     super();
-    this.chat = new SocialChat(
-      this,
-      client.logger.module("plugins").submodule("social-chat")
-    );
-    this.connections = new SocialConnections(
-      this,
-      client.logger.module("plugins").submodule("social-connections")
-    );
-    this.posts = new SocialPosts(
-      this,
-      client.logger.module("plugins").submodule("social-posts")
-    );
+    this.logger = client.logger.module("plugins").submodule("socialClient");
+    this.notifications = new SocialNotifications(this);
+    this.chat = new SocialChat(this);
+    this.connections = new SocialConnections(this);
+    this.posts = new SocialPosts(this);
     this.profiles = new SocialProfiles(this);
-    this.users = new SocialUsers(
-      this,
-      client.logger.module("plugins").submodule("social-users")
-    );
-    this.notifications = new SocialNotifications(
-      this,
-      client.logger.module("plugins").submodule("social-notifications")
-    );
+    this.users = new SocialUsers(this);
     this.settings = new SocialSettings(this);
 
     this.pubsub = {
@@ -102,25 +88,26 @@ export class SocialClientPlugin<
       await this.client.identity.resolve();
     }
 
-    this.logger.info(`start: starting social client plugin`);
+    this.logger.info(`starting social client plugin`);
     await loadSocialSchema(this.client);
-    this.logger.info(`start: start: loaded social schema`);
+    this.logger.info(`loaded social schema`);
     await this.users.loadLocalUser();
 
-    this.logger.info(`start: loaded local user`);
-    this.logger.info(`start: initializing features`);
+    this.logger.info(`loaded local user`);
+    this.logger.info(`initializing features`);
+    await this.notifications.start();
     await this.chat.start();
     await this.connections.start();
     await this.posts.start();
     await this.profiles.start();
     await this.users.start();
 
-    this.ready = true;
+    this.started = true;
 
-    this.logger.info(`start: plugin is ready`);
+    this.logger.info(`plugin is ready`);
     this.emit("ready", undefined);
 
-    this.logger.info(`start: registering sync config`);
+    this.logger.info(`registering sync config`);
     const syncDb: SyncDBPlugin = this.client.getPlugin("sync");
     if (syncDb) {
       Object.entries(SocialSyncConfig).map(([table, config]) => {
@@ -132,6 +119,7 @@ export class SocialClientPlugin<
   get db() {
     const schema = this.client.getSchema("social");
     if (!schema) {
+      this.logger.error(`failed to get schema`);
       throw new Error(`social-client: failed to get schema`);
     }
     return schema;
@@ -143,14 +131,19 @@ export class SocialClientPlugin<
   >(name: string) {
     const table = this.db.getTable<Row, Def>(name);
     if (!table) {
+      this.logger.error(`failed to get table ${name}`);
       throw new Error(`social-client: failed to get table ${name}`);
     }
     return table;
   }
 
   async stop() {
-    this.logger.info(`stop: stopping social client plugin`);
+    this.logger.info(`stopping`);
+    await this.chat.stop();
+    await this.connections.stop();
+    await this.posts.stop();
     await this.users.stop();
+    this.started = false;
   }
 }
 

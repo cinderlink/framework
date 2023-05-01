@@ -1,0 +1,46 @@
+{
+  "name": "@cinderlink/plugin-rcon-server",
+  "description": "RCON server plugin for Cinderlink",
+  "authors": "Drew <drew@cinderlink.com>",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "watch": "tsup --watch",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "@cinderlink/core-types": "workspace:../core-types",
+    "@cinderlink/identifiers": "workspace:../identifiers",
+    "@cinderlink/ipld-database": "workspace:../ipld-database",
+    "multiformats": "^11.0.2"
+  },
+  "devDependencies": {
+    "@cinderlink/core-types": "workspace:../core-types",
+    "@cinderlink/identifiers": "workspace:../identifiers",
+    "@cinderlink/ipld-database": "workspace:../ipld-database",
+    "@cinderlink/test-adapters": "workspace:../test-adapters",
+    "@cinderlink/tsconfig": "workspace:../tsconfig",
+    "@ipld/car": "^5.1.1",
+    "@types/node": "^18.16.3",
+    "ethers": "^5.7.2",
+    "it-all": "^3.0.1",
+    "multiformats": "^11.0.2",
+    "tsup": "^6.7.0",
+    "typescript": "^5.0.4",
+    "vitest": "^0.30.1"
+  }
+}

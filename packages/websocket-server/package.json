@@ -1,0 +1,36 @@
+{
+  "name": "@cinderlink/websocket-server",
+  "version": "0.0.1",
+  "description": "",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx src/bin.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Drew Ewing",
+  "license": "ISC",
+  "devDependencies": {
+    "@cinderlink/core-types": "workspace:^0.0.12",
+    "@cinderlink/tsconfig": "workspace:^1.0.0",
+    "@cinderlink/websocket-client": "workspace:^0.0.1",
+    "@types/minimist": "^1.2.2",
+    "@types/node": "^18.16.3",
+    "@types/ws": "^8.5.4",
+    "dotenv": "^16.0.3",
+    "tsup": "^6.7.0",
+    "tsx": "^3.12.7",
+    "typescript": "^5.0.4",
+    "vitest": "^0.30.1"
+  },
+  "dependencies": {
+    "chalk": "^5.2.0",
+    "did-jwt": "^7.0.0",
+    "dids": "^4.0.1",
+    "minimist": "^1.2.8",
+    "multiformats": "^11.0.2",
+    "viem": "^0.3.16",
+    "ws": "^8.13.0"
+  }
+}

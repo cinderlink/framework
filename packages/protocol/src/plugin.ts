@@ -45,11 +45,14 @@ export class CinderlinkProtocolPlugin<
 > implements PluginBaseInterface, PluginInterface<ProtocolEvents>
 {
   id = "cinderlink";
+  logger: SubLoggerInterface;
+  started = false;
 
   constructor(
-    public client: CinderlinkClientInterface<ProtocolEvents & PeerEvents>,
-    public logger: SubLoggerInterface
-  ) {}
+    public client: CinderlinkClientInterface<ProtocolEvents & PeerEvents>
+  ) {
+    this.logger = client.logger.module("protocol");
+  }
 
   p2p: ReceiveEventHandlers<ProtocolEvents> = {
     "/cinderlink/handshake/request": this.onHandshakeRequest,
@@ -69,7 +72,7 @@ export class CinderlinkProtocolPlugin<
   protocolHandlers: Record<string, ProtocolHandler> = {};
 
   async start() {
-    this.logger.info(`start: registering protocol /cinderlink/1.0.0`);
+    this.logger.info(`registering protocol /cinderlink/1.0.0`);
     await this.client.ipfs.libp2p.handle(
       "/cinderlink/1.0.0",
       async ({

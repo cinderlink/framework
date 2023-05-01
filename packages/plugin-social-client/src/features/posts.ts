@@ -10,20 +10,50 @@ import {
   IncomingPubsubMessage,
   SubLoggerInterface,
 } from "@cinderlink/core-types";
+import { NotificationGenerator, SocialNotifications } from "./notifications";
 export class SocialPosts {
-  constructor(
-    private plugin: SocialClientPlugin,
-    private logger: SubLoggerInterface
-  ) {}
+  logger: SubLoggerInterface;
+  constructor(private plugin: SocialClientPlugin) {
+    this.logger = plugin.logger.submodule("posts");
+  }
 
-  async start() {}
+  async start() {
+    this.plugin.notifications.addGenerator<SocialPost>({
+      id: "social/posts",
+      schemaId: "social",
+      tableId: "posts",
+      enabled: true,
+      async insert(this: SocialNotifications, post: SocialPost) {
+        if (post?.did === this.plugin.client?.id) return;
+        const user = await this.plugin.users.getUserByDID(post.did);
+        const title = "New post";
+        const body = `
+${user?.name}
+${post.content}
+`;
+        return {
+          sourceUid: post.uid,
+          type: "posts/new",
+          title,
+          body,
+          link: "/feed",
+          metaData: { did: post.did },
+        };
+      },
+    } as NotificationGenerator<SocialPost>);
+  }
+
+  async stop() {
+    this.plugin.notifications.disableGenerator("social/posts");
+  }
 
   async createPost(
     post: Omit<Omit<Omit<Omit<SocialPost, "id">, "uid">, "cid">, "did">
   ): Promise<SocialPost> {
-    this.logger.info(`createPost: creating post`, { post });
+    this.logger.info(`creating post`, { post });
     const cid = await this.plugin.client.dag.store(post);
     if (!cid) {
+      this.logger.error(`failed to store post`, { post });
       throw new Error(`social-posts: failed to store post`);
     }
 
@@ -40,7 +70,7 @@ export class SocialPosts {
     }
 
     // publish the post
-    this.logger.info(`createPost: publishing post`, { post: saved });
+    this.logger.debug(`publishing post`, { post: saved });
     await this.plugin.client
       .publish("/social/posts/create", saved, {
         sign: true,
@@ -54,7 +84,8 @@ export class SocialPosts {
   async onCreate(
     message: IncomingPubsubMessage<SocialClientEvents, "/social/posts/create">
   ) {
-    this.logger.info("onCreate: received post", { message });
+    this.logger.debug("received post pubsub", { message });
+    // TODO: save the post
   }
 
   async getPost(postUid: string) {
@@ -70,15 +101,18 @@ export class SocialPosts {
   async createComment(comment: Partial<SocialComment>): Promise<SocialComment> {
     const { postUid } = comment;
     if (!postUid) {
+      this.logger.error(`postUid is required to create a comment`, { comment });
       throw new Error("postUid is required to create a comment");
     }
     const post = await this.getPost(postUid);
     if (!post) {
+      this.logger.error(`post not found: ${postUid}`, { comment });
       throw new Error("post not found: " + postUid);
     }
 
     const cid = await this.plugin.client.dag.store(comment);
     if (!cid) {
+      this.logger.error(`failed to store comment`, { comment });
       throw new Error("failed to store comment");
     }
 
@@ -96,6 +130,7 @@ export class SocialPosts {
     );
 
     if (saved === undefined) {
+      this.logger.error(`failed to upsert comment`, { comment });
       throw new Error("failed to upsert comment");
     }
 
@@ -188,6 +223,9 @@ export class SocialPosts {
   ): Promise<SocialReaction> {
     const { postUid, from, type, commentUid } = reaction;
     if (!postUid) {
+      this.logger.error(`postUid is required to delete a reaction`, {
+        reaction,
+      });
       throw new Error("postUid is required to delete a reaction");
     }
 

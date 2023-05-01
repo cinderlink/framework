@@ -8,14 +8,43 @@ import {
   IncomingPubsubMessage,
   SubLoggerInterface,
 } from "@cinderlink/core-types";
+import { NotificationGenerator, SocialNotifications } from "./notifications";
 
 export class SocialConnections {
-  constructor(
-    private plugin: SocialClientPlugin,
-    private logger: SubLoggerInterface
-  ) {}
+  logger: SubLoggerInterface;
+  constructor(private plugin: SocialClientPlugin) {
+    this.logger = plugin.logger.submodule("connections");
+  }
 
-  async start() {}
+  async start() {
+    this.plugin.notifications.addGenerator({
+      id: "social/follower",
+      schemaId: "social",
+      tableId: "connections",
+      enabled: true,
+      async insert(this: SocialNotifications, connection: SocialConnection) {
+        if (connection.from === this.plugin.client.id) return;
+
+        if (connection && connection.follow) {
+          const user = await this.plugin.users.getUserByDID(connection.from);
+          const title = "New Follower";
+          const body = `${user?.name} is now following you.`;
+          return {
+            title,
+            body,
+            sourceUid: connection.uid,
+            type: "connections/follow",
+            link: "/connections/followers",
+          };
+        }
+        return undefined;
+      },
+    } as NotificationGenerator<SocialConnection>);
+  }
+
+  async stop() {
+    this.plugin.notifications.disableGenerator("social/follower");
+  }
 
   async createConnection(to: string) {
     const connection = {
@@ -27,7 +56,7 @@ export class SocialConnections {
       .table<SocialConnection>("connections")
       .upsert({ from: connection.from, to: connection.to }, connection);
     if (!stored) {
-      this.logger.warn(`createConnection: failed to create connection`, {
+      this.logger.warn(`failed to create connection`, {
         from: this.plugin.client.id,
         to,
       });
@@ -35,7 +64,7 @@ export class SocialConnections {
       return;
     }
 
-    this.logger.info(`createConnection: connection created`, {
+    this.logger.info(`connection created`, {
       from: this.plugin.client.id,
       to,
     });
@@ -48,7 +77,7 @@ export class SocialConnections {
       "/social/connections/create"
     >
   ) {
-    this.logger.info(`onCreate: connection received`, {
+    this.logger.info(`connection received via pubsub`, {
       message,
     });
   }
@@ -72,7 +101,7 @@ export class SocialConnections {
       .execute()
       .then((result) => result.first());
 
-    this.logger.info(`deleteConnection: deleting connection`, {
+    this.logger.info(`deleting connection`, {
       from: this.plugin.client.id,
       to,
       connection,
@@ -87,7 +116,7 @@ export class SocialConnections {
       .execute()
       .then((result) => result.first());
     if (!deleted) {
-      this.logger.error(`deleteConnection: failed to delete connection`, {
+      this.logger.error(`failed to delete connection`, {
         from: this.plugin.client.id,
         to,
       });
@@ -95,7 +124,7 @@ export class SocialConnections {
       return;
     }
 
-    this.logger.info(`deleteConnection: connection deleted`, {
+    this.logger.info(`connection deleted`, {
       from: this.plugin.client.id,
       to,
     });
@@ -134,7 +163,6 @@ export class SocialConnections {
 
     const results = (await query.execute()).all();
 
-    this.logger.info(`getConnections: get connections`, { filter, results });
     if (filter === "mutual") {
       return results
         .filter((row) => row.to === user)

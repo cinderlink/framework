@@ -26,8 +26,14 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
         document: undefined,
       };
       let resolved = await this.resolveLocal().catch(() => emptyResult);
+      this.client.logger.info("identity", "local identity resolved", {
+        resolved,
+      });
       this.client.logger.info("identity", "resolving ipns identity");
       const ipns = await this.resolveIPNS().catch(() => emptyResult);
+      this.client.logger.info("identity", "ipns identity resolved", {
+        resolved: ipns,
+      });
       if (
         !Object.keys(resolved.document?.schemas || {}).length ||
         (ipns && !resolved?.document?.updatedAt) ||
@@ -35,10 +41,14 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
           Number(ipns.document?.updatedAt || 0) >
             Number(resolved?.document?.updatedAt || 0))
       ) {
+        this.client.logger.info("identity", "ipns identity newer");
         resolved = ipns;
       }
       this.client.logger.info("identity", "resolving server identity");
       const server = await this.resolveServer().catch(() => emptyResult);
+      this.client.logger.info("identity", "server identity resolved", {
+        resolved: server,
+      });
       if (
         !Object.keys(resolved.document?.schemas || {}).length ||
         (server?.cid !== undefined &&
@@ -46,6 +56,7 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
           Number(server.document.updatedAt || 0) >=
             Number(resolved?.document?.updatedAt || 0))
       ) {
+        this.client.logger.info("identity", "server identity newest");
         resolved = server as IdentityResolved;
       }
       this.cid = resolved?.cid;
@@ -170,7 +181,7 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
     forceRemote,
     forceImmediate,
   }: {
-    cid: string;
+    cid: CID;
     document: Record<string, unknown>;
     forceRemote?: boolean;
     forceImmediate?: boolean;
@@ -205,11 +216,21 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
     document,
     forceRemote,
   }: {
-    cid: string;
+    cid: CID;
     document: Record<string, unknown>;
     forceRemote?: boolean;
   }) {
-    this.cid = cid;
+    // unpin previous cid
+    if (this.cid && this.cid !== cid.toString()) {
+      this.client.logger.info("identity", "unpinning previous identity", {
+        cid: this.cid,
+      });
+      await Promise.allSettled([
+        this.client.ipfs.pin.rm(this.cid, { recursive: true }),
+      ]);
+    }
+
+    this.cid = cid.toString();
     this.document = document;
     this.client.logger.info("identity", "saving identity", {
       cid,
@@ -217,18 +238,17 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
       servers: this.client.peers.getServers(),
     });
 
-    await localforage.setItem("rootCID", cid).catch(() => {});
-    await this.client.ipfs.pin
-      .add(cid, { recursive: true, timeout: 3000 })
-      .catch(() => {});
-    await this.client.ipfs.name
-      .publish(cid, {
-        timeout: 3000,
+    await Promise.allSettled([
+      localforage.setItem("rootCID", cid),
+      this.client.ipfs.pin.add(cid, { recursive: true, timeout: 10000 }),
+      this.client.ipfs.dht.provide(cid, { recursive: true, timeout: 10000 }),
+      this.client.ipfs.name.publish(cid, {
+        timeout: 10000,
         allowOffline: true,
         lifetime: "14d",
         ttl: "1m",
-      })
-      .catch(() => {});
+      }),
+    ]);
     if (forceRemote || Date.now() - this.lastSavedAt > 10000) {
       this.lastSavedAt = Date.now();
       await Promise.all(
@@ -242,7 +262,7 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
               server.peerId.toString(),
               {
                 topic: "/identity/set/request",
-                payload: { requestId: uuid(), cid },
+                payload: { requestId: uuid(), cid: cid.toString() },
               }
             );
           } else {

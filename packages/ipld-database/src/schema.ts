@@ -131,7 +131,7 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
     dag: DIDDagInterface,
     logger: SubLoggerInterface
   ) {
-    const data = await dag.load<SavedSchema>(cid);
+    const data = await dag.load<SavedSchema>(cid).catch(() => undefined);
     if (!data) {
       logger.error(`failed to load schema ${cid}`);
       throw new Error("Failed to load schema");

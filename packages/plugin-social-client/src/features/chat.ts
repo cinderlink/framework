@@ -4,14 +4,54 @@ import { ProtocolRequest, SubLoggerInterface } from "@cinderlink/core-types";
 import { encodePayload } from "@cinderlink/protocol";
 import { v4 as uuid } from "uuid";
 import SocialClientPlugin from "../plugin";
+import { NotificationGenerator, SocialNotifications } from "./notifications";
 
 export class SocialChat {
-  constructor(
-    private plugin: SocialClientPlugin,
-    private logger: SubLoggerInterface
-  ) {}
+  logger: SubLoggerInterface;
+  constructor(private plugin: SocialClientPlugin) {
+    this.logger = plugin.logger.submodule("chat");
+  }
 
-  async start() {}
+  async start() {
+    this.plugin.notifications.addGenerator({
+      id: "social/chatMessage",
+      schemaId: "social",
+      tableId: "chatMessages",
+      enabled: true,
+      async insert(this: SocialNotifications, message: SocialChatMessage) {
+        if (message?.from === this.plugin.client?.id) return;
+
+        const user = await this.plugin.users.getUserByDID(message.from);
+        const title = "New message";
+        const body = `
+@${user?.name}
+${message.message}
+			`;
+
+        const existingNotification = await this.getBySourceAndType(
+          message.uid,
+          "chat/direct/message"
+        );
+
+        if (!existingNotification) {
+          return {
+            sourceUid: message.uid,
+            type: "chat/direct/message",
+            title,
+            body,
+            link: `/conversations/${message.from}`,
+            metaData: { did: message.from },
+          };
+        }
+
+        return undefined;
+      },
+    } as NotificationGenerator<SocialChatMessage>);
+  }
+
+  async stop() {
+    this.plugin.notifications.disableGenerator("social/chatMessage");
+  }
 
   async sendChatMessage(
     message: Partial<SocialChatMessage>
@@ -25,19 +65,22 @@ export class SocialChat {
       from: this.plugin.client.id,
       ...message,
     };
-    this.logger.info(`sendChatMessage: sending chat message`);
+    this.logger.info(`sending chat message`);
 
     const cid = await this.plugin.client.dag.storeEncrypted(chatMessage, [
       message.to,
     ]);
 
     if (!cid) {
+      this.logger.error(`failed to store chat message`, {
+        message: chatMessage,
+      });
       throw new Error("failed to store chat message");
     }
     const pinned = await this.plugin.client.ipfs.pin.add(cid, {
       recursive: true,
     });
-    this.logger.info(`sendChatMessage: message pinned`, {
+    this.logger.debug(`message pinned`, {
       pinned: pinned.toString(),
     });
 
@@ -58,13 +101,10 @@ export class SocialChat {
         this.plugin.client.getPlugin<OfflineSyncClientPluginInterface>(
           "offlineSync"
         );
-      this.logger.info(
-        `sendChatMessage: sending chat message to offline sync`,
-        {
-          to: message.to,
-          message: savedMessage,
-        }
-      );
+      this.logger.info(`sending chat message to offline sync`, {
+        to: message.to,
+        message: savedMessage,
+      });
 
       const encoded = await encodePayload(savedMessage as any, {
         did: this.plugin.client.did,

@@ -37,7 +37,7 @@ export class OfflineSyncClientPlugin<
   id = "offlineSyncClient";
   updatedAt = Date.now();
   interval: number | null = null;
-  ready = false;
+  started = false;
 
   p2p: ReceiveEventHandlers<OfflineSyncClientEvents> = {
     "/offline/send/response": this.onSendResponse,
@@ -52,29 +52,32 @@ export class OfflineSyncClientPlugin<
     "/cinderlink/handshake/success": this.onPeerConnect,
   };
 
+  logger: SubLoggerInterface;
+
   constructor(
     public client: Client,
-    public options: Record<string, unknown> = {},
-    public logger: SubLoggerInterface
+    public options: Record<string, unknown> = {}
   ) {
     super();
-    // this.client.publish();
+    this.logger = client.logger
+      .module("plugins")
+      .submodule("offlineSyncClient");
   }
 
   async start() {
-    this.logger.info(`start: starting offline sync client plugin`);
+    this.logger.info(`starting offline sync client plugin`);
 
     await loadOfflineSyncSchema(this.client);
-    this.logger.info(`start: loaded offline-sync-client schema`);
+    this.logger.info(`loaded offline-sync-client schema`);
 
-    this.ready = true;
-    this.logger.info(`start: plugin is ready`);
+    this.started = true;
+    this.logger.info(`plugin is ready`);
 
     this.emit("ready", {});
   }
 
   async stop() {
-    this.logger.info(`stop: stopping plugin`);
+    this.logger.info(`stopping plugin`);
   }
 
   async sendMessage<
@@ -89,7 +92,7 @@ export class OfflineSyncClientPlugin<
     const servers = this.client.peers.getServers();
     let saved = false;
     for (const server of servers) {
-      this.logger.info(`sendMessage: sending offline message to server`, {
+      this.logger.info(`sending offline message to server`, {
         server: server.did,
         recipient,
         requestId,
@@ -120,7 +123,7 @@ export class OfflineSyncClientPlugin<
   }
 
   async onPeerConnect(peer: Peer) {
-    this.logger.info(`onPeerConnect: asking new peer for offline messages`, {
+    this.logger.info(`peer connected, asking for offline messages`, {
       peerId: peer.peerId.toString(),
     });
 
@@ -130,9 +133,6 @@ export class OfflineSyncClientPlugin<
         requestId: uuid(),
         limit: 100,
       },
-    });
-    this.logger.info(`onPeerConnect: /offline/get/request sent`, {
-      to: peer.peerId.toString(),
     });
   }
 
@@ -145,12 +145,12 @@ export class OfflineSyncClientPlugin<
   ) {
     const { requestId, saved, error } = message.payload;
     if (!saved) {
-      this.logger.error(`onSendResponse: server failed to save message`, {
+      this.logger.error(`server failed to save message`, {
         requestId,
       });
 
       if (error)
-        this.logger.error(`onSendResponse: error`, {
+        this.logger.error(`server error`, {
           error,
         });
       return;
@@ -167,7 +167,7 @@ export class OfflineSyncClientPlugin<
     >
   ) {
     const { requestId, limit } = message.payload;
-    this.logger.info(`onGetRequest: handling request`, {
+    this.logger.info(`handling get request`, {
       from: message.peer.did,
       requestId,
     });
@@ -176,12 +176,12 @@ export class OfflineSyncClientPlugin<
       .getSchema("offlineSync")
       ?.getTable<OfflineSyncRecord>("messages");
     if (!table) {
-      this.logger.error(`onGetRequest: no offline-sync table found`);
+      this.logger.error(`no offline-sync table found`);
       return;
     }
 
     if (!message.peer.did) {
-      this.logger.error(`onGetRequest: no did found for peer`, {
+      this.logger.error(`no did found for peer`, {
         peerId: message.peer.peerId,
       });
 
@@ -197,7 +197,7 @@ export class OfflineSyncClientPlugin<
       .then((res) => res.all());
 
     this.logger.info(
-      `onGetRequest: sending ${messages.length} messages to ${message.peer.did}`,
+      `sending ${messages.length} messages to ${message.peer.did}`,
       { requestId }
     );
 
@@ -222,27 +222,26 @@ export class OfflineSyncClientPlugin<
   ) {
     const { requestId, messages } = response.payload;
     if (!messages.length) {
-      this.logger.info(`onGetResponse: server has no offline messages`, {
+      this.logger.info(`server has no offline messages`, {
         requestId,
       });
 
       return;
     }
 
-    this.logger.info(
-      `onGetResponse: server has ${messages.length} offline messages`,
-      { requestId }
-    );
+    this.logger.info(`server has ${messages.length} offline messages`, {
+      requestId,
+    });
     let saved: number[] = [];
     let errors: Record<number, string> = {};
     // each of the records contains an encrypted P2P message that we need to decrypt
     // and emit as a normal message
     for (const record of messages) {
       const { message, sender, createdAt = 0 } = record;
-      this.logger.info(
-        `onGetResponse: handling cinderlink message from ${sender}`,
-        { record, date: formatRelative(createdAt, new Date()) }
-      );
+      this.logger.info(`handling protocol message from ${sender}`, {
+        record,
+        date: formatRelative(createdAt, new Date()),
+      });
 
       let peer: Peer = this.client.peers.getPeer(sender);
       if (!peer) {
@@ -292,21 +291,16 @@ export class OfflineSyncClientPlugin<
   ) {
     const { requestId, saved, errors } = response.payload;
     if (saved.length) {
-      this.logger.info(
-        `onGetConfirmation: server saved ${saved.length} messages`,
-        { requestId }
-      );
+      this.logger.info(`server saved ${saved.length} messages`, { requestId });
     }
 
     if (errors && Object.keys(errors).length) {
       this.logger.error(
-        `onGetConfirmation: server failed to save ${
-          Object.keys(errors).length
-        } messages`,
+        `server failed to save ${Object.keys(errors).length} messages`,
         { requestId }
       );
 
-      this.logger.error(`onGetConfirmation: errors`, {
+      this.logger.error(`errors`, {
         errors,
       });
     }
@@ -316,7 +310,7 @@ export class OfflineSyncClientPlugin<
       .getSchema("offlineSync")
       ?.getTable<OfflineSyncRecord>("messages");
     if (!table) {
-      this.logger.error(`onGetConfirmation: no offline-sync table found`);
+      this.logger.error(`no offline-sync table found`);
       return;
     }
 

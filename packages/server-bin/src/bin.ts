@@ -93,6 +93,13 @@ export default {
         API: ["/ip4/127.0.0.1/tcp/5001"],
         Gateway: ["/ip4/127.0.0.1/tcp/8080"],
       },
+      API: {
+        HTTPHeaders: {
+          "Access-Control-Allow-Origin": ["http://localhost:3000/"],
+          "Access-Control-Allow-Methods": ["PUT", "GET", "POST"],
+          "Access-Control-Allow-Credentials": ["true"],
+        },
+      },
       Bootstrap: [],
     },
   },

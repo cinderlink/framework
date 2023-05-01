@@ -1,3 +1,4 @@
+import type { CID } from "multiformats";
 import { CinderlinkClientInterface } from "../client";
 import { IdentityResolved } from "./types";
 
@@ -17,7 +18,7 @@ export interface IdentityInterface<Document = any> {
     forceRemote,
     forceImmediate,
   }: {
-    cid: string;
+    cid: CID;
     document: Document;
     forceRemote?: boolean;
     forceImmediate?: boolean;

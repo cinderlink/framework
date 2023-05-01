@@ -100,6 +100,10 @@ export type SocialNotification = TableRow & {
 
 export interface SocialClientPluginEvents {
   ready: void;
+  "/notification/clicked": {
+    notification: SocialNotification;
+    options: NotificationOptions;
+  };
 }
 
 export interface SocialUsersSearchRequest {

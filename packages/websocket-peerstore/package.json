@@ -1,0 +1,19 @@
+{
+  "name": "@cinderlink/websocket-peerstore",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Drew Ewing",
+  "license": "ISC",
+  "devDependencies": {
+    "@cinderlink/core-types": "workspace:^0.0.12",
+    "@cinderlink/tsconfig": "workspace:^1.0.0",
+    "tsup": "^6.7.0",
+    "typescript": "^5.0.4",
+    "vitest": "^0.30.1"
+  }
+}

@@ -35,7 +35,7 @@
     "@cinderlink/test-adapters": "workspace:../test-adapters",
     "@cinderlink/tsconfig": "workspace:../tsconfig",
     "@ipld/car": "^5.1.1",
-    "@types/node": "^18.15.11",
+    "@types/node": "^18.16.3",
     "ethers": "^5.7.2",
     "it-all": "^3.0.1",
     "multiformats": "^11.0.2",
