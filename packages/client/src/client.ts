@@ -573,10 +573,13 @@ export class CinderlinkClient<
       });
     }
 
-    if (this.plugins.cinderlink?.protocolHandlers[peer.peerId.toString()]) {
+    if (
+      this.plugins.cinderlink?.protocolHandlers[peer.peerId.toString()]
+        ?.outgoing
+    ) {
       await this.plugins.cinderlink.protocolHandlers[
         peer.peerId.toString()
-      ].buffer.push(json.encode({ ...message, ...encoded }));
+      ].outgoing.buffer.push(json.encode({ ...message, ...encoded }));
     } else {
       this.logger.error(
         "p2p",

@@ -493,7 +493,7 @@ export class SocialUsers {
             did: user.did,
             name: user.name,
             bio: user.bio,
-            status: "offline",
+            status: "online",
             avatar: user.avatar,
             updatedAt: user.updatedAt,
           });

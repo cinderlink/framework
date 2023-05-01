@@ -69,20 +69,17 @@ export class CinderlinkProtocolPlugin<
   };
   ProtocolEvents = {};
   handshakeInterval: NodeJS.Timeout | undefined;
-  protocolHandlers: Record<string, ProtocolHandler> = {};
+  protocolHandlers: Record<
+    string,
+    { incoming?: ProtocolHandler; outgoing?: ProtocolHandler }
+  > = {};
 
   async start() {
     this.logger.info(`registering protocol /cinderlink/1.0.0`);
     await this.client.ipfs.libp2p.handle(
       "/cinderlink/1.0.0",
-      async ({
-        stream,
-        connection,
-      }: {
-        stream: Stream;
-        connection: Connection;
-      }) => {
-        await this.initializeProtocol(stream, connection);
+      async ({ stream, connection }) => {
+        await this.initializeProtocol(stream as any, connection as any);
       },
       {
         maxInboundStreams: 128,
@@ -113,7 +110,7 @@ export class CinderlinkProtocolPlugin<
   async initializeProtocol(
     stream: Stream,
     connection: Connection,
-    force = false
+    incoming = false
   ) {
     if (
       !connection.remotePeer?.toString() ||
@@ -125,11 +122,16 @@ export class CinderlinkProtocolPlugin<
       peer = this.client.peers.addPeer(connection.remotePeer, "peer");
     }
 
-    if (this.protocolHandlers[peer.peerId.toString()]?.connection && !force) {
+    const existing =
+      this.protocolHandlers[peer.peerId.toString()]?.[
+        incoming ? "incoming" : "outgoing"
+      ];
+
+    if (existing) {
       this.logger.info(
-        `initializeProtocol: already initialized protocol with ${readablePeer(
-          peer
-        )}`
+        `initializeProtocol: ${
+          incoming ? "incoming" : "outgoing"
+        } protocol handler exists for peer ${readablePeer(peer)}`
       );
 
       await this.client.send<ProtocolEvents>(peer.peerId.toString(), {
@@ -144,7 +146,17 @@ export class CinderlinkProtocolPlugin<
     try {
       const self = this;
       const buffer = pushable();
-      this.protocolHandlers[peer.peerId.toString()] = {
+
+      if (!this.protocolHandlers[peer.peerId.toString()]) {
+        this.protocolHandlers[peer.peerId.toString()] = {
+          incoming: undefined,
+          outgoing: undefined,
+        };
+      }
+
+      this.protocolHandlers[peer.peerId.toString()][
+        incoming ? "incoming" : "outgoing"
+      ] = {
         buffer,
         stream,
         out: pipe(buffer, lp.encode, stream.sink),
@@ -165,14 +177,13 @@ export class CinderlinkProtocolPlugin<
           async function (source) {
             try {
               for await (const encoded of source) {
-                self.logger.info(
-                  `initializeProtocol: received message`,
-                  encoded
-                );
                 await self.handleProtocolMessage(connection, encoded);
               }
-            } catch (error) {
-              self.logger.error(`initializeProtocol: error`, { error });
+            } catch (error: any) {
+              self.logger.error(`initializeProtocol: error`, {
+                message: error.message,
+                trace: error.trace,
+              });
             }
           }
         ),
@@ -190,9 +201,10 @@ export class CinderlinkProtocolPlugin<
           did: this.client.id,
         } as HandshakeRequest,
       });
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`initializeProtocol: error`, {
-        error,
+        message: error.message,
+        trace: error.trace,
       });
     }
   }
@@ -208,7 +220,7 @@ export class CinderlinkProtocolPlugin<
         "/cinderlink/1.0.0"
       );
       const connection = this.client.ipfs.libp2p.getConnections(peer.peerId)[0];
-      await this.initializeProtocol(stream, connection);
+      await this.initializeProtocol(stream, connection, false);
     }
   }
 
@@ -218,9 +230,18 @@ export class CinderlinkProtocolPlugin<
         `onPeerDisconnect:  closing cinderlink protocol ${readablePeer(peer)}`
       );
 
-      this.protocolHandlers[peer.peerId.toString()].buffer?.end();
-      this.protocolHandlers[peer.peerId.toString()].stream?.close();
-      this.protocolHandlers[peer.peerId.toString()].connection?.close();
+      const outgoing = this.protocolHandlers[peer.peerId.toString()].outgoing;
+      if (outgoing) {
+        outgoing.buffer?.end();
+        outgoing.stream?.close();
+        outgoing.connection?.close();
+      }
+      const incoming = this.protocolHandlers[peer.peerId.toString()].incoming;
+      if (incoming) {
+        incoming.buffer?.end();
+        incoming.stream?.close();
+        incoming.connection?.close();
+      }
       delete this.protocolHandlers[peer.peerId.toString()];
     }
   }
@@ -233,26 +254,29 @@ export class CinderlinkProtocolPlugin<
     connection: Connection,
     encoded: ProtocolMessage<Events["receive"][Topic], Topic, Encoding>
   ) {
-    if (!encoded?.topic) {
-      this.logger.error(`handleProtocolMessage:  Error: invalid topic`, {
+    if (!encoded) {
+      this.logger.error(`invalid encoded message`, {
         from: connection.remotePeer,
         encoded,
       });
-
-      return;
+      throw new Error("invalid encoded message");
     }
-    this.logger.info(`handleProtocolMessage: p2p topic received`, {
-      from: connection.remotePeer,
-      topic: encoded.topic,
-    });
 
     const { topic } = encoded;
     if (!topic) {
+      this.logger.error(`invalid topic in encoded message`, {
+        from: connection.remotePeer,
+        encoded,
+      });
       throw new Error('missing "topic" in encoded message');
     }
 
     const peer = this.client.peers.getPeer(connection.remotePeer.toString());
     if (!peer) {
+      this.logger.error(`peer not found`, {
+        from: connection.remotePeer,
+        encoded,
+      });
       throw new Error("peer not found");
     }
 
@@ -278,12 +302,6 @@ export class CinderlinkProtocolPlugin<
         event as any
       );
     }
-
-    this.logger.debug(`handleProtocolMessage: p2p topic payload`, {
-      from: connection.remotePeer,
-      topic: encoded.topic,
-      payload: event.payload,
-    });
 
     await this.client.p2p.emit(
       topic as keyof ProtocolEvents["receive"],
