@@ -19,8 +19,6 @@ export interface PeerStoreInterface {
   setMetadata(peerId: string, key: string, value: string): void;
   isConnected(peerId: string): boolean;
   isDIDConnected(did: string): boolean;
-  isAuthenticated(peerId: string): boolean;
-  isDIDAuthenticated(did: string): boolean;
 
   hasPeerByDID(did: string): boolean;
   getPeerByDID(did: string): Peer | undefined;

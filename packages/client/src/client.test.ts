@@ -14,6 +14,7 @@ import {
   EncodingOptions,
   IncomingP2PMessage,
   ReceiveEventHandlers,
+  SubLoggerInterface,
 } from "../../core-types";
 import * as ethers from "ethers";
 
@@ -28,7 +29,11 @@ interface TestClientEvents extends PluginEventDef {
 }
 export class TestClientPlugin implements PluginInterface {
   id = "test-client-plugin";
-  constructor(public client: CinderlinkClientInterface) {}
+  logger: SubLoggerInterface;
+  started = false;
+  constructor(public client: CinderlinkClientInterface) {
+    this.logger = client.logger.module("plugins").submodule(this.id);
+  }
 
   p2p: ReceiveEventHandlers<TestClientEvents> = {
     "/test/response": this.onTestResponse,
@@ -57,7 +62,11 @@ interface TestServerEvents extends PluginEventDef {
 }
 export class TestServerPlugin implements PluginInterface {
   id = "test-server-plugin";
-  constructor(public client: CinderlinkClientInterface<TestServerEvents>) {}
+  logger: SubLoggerInterface;
+  started = false;
+  constructor(public client: CinderlinkClientInterface<TestServerEvents>) {
+    this.logger = client.logger.module("plugins").submodule(this.id);
+  }
 
   p2p: ReceiveEventHandlers<TestServerEvents> = {
     "/test/request": this.onTestRequest,
@@ -137,7 +146,7 @@ describe("CinderlinkClient", () => {
     const serverPeer = await server.ipfs.id();
     await Promise.all([
       client.connect(serverPeer.id),
-      await client.pluginEvents.once("/cinderlink/handshake/success"),
+      await client.once("/server/connect"),
     ]);
   });
 

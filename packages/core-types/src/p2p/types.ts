@@ -9,12 +9,9 @@ export type Peer = {
   subscriptions: string[];
   metadata: Record<string, string>;
   connected: boolean;
-  challenge?: string;
-  challengedAt?: number;
-  authenticated: boolean;
-  authenticatedAt?: number;
-  authenticatedWith?: boolean;
-  authenticatedWithAt?: number;
+  connectedAt?: number;
+  disconnectedAt?: number;
+  seenAt?: number;
 };
 
 export type PeerRole = "server" | "peer";

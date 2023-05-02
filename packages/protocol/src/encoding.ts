@@ -25,7 +25,6 @@ export async function decodePayload<
       .verifyJWS(encoded.payload as DagJWS)
       .catch(() => false);
     if (verification && verification.payload) {
-      console.info("verified JWS", verification.payload);
       payload = verification.payload as Encoded;
       senderDid = verification.didResolutionResult.didDocument?.id;
     } else {

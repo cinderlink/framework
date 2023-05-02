@@ -96,6 +96,10 @@ export type ProtocolMessage<
   peer?: Peer;
 };
 
+export interface ProtocolKeepAlive extends ProtocolRequest {
+  timestamp: number;
+}
+
 export type DecodedProtocolMessage<
   Events extends PluginEventDef = PluginEventDef,
   Type extends keyof Events = keyof Events,
@@ -114,18 +118,10 @@ export interface ProtocolEvents<
   PluginEvents extends PluginEventDef = PluginEventDef
 > extends PluginEventDef {
   send: {
-    "/cinderlink/handshake/request": HandshakeRequest;
-    "/cinderlink/handshake/challenge": HandshakeChallenge;
-    "/cinderlink/handshake/complete": HandshakeComplete;
-    "/cinderlink/handshake/success": HandshakeSuccess;
-    "/cinderlink/handshake/error": HandshakeError;
+    "/cinderlink/keepalive": ProtocolKeepAlive;
   };
   receive: {
-    "/cinderlink/handshake/request": HandshakeRequest;
-    "/cinderlink/handshake/challenge": HandshakeChallenge;
-    "/cinderlink/handshake/complete": HandshakeComplete;
-    "/cinderlink/handshake/success": HandshakeSuccess;
-    "/cinderlink/handshake/error": HandshakeError;
+    "/cinderlink/keepalive": ProtocolKeepAlive;
   };
   publish: {
     "/cinderlink/peer/connect": Peer;

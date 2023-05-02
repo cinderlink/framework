@@ -21,10 +21,6 @@ export class Peerstore implements PeerStoreInterface {
       subscriptions: [],
       metadata: {},
       connected: false,
-      authenticated: false,
-      authenticatedAt: undefined,
-      authenticatedWith: false,
-      authenticatedWithAt: undefined,
     };
     return this.peers[peerId.toString()];
   }
@@ -91,14 +87,6 @@ export class Peerstore implements PeerStoreInterface {
 
   isDIDConnected(did: string) {
     return this.peers[this.peerIds[did]]?.connected;
-  }
-
-  isAuthenticated(peerId: string) {
-    return this.peers[peerId.toString()]?.authenticated || false;
-  }
-
-  isDIDAuthenticated(did: string) {
-    return this.peers[this.peerIds[did]]?.authenticated || false;
   }
 
   hasPeerByDID(did: string) {

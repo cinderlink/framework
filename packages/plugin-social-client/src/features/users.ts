@@ -35,7 +35,7 @@ export class SocialUsers {
 
   async start() {
     await this.loadLocalUser();
-    this.plugin.client.on("/cinderlink/handshake/success", async (peer) => {
+    this.plugin.client.on("/peer/connect", async (peer) => {
       if (peer.role === "server") {
         this.hasServerConnection = true;
       } else {
@@ -51,17 +51,20 @@ export class SocialUsers {
       }
     });
 
-    this.plugin.client.on("/peer/connect", async (peer: Peer) => {
-      if (peer.role === "peer" && peer.did) {
-        await this.setUserStatus(peer.did as string, "online");
+    this.plugin.client.on("/server/connect", async (peer) => {
+      this.hasServerConnection = true;
+      if (
+        this.localUser?.name &&
+        this.localUser.name !== "guest" &&
+        this.plugin.client.addressVerification
+      ) {
+        await this.announce(peer.peerId.toString());
       }
     });
 
     this.plugin.client.on("/peer/disconnect", async (peer: Peer) => {
       this.logger.info(`peer disconnected`, { peer });
-      if (peer.role === "peer" && peer.did) {
-        await this.setUserStatus(peer.did as string, "offline");
-      }
+      this.hasServerConnection = this.plugin.client.peers.getServerCount() > 0;
     });
 
     this.announceInterval = setInterval(async () => {
@@ -73,7 +76,7 @@ export class SocialUsers {
         return;
       this.logger.info(`announcing (pubsub, interval)`);
       await this.announce();
-    }, Number(this.plugin.options.announceInterval || 180000));
+    }, Number(this.plugin.options.announceInterval || 30000));
 
     const connections = await this.plugin.connections.getConnections(
       this.plugin.client.id,
@@ -270,7 +273,7 @@ export class SocialUsers {
 
     await Promise.all(
       servers
-        .filter((s) => s.connected && s.authenticated)
+        .filter((s) => s.connected)
         .map(async (server) => {
           await this.plugin.client
             .request<
@@ -392,7 +395,6 @@ export class SocialUsers {
     if (message.payload.did) {
       this.plugin.client.peers.updatePeer(message.peer.peerId.toString(), {
         did: message.payload.did,
-        authenticated: true,
       });
     }
 
@@ -430,14 +432,13 @@ export class SocialUsers {
           !this.plugin.client.peers.getPeer(message.peer.peerId.toString())
             ?.connected)
       ) {
-        this.logger.info(`connecting to peer`, {
-          peerId: message.peer.peerId,
-        });
-
+        this.logger.info(
+          `onAnnounce - connecting to peer: ${message.peer.peerId}`
+        );
         await this.plugin.client.connect(message.peer.peerId);
       }
     } catch (e) {
-      this.logger.error(`failed to connect to peer`, {
+      this.logger.error(`onAnnounce - failed to connect to peer`, {
         peerId: message.peer.peerId,
         error: e,
       });

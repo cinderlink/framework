@@ -107,10 +107,7 @@ export class SyncDBPlugin<
 
     await this.syncRows.query().where("success", "=", true).delete().execute();
 
-    this.client.pluginEvents.on(
-      "/cinderlink/handshake/success",
-      this.onHandshakeSuccess.bind(this)
-    );
+    this.client.on("/peer/connect", this.onPeerConnect.bind(this));
     this.started = true;
   }
 
@@ -119,17 +116,14 @@ export class SyncDBPlugin<
     this.logger.info(`stopping`);
     Object.values(this.timers).forEach((timer) => clearInterval(timer));
     this.timers = {};
-    this.client.pluginEvents.off(
-      "/cinderlink/handshake/success",
-      this.onHandshakeSuccess.bind(this)
-    );
+    this.client.off("/peer/connect", this.onPeerConnect.bind(this));
   }
 
   /**
-   * On peer handshake success, notify the peer of the minimum lastSyncedAt value
+   * On peer connect: notify the peer of the minimum lastSyncedAt value
    * @param peer
    */
-  async onHandshakeSuccess(peer: Peer) {
+  async onPeerConnect(peer: Peer) {
     const minLastSyncedAt = await this.getMinLastSyncedAt(peer.did as string);
     await this.client.send(peer.peerId.toString(), {
       topic: "/cinderlink/sync/since",
@@ -349,7 +343,7 @@ export class SyncDBPlugin<
 
     const peers = this.client.peers
       .getAllPeers()
-      .filter((peer) => peer.authenticated && peer.did !== undefined);
+      .filter((peer) => peer.did !== undefined);
 
     let syncDids: string[] = [];
     const syncTo = await sync.syncTo?.(peers, table, this.client);
@@ -365,12 +359,6 @@ export class SyncDBPlugin<
       return;
     }
 
-    this.logger.debug(`syncing table rows`, {
-      schemaId,
-      tableId,
-      syncDids,
-      toSync: toSync?.length,
-    });
     for (const did of syncDids) {
       let rows: TableRow[] = [];
       if (!toSync) {
@@ -494,7 +482,6 @@ export class SyncDBPlugin<
   ) {
     const peer = this.client.peers.getPeerByDID(did);
     if (!peer) {
-      this.logger.warn(`peer not found`, { did });
       return;
     }
 
@@ -525,7 +512,6 @@ export class SyncDBPlugin<
   ) {
     const peer = this.client.peers.getPeerByDID(did);
     if (!peer) {
-      this.logger.warn(`peer not found`, { did });
       return;
     }
 
@@ -567,7 +553,7 @@ export class SyncDBPlugin<
     if (!message.peer.did) {
       this.client.logger.warn(
         "sync",
-        `received sync message from unauthenticated peer: \`${message.peer.peerId}\``
+        `received sync message from peer without DID: \`${message.peer.peerId}\``
       );
       return;
     }
@@ -690,7 +676,7 @@ export class SyncDBPlugin<
   ) {
     if (!message.peer.did) {
       this.logger.warn(
-        `received sync message from unauthenticated peer: \`${message.peer.peerId}\``
+        `received sync message from peer without DID: \`${message.peer.peerId}\``
       );
       return;
     }
@@ -785,7 +771,7 @@ export class SyncDBPlugin<
   ) {
     if (!message.peer.did) {
       this.logger.warn(
-        `received sync message from unauthenticated peer: \`${message.peer.peerId}\``
+        `received sync message from peer without DID: \`${message.peer.peerId}\``
       );
       return;
     }
@@ -889,7 +875,7 @@ export class SyncDBPlugin<
   ) {
     if (!message.peer.did) {
       this.logger.warn(
-        `received sync message from unauthenticated peer: \`${message.peer.peerId}\``
+        `received sync message from peer without DID: \`${message.peer.peerId}\``
       );
       return;
     }
@@ -957,7 +943,7 @@ export class SyncDBPlugin<
   ) {
     if (!message.peer.did) {
       this.logger.warn(
-        `received sync message from unauthenticated peer: \`${message.peer.peerId}\``
+        `received sync message from peer without DID: \`${message.peer.peerId}\``
       );
       return;
     }

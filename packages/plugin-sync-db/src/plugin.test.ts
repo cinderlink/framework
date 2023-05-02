@@ -128,8 +128,8 @@ describe("TableSync", () => {
 
     await Promise.all([
       client.start([serverPeer.addresses[0].toString()]),
-      client.pluginEvents.once("/cinderlink/handshake/success"),
-      server.pluginEvents.once("/cinderlink/handshake/success"),
+      client.once("/server/connect"),
+      server.once("/peer/connect"),
     ]);
 
     if (!server.hasSchema("test")) {

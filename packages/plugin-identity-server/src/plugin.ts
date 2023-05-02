@@ -92,7 +92,7 @@ export class IdentityServerPlugin
     >
   ) {
     if (!message.peer.did) {
-      this.logger.warn("refusing unauthenticated peer");
+      this.logger.warn("refusing peer without DID");
       return this.client.send<IdentityServerEvents, "/identity/set/response">(
         message.peer.peerId.toString(),
         {
@@ -100,7 +100,7 @@ export class IdentityServerPlugin
           payload: {
             requestId: message.payload.requestId,
             success: false,
-            error: "did not found, peer not authenticated",
+            error: "did not found, peer does not have a DID",
           },
         }
       );
@@ -151,7 +151,7 @@ export class IdentityServerPlugin
     >
   ) {
     if (!message.peer.did) {
-      this.logger.warn("refusing unauthenticated peer");
+      this.logger.warn("refusing peer without DID");
       return this.client.send(message.peer.peerId.toString(), {
         topic: "/identity/resolve/response",
         payload: {
