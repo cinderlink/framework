@@ -248,7 +248,6 @@ export class OfflineSyncClientPlugin<
         peer = {
           peerId: response.peer.peerId,
           did: sender,
-          authenticated: true,
           connected: true,
           metadata: {},
           role: "peer",
