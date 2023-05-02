@@ -129,7 +129,6 @@ if (command !== "start") {
     process.exit(1);
   }
 
-  console.info("resolved config", resolvedConfigPath);
   const { default: config } = await import(resolvedConfigPath);
   let wallet: Wallet;
 
@@ -190,7 +189,6 @@ if (command !== "start") {
   ).filter((p) => !!p);
 
   console.log(`starting ${chalk.cyan("cinderlink")}...`);
-  console.info(config);
   const { did } = await createSignerDID(
     config.app,
     wallet,

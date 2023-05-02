@@ -19,11 +19,6 @@ export class SocialChat {
       tableId: "chat_messages",
       enabled: true,
       async insert(this: SocialNotifications, message: SocialChatMessage) {
-        console.info(
-          "chat message insert notification",
-          message,
-          this.plugin.client?.id
-        );
         if (message?.from === this.plugin.client?.id) return;
 
         const user = await this.plugin.users.getUserByDID(message.from);
