@@ -180,7 +180,6 @@ var OfflineSyncClientPlugin = class extends import_emittery.default {
         peer = {
           peerId: response.peer.peerId,
           did: sender,
-          authenticated: true,
           connected: true,
           metadata: {},
           role: "peer",

@@ -1,5 +1,5 @@
 import { rmSync } from "fs";
-import { describe, afterEach, beforeEach } from "vitest";
+import { describe, it, afterEach, beforeEach, expect, vi } from "vitest";
 import {
   createDID,
   createSeed,
@@ -57,12 +57,32 @@ describe("handleProtocol", () => {
         },
       },
     });
-    server.initialConnectTimeout = 0;
+    vi.useFakeTimers();
+
+    await Promise.all([server.start([]), server.once("/client/ready")]);
+    const serverPeer = await server.ipfs.id();
+    console.info("server ready");
+    await vi.runOnlyPendingTimersAsync();
+
+    client.initialConnectTimeout = 0;
+    await Promise.all([
+      client.start([serverPeer.addresses[0].toString()]),
+      client.once("/server/connect"),
+      vi.runOnlyPendingTimersAsync(),
+    ]);
+    console.info("server connected");
     // await client.addPlugin(new ProtocolPlugin(client));
     // await server.addPlugin(new ProtocolPlugin(server));
   });
 
+  it("should timeout peers after 10 seconds of inactivity", async () => {
+    vi.advanceTimersByTime(10000);
+    expect(client.peers.getServerCount()).toBe(0);
+    expect(server.peers.peerCount()).toBe(0);
+  }, 11000);
+
   afterEach(async () => {
+    vi.useRealTimers();
     await server.stop();
     await client.stop();
     await rmSync("./test-protocol-client", { recursive: true, force: true });

@@ -283,7 +283,7 @@ export class CinderlinkClient<
   }
 
   async connectToNodes() {
-    Promise.all(
+    await Promise.all(
       this.nodeAddresses.map(async (addr) => {
         const peerIdStr = addr.split("/").pop();
         if (peerIdStr === this.peerId?.toString()) return;
@@ -574,6 +574,10 @@ export class CinderlinkClient<
     } as Encoding,
     offline = false
   ) {
+    if (!this.ipfs?.libp2p) {
+      this.logger.error("p2p", "send - libp2p not initialized");
+      throw new Error("libp2p not initialized");
+    }
     if (peerId === this.peerId?.toString()) return;
     if (!options.sign && !options.encrypt) {
       this.logger.error("p2p", "message must be signed or encrypted", {
@@ -623,7 +627,7 @@ export class CinderlinkClient<
     }
 
     const stream = await this.ipfs.libp2p
-      .dialProtocol(peer.peerId, "/cinderlink/1.0.0")
+      ?.dialProtocol(peer.peerId, "/cinderlink/1.0.0")
       .catch(() => {
         this.logger.error("p2p", "error dialing protocol", {
           peerId,

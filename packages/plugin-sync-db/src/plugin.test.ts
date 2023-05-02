@@ -122,15 +122,15 @@ describe("TableSync", () => {
     });
     server.initialConnectTimeout = 0;
 
-    await server.start([]);
+    await Promise.all([server.start([]), server.once("/client/ready")]);
     const serverPeer = await server.ipfs.id();
-    client.initialConnectTimeout = 0;
+    console.info("server ready");
 
     await Promise.all([
-      client.start([serverPeer.addresses[0].toString()]),
-      client.once("/server/connect"),
-      server.once("/peer/connect"),
+      client.start([`/ip4/127.0.0.1/tcp/7387/ws/p2p/${serverPeer.id}`]),
+      client.once("/client/ready"),
     ]);
+    console.info("client ready");
 
     if (!server.hasSchema("test")) {
       serverSchema = new Schema(
@@ -153,11 +153,13 @@ describe("TableSync", () => {
     }
 
     serverSyncPlugin = new SyncDBPlugin(server);
-    await server.addPlugin(serverSyncPlugin);
-
     clientSyncPlugin = new SyncDBPlugin(client);
-    await client.addPlugin(clientSyncPlugin);
+    await Promise.all([
+      server.addPlugin(serverSyncPlugin),
+      client.addPlugin(clientSyncPlugin),
+    ]);
 
+    vi.useFakeTimers();
     vi.spyOn(client, "send");
     vi.spyOn(client.p2p, "emit");
     vi.spyOn(server.p2p, "emit");
@@ -166,6 +168,7 @@ describe("TableSync", () => {
 
   afterEach(async () => {
     vi.resetAllMocks();
+    vi.useRealTimers();
     try {
       await client.stop().catch(() => {});
       await server.stop().catch(() => {});
@@ -192,7 +195,7 @@ describe("TableSync", () => {
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
-    await new Promise((resolve) => setTimeout(resolve, 200));
+    await vi.advanceTimersByTimeAsync(200);
     // called once immediately at startup
     expect(clientSyncPlugin.syncTableRows).toHaveBeenCalledTimes(3);
 

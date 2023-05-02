@@ -1,4 +1,3 @@
-import { CinderlinkProtocolPlugin } from "@cinderlink/protocol";
 import type {
   PluginInterface,
   CinderlinkClientInterface,
@@ -108,11 +107,7 @@ export class OfflineSyncServerPlugin
     if (this.client.peers.isDIDConnected(message.payload.recipient)) {
       const peer = this.client.peers.getPeerByDID(message.payload.recipient);
 
-      if (
-        peer &&
-        (this.client.getPlugin("cinderlink") as CinderlinkProtocolPlugin)
-          ?.protocolHandlers[peer.peerId.toString()]
-      ) {
+      if (peer && peer.connected) {
         this.logger.info(`received offline message for online peer, relaying`, {
           peer,
           message: message.payload,

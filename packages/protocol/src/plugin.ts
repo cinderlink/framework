@@ -123,18 +123,22 @@ export class CinderlinkProtocolPlugin<
   async keepAliveCheck() {
     const now = Date.now();
     for (const peer of this.client.peers.getAllPeers()) {
-      if (!peer.seenAt || now - peer.seenAt > 10000) {
-        this.logger.info(`peer ${readablePeer(peer)} timed out`);
-        this.client.ipfs.swarm.disconnect(peer.peerId);
-        this.client.emit("/peer/disconnect", peer);
-        this.client.peers.removePeer(peer.peerId.toString());
-      } else {
-        await this.client.send(peer.peerId.toString(), {
-          topic: "/cinderlink/keepalive",
-          payload: {
-            timestamp: Date.now(),
-          },
-        } as OutgoingP2PMessage<ProtocolEvents, "/cinderlink/keepalive">);
+      if (peer.connected) {
+        if (!peer.seenAt || now - peer.seenAt > 10000) {
+          this.logger.info(`peer ${readablePeer(peer)} timed out`);
+          try {
+            this.client.ipfs.swarm.disconnect(peer.peerId);
+            this.client.emit("/peer/disconnect", peer);
+            this.client.peers.removePeer(peer.peerId.toString());
+          } catch (_) {}
+        } else {
+          await this.client.send(peer.peerId.toString(), {
+            topic: "/cinderlink/keepalive",
+            payload: {
+              timestamp: Date.now(),
+            },
+          } as OutgoingP2PMessage<ProtocolEvents, "/cinderlink/keepalive">);
+        }
       }
     }
   }

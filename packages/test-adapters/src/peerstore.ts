@@ -5,6 +5,11 @@ export class Peerstore implements PeerStoreInterface {
   peers: Record<string, Peer> = {};
   peerIds: Record<string, string> = {};
   localPeerId: string = "";
+
+  constructor(localPeerId: string) {
+    this.localPeerId = localPeerId;
+  }
+
   addPeer(peerId: PeerId, role: "server" | "peer" = "peer", did?: string) {
     if (this.peers[peerId.toString()]) {
       throw new Error("peer already exists");

@@ -144,7 +144,7 @@ export class TestClient<PluginEvents extends PluginEventDef>
 {
   running = false;
   hasServerConnection = false;
-  peers = new Peerstore();
+  peers = new Peerstore("test");
   subscriptions: string[] = [];
   relayAddresses: string[] = [];
   pluginEvents = new Emittery<PluginEvents["emit"]>();
