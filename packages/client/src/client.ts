@@ -263,6 +263,7 @@ export class CinderlinkClient<
   }
 
   async onPeerConnect(peer: Peer) {
+    if (!peer.did) return;
     this.logger.info("p2p", `peer connected ${this.peerReadable(peer)}`, {
       peer,
     });
