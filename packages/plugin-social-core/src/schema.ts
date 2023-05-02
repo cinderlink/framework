@@ -140,6 +140,10 @@ export const SocialSchemaDef = {
     encrypted: true,
     aggregate: {},
     indexes: {
+      uid: {
+        unique: true,
+        fields: ["uid"],
+      },
       did: {
         unique: false,
         fields: ["did"],
@@ -152,6 +156,7 @@ export const SocialSchemaDef = {
     schema: {
       type: "object",
       properties: {
+        cid: { type: "string" },
         did: { type: "string" },
         content: { type: "string" },
         attachments: { type: "array", items: { type: "string" } },
