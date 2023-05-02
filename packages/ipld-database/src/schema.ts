@@ -28,6 +28,7 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
     public encrypted = true
   ) {
     super();
+    this.logger.info(`creating schema "${schemaId}"`);
     Object.entries(defs).forEach(([tableId, def]) => {
       this.logger.info(`creating table "${tableId}"`);
       this.tables[tableId] = new Table(
@@ -58,6 +59,9 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
   }
 
   async createTable(tableId: string, def: TableDefinition<any>) {
+    if (this.tables[tableId]) {
+      throw new Error(`table already exists: ${tableId}`);
+    }
     this.tables[tableId] = new Table(
       tableId,
       def,
@@ -131,7 +135,7 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
     dag: DIDDagInterface,
     logger: SubLoggerInterface
   ) {
-    const data = await dag.load<SavedSchema>(cid);
+    const data = await dag.load<SavedSchema>(cid).catch(() => undefined);
     if (!data) {
       logger.error(`failed to load schema ${cid}`);
       throw new Error("Failed to load schema");

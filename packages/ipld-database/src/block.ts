@@ -60,7 +60,18 @@ export class TableBlock<
     // return this.table.encrypted
     //   ? this.table.dag.loadDecrypted<Data>(cid, path)
     //   : this.table.dag.load<Data>(cid, path);
-    return this.table.dag.load<Data>(cid, path);
+    try {
+      const data = await this.table.dag.load<Data>(cid, path);
+      return data;
+    } catch (error: any) {
+      this.logger.error(`failed to load data from dag`, {
+        cid,
+        path,
+        error,
+        stack: error.stack,
+      });
+      throw error;
+    }
   }
 
   async prevCID(): Promise<string | undefined> {

@@ -37,6 +37,7 @@ export class DIDDag implements DIDDagInterface {
           path,
           options,
           err,
+          stack: err.stack,
         });
         throw new Error("DAG failed to load data: " + err.message);
       });

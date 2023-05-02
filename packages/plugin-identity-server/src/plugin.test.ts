@@ -72,11 +72,12 @@ describe("IdentityServerPlugin", () => {
     server.initialConnectTimeout = 0;
     await server.addPlugin(new IdentityServerPlugin(server));
 
-    await server.start([]);
+    await Promise.all([server.start([]), server.once("/client/ready")]);
     const serverPeer = await server.ipfs.id();
-    await client.start([
-      `/ip4/127.0.0.1/tcp/7377/ws/p2p/${serverPeer.id.toString()}`,
-    ]);
+    console.info("server ready");
+
+    await client.start([`/ip4/127.0.0.1/tcp/7377/ws/p2p/${serverPeer.id}`]);
+    console.info("client ready");
   });
 
   it("should pin identities", async () => {
@@ -109,7 +110,7 @@ describe("IdentityServerPlugin", () => {
 
   it.skip("should restore identities from a fresh client", async () => {
     await client.identity.save({
-      cid: testIdentityCid as string,
+      cid: testIdentityCid as any,
       document: testIdentityDoc,
       forceRemote: true,
       forceImmediate: true,
@@ -130,13 +131,15 @@ describe("IdentityServerPlugin", () => {
       },
     });
     const serverPeer = await server.ipfs.id();
-    await clientB.start([
-      `/ip4/127.0.0.1/tcp/7377/ws/p2p/${serverPeer.id.toString()}`,
+    await Promise.all([
+      clientB.start([
+        `/ip4/127.0.0.1/tcp/7377/ws/p2p/${serverPeer.id.toString()}`,
+      ]),
+      clientB.once("/identity/resolved"),
     ]);
-    const resolved = await clientB.identity.resolve();
 
-    expect(resolved).not.toBeUndefined();
-    expect(resolved?.cid).toEqual(testIdentityCid as string);
+    expect(clientB.identity.hasResolved).to.toBeTruthy();
+    expect(clientB.identity.cid).toEqual(testIdentityCid as string);
 
     await clientB.stop();
   });

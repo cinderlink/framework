@@ -2,7 +2,7 @@
   "name": "@cinderlink/plugin-offline-sync-server",
   "description": "Offline messaging sync server plugin for Cinderlink",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "0.0.10",
+  "version": "0.1.0",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -30,7 +30,7 @@
     "@cinderlink/protocol": "workspace:../protocol",
     "@cinderlink/tsconfig": "workspace:../tsconfig",
     "did-jwt": "^7.0.0",
-    "dids": "^4.0.0",
+    "dids": "^4.0.1",
     "tsup": "^6.7.0",
     "typescript": "^5.0.4",
     "vitest": "^0.30.1"

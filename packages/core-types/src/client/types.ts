@@ -45,10 +45,12 @@ export interface CinderlinkClientEvents<
   };
   emit: {
     "/client/ready": ProtocolRequest;
+    "/client/loaded": boolean;
     "/peer/connect": Peer;
     "/server/connect": Peer;
     "/peer/disconnect": Peer;
     "/peer/handshake": Peer;
+    "/peer/authenticated": Peer;
     "/peer/message": IncomingP2PMessage<PluginEvents>;
     "/pubsub/message": IncomingPubsubMessage<PluginEvents>;
     "/identity/resolved": IdentityResolved;

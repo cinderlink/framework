@@ -96,10 +96,15 @@ export type SocialNotification = TableRow & {
   read?: boolean;
   link?: string;
   metaData?: Record<string, unknown>;
+  browser?: NotificationOptions;
 };
 
 export interface SocialClientPluginEvents {
   ready: void;
+  "/notification/clicked": {
+    notification: SocialNotification;
+    options: NotificationOptions;
+  };
 }
 
 export interface SocialUsersSearchRequest {

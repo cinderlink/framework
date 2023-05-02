@@ -23,7 +23,9 @@ export interface PluginEventDef {
 
 export interface PluginBaseInterface {
   id: string;
+  logger: SubLoggerInterface;
   client: CinderlinkClientInterface<any>;
+  started: boolean;
   start?(): Promise<void>;
   stop?(): Promise<void>;
   pubsub: SubscribeEventHandlers<any>;
@@ -39,15 +41,16 @@ export interface PluginInterface<
     Events & PeerEvents
   > = CinderlinkClientInterface<any>
 > extends PluginBaseInterface {
+  logger: SubLoggerInterface;
   client: Client;
   pubsub: SubscribeEventHandlers<Events>;
   p2p: ReceiveEventHandlers<Events>;
   pluginEvents?: PluginEventHandlers<PeerEvents["emit"]>;
+  started: boolean;
 }
 export default PluginInterface;
 
 export type PluginConstructor<
   Client extends CinderlinkClientInterface = CinderlinkClientInterface,
-  Options extends Record<string, unknown> = {},
-  Logger extends SubLoggerInterface = SubLoggerInterface
-> = new (client: Client, options?: Options, logger?: Logger) => PluginInterface;
+  Options extends Record<string, unknown> = {}
+> = new (client: Client, options?: Options) => PluginInterface;

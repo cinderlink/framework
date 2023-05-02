@@ -2,7 +2,7 @@
   "name": "@cinderlink/server-bin",
   "description": "Cinderlink server binary",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "0.0.16",
+  "version": "0.1.0",
   "main": "dist/bin.js",
   "type": "module",
   "module": "./dist/bin.js",
@@ -25,12 +25,12 @@
     "watch": "tsup --watch"
   },
   "dependencies": {
-    "@cinderlink/server": "workspace:../server",
     "@cinderlink/identifiers": "workspace:../identifiers",
     "@cinderlink/plugin-identity-server": "workspace:../plugin-identity-server",
     "@cinderlink/plugin-offline-sync-server": "workspace:../plugin-offline-sync-server",
     "@cinderlink/plugin-social-server": "workspace:../plugin-social-server",
     "@cinderlink/protocol": "workspace:../protocol",
+    "@cinderlink/server": "workspace:../server",
     "chalk": "^5.2.0",
     "dotenv": "^16.0.3",
     "ethers": "^5.7.2",
@@ -44,7 +44,7 @@
   "devDependencies": {
     "@cinderlink/tsconfig": "workspace:../tsconfig",
     "@types/minimist": "^1.2.2",
-    "@types/node": "^18.15.11",
+    "@types/node": "^18.16.3",
     "ts-node": "^10.9.1",
     "tsup": "^6.7.0",
     "typescript": "^5.0.4",

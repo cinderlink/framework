@@ -2,7 +2,7 @@
   "name": "@cinderlink/plugin-offline-sync-core",
   "description": "Core types and utilities for the Cinderlink offline sync plugin",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "0.0.7",
+  "version": "0.1.0",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",

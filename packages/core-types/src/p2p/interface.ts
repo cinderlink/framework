@@ -4,6 +4,7 @@ import { Peer } from "./types";
 export interface PeerStoreInterface {
   peers: Record<string, Peer>;
   peerIds: Record<string, string>;
+  localPeerId: string;
   addPeer(peerId: PeerId, role: "server" | "peer"): Peer;
   hasPeer(peerId: string): boolean;
   hasServer(peerId: string): boolean;
@@ -19,8 +20,6 @@ export interface PeerStoreInterface {
   setMetadata(peerId: string, key: string, value: string): void;
   isConnected(peerId: string): boolean;
   isDIDConnected(did: string): boolean;
-  isAuthenticated(peerId: string): boolean;
-  isDIDAuthenticated(did: string): boolean;
 
   hasPeerByDID(did: string): boolean;
   getPeerByDID(did: string): Peer | undefined;

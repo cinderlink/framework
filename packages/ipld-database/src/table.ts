@@ -76,7 +76,6 @@ export class Table<
 
   async insert(data: Omit<Omit<Row, "id">, "uid">) {
     this.assertValid(data as Partial<Row>);
-    this.logger.info(`locking (insert)`, data);
     await this.awaitLock();
     const id = this.currentIndex + 1;
     this.currentIndex = id + 0;
@@ -100,10 +99,14 @@ export class Table<
       }
     }
     cache.invalidateTable(this.tableId);
-    this.logger.info(`unlocking (insert)`, data);
     this.unlock();
-    this.emit("/record/inserted", { ...data, uid, id } as Row);
-    this.logger.info(`inserted record ${id}`, data);
+    await this.emit("/record/inserted", { ...data, uid, id } as Row).catch(
+      (error: Error) => {
+        this.logger.error(`error emitting table insert: ${error.message}`, {
+          stack: error.stack,
+        });
+      }
+    );
     return uid;
   }
 
@@ -252,13 +255,11 @@ export class Table<
     if (!this.currentBlock.changed) {
       return this.currentBlock.cid;
     }
-    this.logger.debug(`locking (save, ${this.currentBlock.cid})`);
     await this.awaitLock();
     this.logger.debug(`saving`, { currentBlock: this.currentBlock.cid });
     await this.currentBlock.save();
     cache.invalidateTable(this.tableId);
     this.logger.info(`saved`, { currentBlock: this.currentBlock.cid });
-    this.logger.debug(`unlocking (save, ${this.currentBlock.cid})`);
     this.unlock();
     return this.currentBlock.cid;
   }

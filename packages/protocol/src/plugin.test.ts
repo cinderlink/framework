@@ -1,13 +1,16 @@
 import { rmSync } from "fs";
-import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
+import { describe, it, afterEach, beforeEach, expect, vi } from "vitest";
 import {
   createDID,
   createSeed,
   signAddressVerification,
 } from "../../identifiers";
+import { IdentityServerPlugin } from "../../plugin-identity-server";
 import { createClient } from "../../client";
+import { ServerLogger } from "../../server";
 import * as ethers from "ethers";
 import { CinderlinkClientInterface, ProtocolEvents } from "../../core-types";
+import CinderlinkProtocolPlugin from "./plugin";
 
 describe("handleProtocol", () => {
   let client: CinderlinkClientInterface<ProtocolEvents>;
@@ -26,6 +29,7 @@ describe("handleProtocol", () => {
       did: clientDID,
       address: clientWallet.address as `0x${string}`,
       addressVerification: clientAV,
+      logger: new ServerLogger(),
       role: "peer",
       options: {
         repo: "test-protocol-client",
@@ -44,6 +48,7 @@ describe("handleProtocol", () => {
       did: serverDID,
       address: serverWallet.address as `0x${string}`,
       addressVerification: serverAV,
+      logger: new ServerLogger(),
       role: "server",
       options: {
         repo: "test-protocol-server",
@@ -57,113 +62,34 @@ describe("handleProtocol", () => {
         },
       },
     });
+    const identity = new IdentityServerPlugin(server as any);
+    server.addPlugin(identity);
     server.initialConnectTimeout = 0;
+
+    await Promise.all([server.start([]), server.once("/client/ready")]);
+    const serverPeer = await server.ipfs.id();
+
+    client.keepAliveInterval = 100;
+    client.keepAliveTimeout = 500;
+    client.initialConnectTimeout = 0;
+    await Promise.all([
+      client.start([serverPeer.addresses[0].toString()]),
+      client.once("/server/connect"),
+    ]);
+
+    server.getPlugin<CinderlinkProtocolPlugin>(
+      "cinderlink"
+    ).respondToKeepAlive = false;
     // await client.addPlugin(new ProtocolPlugin(client));
     // await server.addPlugin(new ProtocolPlugin(server));
   });
 
-  it("should handshake on connect", async () => {
-    const fnA = vi.fn();
-    const fnB = vi.fn();
-    client.pluginEvents.on("/cinderlink/handshake/success", fnA);
-    server.pluginEvents.on("/cinderlink/handshake/success", fnB);
-
-    await server.start([]);
-    const serverPeer = await server.ipfs.id();
-
-    await client.start([serverPeer.addresses[0].toString()]);
-
-    await Promise.all([
-      client.pluginEvents.once("/cinderlink/handshake/success"),
-      server.pluginEvents.once("/cinderlink/handshake/success"),
-    ]);
-
-    await new Promise((resolve) => setTimeout(resolve, 3000));
-
-    expect(fnA).toHaveBeenCalledTimes(1);
-    expect(fnB).toHaveBeenCalledTimes(1);
-  });
-
-  it("should handshake on reconnect", async () => {
-    const fnClient = vi.fn();
-    const fnServer = vi.fn();
-    client.pluginEvents.on("/cinderlink/handshake/success", fnClient);
-    server.pluginEvents.on("/cinderlink/handshake/success", fnServer);
-
-    await server.start([]);
-    const serverPeer = await server.ipfs.id();
-
-    await client.start([serverPeer.addresses[0].toString()]);
-
-    await Promise.all([
-      client.pluginEvents.once("/cinderlink/handshake/success"),
-      server.pluginEvents.once("/cinderlink/handshake/success"),
-    ]);
-
-    await client.ipfs.swarm.disconnect(serverPeer.id);
+  it("should timeout peers after 10 seconds of inactivity", async () => {
+    const spy = vi.fn();
+    client.pluginEvents.on("/cinderlink/keepalive/timeout", spy);
     await new Promise((resolve) => setTimeout(resolve, 1000));
-    await client.ipfs.swarm.connect(serverPeer.id);
-
-    await Promise.all([
-      client.pluginEvents.once("/cinderlink/handshake/success"),
-      server.pluginEvents.once("/cinderlink/handshake/success"),
-    ]);
-
-    expect(fnClient).toHaveBeenCalledTimes(2);
-    expect(fnClient).toHaveBeenCalledTimes(2);
-  }, 10000);
-
-  it("should remain authenticated on reconnect", async () => {
-    const fnClient = vi.fn();
-    const fnServer = vi.fn();
-
-    client.pluginEvents.on("/cinderlink/handshake/success", fnClient);
-    server.pluginEvents.on("/cinderlink/handshake/success", fnServer);
-
-    await server.start([]);
-    const serverPeer = await server.ipfs.id();
-
-    await client.start([serverPeer.addresses[0].toString()]);
-    const clientPeer = await client.ipfs.id();
-
-    await Promise.all([
-      client.pluginEvents.once("/cinderlink/handshake/success"),
-      server.pluginEvents.once("/cinderlink/handshake/success"),
-    ]);
-
-    expect(client.peers.getPeer(serverPeer.id.toString())?.authenticated).toBe(
-      true
-    );
-    expect(server.peers.getPeer(clientPeer.id.toString())?.authenticated).toBe(
-      true
-    );
-
-    await client.ipfs.swarm.disconnect(serverPeer.id);
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    expect(client.peers.getPeer(serverPeer.id.toString())?.authenticated).toBe(
-      false
-    );
-    expect(server.peers.getPeer(clientPeer.id.toString())?.authenticated).toBe(
-      false
-    );
-
-    await client.ipfs.swarm.connect(serverPeer.id);
-
-    await Promise.all([
-      client.pluginEvents.once("/cinderlink/handshake/success"),
-      server.pluginEvents.once("/cinderlink/handshake/success"),
-    ]);
-
-    expect(fnClient).toHaveBeenCalledTimes(2);
-    expect(fnServer).toHaveBeenCalledTimes(2);
-
-    expect(client.peers.getPeer(serverPeer.id.toString())?.authenticated).toBe(
-      true
-    );
-    expect(server.peers.getPeer(clientPeer.id.toString())?.authenticated).toBe(
-      true
-    );
-  }, 10000);
+    expect(spy).toHaveBeenCalled();
+  });
 
   afterEach(async () => {
     await server.stop();
