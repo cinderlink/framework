@@ -160,6 +160,8 @@ export class TestClient<PluginEvents extends PluginEventDef>
   plugins = {} as Record<string, PluginInterface<any, any>>;
   initialConnectTimeout = 1;
   logger: LoggerInterface = new TestLogger();
+  keepAliveInterval = 5;
+  keepAliveTimeout = 10;
 
   constructor(public readonly did: DID) {
     super();
