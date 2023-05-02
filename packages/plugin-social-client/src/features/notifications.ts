@@ -4,6 +4,7 @@ import {
   SocialNotificationType,
 } from "@cinderlink/plugin-social-core";
 import {
+  SchemaInterface,
   SubLoggerInterface,
   TableInterface,
   TableRow,
@@ -82,11 +83,13 @@ export class SocialNotifications {
   unbindGenerator<Row extends TableRow = TableRow>(
     generator: NotificationGenerator<Row>
   ) {
-    const schema = this.plugin.client.getSchema(generator.schemaId);
-    if (!schema) {
+    if (!this.plugin.client.hasSchema(generator.schemaId)) {
       this.logger.error(`schema not found`, { schemaId: generator.schemaId });
       return;
     }
+    const schema = this.plugin.client.getSchema(
+      generator.schemaId
+    ) as SchemaInterface;
 
     const table = schema.getTable<Row>(generator.tableId);
     if (!table) {

@@ -25,40 +25,25 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
         cid: undefined,
         document: undefined,
       };
-      let resolved = await this.resolveLocal().catch(() => emptyResult);
-      this.client.logger.info("identity", "local identity resolved", {
-        resolved,
+
+      const resolved = { ...emptyResult };
+      const results = await Promise.all([
+        this.resolveLocal().catch(() => emptyResult),
+        this.resolveIPNS().catch(() => emptyResult),
+        this.resolveServer().catch(() => emptyResult),
+      ]);
+      results.forEach((result) => {
+        if (
+          !Object.keys(resolved.document?.schemas || {}).length ||
+          (result?.cid !== undefined &&
+            result.document?.updatedAt &&
+            Number(result.document.updatedAt || 0) >
+              Number(resolved?.document?.updatedAt || 0))
+        ) {
+          resolved.cid = result.cid;
+          resolved.document = result.document;
+        }
       });
-      this.client.logger.info("identity", "resolving ipns identity");
-      const ipns = await this.resolveIPNS().catch(() => emptyResult);
-      this.client.logger.info("identity", "ipns identity resolved", {
-        resolved: ipns,
-      });
-      if (
-        !Object.keys(resolved.document?.schemas || {}).length ||
-        (ipns && !resolved?.document?.updatedAt) ||
-        (ipns.cid &&
-          Number(ipns.document?.updatedAt || 0) >
-            Number(resolved?.document?.updatedAt || 0))
-      ) {
-        this.client.logger.info("identity", "ipns identity newer");
-        resolved = ipns;
-      }
-      this.client.logger.info("identity", "resolving server identity");
-      const server = await this.resolveServer().catch(() => emptyResult);
-      this.client.logger.info("identity", "server identity resolved", {
-        resolved: server,
-      });
-      if (
-        !Object.keys(resolved.document?.schemas || {}).length ||
-        (server?.cid !== undefined &&
-          server.document?.updatedAt &&
-          Number(server.document.updatedAt || 0) >=
-            Number(resolved?.document?.updatedAt || 0))
-      ) {
-        this.client.logger.info("identity", "server identity newest");
-        resolved = server as IdentityResolved;
-      }
       this.cid = resolved?.cid;
       this.document = resolved?.document;
 
@@ -67,11 +52,11 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
         document: this.document,
       });
 
+      this.hasResolved = true;
       this.client.emit("/identity/resolved", {
         cid: this.cid,
         document: this.document,
       });
-      this.hasResolved = true;
       resolve(resolved);
     });
     return this.resolving.then((result) => {
@@ -87,11 +72,11 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
     if (!cid) {
       return { cid: undefined, document: undefined };
     }
-    const document = await this.client.dag.loadDecrypted<IdentityDocument>(
-      CID.parse(cid),
-      undefined,
-      { timeout: 3000 }
-    );
+    const document = await this.client.dag
+      .loadDecrypted<IdentityDocument>(CID.parse(cid), undefined, {
+        timeout: 3000,
+      })
+      .catch(() => undefined);
     return { cid, document };
   }
 
@@ -140,13 +125,12 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
     let document: IdentityDocument | undefined = undefined;
 
     for (const server of servers.filter((s) => !!s.peerId)) {
-      const resolved = await this.client.request<CinderlinkClientEvents>(
-        server.peerId.toString(),
-        {
+      const resolved = await this.client
+        .request<CinderlinkClientEvents>(server.peerId.toString(), {
           topic: "/identity/resolve/request",
           payload: { requestId },
-        }
-      );
+        })
+        .catch(() => undefined);
       if (resolved?.payload.cid) {
         const doc: IdentityDocument | undefined = await this.client.dag
           .loadDecrypted<IdentityDocument>(

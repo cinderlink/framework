@@ -34,7 +34,27 @@ export class SocialUsers {
   }
 
   async start() {
-    await this.loadLocalUser();
+    const onlinePeerDids = this.plugin.client.peers
+      .getPeers()
+      .filter((p) => p.role === "peer" && p.did)
+      .map((p) => p.did as string);
+    await this.plugin
+      .table<SocialUser>("users")
+      .query()
+      .where("did", "!in", onlinePeerDids)
+      .update({ status: "offline" })
+      .execute();
+    await this.plugin
+      .table<SocialUser>("users")
+      .query()
+      .where("did", "in", onlinePeerDids)
+      .update({ status: "online" })
+      .execute();
+
+    this.plugin.client.on("/identity/resolved", async () => {
+      await this.loadLocalUser();
+    });
+
     this.plugin.client.on("/peer/connect", async (peer) => {
       if (peer.role === "server") {
         this.hasServerConnection = true;
@@ -48,6 +68,12 @@ export class SocialUsers {
         this.plugin.client.addressVerification
       ) {
         await this.announce(peer.peerId.toString());
+      }
+    });
+
+    this.plugin.client.on("/peer/authenticated", async (peer) => {
+      if (peer.role === "peer") {
+        await this.setUserStatus(peer.did as string, "online");
       }
     });
 
@@ -90,8 +116,10 @@ export class SocialUsers {
       }
     }
 
-    this.localUser.status === "online";
-    await this.saveLocalUser();
+    if (this.localUser.name) {
+      this.localUser.status === "online";
+      await this.saveLocalUser();
+    }
     await this.announce();
   }
 
@@ -265,6 +293,7 @@ export class SocialUsers {
       status: "online",
     };
     this.logger.info(`local user loaded`, this.localUser);
+    return this.localUser;
   }
 
   async getUserFromServer(did: string): Promise<SocialUser | undefined> {

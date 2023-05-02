@@ -1,5 +1,0 @@
-.turbo/
-dist/
-node_modules/
-/identity-server-server
-/identity-server-client

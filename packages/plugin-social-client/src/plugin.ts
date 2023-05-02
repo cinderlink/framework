@@ -2,6 +2,7 @@ import { SyncDBPlugin } from "@cinderlink/plugin-sync-db";
 import {
   ProtocolEvents,
   ReceiveEventHandlers,
+  SchemaInterface,
   SubLoggerInterface,
   SubscribeEventHandlers,
 } from "@cinderlink/core-types";
@@ -84,23 +85,18 @@ export class SocialClientPlugin<
   }
 
   async start() {
-    if (!this.client.identity.hasResolved) {
-      await this.client.identity.resolve();
-    }
-
-    this.logger.info(`starting social client plugin`);
     await loadSocialSchema(this.client);
     this.logger.info(`loaded social schema`);
-    await this.users.loadLocalUser();
 
-    this.logger.info(`loaded local user`);
     this.logger.info(`initializing features`);
-    await this.notifications.start();
-    await this.chat.start();
-    await this.connections.start();
-    await this.posts.start();
-    await this.profiles.start();
-    await this.users.start();
+    await Promise.allSettled([
+      this.notifications.start(),
+      this.chat.start(),
+      this.connections.start(),
+      this.posts.start(),
+      this.profiles.start(),
+      this.users.start(),
+    ]);
 
     this.started = true;
 
@@ -117,12 +113,11 @@ export class SocialClientPlugin<
   }
 
   get db() {
-    const schema = this.client.getSchema("social");
-    if (!schema) {
+    if (!this.client.hasSchema("social")) {
       this.logger.error(`failed to get schema`);
       throw new Error(`social-client: failed to get schema`);
     }
-    return schema;
+    return this.client.getSchema("social") as SchemaInterface;
   }
 
   table<

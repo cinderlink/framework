@@ -105,8 +105,6 @@ export class SyncDBPlugin<
     this.syncRows = this.schema.getTable<SyncRowsRow>("rows");
     this.syncTables = this.schema.getTable<SyncTablesRow>("tables");
 
-    await this.syncRows.query().where("success", "=", true).delete().execute();
-
     this.client.on("/peer/connect", this.onPeerConnect.bind(this));
     this.started = true;
   }

@@ -365,6 +365,8 @@ export class TableQuery<
       }
     }
 
+    let changedRows: Row[] = [];
+
     // this.logger.debug(`unwinding table blocks`);
     await this.table.unwind(async (event) => {
       await event.block.headers();
@@ -424,14 +426,14 @@ export class TableQuery<
                 );
               });
             if (updated?.uid && this.terminator === "update") {
-              this.table.emit("/record/updated", updated as Row);
+              changedRows.push(updated as Row);
             }
-          } else {
           }
         }
       } else if (this.terminator === "delete") {
         for (const match of matches) {
           event.block.deleteRecord(match.id);
+          changedRows.push(match);
         }
       } else if (this.terminator === "select") {
         const selectInstruction = this.instructions.find(
@@ -458,16 +460,18 @@ export class TableQuery<
       if (returningInstruction) {
         returning = returningInstruction.fields?.length
           ? returning.concat(
-              matches.map((m: Row) => {
-                const updated = event.block.cache?.records?.[m.id];
-                return returningInstruction.fields?.reduce(
-                  (acc, field) => ({
-                    ...acc,
-                    [field]: updated?.[field] || m[field],
-                  }),
-                  {}
-                ) as Row;
-              })
+              (this.terminator === "update" ? changedRows : matches).map(
+                (m: Row) => {
+                  const updated = event.block.cache?.records?.[m.id];
+                  return returningInstruction.fields?.reduce(
+                    (acc, field) => ({
+                      ...acc,
+                      [field]: updated?.[field] || m[field],
+                    }),
+                    {}
+                  ) as Row;
+                }
+              )
             )
           : returning.concat(
               matches.map((m) => event.block.cache?.records?.[m.id] || m)
@@ -549,7 +553,9 @@ export class TableQuery<
       }
       this.table.unlock();
       if (this.terminator === "delete") {
-        this.table.emit("/record/deleted", {} as Row);
+        changedRows.forEach((r) => this.table.emit("/record/deleted", r));
+      } else if (this.terminator === "update") {
+        changedRows.forEach((r) => this.table.emit("/record/updated", r));
       }
     }
 

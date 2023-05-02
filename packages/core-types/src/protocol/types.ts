@@ -96,7 +96,7 @@ export type ProtocolMessage<
   peer?: Peer;
 };
 
-export interface ProtocolKeepAlive extends ProtocolRequest {
+export interface ProtocolKeepAlive {
   timestamp: number;
 }
 

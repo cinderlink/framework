@@ -4,6 +4,7 @@ import { Peer } from "./types";
 export interface PeerStoreInterface {
   peers: Record<string, Peer>;
   peerIds: Record<string, string>;
+  localPeerId: string;
   addPeer(peerId: PeerId, role: "server" | "peer"): Peer;
   hasPeer(peerId: string): boolean;
   hasServer(peerId: string): boolean;

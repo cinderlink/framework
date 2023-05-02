@@ -73,7 +73,7 @@ export class CinderlinkProtocolPlugin<
         maxOutboundStreams: 128,
       }
     );
-    this.keepaliveInterval = setInterval(this.keepAliveCheck.bind(this), 1000);
+    this.keepaliveInterval = setInterval(this.keepAliveCheck.bind(this), 5000);
   }
 
   async stop() {}
@@ -112,17 +112,29 @@ export class CinderlinkProtocolPlugin<
           });
         }
       }
-    );
+    ).catch((error: Error) => {
+      self.logger.error(`error handling protocol message`, {
+        message: error.message,
+        trace: error.stack,
+      });
+    });
   }
 
   async keepAliveCheck() {
     const now = Date.now();
     for (const peer of this.client.peers.getAllPeers()) {
-      if (peer.seenAt && now - peer.seenAt > 10000) {
+      if (!peer.seenAt || now - peer.seenAt > 10000) {
         this.logger.info(`peer ${readablePeer(peer)} timed out`);
         this.client.ipfs.swarm.disconnect(peer.peerId);
         this.client.emit("/peer/disconnect", peer);
         this.client.peers.removePeer(peer.peerId.toString());
+      } else {
+        await this.client.send(peer.peerId.toString(), {
+          topic: "/cinderlink/keepalive",
+          payload: {
+            timestamp: Date.now(),
+          },
+        } as OutgoingP2PMessage<ProtocolEvents, "/cinderlink/keepalive">);
       }
     }
   }
@@ -134,7 +146,9 @@ export class CinderlinkProtocolPlugin<
       EncodingOptions
     >
   ) {
-    message.peer.seenAt = Date.now();
+    this.client.peers.updatePeer(message.peer.peerId.toString(), {
+      seenAt: Date.now(),
+    });
   }
 
   async onPeerConnect(peer: Peer) {
@@ -204,6 +218,7 @@ export class CinderlinkProtocolPlugin<
 
     if (!peer.did && decoded.sender) {
       peer.did = decoded.sender;
+      this.client.emit("/peer/authenticated", peer);
     }
 
     const event: DecodedProtocolMessage<Events, "receive", Topic, Encoding> = {

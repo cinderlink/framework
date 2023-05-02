@@ -61,7 +61,7 @@ export class CinderlinkClient<
     cinderlink?: CinderlinkProtocolPlugin;
   };
   public pluginEvents: Emittery<PluginEvents["emit"]> = new Emittery();
-  public peers: PeerStoreInterface = new Peerstore();
+  public peers: PeerStoreInterface;
   public subscriptions: string[] = [];
 
   public pubsub: Emittery<
@@ -81,7 +81,7 @@ export class CinderlinkClient<
   public identity: Identity<PluginEvents>;
   public relayAddresses: string[] = [];
   public role: PeerRole;
-  public initialConnectTimeout: number = 10000;
+  public initialConnectTimeout: number = 3000;
   public nodeAddresses: string[] = [];
   public logger: LoggerInterface;
   public nodeReconnectTimer: NodeJS.Timer | undefined = undefined;
@@ -105,6 +105,7 @@ export class CinderlinkClient<
     this.dag = new ClientDIDDag<PluginEvents>(this);
     this.identity = new Identity<PluginEvents>(this);
     this.files = new Files<PluginEvents>(this);
+    this.peers = new Peerstore("");
   }
 
   async addPlugin<Plugin extends PluginBaseInterface>(plugin: Plugin) {
@@ -158,6 +159,7 @@ export class CinderlinkClient<
 
     const info = await this.ipfs.id();
     this.peerId = info.id;
+    this.peers.localPeerId = info.id.toString();
 
     this.logger.info("ipfs", "starting ipfs");
     await this.ipfs.start();
@@ -185,12 +187,46 @@ export class CinderlinkClient<
     this.ipfs.libp2p.addEventListener("peer:disconnect", (connection) => {
       const peerId = connection.detail.remotePeer.toString();
       const peer = this.peers.getPeer(peerId);
-      this.logger.info("p2p", "peer disconnected", { peerId, peer });
-      return this.onPeerDisconnect(peer);
+      if (peer) {
+        this.logger.info("p2p", "peer disconnected", { peerId, peer });
+        return this.onPeerDisconnect(peer);
+      }
+
+      return;
     });
 
     this.ipfs.libp2p.pubsub.addEventListener("subscription-change", (event) => {
       this.logger.debug("pubsub", "subscription change", { event });
+    });
+
+    this.on("/server/connect", () => {
+      this.hasServerConnection = true;
+    });
+
+    this.on("/identity/resolved", async () => {
+      this.hasServerConnection = this.peers.getServerCount() > 0;
+      this.logger.info("plugins", "loading plugins", {
+        plugins: Object.keys(this.plugins),
+      });
+      await Promise.all(
+        Object.values(this.plugins).map(async (plugin) => {
+          if (plugin.id === protocol.id) return;
+          await this.startPlugin(plugin.id);
+        })
+      );
+
+      this.logger.info("p2p", "sending /peer/connect pubsub");
+      await this.publish<CinderlinkClientEvents, "/peer/connect">(
+        "/peer/connect",
+        {
+          did: this.id,
+          peerId: this.peerId?.toString() as string,
+        }
+      );
+
+      this.logger.info("client", "ready");
+      this.running = true;
+      this.emit("/client/ready", {});
     });
 
     const protocol = new CinderlinkProtocolPlugin(this as any);
@@ -221,29 +257,6 @@ export class CinderlinkClient<
       }
     });
 
-    this.logger.info("plugins", "loading plugins", {
-      plugins: Object.keys(this.plugins),
-    });
-    await Promise.all(
-      Object.values(this.plugins).map(async (plugin) => {
-        if (plugin.id === protocol.id) return;
-        await this.startPlugin(plugin.id);
-      })
-    );
-
-    this.logger.info("p2p", "sending /peer/connect pubsub");
-    await this.publish<CinderlinkClientEvents, "/peer/connect">(
-      "/peer/connect",
-      {
-        did: this.id,
-        peerId: this.peerId.toString(),
-      }
-    );
-
-    this.logger.info("client", "ready");
-    this.running = true;
-    this.emit("/client/ready", {});
-
     setTimeout(() => {
       this.ipfs.repo.gc();
     }, 3000);
@@ -253,6 +266,7 @@ export class CinderlinkClient<
     this.logger.info("p2p", `peer connected ${this.peerReadable(peer)}`, {
       peer,
     });
+    this.hasServerConnection = this.peers.getServerCount() > 0;
     this.emit("/peer/connect", peer);
     this.peers.updatePeer(peer.peerId.toString(), {
       connected: true,
@@ -362,7 +376,7 @@ export class CinderlinkClient<
       await new Promise((resolve) => {
         const timeout = setTimeout(() => {
           this.logger.warn("p2p", "timed out waiting for server");
-          this.p2p.off("/peer/connected", onPeerConnect.bind(this));
+          this.off("/server/connect", onPeerConnect.bind(this));
           resolve(false);
         }, this.initialConnectTimeout);
         const onPeerConnect = (message: any) => {
@@ -374,7 +388,7 @@ export class CinderlinkClient<
             resolve(true);
           }
         };
-        this.p2p.on("/peer/connected", onPeerConnect.bind(this));
+        this.on("/server/connect", onPeerConnect.bind(this));
       });
     }
     this.logger.debug("identity", "resolving root document");
@@ -443,6 +457,9 @@ export class CinderlinkClient<
     } else {
       peer = this.peers.getPeer(peerId.toString());
     }
+    if (peer.peerId.toString() === this.ipfs.libp2p.peerId.toString()) {
+      return;
+    }
     if (peer.connected) {
       return;
     }
@@ -462,6 +479,15 @@ export class CinderlinkClient<
       ]);
     }
     await this.ipfs.swarm.connect(peer.peerId);
+    await this.send<ProtocolEvents, "/cinderlink/keepalive">(
+      peer.peerId.toString(),
+      {
+        topic: "/cinderlink/keepalive",
+        payload: {
+          timestamp: Date.now(),
+        },
+      } as any
+    );
   }
 
   async onPubsubMessage<Encoding extends EncodingOptions = EncodingOptions>(
@@ -475,7 +501,7 @@ export class CinderlinkClient<
       >
     >;
     const peerId = message.detail.from;
-    if (peerId === this.ipfs.libp2p.peerId) {
+    if (peerId.toString() === this.peerId?.toString()) {
       return;
     }
 
@@ -507,6 +533,7 @@ export class CinderlinkClient<
 
     if (!peer.did) {
       peer.did = decoded.sender;
+      this.emit("/peer/authenticated", peer);
     }
 
     const incoming: IncomingPubsubMessage<
@@ -523,6 +550,7 @@ export class CinderlinkClient<
       const sender = await this.did.resolve(decoded.sender);
       if (sender) {
         peer.did = decoded.sender;
+        this.emit("/peer/authenticated", peer);
       }
     }
 
@@ -546,6 +574,7 @@ export class CinderlinkClient<
     } as Encoding,
     offline = false
   ) {
+    if (peerId === this.peerId?.toString()) return;
     if (!options.sign && !options.encrypt) {
       this.logger.error("p2p", "message must be signed or encrypted", {
         peerId,
@@ -593,12 +622,29 @@ export class CinderlinkClient<
       return;
     }
 
-    const stream = await this.ipfs.libp2p.dialProtocol(
-      peer.peerId,
-      "/cinderlink/1.0.0"
-    );
+    const stream = await this.ipfs.libp2p
+      .dialProtocol(peer.peerId, "/cinderlink/1.0.0")
+      .catch(() => {
+        this.logger.error("p2p", "error dialing protocol", {
+          peerId,
+          message,
+        });
+        return undefined;
+      });
 
-    pipe([json.encode({ ...message, ...encoded })], lp.encode, stream.sink);
+    if (!stream) return;
+
+    pipe(
+      [json.encode({ ...message, ...encoded })],
+      lp.encode,
+      stream.sink
+    ).catch((error: Error) => {
+      this.logger.error("p2p", "error sending message", {
+        peerId,
+        message,
+        error,
+      });
+    });
   }
 
   peerReadable(peer: Peer) {
@@ -704,11 +750,20 @@ export class CinderlinkClient<
   >(
     peerId: string,
     message: OutgoingP2PMessage<Events, OutTopic, Encoding>,
-    options: Encoding = { sign: false, encrypt: false } as Encoding
+    options: Encoding = { sign: true, encrypt: false } as Encoding
   ): Promise<IncomingP2PMessage<Events, InTopic, Encoding> | undefined> {
     const peer = this.peers.getPeer(peerId);
     if (!peer) {
       throw new Error(`peer does not exist: ${peerId}`);
+    }
+
+    if (!options.sign && !options.encrypt) {
+      this.logger.error("p2p", "request must be signed or encrypted", {
+        peerId,
+        message,
+        options,
+      });
+      throw new Error("P2P request must be signed or encrypted");
     }
 
     const requestId = (message.payload as ProtocolRequest)?.requestId || uuid();

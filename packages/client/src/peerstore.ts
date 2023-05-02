@@ -5,7 +5,12 @@ export class Peerstore implements PeerStoreInterface {
   peers: Record<string, Peer> = {};
   peerIds: Record<string, string> = {};
 
+  constructor(public localPeerId: string) {}
+
   addPeer(peerId: PeerId, role: "server" | "peer" = "peer", did?: string) {
+    if (peerId.toString() === this.localPeerId) {
+      throw new Error("cannot add self as peer");
+    }
     if (this.peers[peerId.toString()]) {
       throw new Error("peer already exists");
     }
@@ -21,6 +26,7 @@ export class Peerstore implements PeerStoreInterface {
       subscriptions: [],
       metadata: {},
       connected: false,
+      seenAt: Date.now(),
     };
     return this.peers[peerId.toString()];
   }
