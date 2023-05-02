@@ -5,7 +5,6 @@ import type {
   OutgoingP2PMessage,
   Peer,
   PluginEventDef,
-  PluginEventHandlers,
   PluginInterface,
   ProtocolEvents,
   ProtocolMessage,
