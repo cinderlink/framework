@@ -205,7 +205,7 @@ export class CinderlinkClient<
       this.hasServerConnection = true;
     });
 
-    this.on("/identity/resolved", async () => {
+    this.on("/client/loaded", async () => {
       this.hasServerConnection = this.peers.getServerCount() > 0;
       this.logger.info("plugins", "loading plugins", {
         plugins: Object.keys(this.plugins),
@@ -311,17 +311,30 @@ export class CinderlinkClient<
           await this.ipfs.libp2p.peerStore.delete(peerId);
           const connected = await this.ipfs.swarm
             .connect(multiaddr(addr))
-            .catch(() => false);
+            .catch((err) => {
+              this.logger.error(
+                "p2p",
+                `error connecting to peer: ${err.message}`,
+                {
+                  peerId: peerIdStr,
+                  error: err.message,
+                  stack: err.stack,
+                }
+              );
+              return false;
+            });
           if (connected !== false) {
             await this.connect(peerId, "server").catch((err: Error) => {
               this.logger.error("p2p", "peer could not be dialed", {
                 peerId: peerIdStr,
-                err,
+                error: err.message,
+                stack: err.stack,
               });
             });
           } else {
             this.logger.error("p2p", "peer could not be dialed", {
               peerId: peerIdStr,
+              localPeerId: this.ipfs.libp2p.peerId.toString(),
             });
           }
         }
@@ -381,6 +394,7 @@ export class CinderlinkClient<
   }
 
   async load() {
+    this.logger.info("client", "loading client");
     if (!this.hasServerConnection && this.role !== "server") {
       this.logger.info("p2p", "waiting for server connection", {
         timeout: this.initialConnectTimeout,
@@ -460,6 +474,7 @@ export class CinderlinkClient<
         })
       );
     }
+    this.emit("/client/loaded", true);
   }
 
   async connect(peerId: PeerId, role: PeerRole = "peer") {
@@ -477,9 +492,13 @@ export class CinderlinkClient<
     }
     const addr = await this.ipfs.libp2p.peerStore.addressBook.get(peer.peerId);
     if (addr[0]) {
-      this.logger.debug("p2p", `connect - connecting to peer: ${peer.peerId}`, {
-        addr: addr[0].multiaddr.toString(),
-      });
+      this.logger.debug(
+        "p2p",
+        `connect - connecting to ${role}: ${peer.peerId}`,
+        {
+          addr: addr[0].multiaddr.toString(),
+        }
+      );
     } else {
       const relayAddr = `${this.relayAddresses[0]}/p2p-circuit/p2p/${peer.peerId}`;
       this.logger.debug(
@@ -490,16 +509,20 @@ export class CinderlinkClient<
         multiaddr(relayAddr),
       ]);
     }
-    await this.ipfs.swarm.connect(peer.peerId);
-    await this.send<ProtocolEvents, "/cinderlink/keepalive">(
-      peer.peerId.toString(),
-      {
-        topic: "/cinderlink/keepalive",
-        payload: {
-          timestamp: Date.now(),
-        },
-      } as any
-    );
+    const connected = await this.ipfs.swarm
+      .connect(peer.peerId)
+      .catch(() => undefined);
+    if (connected) {
+      await this.send<ProtocolEvents, "/cinderlink/keepalive">(
+        peer.peerId.toString(),
+        {
+          topic: "/cinderlink/keepalive",
+          payload: {
+            timestamp: Date.now(),
+          },
+        } as any
+      );
+    }
   }
 
   async onPubsubMessage<Encoding extends EncodingOptions = EncodingOptions>(
@@ -640,10 +663,11 @@ export class CinderlinkClient<
 
     const stream = await this.ipfs.libp2p
       ?.dialProtocol(peer.peerId, "/cinderlink/1.0.0")
-      .catch(() => {
-        this.logger.error("p2p", "error dialing protocol", {
+      .catch((err: Error) => {
+        this.logger.error("p2p", `error dialing protocol: ${err.message}`, {
           peerId,
           message,
+          stack: err.stack,
         });
         return undefined;
       });

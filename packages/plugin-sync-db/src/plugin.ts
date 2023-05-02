@@ -965,7 +965,7 @@ export class SyncDBPlugin<
       })
       .execute();
 
-    this.logger.info(`updated sync times for peer`, {
+    this.logger.debug(`updated sync times for peer`, {
       peerId: message.peer.peerId,
       did: message.peer.did,
       since,

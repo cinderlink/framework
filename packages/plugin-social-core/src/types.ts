@@ -96,6 +96,7 @@ export type SocialNotification = TableRow & {
   read?: boolean;
   link?: string;
   metaData?: Record<string, unknown>;
+  browser?: NotificationOptions;
 };
 
 export interface SocialClientPluginEvents {

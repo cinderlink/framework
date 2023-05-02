@@ -45,6 +45,7 @@ export interface CinderlinkClientEvents<
   };
   emit: {
     "/client/ready": ProtocolRequest;
+    "/client/loaded": boolean;
     "/peer/connect": Peer;
     "/server/connect": Peer;
     "/peer/disconnect": Peer;

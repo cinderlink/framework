@@ -16,9 +16,14 @@ export class SocialChat {
     this.plugin.notifications.addGenerator({
       id: "social/chatMessage",
       schemaId: "social",
-      tableId: "chatMessages",
+      tableId: "chat_messages",
       enabled: true,
       async insert(this: SocialNotifications, message: SocialChatMessage) {
+        console.info(
+          "chat message insert notification",
+          message,
+          this.plugin.client?.id
+        );
         if (message?.from === this.plugin.client?.id) return;
 
         const user = await this.plugin.users.getUserByDID(message.from);
@@ -41,6 +46,9 @@ ${message.message}
             body,
             link: `/conversations/${message.from}`,
             metaData: { did: message.from },
+            browser: {
+              body,
+            },
           };
         }
 

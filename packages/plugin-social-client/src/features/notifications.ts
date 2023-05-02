@@ -58,24 +58,28 @@ export class SocialNotifications {
       return;
     }
 
+    this.logger.info(
+      `creating table bind gen: ${generator.schemaId}.${generator.tableId}`
+    );
+
     if (generator.insert) {
       table.on(
         "/record/inserted",
-        this.handleGeneratorListener<Row>(generator.insert)
+        this.handleGeneratorListener<Row>(generator.insert).bind(this)
       );
     }
 
     if (generator.update) {
       table.on(
         "/record/updated",
-        this.handleGeneratorListener<Row>(generator.update)
+        this.handleGeneratorListener<Row>(generator.update).bind(this)
       );
     }
 
     if (generator.delete) {
       table.on(
         "/record/deleted",
-        this.handleGeneratorListener<Row>(generator.delete)
+        this.handleGeneratorListener<Row>(generator.delete).bind(this)
       );
     }
   }
@@ -103,21 +107,21 @@ export class SocialNotifications {
     if (generator.insert) {
       table.off(
         "/record/inserted",
-        this.handleGeneratorListener<Row>(generator.insert)
+        this.handleGeneratorListener<Row>(generator.insert).bind(this)
       );
     }
 
     if (generator.update) {
       table.off(
         "/record/updated",
-        this.handleGeneratorListener<Row>(generator.update)
+        this.handleGeneratorListener<Row>(generator.update).bind(this)
       );
     }
 
     if (generator.delete) {
       table.off(
         "/record/deleted",
-        this.handleGeneratorListener<Row>(generator.delete)
+        this.handleGeneratorListener<Row>(generator.delete).bind(this)
       );
     }
   }
@@ -126,14 +130,20 @@ export class SocialNotifications {
     fn: NotificationGeneratorFn<Row>
   ) {
     return async (record: Row): Promise<void> => {
-      try {
-        const notification = await fn(record);
-        if (!notification) return;
+      this.logger.info(`handling generator listener`, { record, fn });
+      const notification = await fn.call(this, record).catch((err: Error) => {
+        this.logger.error(
+          `error encountered in notifications generator listener: ${err.message}`,
+          {
+            record,
+            fn,
+            stack: err.stack,
+          }
+        );
+      });
+      if (!notification) return;
 
-        await this.create(notification);
-      } catch (err) {
-        // handle error
-      }
+      await this.create(notification, notification.browser);
     };
   }
 
@@ -180,18 +190,23 @@ export class SocialNotifications {
 
   askForBrowserPermission() {
     if (!("Notification" in window)) {
+      this.logger.warn("browser notification not available");
       return;
     }
     if (Notification.permission === "granted") {
+      this.logger.warn("browser notification permissions already granted");
       return;
     }
     if (Notification.permission !== "denied") {
-      Notification.requestPermission().then((permission) => {
+      this.logger.warn("requesting browser notification permissions");
+      return Notification.requestPermission().then((permission) => {
         if (permission === "granted") {
-          this.logger.info(`browser permissions granted`);
+          this.logger.info(`browser notification permissions granted`);
         }
       });
     }
+    this.logger.warn("browser notification permission denied");
+    return;
   }
 
   showBrowserNotification(
@@ -210,6 +225,8 @@ export class SocialNotifications {
         this.plugin.emit("/notification/clicked", { notification, options });
         browserNotification.close();
       };
+    } else {
+      console.warn("cannot create notification, permissions not granted");
     }
   }
 

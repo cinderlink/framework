@@ -18,6 +18,7 @@ import {
   SubLoggerInterface,
 } from "../../core-types";
 import * as ethers from "ethers";
+import Emittery from "emittery";
 
 const response = vi.fn();
 interface TestClientEvents extends PluginEventDef {

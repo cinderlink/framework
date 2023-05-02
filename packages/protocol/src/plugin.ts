@@ -130,23 +130,15 @@ export class CinderlinkProtocolPlugin<
     const now = Date.now();
     for (const peer of this.client.peers.getAllPeers()) {
       if (peer.connected) {
-        console.info(
-          "peer keepalive check",
-          peer.seenAt,
-          now - Number(peer?.seenAt || 0),
-          this.client.keepAliveTimeout
-        );
         if (
           !peer.seenAt ||
           now - peer.seenAt >= (this.client.keepAliveTimeout || 10000)
         ) {
           this.logger.info(`peer ${readablePeer(peer)} timed out`);
-          console.info("Timing this bitch out!!", this.client.pluginEvents);
           await this.client.pluginEvents.emit(
             "/cinderlink/keepalive/timeout",
             peer as any
           );
-          console.info("Timed this bitch out!!");
           try {
             this.client.ipfs.swarm.disconnect(peer.peerId);
             this.client.emit("/peer/disconnect", peer);

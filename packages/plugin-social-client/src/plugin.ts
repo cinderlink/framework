@@ -90,18 +90,13 @@ export class SocialClientPlugin<
 
     this.logger.info(`initializing features`);
     await this.notifications.start();
-    await Promise.allSettled([
+    await Promise.all([
       this.chat.start(),
       this.connections.start(),
       this.posts.start(),
       this.profiles.start(),
       this.users.start(),
     ]);
-
-    this.started = true;
-
-    this.logger.info(`plugin is ready`);
-    this.emit("ready", undefined);
 
     this.logger.info(`registering sync config`);
     const syncDb: SyncDBPlugin = this.client.getPlugin("sync");
@@ -110,6 +105,11 @@ export class SocialClientPlugin<
         syncDb.addTableSync("social", table, config);
       });
     }
+
+    this.started = true;
+
+    this.logger.info(`plugin is ready`);
+    this.emit("ready", undefined);
   }
 
   get db() {
