@@ -48,10 +48,6 @@ export class OfflineSyncClientPlugin<
 
   pubsub: SubscribeEventHandlers<OfflineSyncClientEvents & ProtocolEvents> = {};
 
-  pluginEvents: PluginEventHandlers<ProtocolEvents["emit"]> = {
-    "/cinderlink/handshake/success": this.onPeerConnect,
-  };
-
   logger: SubLoggerInterface;
 
   constructor(
@@ -70,14 +66,16 @@ export class OfflineSyncClientPlugin<
     await loadOfflineSyncSchema(this.client);
     this.logger.info(`loaded offline-sync-client schema`);
 
+    this.client.on("/peer/authenticated", this.onPeerConnect.bind(this));
+
     this.started = true;
     this.logger.info(`plugin is ready`);
-
     this.emit("ready", {});
   }
 
   async stop() {
     this.logger.info(`stopping plugin`);
+    this.client.off("/peer/authenticated", this.onPeerConnect.bind(this));
   }
 
   async sendMessage<

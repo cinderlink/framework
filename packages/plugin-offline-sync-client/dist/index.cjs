@@ -58,20 +58,19 @@ var OfflineSyncClientPlugin = class extends import_emittery.default {
     "/offline/get/confirmation": this.onGetConfirmation
   };
   pubsub = {};
-  pluginEvents = {
-    "/cinderlink/handshake/success": this.onPeerConnect
-  };
   logger;
   async start() {
     this.logger.info(`starting offline sync client plugin`);
     await (0, import_plugin_offline_sync_core.loadOfflineSyncSchema)(this.client);
     this.logger.info(`loaded offline-sync-client schema`);
+    this.client.on("/peer/authenticated", this.onPeerConnect.bind(this));
     this.started = true;
     this.logger.info(`plugin is ready`);
     this.emit("ready", {});
   }
   async stop() {
     this.logger.info(`stopping plugin`);
+    this.client.off("/peer/authenticated", this.onPeerConnect.bind(this));
   }
   async sendMessage(recipient, outgoing) {
     const requestId = (0, import_uuid.v4)();
