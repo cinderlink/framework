@@ -44,8 +44,9 @@ export class CinderlinkProtocolPlugin<
 {
   id = "cinderlink";
   logger: SubLoggerInterface;
+  keepAliveHandler: NodeJS.Timeout | undefined;
+  respondToKeepAlive = true;
   started = false;
-  keepaliveInterval: NodeJS.Timeout | undefined;
 
   constructor(
     public client: CinderlinkClientInterface<ProtocolEvents & PeerEvents>
@@ -65,7 +66,7 @@ export class CinderlinkProtocolPlugin<
 
   async start() {
     this.logger.info(`registering protocol /cinderlink/1.0.0`);
-    await this.client.ipfs.libp2p.handle(
+    this.client.ipfs.libp2p.handle(
       "/cinderlink/1.0.0",
       this.handleProtocol.bind(this) as any,
       {
@@ -73,10 +74,15 @@ export class CinderlinkProtocolPlugin<
         maxOutboundStreams: 128,
       }
     );
-    this.keepaliveInterval = setInterval(this.keepAliveCheck.bind(this), 5000);
+    this.keepAliveHandler = setInterval(
+      this.keepAliveCheck.bind(this),
+      this.client.keepAliveInterval
+    );
   }
 
-  async stop() {}
+  async stop() {
+    clearInterval(this.keepAliveHandler);
+  }
 
   async handleProtocol({
     stream,
@@ -124,8 +130,23 @@ export class CinderlinkProtocolPlugin<
     const now = Date.now();
     for (const peer of this.client.peers.getAllPeers()) {
       if (peer.connected) {
-        if (!peer.seenAt || now - peer.seenAt > 10000) {
+        console.info(
+          "peer keepalive check",
+          peer.seenAt,
+          now - Number(peer?.seenAt || 0),
+          this.client.keepAliveTimeout
+        );
+        if (
+          !peer.seenAt ||
+          now - peer.seenAt >= (this.client.keepAliveTimeout || 10000)
+        ) {
           this.logger.info(`peer ${readablePeer(peer)} timed out`);
+          console.info("Timing this bitch out!!", this.client.pluginEvents);
+          await this.client.pluginEvents.emit(
+            "/cinderlink/keepalive/timeout",
+            peer as any
+          );
+          console.info("Timed this bitch out!!");
           try {
             this.client.ipfs.swarm.disconnect(peer.peerId);
             this.client.emit("/peer/disconnect", peer);
@@ -150,6 +171,7 @@ export class CinderlinkProtocolPlugin<
       EncodingOptions
     >
   ) {
+    if (!this.respondToKeepAlive) return;
     this.client.peers.updatePeer(message.peer.peerId.toString(), {
       seenAt: Date.now(),
     });
@@ -216,6 +238,10 @@ export class CinderlinkProtocolPlugin<
       EncodedProtocolPayload<Events["receive"][Topic], Encoding>
     >(encoded, this.client.did);
     if (!decoded) {
+      this.logger.error("failed to decode message (no data)", {
+        encoded,
+        decoded,
+      });
       throw new Error("failed to decode message (no data)");
       return;
     }
@@ -231,7 +257,16 @@ export class CinderlinkProtocolPlugin<
       ...decoded,
     } as DecodedProtocolMessage<Events, "receive", Topic, Encoding>;
 
-    if ((event.payload as any)?.requestId) {
+    this.logger.info(
+      `received protocol message on topic ${event.topic as string} from ${
+        peer.did
+      }`,
+      event
+    );
+    if (event.payload?.requestId) {
+      this.logger.info(
+        `received request message from ${peer.did}: ${event.payload.requestId}`
+      );
       this.client.emit(
         `/cinderlink/request/${(event.payload as any).requestId}`,
         event as any

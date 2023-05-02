@@ -5,9 +5,12 @@ import {
   createSeed,
   signAddressVerification,
 } from "../../identifiers";
+import { IdentityServerPlugin } from "../../plugin-identity-server";
 import { createClient } from "../../client";
+import { ServerLogger } from "../../server";
 import * as ethers from "ethers";
 import { CinderlinkClientInterface, ProtocolEvents } from "../../core-types";
+import CinderlinkProtocolPlugin from "./plugin";
 
 describe("handleProtocol", () => {
   let client: CinderlinkClientInterface<ProtocolEvents>;
@@ -26,6 +29,7 @@ describe("handleProtocol", () => {
       did: clientDID,
       address: clientWallet.address as `0x${string}`,
       addressVerification: clientAV,
+      logger: new ServerLogger(),
       role: "peer",
       options: {
         repo: "test-protocol-client",
@@ -44,6 +48,7 @@ describe("handleProtocol", () => {
       did: serverDID,
       address: serverWallet.address as `0x${string}`,
       addressVerification: serverAV,
+      logger: new ServerLogger(),
       role: "server",
       options: {
         repo: "test-protocol-server",
@@ -57,32 +62,36 @@ describe("handleProtocol", () => {
         },
       },
     });
-    vi.useFakeTimers();
+    const identity = new IdentityServerPlugin(server as any);
+    server.addPlugin(identity);
+    server.initialConnectTimeout = 0;
 
     await Promise.all([server.start([]), server.once("/client/ready")]);
     const serverPeer = await server.ipfs.id();
-    console.info("server ready");
-    await vi.runOnlyPendingTimersAsync();
 
+    client.keepAliveInterval = 100;
+    client.keepAliveTimeout = 500;
     client.initialConnectTimeout = 0;
     await Promise.all([
       client.start([serverPeer.addresses[0].toString()]),
       client.once("/server/connect"),
-      vi.runOnlyPendingTimersAsync(),
     ]);
-    console.info("server connected");
+
+    server.getPlugin<CinderlinkProtocolPlugin>(
+      "cinderlink"
+    ).respondToKeepAlive = false;
     // await client.addPlugin(new ProtocolPlugin(client));
     // await server.addPlugin(new ProtocolPlugin(server));
   });
 
   it("should timeout peers after 10 seconds of inactivity", async () => {
-    vi.advanceTimersByTime(10000);
-    expect(client.peers.getServerCount()).toBe(0);
-    expect(server.peers.peerCount()).toBe(0);
-  }, 11000);
+    const spy = vi.fn();
+    client.pluginEvents.on("/cinderlink/keepalive/timeout", spy);
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    expect(spy).toHaveBeenCalled();
+  });
 
   afterEach(async () => {
-    vi.useRealTimers();
     await server.stop();
     await client.stop();
     await rmSync("./test-protocol-client", { recursive: true, force: true });

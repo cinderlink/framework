@@ -54,6 +54,8 @@ export interface CinderlinkClientInterface<
   schemas: Record<string, SchemaInterface>;
   identity: IdentityInterface;
   initialConnectTimeout: number;
+  keepAliveTimeout: number;
+  keepAliveInterval: number;
 
   get id(): string;
 

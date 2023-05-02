@@ -1,6 +1,7 @@
 import { rmSync } from "fs";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { createClient } from "./create";
+import { IdentityServerPlugin } from "../../plugin-identity-server";
 import {
   createSeed,
   createDID,
@@ -139,14 +140,15 @@ describe("CinderlinkClient", () => {
       },
     });
     server.initialConnectTimeout = 0;
+    server.addPlugin(new IdentityServerPlugin(server));
     server.addPlugin(new TestServerPlugin(server));
 
-    await Promise.all([server.start([]), client.start([])]);
-
+    await Promise.all([server.start([]), server.once("/client/ready")]);
     const serverPeer = await server.ipfs.id();
     await Promise.all([
-      client.connect(serverPeer.id),
-      await client.once("/server/connect"),
+      client.start([`/ip4/127.0.0.1/tcp/7357/ws/p2p/${serverPeer.id}`]),
+      client.once("/client/ready"),
+      client.once("/server/connect"),
     ]);
   });
 

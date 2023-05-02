@@ -89,8 +89,8 @@ export class SocialClientPlugin<
     this.logger.info(`loaded social schema`);
 
     this.logger.info(`initializing features`);
+    await this.notifications.start();
     await Promise.allSettled([
-      this.notifications.start(),
       this.chat.start(),
       this.connections.start(),
       this.posts.start(),

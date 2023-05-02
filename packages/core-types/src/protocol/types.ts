@@ -128,7 +128,7 @@ export interface ProtocolEvents<
     "/cinderlink/peer/disconnect": Peer;
   };
   emit: {
-    "/cinderlink/handshake/success": Peer;
+    "/cinderlink/keepalive/timeout": Peer;
   } & {
     [key in `/cinderlink/request/${string}`]:
       | DecodedProtocolMessage<PluginEvents>

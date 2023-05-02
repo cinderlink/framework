@@ -105,7 +105,7 @@ export class SyncDBPlugin<
     this.syncRows = this.schema.getTable<SyncRowsRow>("rows");
     this.syncTables = this.schema.getTable<SyncTablesRow>("tables");
 
-    this.client.on("/peer/connect", this.onPeerConnect.bind(this));
+    this.client.on("/peer/authenticated", this.onPeerConnect.bind(this));
     this.started = true;
   }
 
@@ -114,7 +114,7 @@ export class SyncDBPlugin<
     this.logger.info(`stopping`);
     Object.values(this.timers).forEach((timer) => clearInterval(timer));
     this.timers = {};
-    this.client.off("/peer/connect", this.onPeerConnect.bind(this));
+    this.client.off("/peer/authenticated", this.onPeerConnect.bind(this));
   }
 
   /**

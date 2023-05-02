@@ -82,6 +82,8 @@ export class CinderlinkClient<
   public relayAddresses: string[] = [];
   public role: PeerRole;
   public initialConnectTimeout: number = 3000;
+  public keepAliveTimeout: number = 10000;
+  public keepAliveInterval: number = 5000;
   public nodeAddresses: string[] = [];
   public logger: LoggerInterface;
   public nodeReconnectTimer: NodeJS.Timer | undefined = undefined;
@@ -236,7 +238,10 @@ export class CinderlinkClient<
 
     this.logger.debug("identity", "loading identity (client)");
     await this.load();
-    this.nodeReconnectTimer = setInterval(this.connectToNodes.bind(this), 5000);
+    this.nodeReconnectTimer = setInterval(
+      this.connectToNodes.bind(this),
+      this.keepAliveInterval
+    );
 
     await Promise.all([
       this.subscribe("/peer/connect"),
@@ -263,16 +268,22 @@ export class CinderlinkClient<
   }
 
   async onPeerConnect(peer: Peer) {
-    if (!peer.did) return;
     this.logger.info("p2p", `peer connected ${this.peerReadable(peer)}`, {
       peer,
     });
     this.hasServerConnection = this.peers.getServerCount() > 0;
+
+    // TODO: should we not emit this for servers?
     this.emit("/peer/connect", peer);
+
+    if (peer.role === "server") {
+      this.emit("/server/connect", peer);
+    }
     this.peers.updatePeer(peer.peerId.toString(), {
       connected: true,
     });
   }
+
   async onPeerDisconnect(peer: Peer) {
     this.logger.info("p2p", `peer disconnected ${this.peerReadable(peer)}`, {
       peer,
