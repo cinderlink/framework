@@ -2,6 +2,7 @@ import {
   SocialClientEvents,
   SocialConnection,
   SocialConnectionFilter,
+  SocialNotificationType,
 } from "@cinderlink/plugin-social-core";
 import SocialClientPlugin from "../plugin";
 import {
@@ -26,16 +27,24 @@ export class SocialConnections {
         if (connection.from === this.plugin.client.id) return;
 
         if (connection && connection.follow) {
+          const type: SocialNotificationType = "connection/follow/received";
           const user = await this.plugin.users.getUserByDID(connection.from);
           const title = "New Follower";
           const body = `${user?.name} is now following you.`;
-          return {
-            title,
-            body,
-            sourceUid: connection.uid,
-            type: "connections/follow",
-            link: "/connections/followers",
-          };
+
+          const existingNotification = await this.getBySourceAndType(
+            connection.uid,
+            type
+          );
+          if (!existingNotification) {
+            return {
+              title,
+              body,
+              sourceUid: connection.uid,
+              type,
+              link: "/connections/followers",
+            };
+          }
         }
         return undefined;
       },

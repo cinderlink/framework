@@ -81,10 +81,10 @@ export interface SocialChatMessage extends TableRow {
   rejectedAt?: number;
 }
 export type SocialNotificationType =
-  | "connections/follow"
-  | "chat/direct/message"
-  | "posts/new"
-  | "posts/comment";
+  | "connection/follow/received"
+  | "chat/message/received"
+  | "post/created"
+  | "post/comment/created";
 
 export type SocialNotification = TableRow & {
   type: SocialNotificationType;
