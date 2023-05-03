@@ -1,5 +1,8 @@
 import { OfflineSyncClientPluginInterface } from "@cinderlink/plugin-offline-sync-core";
-import { SocialChatMessage } from "@cinderlink/plugin-social-core";
+import {
+  SocialChatMessage,
+  SocialNotificationType,
+} from "@cinderlink/plugin-social-core";
 import { ProtocolRequest, SubLoggerInterface } from "@cinderlink/core-types";
 import { encodePayload } from "@cinderlink/protocol";
 import { v4 as uuid } from "uuid";
@@ -20,7 +23,7 @@ export class SocialChat {
       enabled: true,
       async insert(this: SocialNotifications, message: SocialChatMessage) {
         if (message?.from === this.plugin.client?.id) return;
-
+        const type: SocialNotificationType = "chat/message/received";
         const user = await this.plugin.users.getUserByDID(message.from);
         const title = "New message";
         const body = `
@@ -30,13 +33,13 @@ ${message.message}
 
         const existingNotification = await this.getBySourceAndType(
           message.uid,
-          "chat/direct/message"
+          type
         );
 
         if (!existingNotification) {
           return {
             sourceUid: message.uid,
-            type: "chat/direct/message",
+            type,
             title,
             body,
             link: `/conversations/${message.from}`,
