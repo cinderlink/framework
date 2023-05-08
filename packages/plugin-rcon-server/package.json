@@ -36,6 +36,7 @@
     "@cinderlink/ipld-database": "workspace:../ipld-database",
     "@cinderlink/test-adapters": "workspace:../test-adapters",
     "@cinderlink/tsconfig": "workspace:../tsconfig",
+    "@types/ws": "^8.5.4",
     "tsup": "^6.7.0",
     "typescript": "^5.0.4",
     "vitest": "^0.30.1"

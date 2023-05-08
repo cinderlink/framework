@@ -119,7 +119,7 @@ export class RconServerPlugin implements PluginInterface<RconServerEvents> {
     });
 
     ws.on("message", (data) => {
-      this.logger.debug("received rcon message", data);
+      this.logger.debug("received rcon message", { data });
     });
 
     ws.on("close", () => {
@@ -127,7 +127,11 @@ export class RconServerPlugin implements PluginInterface<RconServerEvents> {
     });
 
     ws.on("error", (err) => {
-      this.logger.error("rcon connection error", err);
+      this.logger.error("rcon connection error", {
+        uri,
+        error: err.message,
+        stack: err.stack,
+      });
     });
 
     setTimeout(() => {
@@ -142,7 +146,10 @@ export class RconServerPlugin implements PluginInterface<RconServerEvents> {
           },
         });
       }
+      return;
     }, 5000);
+
+    return;
   }
 }
 
