@@ -26,8 +26,8 @@ export class SocialPosts {
       enabled: true,
       async insert(this: SocialNotifications, post: SocialPost) {
         if (post?.did === this.plugin.client?.id) return;
-        const user = await this.plugin.users.getUserByDID(post.did);
         const type: SocialNotificationType = "post/created";
+        const user = await this.plugin.users.getUserByDID(post.did);
         if (!user) {
           this.logger.error("failed to get user for notification", {
             type,
@@ -41,14 +41,21 @@ export class SocialPosts {
 From: ${user?.name}
 Content: ${post.content}
 `;
-        return {
-          sourceUid: post.uid,
-          type,
-          title,
-          body,
-          link: "/feed",
-          metaData: { did: post.did },
-        };
+        const existingNotification = await this.getBySourceAndType(
+          post.uid,
+          type
+        );
+        if (!existingNotification) {
+          return {
+            sourceUid: post.uid,
+            type,
+            title,
+            body,
+            link: "/feed",
+            metaData: { did: post.did },
+          };
+        }
+        return undefined;
       },
     } as NotificationGenerator<SocialPost>);
   }

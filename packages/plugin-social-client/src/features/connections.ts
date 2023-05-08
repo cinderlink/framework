@@ -31,8 +31,8 @@ export class SocialConnections {
           return;
 
         if (connection && connection.follow) {
-          const user = await this.plugin.users.getUserByDID(connection.from);
           const type: SocialNotificationType = "connection/follow/received";
+          const user = await this.plugin.users.getUserByDID(connection.from);
           if (!user) {
             this.logger.error("failed to get user for notification", {
               type,
@@ -42,13 +42,20 @@ export class SocialConnections {
           }
           const title = "New Follower";
           const body = `${user?.name} is now following you.`;
-          return {
-            title,
-            body,
-            sourceUid: connection.uid,
-            type,
-            link: "/connections/followers",
-          };
+
+          const existingNotification = await this.getBySourceAndType(
+            connection.uid,
+            type
+          );
+          if (!existingNotification) {
+            return {
+              title,
+              body,
+              sourceUid: connection.uid,
+              type,
+              link: "/connections/followers",
+            };
+          }
         }
         return undefined;
       },

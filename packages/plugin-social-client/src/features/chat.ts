@@ -52,7 +52,7 @@ Message: ${message.message}
 
         const existingNotification = await this.getBySourceAndType(
           message.uid,
-          "chat/message/received"
+          type
         );
 
         if (!existingNotification) {
