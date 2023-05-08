@@ -55,6 +55,10 @@
     {
       "name": "📦 @cinderlink/plugin-sync-db",
       "path": "packages/plugin-sync-db"
+    },
+    {
+      "name": "📦 @cinderlink/test-adapters",
+      "path": "packages/test-adapters"
     }
   ],
   "settings": {}
