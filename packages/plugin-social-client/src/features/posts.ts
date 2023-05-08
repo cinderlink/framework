@@ -1,6 +1,7 @@
 import {
   SocialClientEvents,
   SocialComment,
+  SocialNotificationType,
   SocialPost,
   SocialReaction,
 } from "@cinderlink/plugin-social-core";
@@ -26,14 +27,23 @@ export class SocialPosts {
       async insert(this: SocialNotifications, post: SocialPost) {
         if (post?.did === this.plugin.client?.id) return;
         const user = await this.plugin.users.getUserByDID(post.did);
+        const type: SocialNotificationType = "post/created";
+        if (!user) {
+          this.logger.error("failed to get user for notification", {
+            type,
+            did: post.did,
+          });
+          return;
+        }
+
         const title = "New post";
         const body = `
-${user?.name}
-${post.content}
+From: ${user?.name}
+Content: ${post.content}
 `;
         return {
           sourceUid: post.uid,
-          type: "posts/new",
+          type,
           title,
           body,
           link: "/feed",

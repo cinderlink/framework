@@ -1,5 +1,8 @@
 import { OfflineSyncClientPluginInterface } from "@cinderlink/plugin-offline-sync-core";
-import { SocialChatMessage } from "@cinderlink/plugin-social-core";
+import {
+  SocialChatMessage,
+  SocialNotificationType,
+} from "@cinderlink/plugin-social-core";
 import { ProtocolRequest, SubLoggerInterface } from "@cinderlink/core-types";
 import { encodePayload } from "@cinderlink/protocol";
 import { v4 as uuid } from "uuid";
@@ -19,24 +22,43 @@ export class SocialChat {
       tableId: "chat_messages",
       enabled: true,
       async insert(this: SocialNotifications, message: SocialChatMessage) {
-        if (message?.from === this.plugin.client?.id) return;
+        if (
+          message?.from === this.plugin.client?.id ||
+          message.to !== this.plugin.client?.id
+        )
+          return;
 
+        const type: SocialNotificationType = "chat/message/received";
         const user = await this.plugin.users.getUserByDID(message.from);
+        if (!user) {
+          this.logger.error("failed to get user for notification", {
+            type,
+            did: message.from,
+          });
+          return;
+        }
+        const hasConnection = await this.plugin.connections.hasConnectionFrom(
+          message.from
+        );
+        if (!hasConnection) {
+          this.logger.error(`no connection from ${message.from}`);
+          return;
+        }
         const title = "New message";
         const body = `
-@${user?.name}
-${message.message}
+From: ${user?.name}
+Message: ${message.message}
 			`;
 
         const existingNotification = await this.getBySourceAndType(
           message.uid,
-          "chat/direct/message"
+          "chat/message/received"
         );
 
         if (!existingNotification) {
           return {
             sourceUid: message.uid,
-            type: "chat/direct/message",
+            type,
             title,
             body,
             link: `/conversations/${message.from}`,
