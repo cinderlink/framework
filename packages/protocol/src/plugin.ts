@@ -204,13 +204,13 @@ export class CinderlinkProtocolPlugin<
       throw new Error('missing "topic" in encoded message');
     }
 
-    const peer = this.client.peers.getPeer(connection.remotePeer.toString());
+    let peer = this.client.peers.getPeer(connection.remotePeer.toString());
     if (!peer) {
-      this.logger.error(`peer not found`, {
+      this.logger.warn(`peer not found, creating peer`, {
         from: connection.remotePeer,
         encoded,
       });
-      throw new Error("peer not found");
+      peer = await this.client.peers.addPeer(connection.remotePeer, "peer");
     }
 
     if (!encoded.signed && !encoded.encrypted) {
@@ -261,7 +261,7 @@ export class CinderlinkProtocolPlugin<
       );
       this.client.emit(
         `/cinderlink/request/${(event.payload as any).requestId}`,
-        event as any
+        event.payload
       );
     }
 

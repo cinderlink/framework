@@ -47,22 +47,23 @@ ${post.content}
     this.plugin.notifications.disableGenerator("social/posts");
   }
 
-  async createPost(
-    post: Omit<Omit<Omit<Omit<SocialPost, "id">, "uid">, "cid">, "did">
-  ): Promise<SocialPost> {
-    this.logger.info(`creating post`, { post });
+  async createPost(data: Partial<SocialPost>): Promise<SocialPost> {
+    this.logger.info(`creating post`, { data });
+    const { id, uid, ...postData } = data;
+    const post = {
+      ...postData,
+      createdAt: Date.now(),
+      did: this.plugin.client.id,
+    };
     const cid = await this.plugin.client.dag.store(post);
     if (!cid) {
       this.logger.error(`failed to store post`, { post });
       throw new Error(`social-posts: failed to store post`);
     }
+    post.cid = cid.toString();
 
     const table = this.plugin.table<SocialPost>("posts");
-    const save = { ...post, cid: cid.toString() };
-    const savedId = await table.insert({
-      ...save,
-      did: this.plugin.client.id,
-    });
+    const savedId = await table.insert(post as SocialPost);
     const saved = await table.getByUid(savedId);
 
     if (saved === undefined) {

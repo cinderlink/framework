@@ -131,6 +131,14 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
           payload: { requestId },
         })
         .catch(() => undefined);
+      this.client.logger.info(
+        "identity",
+        `resolved server identity from ${server.peerId.toString()}`,
+        {
+          server: server.peerId.toString(),
+          resolved,
+        }
+      );
       if (resolved?.payload.cid) {
         const doc: IdentityDocument | undefined = await this.client.dag
           .loadDecrypted<IdentityDocument>(
@@ -209,9 +217,7 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
       this.client.logger.info("identity", "unpinning previous identity", {
         cid: this.cid,
       });
-      await Promise.allSettled([
-        this.client.ipfs.pin.rm(this.cid, { recursive: true }),
-      ]);
+      this.client.ipfs.pin.rm(this.cid, { recursive: true }).catch(() => {});
     }
 
     this.cid = cid.toString();

@@ -1,0 +1,41 @@
+{
+	"folders": [
+		{
+			"name": "📦 @cinderlink/plugin-identity-server",
+			"path": "packages/plugin-identity-server"
+		},
+		{
+			"name": "📦 @cinderlink/plugin-offline-sync-client",
+			"path": "packages/plugin-offline-sync-client"
+		},
+		{
+			"name": "📦 @cinderlink/plugin-offline-sync-core",
+			"path": "packages/plugin-offline-sync-core"
+		},
+		{
+			"name": "📦 @cinderlink/plugin-offline-sync-server",
+			"path": "packages/plugin-offline-sync-server"
+		},
+		{
+			"name": "📦 @cinderlink/plugin-rcon-server",
+			"path": "packages/plugin-rcon-server"
+		},
+		{
+			"name": "📦 @cinderlink/plugin-social-client",
+			"path": "packages/plugin-social-client"
+		},
+		{
+			"name": "📦 @cinderlink/plugin-social-core",
+			"path": "packages/plugin-social-core"
+		},
+		{
+			"name": "📦 @cinderlink/plugin-social-server",
+			"path": "packages/plugin-social-server"
+		},
+		{
+			"name": "📦 @cinderlink/plugin-sync-db",
+			"path": "packages/plugin-sync-db"
+		}
+	],
+	"settings": {}
+}

@@ -78,7 +78,10 @@ export async function encodePayload<
       signed: true,
       encrypted: false,
     } as EncodedProtocolPayload<Data, Encoding>;
-  } else if (encrypt === true && recipients) {
+  } else if (encrypt === true) {
+    if (!recipients) {
+      throw new Error("recipient DIDs required to encrypt payload");
+    }
     if (!did) {
       throw new Error("did required to encrypt payload");
     }

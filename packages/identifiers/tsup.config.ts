@@ -5,14 +5,7 @@ export default defineConfig({
   format: ["esm", "cjs"],
   dts: true,
   sourcemap: true,
-  external: [
-    "did",
-    "did-jwt",
-    "did-resolver",
-    "dids",
-    "ethers",
-    "key-did-provider-ed25519",
-    "key-did-resolver",
-    "multiformats",
-  ],
+  treeshake: true,
+  clean: true,
+  target: ["chrome112", "firefox89", "safari14", "edge92", "node16"],
 });

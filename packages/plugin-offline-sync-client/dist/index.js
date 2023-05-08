@@ -1,9 +1,3 @@
-import {
-  OfflineSyncClientPlugin,
-  plugin_default
-} from "./chunk-P6UF6FVE.js";
-export {
-  OfflineSyncClientPlugin,
-  plugin_default as default
-};
+export { OfflineSyncClientPlugin, plugin_default as default } from './chunk-T54PDNXR.js';
+//# sourceMappingURL=out.js.map
 //# sourceMappingURL=index.js.map

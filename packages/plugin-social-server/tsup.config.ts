@@ -5,14 +5,7 @@ export default defineConfig({
   format: ["esm", "cjs"],
   dts: true,
   sourcemap: true,
-  external: [
-    "@cinderlink/identifiers",
-    "@cinderlink/core-types",
-    "@cinderlink/plugin-social-client",
-    "@cinderlink/plugin-social-core",
-    "did-jwt",
-    "dids",
-    "did-jwt",
-    "dids",
-  ],
+  treeshake: true,
+  clean: true,
+  target: ["chrome112", "firefox89", "safari14", "edge92", "node16"],
 });

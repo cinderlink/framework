@@ -96,6 +96,11 @@ export type ProtocolMessage<
   peer?: Peer;
 };
 
+export type OutgoingProtocolMessage<
+  Payload = ProtocolRequest,
+  Topic = string
+> = { topic: Topic; payload: Payload };
+
 export interface ProtocolKeepAlive {
   timestamp: number;
 }

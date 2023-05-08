@@ -3,24 +3,21 @@ import type {
   PluginEventDef,
   TableRow,
   OutgoingP2PMessage,
-  EncodingOptions,
 } from "@cinderlink/core-types";
 
 export type OfflineSyncSendRequest<
   Events extends PluginEventDef = PluginEventDef,
-  Topic extends keyof Events["send"] = keyof Events["send"],
-  Encoding extends EncodingOptions = EncodingOptions
+  Topic extends keyof Events["send"] = keyof Events["send"]
 > = {
   requestId: string;
   recipient: string;
-  message: OutgoingP2PMessage<Events, Topic, Encoding>;
+  message: OutgoingP2PMessage<Events, Topic>;
 };
 
 export type OfflineSyncRecord<
   Events extends PluginEventDef = PluginEventDef,
-  Topic extends keyof Events["send"] = keyof Events["send"],
-  Encoding extends EncodingOptions = EncodingOptions
-> = OfflineSyncSendRequest<Events, Topic, Encoding> &
+  Topic extends keyof Events["send"] = keyof Events["send"]
+> = OfflineSyncSendRequest<Events, Topic> &
   TableRow & {
     sender: string;
     attempts: number;

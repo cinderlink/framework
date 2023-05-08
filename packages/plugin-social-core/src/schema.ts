@@ -140,9 +140,9 @@ export const SocialSchemaDef = {
     encrypted: true,
     aggregate: {},
     indexes: {
-      uid: {
+      cid: {
         unique: true,
-        fields: ["uid"],
+        fields: ["cid"],
       },
       did: {
         unique: false,

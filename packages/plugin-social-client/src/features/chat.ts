@@ -122,7 +122,7 @@ ${message.message}
         signed: encoded.signed,
         encrypted: encoded.encrypted,
         recipients: encoded.recipients,
-      });
+      } as any);
     }
 
     return savedMessage;

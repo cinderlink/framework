@@ -24,24 +24,29 @@ export class DIDDag implements DIDDagInterface {
     });
   }
 
+  // Load a DAG from a CID, optionally loading a specific path within that DAG.
+
   async load<Data = unknown>(
     cid: CID,
     path?: string,
-    options: GetOptions = {}
-  ): Promise<Data> {
+    options: GetOptions & { suppressErrors?: boolean } = {}
+  ): Promise<Data | undefined> {
     const loaded = await this.dag
       .load<Data>(cid, path, options)
       .catch((err: Error) => {
-        this.logger.error("error occurred during dag load", {
-          cid,
-          path,
-          options,
-          err,
-          stack: err.stack,
-        });
-        throw new Error("DAG failed to load data: " + err.message);
+        if (!options.suppressErrors) {
+          this.logger.error("error occurred during dag load", {
+            cid,
+            path,
+            options,
+            err,
+            stack: err.stack,
+          });
+          throw new Error("DAG failed to load data: " + err.message);
+        }
+        return undefined;
       });
-    if (!loaded) {
+    if (!loaded && !options.suppressErrors) {
       this.logger.error("failed to load data", { cid, path, options });
       throw new Error("Unable to load data");
     }

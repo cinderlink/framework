@@ -56,12 +56,14 @@ export class TableBlock<
     this.index.addAll(Object.values(this.cache.records || {}));
   }
 
-  async loadData<Data = Row>(cid: CID, path?: string) {
+  async loadData<Data = Row>(cid: CID, path?: string, options?: any) {
     // return this.table.encrypted
     //   ? this.table.dag.loadDecrypted<Data>(cid, path)
     //   : this.table.dag.load<Data>(cid, path);
     try {
-      const data = await this.table.dag.load<Data>(cid, path);
+      const data = await this.table.dag
+        .load<Data>(cid, path, options)
+        .catch(() => undefined);
       return data;
     } catch (error: any) {
       this.logger.error(`failed to load data from dag`, {
@@ -83,10 +85,9 @@ export class TableBlock<
       return undefined;
     }
 
-    this.cache.prevCID = await this.loadData<string>(
-      this.cid,
-      "/prevCID"
-    ).catch(() => undefined);
+    this.cache.prevCID = await this.loadData<string>(this.cid, "/prevCID", {
+      suppressErrors: true,
+    }).catch(() => undefined);
 
     return this.cache.prevCID;
   }
@@ -99,7 +100,8 @@ export class TableBlock<
     if (!this.cache.headers && this.cid) {
       this.cache.headers = (await this.loadData<BlockHeaders>(
         this.cid!,
-        "/headers"
+        "/headers",
+        { suppressErrors: true }
       ).catch(() => undefined)) as BlockHeaders | undefined;
     }
 
@@ -124,7 +126,8 @@ export class TableBlock<
     if (!this.cache.filters && this.cid) {
       this.cache.filters = (await this.loadData<BlockFilters<Row, Def>>(
         this.cid!,
-        "/filters"
+        "/filters",
+        { suppressErrors: true }
       ).catch(() => undefined)) as BlockFilters<Row, Def> | undefined;
       this.buildSearchIndex();
     }
@@ -147,10 +150,9 @@ export class TableBlock<
   async records() {
     if (!this.cache.records && this.cid) {
       this.logger.debug(`loading records from ${this.cid || "new block"}`);
-      this.cache.records = await this.loadData<Row[]>(
-        this.cid!,
-        "/records"
-      ).catch(() => ({}));
+      this.cache.records = await this.loadData<Row[]>(this.cid!, "/records", {
+        suppressErrors: true,
+      }).catch(() => ({}));
       this.index?.removeAll();
       this.index?.addAll(Object.values(this.cache.records || {}));
     }
@@ -175,7 +177,9 @@ export class TableBlock<
       return this.cache.records[id];
     }
 
-    return this.loadData<Row>(this.cid!, `/records/${id}`);
+    return this.loadData<Row>(this.cid!, `/records/${id}`, {
+      suppressErrors: true,
+    }).catch(() => undefined);
   }
 
   async hasIndex(name: string) {
@@ -396,6 +400,7 @@ export class TableBlock<
   }
 
   async addRecord(row: Row) {
+    this.table.assertValid(row);
     await this.assertUniqueConstraints(row, row.id);
     if (!this.cache.headers) {
       this.logger.error(`cannot set record ${row.id} without headers`);
@@ -539,12 +544,25 @@ export class TableBlock<
 
   async serialize(): Promise<BlockData<Row> | undefined> {
     if (!this.changed) {
+      if (
+        !Object.keys(this.cache?.records || {}).length &&
+        !this.cache.prevCID
+      ) {
+        this.logger.warn(
+          `no records in block without changes (${
+            this.cid?.toString() || "new"
+          }), skipping save...`
+        );
+        return undefined;
+      }
       return this.cache as BlockData<Row, TableDefinition<Row>>;
     }
 
-    if (Object.keys(this.cache?.records || {}).length === 0) {
+    const prevCID = await this.prevCID();
+    const records = await this.records();
+    if (Object.keys(records || {}).length === 0 && !prevCID) {
       this.logger.warn(
-        `no records in block (${
+        `no records in block without prevCID (${
           this.cid?.toString() || "new"
         }), skipping save...`
       );

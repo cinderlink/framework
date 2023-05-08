@@ -1,46 +1,69 @@
-"use strict";
-var __create = Object.create;
-var __defProp = Object.defineProperty;
-var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
-var __getOwnPropNames = Object.getOwnPropertyNames;
-var __getProtoOf = Object.getPrototypeOf;
-var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __export = (target, all) => {
-  for (var name in all)
-    __defProp(target, name, { get: all[name], enumerable: true });
-};
-var __copyProps = (to, from, except, desc) => {
-  if (from && typeof from === "object" || typeof from === "function") {
-    for (let key of __getOwnPropNames(from))
-      if (!__hasOwnProp.call(to, key) && key !== except)
-        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
-  }
-  return to;
-};
-var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
-  // If the importer is in node compatibility mode or this is not an ESM
-  // file that has been converted to a CommonJS file using a Babel-
-  // compatible transform (i.e. "__esModule" has not been set), then set
-  // "default" to the CommonJS "module.exports" for node compatibility.
-  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
-  mod
-));
-var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+'use strict';
 
-// src/index.ts
-var src_exports = {};
-__export(src_exports, {
-  OfflineSyncClientPlugin: () => OfflineSyncClientPlugin,
-  default: () => plugin_default
-});
-module.exports = __toCommonJS(src_exports);
+Object.defineProperty(exports, '__esModule', { value: true });
+
+var Emittery = require('emittery');
+var uuid = require('uuid');
+var ipldDatabase = require('@cinderlink/ipld-database');
+var dateFns = require('date-fns');
+
+function _interopDefault (e) { return e && e.__esModule ? e : { default: e }; }
+
+var Emittery__default = /*#__PURE__*/_interopDefault(Emittery);
 
 // src/plugin.ts
-var import_emittery = __toESM(require("emittery"), 1);
-var import_uuid = require("uuid");
-var import_plugin_offline_sync_core = require("@cinderlink/plugin-offline-sync-core");
-var import_date_fns = require("date-fns");
-var OfflineSyncClientPlugin = class extends import_emittery.default {
+var OfflineSyncSchemaDef = {
+  messages: {
+    schemaId: "offlineSync",
+    encrypted: false,
+    aggregate: {},
+    indexes: {
+      remoteId: {
+        unique: false,
+        fields: ["sender", "recipient"]
+      }
+    },
+    rollup: 1e3,
+    searchOptions: {
+      fields: [
+        "id",
+        "sender",
+        "recipients",
+        "updatedAt",
+        "deliveredAt",
+        "attemptedAt"
+      ]
+    },
+    schema: {
+      type: "object",
+      properties: {
+        sender: { type: "string" },
+        recipient: { type: "string" },
+        message: { type: "object", additionalProperties: true, properties: {} },
+        updatedAt: { type: "number" },
+        deliveredAt: { type: "number" },
+        attemptedAt: { type: "number" },
+        attempts: { type: "number" }
+      }
+    }
+  }
+};
+async function loadOfflineSyncSchema(client) {
+  var _a;
+  (_a = client.logger) == null ? void 0 : _a.info("offline-sync", "loading offline sync schema");
+  if (!client.schemas["offlineSync"]) {
+    const schema = new ipldDatabase.Schema(
+      "offlineSync",
+      OfflineSyncSchemaDef,
+      client.dag,
+      client.logger.module("db").submodule(`schema:offlineSync`)
+    );
+    await client.addSchema("offlineSync", schema);
+  } else {
+    client.schemas["offlineSync"].setDefs(OfflineSyncSchemaDef);
+  }
+}
+var OfflineSyncClientPlugin = class extends Emittery__default.default {
   constructor(client, options = {}) {
     super();
     this.client = client;
@@ -61,7 +84,7 @@ var OfflineSyncClientPlugin = class extends import_emittery.default {
   logger;
   async start() {
     this.logger.info(`starting offline sync client plugin`);
-    await (0, import_plugin_offline_sync_core.loadOfflineSyncSchema)(this.client);
+    await loadOfflineSyncSchema(this.client);
     this.logger.info(`loaded offline-sync-client schema`);
     this.client.on("/peer/authenticated", this.onPeerConnect.bind(this));
     this.started = true;
@@ -73,7 +96,7 @@ var OfflineSyncClientPlugin = class extends import_emittery.default {
     this.client.off("/peer/authenticated", this.onPeerConnect.bind(this));
   }
   async sendMessage(recipient, outgoing) {
-    const requestId = (0, import_uuid.v4)();
+    const requestId = uuid.v4();
     const servers = this.client.peers.getServers();
     let saved = false;
     for (const server of servers) {
@@ -90,20 +113,20 @@ var OfflineSyncClientPlugin = class extends import_emittery.default {
           message: outgoing
         }
       });
-      if (received?.payload.saved) {
+      if (received == null ? void 0 : received.payload.saved) {
         saved = true;
       }
     }
     return saved;
   }
   async onPeerConnect(peer) {
-    this.logger.info(`peer connected, asking for offline messages`, {
+    this.logger.info(`peer connected, asking for offline messages...`, {
       peerId: peer.peerId.toString()
     });
     await this.client.send(peer.peerId.toString(), {
       topic: "/offline/get/request",
       payload: {
-        requestId: (0, import_uuid.v4)(),
+        requestId: uuid.v4(),
         limit: 100
       }
     });
@@ -123,12 +146,13 @@ var OfflineSyncClientPlugin = class extends import_emittery.default {
     this.emit(`/send/response/${requestId}`, message.payload);
   }
   async onGetRequest(message) {
+    var _a;
     const { requestId, limit } = message.payload;
     this.logger.info(`handling get request`, {
       from: message.peer.did,
       requestId
     });
-    const table = this.client.getSchema("offlineSync")?.getTable("messages");
+    const table = (_a = this.client.getSchema("offlineSync")) == null ? void 0 : _a.getTable("messages");
     if (!table) {
       this.logger.error(`no offline-sync table found`);
       return;
@@ -156,6 +180,7 @@ var OfflineSyncClientPlugin = class extends import_emittery.default {
     );
   }
   async onGetResponse(response) {
+    var _a;
     const { requestId, messages } = response.payload;
     if (!messages.length) {
       this.logger.info(`server has no offline messages`, {
@@ -172,7 +197,7 @@ var OfflineSyncClientPlugin = class extends import_emittery.default {
       const { message, sender, createdAt = 0 } = record;
       this.logger.info(`handling protocol message from ${sender}`, {
         record,
-        date: (0, import_date_fns.formatRelative)(createdAt, /* @__PURE__ */ new Date())
+        date: dateFns.formatRelative(createdAt, /* @__PURE__ */ new Date())
       });
       let peer = this.client.peers.getPeer(sender);
       if (!peer) {
@@ -186,14 +211,14 @@ var OfflineSyncClientPlugin = class extends import_emittery.default {
         };
       }
       const connection = this.client.ipfs.libp2p.getConnections(peer.peerId)[0];
-      await this.client.getPlugin("cinderlink")?.handleProtocolMessage(
+      await ((_a = this.client.getPlugin("cinderlink")) == null ? void 0 : _a.handleProtocolMessage(
         connection,
         message.payload
       ).then(() => {
         saved.push(record.id);
       }).catch((error) => {
         errors[record.id] = error.message;
-      });
+      }));
     }
     await this.client.send(response.peer.peerId.toString(), {
       topic: "/offline/get/confirmation",
@@ -205,6 +230,7 @@ var OfflineSyncClientPlugin = class extends import_emittery.default {
     });
   }
   async onGetConfirmation(response) {
+    var _a;
     const { requestId, saved, errors } = response.payload;
     if (saved.length) {
       this.logger.info(`server saved ${saved.length} messages`, { requestId });
@@ -218,7 +244,7 @@ var OfflineSyncClientPlugin = class extends import_emittery.default {
         errors
       });
     }
-    const table = this.client.getSchema("offlineSync")?.getTable("messages");
+    const table = (_a = this.client.getSchema("offlineSync")) == null ? void 0 : _a.getTable("messages");
     if (!table) {
       this.logger.error(`no offline-sync table found`);
       return;
@@ -227,8 +253,8 @@ var OfflineSyncClientPlugin = class extends import_emittery.default {
   }
 };
 var plugin_default = OfflineSyncClientPlugin;
-// Annotate the CommonJS export names for ESM import in node:
-0 && (module.exports = {
-  OfflineSyncClientPlugin
-});
+
+exports.OfflineSyncClientPlugin = OfflineSyncClientPlugin;
+exports.default = plugin_default;
+//# sourceMappingURL=out.js.map
 //# sourceMappingURL=index.cjs.map
