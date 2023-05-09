@@ -22,11 +22,13 @@
   },
   "devDependencies": {
     "@cinderlink/tsconfig": "workspace:../tsconfig",
-    "@libp2p/interface-connection": "^5.0.1",
-    "@libp2p/interface-peer-id": "^2.0.1",
-    "@types/node": "^18.16.3",
+    "@libp2p/interface-connection": "^5.0.2",
+    "@libp2p/interface-libp2p": "^3.1.0",
+    "@libp2p/interface-peer-id": "^2.0.2",
+    "@libp2p/interface-pubsub": "^4.0.1",
+    "@types/node": "^18.16.6",
     "ajv": "^8.12.0",
-    "did-jwt": "^7.0.0",
+    "did-jwt": "^7.1.0",
     "dids": "^4.0.1",
     "emittery": "^1.0.1",
     "ipfs-core-types": "^0.14.0",
@@ -44,7 +46,7 @@
     "dids": "^3.4.0",
     "emittery": "^1.0.1",
     "ipfs-core-types": "^0.13.0",
-    "libp2p": "^0.41.0",
+    "libp2p": "^0.44.0",
     "minisearch": "^6.0.1",
     "multiformats": "^11.0.2"
   }

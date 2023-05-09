@@ -119,7 +119,7 @@ export class OfflineSyncClientPlugin<
     return saved;
   }
   async onPeerConnect(peer: Peer) {
-    this.logger.info(`peer connected, asking for offline messages...`, {
+    this.logger.info(`peer connected, asking for offline messages`, {
       peerId: peer.peerId.toString(),
     });
 

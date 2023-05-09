@@ -2,12 +2,12 @@ import { GetOptions } from "ipfs-core-types/src/root";
 import type { CID } from "multiformats";
 import type { DID } from "dids";
 import type { JWE } from "did-jwt";
+import { DAGStoreOptions } from "./types";
 
 export interface DAGInterface {
   store<Data = unknown>(
     data: Data,
-    inputCodec?: string,
-    hashAlg?: string
+    options?: DAGStoreOptions
   ): Promise<CID | undefined>;
   load<Data = unknown>(
     cid: CID | string,
@@ -22,7 +22,8 @@ export interface DIDDagInterface extends DAGInterface {
     Data extends Record<string, unknown> = Record<string, unknown>
   >(
     data: Data,
-    recipients?: string[]
+    recipients?: string[],
+    options?: DAGStoreOptions
   ): Promise<CID | undefined>;
   loadEncrypted(
     cid: CID | string,

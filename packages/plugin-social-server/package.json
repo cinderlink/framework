@@ -28,7 +28,7 @@
     "@cinderlink/plugin-social-core": "workspace:../plugin-social-core",
     "@cinderlink/plugin-sync-db": "workspace:../plugin-sync-db",
     "@cinderlink/tsconfig": "workspace:../tsconfig",
-    "did-jwt": "^7.0.0",
+    "did-jwt": "^7.1.0",
     "dids": "^4.0.1",
     "tsup": "^6.7.0",
     "typescript": "^5.0.4",

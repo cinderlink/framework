@@ -4,6 +4,7 @@ import { DID } from "dids";
 import { CID } from "multiformats";
 import {
   DAGInterface,
+  DAGStoreOptions,
   DIDDagInterface,
   SubLoggerInterface,
 } from "@cinderlink/core-types";
@@ -16,9 +17,12 @@ export class DIDDag implements DIDDagInterface {
     public logger: SubLoggerInterface
   ) {}
 
-  async store<Data = unknown>(data: Data): Promise<CID | undefined> {
+  async store<Data = unknown>(
+    data: Data,
+    options?: DAGStoreOptions
+  ): Promise<CID | undefined> {
     this.logger.debug("storing data", { data });
-    return this.dag.store(data).catch((err: Error) => {
+    return this.dag.store(data, options).catch((err: Error) => {
       this.logger.error("failed to store data", { data, err });
       throw new Error("Client DAG failed to store data: " + err.message);
     });
@@ -57,7 +61,8 @@ export class DIDDag implements DIDDagInterface {
     Data extends Record<string, unknown> = Record<string, unknown>
   >(
     data: Data,
-    recipients: string[] = [this.did.id]
+    recipients: string[] = [this.did.id],
+    options?: DAGStoreOptions
   ): Promise<CID | undefined> {
     const jwe = await this.did.createDagJWE(
       removeUndefined(data),
@@ -68,7 +73,12 @@ export class DIDDag implements DIDDagInterface {
       throw new Error("Unable to create JWE");
     }
     this.logger.debug("storing encrypted data", { jwe });
-    return this.dag.store(jwe, "dag-jose", "sha2-256");
+    return this.dag.store(jwe, {
+      storeCodec: "dag-jose",
+      hashAlg: "sha2-256",
+      pin: true,
+      ...options,
+    });
   }
 
   async loadEncrypted(

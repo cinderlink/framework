@@ -1,6 +1,7 @@
 import { rmSync } from "fs";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createClient } from "../../client";
+import { ServerLogger } from "../../server";
 import {
   createSeed,
   createDID,
@@ -40,10 +41,8 @@ describe("IdentityServerPlugin", () => {
       options: {
         repo: "identity-server-client",
       },
+      logger: new ServerLogger(),
     });
-    testIdentityCid = (
-      await client.dag.storeEncrypted(testIdentityDoc)
-    )?.toString();
 
     const serverWallet = ethers.Wallet.createRandom();
     const serverDID = await createDID(await createSeed("test identity server"));
@@ -68,6 +67,7 @@ describe("IdentityServerPlugin", () => {
           Bootstrap: [],
         },
       },
+      logger: new ServerLogger(),
     });
     server.initialConnectTimeout = 0;
     await server.addPlugin(new IdentityServerPlugin(server));
@@ -78,6 +78,10 @@ describe("IdentityServerPlugin", () => {
 
     await client.start([`/ip4/127.0.0.1/tcp/7377/ws/p2p/${serverPeer.id}`]);
     console.info("client ready");
+
+    testIdentityCid = (
+      await client.dag.storeEncrypted(testIdentityDoc)
+    )?.toString();
   });
 
   it("should pin identities", async () => {
@@ -98,12 +102,23 @@ describe("IdentityServerPlugin", () => {
 
   it("should resolve identities", async () => {
     const serverPeer = await server.ipfs.id();
-    await client.request(serverPeer.id.toString(), {
+    console.info("sending request");
+    const response = await client.request(serverPeer.id.toString(), {
       topic: "/identity/set/request",
       payload: { requestId: "test", cid: testIdentityCid },
     });
 
-    const resolved = await client.identity.resolve();
+    expect(response).not.toBeUndefined();
+    expect(response?.payload).toMatchInlineSnapshot(`
+      {
+        "requestId": "test",
+        "success": true,
+      }
+    `);
+
+    await new Promise((resolve) => setTimeout(resolve, 250));
+
+    const resolved = await client.identity.resolveServer();
     expect(resolved).not.toBeUndefined();
     expect(resolved?.cid).toEqual(testIdentityCid);
   });

@@ -8,4 +8,5 @@ export default defineConfig({
   treeshake: true,
   clean: true,
   target: ["chrome112", "firefox89", "safari14", "edge92", "node16"],
+  external: ["dids", "did-jwt", "emittery", "libp2p", "multiformats"],
 });

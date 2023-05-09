@@ -93,10 +93,10 @@ export class CinderlinkProtocolPlugin<
   }) {
     const self = this;
     pipe(
-      stream.source,
+      stream,
       lp.decode,
-      (source) => {
-        return map(source, (buf) => {
+      (source: any) => {
+        return map(source, (buf: Buffer) => {
           return json.decode<
             ProtocolMessage<
               ProtocolEvents["receive"][keyof ProtocolEvents["receive"]] &
@@ -106,7 +106,7 @@ export class CinderlinkProtocolPlugin<
           >(buf.subarray());
         });
       },
-      async function (source) {
+      async function (source: any) {
         try {
           for await (const encoded of source) {
             await self.handleProtocolMessage(connection, encoded);
@@ -261,7 +261,7 @@ export class CinderlinkProtocolPlugin<
       );
       this.client.emit(
         `/cinderlink/request/${(event.payload as any).requestId}`,
-        event.payload
+        event
       );
     }
 

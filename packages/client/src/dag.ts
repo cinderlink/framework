@@ -1,6 +1,7 @@
 import type {
   CinderlinkClientInterface,
   DAGInterface,
+  DAGStoreOptions,
   PluginEventDef,
 } from "@cinderlink/core-types";
 import { DIDDag } from "./did/dag";
@@ -13,21 +14,21 @@ export class ClientDag<Plugins extends PluginEventDef = PluginEventDef>
 {
   constructor(private client: CinderlinkClientInterface<Plugins>) {}
 
-  async store<T>(
-    data: T,
-    storeCodec = "dag-json",
-    hashAlg = "sha2-256"
-  ): Promise<CID> {
+  async store<T>(data: T, options?: DAGStoreOptions): Promise<CID> {
     // if data is an object
     const cid = await this.client.ipfs.dag.put(
       removeUndefined(data as Record<string, unknown>),
       {
-        storeCodec,
-        hashAlg,
-        pin: true,
-        timeout: 3000,
+        storeCodec: options?.storeCodec,
+        hashAlg: options?.hashAlg,
+        pin: !!options?.pin,
+        timeout: options?.timeout || 3000,
       }
     );
+    if (options?.pin) {
+      await this.client.ipfs.pin.add(cid, { recursive: true });
+      this.client.ipfs.dht.provide(cid);
+    }
     return cid;
   }
 
@@ -38,7 +39,7 @@ export class ClientDag<Plugins extends PluginEventDef = PluginEventDef>
   ): Promise<T> {
     const stored = await this.client.ipfs.dag.get(
       typeof cid === "string" ? CID.parse(cid) : cid,
-      { path, ...options, timeout: 3000 }
+      { path, timeout: 3000, ...options }
     );
     return stored.value as T;
   }

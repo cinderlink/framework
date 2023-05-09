@@ -12,10 +12,10 @@
   "devDependencies": {
     "@cinderlink/core-types": "workspace:../core-types",
     "@cinderlink/tsconfig": "workspace:../tsconfig",
-    "@libp2p/crypto": "^1.0.15",
-    "@libp2p/interface-peer-id": "^2.0.1",
+    "@libp2p/crypto": "^1.0.17",
+    "@libp2p/interface-peer-id": "^2.0.2",
     "@libp2p/peer-id-factory": "^2.0.3",
-    "did-jwt": "^7.0.0",
+    "did-jwt": "^7.1.0",
     "dids": "^4.0.1",
     "emittery": "^1.0.1",
     "multiformats": "^11.0.2",

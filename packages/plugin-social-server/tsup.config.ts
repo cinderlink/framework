@@ -8,4 +8,12 @@ export default defineConfig({
   treeshake: true,
   clean: true,
   target: ["chrome112", "firefox89", "safari14", "edge92", "node16"],
+  external: [
+    "@cinderlink/identifiers",
+    "@cinderlink/plugin-social-client",
+    "@cinderlink/plugin-social-core",
+    "@cinderlink/plugin-sync-db",
+    "did-jwt",
+    "dids",
+  ],
 });

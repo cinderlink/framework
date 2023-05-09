@@ -8,4 +8,14 @@ export default defineConfig({
   treeshake: true,
   clean: true,
   target: ["chrome112", "firefox89", "safari14", "edge92", "node16"],
+  external: [
+    "@cinderlink/core-types",
+    "@cinderlink/ipld-database",
+    "@cinderlink/protocol",
+    "@multiformats/multiaddr",
+    "did-jwt",
+    "dids",
+    "emittery",
+    "multiformats",
+  ],
 });
