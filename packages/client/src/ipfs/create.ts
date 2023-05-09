@@ -4,8 +4,7 @@ import { webSockets } from "@libp2p/websockets";
 import { all } from "@libp2p/websockets/filters";
 import { noise } from "@chainsafe/libp2p-noise";
 import { mplex } from "@libp2p/mplex";
-
-import { IPFSWithLibP2P } from "./types";
+import { IPFSWithLibP2P } from "@cinderlink/core-types";
 
 export async function createIPFS(
   nodes: string[] = [],

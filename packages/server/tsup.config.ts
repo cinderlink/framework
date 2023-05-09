@@ -5,13 +5,9 @@ export default defineConfig({
   format: ["esm", "cjs"],
   dts: true,
   sourcemap: true,
-  external: [
-    "@cinderlink/client",
-    "@cinderlink/core-types",
-    "@cinderlink/tsconfig",
-    "ipfs-core",
-    "ipfs-core-types",
-    "ipfs-http-gateway",
-    "ipfs-http-server",
-  ],
+  treeshake: true,
+  skipNodeModulesBundle: true,
+  bundle: true,
+  clean: true,
+  target: ["chrome112", "firefox89", "safari14", "edge92", "node16"],
 });

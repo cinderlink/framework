@@ -1,194 +1,156 @@
-import { CID } from "multiformats";
-import { IncomingP2PMessage } from "@cinderlink/core-types/src/p2p";
 import {
-  PluginInterface,
   CinderlinkClientInterface,
-  CinderlinkClientEvents,
   EncodingOptions,
+  IncomingP2PMessage,
+  PluginInterface,
   ReceiveEventHandlers,
   SubLoggerInterface,
 } from "@cinderlink/core-types";
-import { Schema } from "@cinderlink/ipld-database";
-import { IdentityServerEvents } from "./types";
 
-export type IdentityPinsRecord = {
-  id: number;
-  uid: string;
-  name: string;
-  avatar: string;
-  did: string;
-  cid: string;
-};
+import { WebSocket } from "ws";
 
-export class IdentityServerPlugin
-  implements PluginInterface<IdentityServerEvents>
-{
+export interface RconServerEvents {
+  send: {
+    "/rcon/connect/response": {
+      requestId: string;
+      success: boolean;
+      error?: string;
+    };
+  };
+  receive: {
+    "/rcon/connect/request": {
+      requestId: string;
+      password: string;
+      uri?: string;
+    };
+  };
+  publish: {};
+  subscribe: {};
+  emit: {};
+}
+
+export interface RconServerOptions {
+  password: string;
+}
+
+export class RconServerPlugin implements PluginInterface<RconServerEvents> {
   id = "identityServer";
   logger: SubLoggerInterface;
   started = false;
+  rconConnections: Record<string, WebSocket> = {};
+
   constructor(
-    public client: CinderlinkClientInterface<IdentityServerEvents>,
+    public client: CinderlinkClientInterface<RconServerEvents>,
     public options: Record<string, unknown> = {}
   ) {
-    this.logger = client.logger.module("plugins").submodule("identityServer");
+    this.logger = client.logger.module("plugins").submodule("rconServer");
   }
   async start() {
-    this.logger.info("starting social server plugin");
-    if (!this.client.hasSchema("identity")) {
-      const schema = new Schema(
-        "identity",
-        {
-          pins: {
-            schemaId: "identity",
-            encrypted: true,
-            aggregate: {},
-            indexes: {
-              did: {
-                unique: true,
-                fields: ["did"],
-              },
-              name: {
-                fields: ["cid"],
-              },
-            },
-            rollup: 1000,
-            searchOptions: {
-              fields: ["cid", "did"],
-            },
-            schema: {
-              type: "object",
-              properties: {
-                did: { type: "string" },
-                cid: { type: "string" },
-              },
-            },
-          },
-        },
-        this.client.dag,
-        this.client.logger.module("db").submodule(`schema:identity`)
-      );
-      await this.client.addSchema("identity", schema);
-    } else {
-      this.logger.info("identity schema already exists");
-    }
+    this.logger.info("starting rcon server plugin");
     this.started = true;
   }
   async stop() {
     this.logger.info("social server plugin stopped");
     this.started = false;
   }
-  p2p: ReceiveEventHandlers<IdentityServerEvents> = {
-    "/identity/set/request": this.onSetRequest,
-    "/identity/resolve/request": this.onResolveRequest,
+  p2p: ReceiveEventHandlers<RconServerEvents> = {
+    "/rcon/connect/request": this.onConnectRequest.bind(this),
   };
   pubsub = {};
   events = {};
 
-  async onSetRequest(
+  onConnectRequest(
     message: IncomingP2PMessage<
-      IdentityServerEvents,
-      "/identity/set/request",
+      RconServerEvents,
+      "/rcon/connect/request",
       EncodingOptions
     >
   ) {
-    if (!message.peer.did) {
-      this.logger.warn("refusing unauthenticated peer");
-      return this.client.send<IdentityServerEvents, "/identity/set/response">(
-        message.peer.peerId.toString(),
-        {
-          topic: "/identity/set/response",
-          payload: {
-            requestId: message.payload.requestId,
-            success: false,
-            error: "did not found, peer not authenticated",
-          },
-        }
+    if (!message.encrypted) {
+      this.logger.warn(
+        `received unencrypted rcon connect request from ${message.peer.peerId}`
       );
-    }
-    this.logger.info("setting identity for peer", message.payload);
-
-    let success = false;
-    if (message.payload.cid) {
-      const cid = CID.parse(message.payload.cid);
-      const resolved = await this.client.ipfs.dag.get(cid, {
-        timeout: 5000,
-      });
-
-      this.logger.info("resolve", {
-        resolved,
-      });
-
-      if (resolved) {
-        await this.client.ipfs.dht.provide(cid, {
-          recursive: true,
-          timeout: 5000,
-        });
-        await this.client.ipfs.pin.add(cid, { recursive: true, timeout: 5000 });
-        success = true;
-      }
-    }
-
-    await this.client
-      .getSchema("identity")
-      ?.getTable<IdentityPinsRecord>("pins")
-      .upsert(
-        { did: message.peer.did },
-        { cid: success ? message.payload.cid : undefined }
-      );
-
-    return this.client.send(message.peer.peerId.toString(), {
-      topic: "/identity/set/response",
-      payload: {
-        requestId: message.payload.requestId,
-        success,
-      },
-    });
-  }
-
-  async onResolveRequest(
-    message: IncomingP2PMessage<
-      IdentityServerEvents,
-      "/identity/resolve/request",
-      EncodingOptions
-    >
-  ) {
-    if (!message.peer.did) {
-      this.logger.warn("refusing unauthenticated peer");
       return this.client.send(message.peer.peerId.toString(), {
-        topic: "/identity/resolve/response",
+        topic: "/rcon/connect/response",
         payload: {
           requestId: message.payload.requestId,
-          cid: undefined,
+          success: false,
+          error: "rcon connect request must be encrypted",
         },
       });
     }
 
-    const identity = await this.client
-      .getSchema("identity")
-      ?.getTable<IdentityPinsRecord>("pins")
-      .query()
-      .where("did", "=", message.peer.did)
-      .select()
-      .execute()
-      .then((r) => r.first());
+    const { requestId, password, uri } = message.payload;
+    if (password !== this.options.password) {
+      return this.client.send(message.peer.peerId.toString(), {
+        topic: "/rcon/connect/response",
+        payload: {
+          requestId,
+          success: false,
+          error: "invalid password",
+        },
+      });
+    }
 
-    this.logger.info("resolving identity for peer", {
-      payload: message.payload,
-      identity,
+    if (!uri) {
+      return this.client.send(message.peer.peerId.toString(), {
+        topic: "/rcon/connect/response",
+        payload: {
+          requestId,
+          success: true,
+        },
+      });
+    }
+
+    if (this.rconConnections[uri]) {
+      return this.client.send(message.peer.peerId.toString(), {
+        topic: "/rcon/connect/response",
+        payload: {
+          requestId,
+          success: false,
+          error: "already connected",
+        },
+      });
+    }
+
+    const ws = new WebSocket(uri);
+    ws.on("open", () => {
+      this.rconConnections[uri] = ws;
     });
 
-    return this.client.send<CinderlinkClientEvents>(
-      message.peer.peerId.toString(),
-      {
-        topic: "/identity/resolve/response",
-        payload: {
-          requestId: message.payload.requestId,
-          since: message.payload.since,
-          cid: identity?.cid,
-        },
+    ws.on("message", (data) => {
+      this.logger.debug("received rcon message", { data });
+    });
+
+    ws.on("close", () => {
+      delete this.rconConnections[uri];
+    });
+
+    ws.on("error", (err) => {
+      this.logger.error("rcon connection error", {
+        uri,
+        error: err.message,
+        stack: err.stack,
+      });
+    });
+
+    setTimeout(() => {
+      if (!this.rconConnections[uri]) {
+        ws.close();
+        return this.client.send(message.peer.peerId.toString(), {
+          topic: "/rcon/connect/response",
+          payload: {
+            requestId,
+            success: false,
+            error: "connection timed out",
+          },
+        });
       }
-    );
+      return;
+    }, 5000);
+
+    return;
   }
 }
 
-export default IdentityServerPlugin;
+export default RconServerPlugin;

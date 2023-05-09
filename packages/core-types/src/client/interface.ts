@@ -77,8 +77,9 @@ export interface CinderlinkClientInterface<
     Encoding extends EncodingOptions = EncodingOptions
   >(
     peerId: string,
-    message: OutgoingP2PMessage<Events, Topic, Encoding>,
-    options?: Encoding
+    message: OutgoingP2PMessage<Events, Topic>,
+    encoding?: Encoding,
+    options?: { retries?: number; retryDelay?: number; offline?: boolean }
   ): Promise<void>;
 
   request<
@@ -88,7 +89,7 @@ export interface CinderlinkClientInterface<
     Encoding extends EncodingOptions = EncodingOptions
   >(
     peerId: string,
-    message: OutgoingP2PMessage<Events, OutTopic, Encoding>,
+    message: OutgoingP2PMessage<Events, OutTopic>,
     options?: Encoding
   ): Promise<IncomingP2PMessage<Events, InTopic, Encoding> | undefined>;
 

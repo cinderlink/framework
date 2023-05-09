@@ -92,7 +92,7 @@ export class IdentityServerPlugin
     >
   ) {
     if (!message.peer.did) {
-      this.logger.warn("refusing peer without DID");
+      this.logger.warn("refusing to save identity for peer without DID");
       return this.client.send<IdentityServerEvents, "/identity/set/response">(
         message.peer.peerId.toString(),
         {
@@ -114,7 +114,7 @@ export class IdentityServerPlugin
         timeout: 5000,
       });
 
-      this.logger.info("resolve", {
+      this.logger.info("identity resolved", {
         resolved,
       });
 
@@ -156,6 +156,7 @@ export class IdentityServerPlugin
         topic: "/identity/resolve/response",
         payload: {
           requestId: message.payload.requestId,
+          error: "DID not found, peer is not authenticated",
           cid: undefined,
         },
       });

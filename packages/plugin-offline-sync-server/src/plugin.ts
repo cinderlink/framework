@@ -98,8 +98,8 @@ export class OfflineSyncServerPlugin
     }
 
     // pin the CID for the user
-    if (message.payload.message.cid) {
-      await this.client.ipfs.pin.add(message.payload.message.cid, {
+    if ((message.payload as any).message.cid) {
+      await this.client.ipfs.pin.add((message.payload as any).message.cid, {
         recursive: true,
       });
     }

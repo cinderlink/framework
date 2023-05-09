@@ -17,6 +17,9 @@
     "isolatedModules": true,
     "noEmit": true,
     "moduleResolution": "node",
+    "preserveSymlinks": true,
+    "preserveWatchOutput": true,
+    "sourceMap": true,
     "baseUrl": ".",
     "paths": {
       "@src/*": ["src/*"]

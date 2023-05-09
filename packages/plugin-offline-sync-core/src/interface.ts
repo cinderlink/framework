@@ -14,7 +14,7 @@ export interface OfflineSyncClientPluginInterface extends PluginInterface {
     Encoding extends EncodingOptions = EncodingOptions
   >(
     recipient: string,
-    outgoing: OutgoingP2PMessage<Events, OutTopic, Encoding>
+    outgoing: OutgoingP2PMessage<Events, OutTopic>
   ): Promise<
     IncomingP2PMessage<
       OfflineSyncClientEvents,

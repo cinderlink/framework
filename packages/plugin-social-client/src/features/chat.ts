@@ -22,13 +22,32 @@ export class SocialChat {
       tableId: "chat_messages",
       enabled: true,
       async insert(this: SocialNotifications, message: SocialChatMessage) {
-        if (message?.from === this.plugin.client?.id) return;
+        if (
+          message?.from === this.plugin.client?.id ||
+          message.to !== this.plugin.client?.id
+        )
+          return;
+
         const type: SocialNotificationType = "chat/message/received";
         const user = await this.plugin.users.getUserByDID(message.from);
+        if (!user) {
+          this.logger.error("failed to get user for notification", {
+            type,
+            did: message.from,
+          });
+          return;
+        }
+        const hasConnection = await this.plugin.connections.hasConnectionFrom(
+          message.from
+        );
+        if (!hasConnection) {
+          this.logger.error(`no connection from ${message.from}`);
+          return;
+        }
         const title = "New message";
         const body = `
-@${user?.name}
-${message.message}
+From: ${user?.name}
+Message: ${message.message}
 			`;
 
         const existingNotification = await this.getBySourceAndType(
@@ -125,7 +144,7 @@ ${message.message}
         signed: encoded.signed,
         encrypted: encoded.encrypted,
         recipients: encoded.recipients,
-      });
+      } as any);
     }
 
     return savedMessage;

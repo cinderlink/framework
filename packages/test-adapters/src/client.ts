@@ -260,7 +260,7 @@ export class TestClient<PluginEvents extends PluginEventDef>
     Encoding extends EncodingOptions = EncodingOptions
   >(
     peerId: string,
-    message: OutgoingP2PMessage<Events, OutTopic, Encoding>,
+    message: OutgoingP2PMessage<Events, OutTopic>,
     options: Encoding = { sign: false, encrypt: false } as Encoding
   ): Promise<IncomingP2PMessage<Events, InTopic, Encoding> | undefined> {
     console.info("TestClient.request", peerId, message, options);

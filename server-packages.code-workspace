@@ -1,0 +1,33 @@
+{
+	"folders": [
+		{
+			"name": "🚀 @cinderlink/server-template",
+			"path": "apps/server-template"
+		},
+		{
+			"name": "📦 @cinderlink/plugin-identity-server",
+			"path": "packages/plugin-identity-server"
+		},
+		{
+			"name": "📦 @cinderlink/plugin-offline-sync-server",
+			"path": "packages/plugin-offline-sync-server"
+		},
+		{
+			"name": "📦 @cinderlink/plugin-rcon-server",
+			"path": "packages/plugin-rcon-server"
+		},
+		{
+			"name": "📦 @cinderlink/plugin-social-server",
+			"path": "packages/plugin-social-server"
+		},
+		{
+			"name": "📦 @cinderlink/server",
+			"path": "packages/server"
+		},
+		{
+			"name": "📦 @cinderlink/server-bin",
+			"path": "packages/server-bin"
+		}
+	],
+	"settings": {}
+}

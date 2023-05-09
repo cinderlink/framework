@@ -83,7 +83,7 @@ export class OfflineSyncClientPlugin<
     Encoding extends EncodingOptions = EncodingOptions
   >(
     recipient: string,
-    outgoing: OutgoingP2PMessage<Events, OutTopic, Encoding>
+    outgoing: OutgoingP2PMessage<Events, OutTopic>
   ): Promise<boolean> {
     const requestId = uuid();
     const servers = this.client.peers.getServers();
@@ -118,7 +118,6 @@ export class OfflineSyncClientPlugin<
     }
     return saved;
   }
-
   async onPeerConnect(peer: Peer) {
     this.logger.info(`peer connected, asking for offline messages`, {
       peerId: peer.peerId.toString(),

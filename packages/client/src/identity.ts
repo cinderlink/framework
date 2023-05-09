@@ -117,6 +117,7 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
   async resolveServer(): Promise<IdentityResolved> {
     const servers = this.client.peers.getServers();
     if (!servers.length) {
+      this.client.logger.module("identity").warn("no servers found");
       return { cid: undefined, document: undefined };
     }
 
@@ -130,22 +131,27 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
           topic: "/identity/resolve/request",
           payload: { requestId },
         })
+        .then((result) => result?.payload as IdentityResolved | undefined)
         .catch(() => undefined);
-      if (resolved?.payload.cid) {
+      this.client.logger.info(
+        "identity",
+        `resolved server identity from ${server.peerId.toString()}`,
+        {
+          server: server.peerId.toString(),
+          resolved,
+        }
+      );
+      if (resolved?.cid) {
         const doc: IdentityDocument | undefined = await this.client.dag
-          .loadDecrypted<IdentityDocument>(
-            resolved.payload.cid as string,
-            undefined,
-            {
-              timeout: 5000,
-            }
-          )
+          .loadDecrypted<IdentityDocument>(resolved.cid as string, undefined, {
+            timeout: 5000,
+          })
           .catch(() => undefined);
         if (
           doc &&
           (!document || Number(doc.updatedAt) >= Number(document.updatedAt))
         ) {
-          cid = resolved.payload.cid as string;
+          cid = resolved.cid as string;
           document = doc;
         }
       }
@@ -209,9 +215,7 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
       this.client.logger.info("identity", "unpinning previous identity", {
         cid: this.cid,
       });
-      await Promise.allSettled([
-        this.client.ipfs.pin.rm(this.cid, { recursive: true }),
-      ]);
+      this.client.ipfs.pin.rm(this.cid, { recursive: true }).catch(() => {});
     }
 
     this.cid = cid.toString();

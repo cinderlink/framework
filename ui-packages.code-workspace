@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "apps/ui-kit"
+		},
+		{
+			"name": "🚀 swagmi",
+			"path": "apps/swagmi"
+		}
+	],
+	"settings": {
+		"typescript.tsdk": "node_modules/typescript/lib"
+	}
+}

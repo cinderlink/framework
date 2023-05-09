@@ -519,15 +519,20 @@ export class SyncDBPlugin<
       did,
       rows,
     });
-    await this.client.send(peer.peerId.toString(), {
-      topic: "/cinderlink/sync/save/request",
-      payload: {
-        requestId: uuid(),
-        schemaId,
-        tableId,
-        rows,
+    await this.client.send(
+      peer.peerId.toString(),
+      {
+        topic: "/cinderlink/sync/save/request",
+        payload: {
+          requestId: uuid(),
+          schemaId,
+          tableId,
+          rows,
+        },
       },
-    });
+      { encrypt: true, sign: false },
+      { retries: 3, retryDelay: 1000 }
+    );
   }
 
   /**
@@ -642,16 +647,21 @@ export class SyncDBPlugin<
       }
     }
 
-    await this.client.send(message.peer.peerId.toString(), {
-      topic: "/cinderlink/sync/save/response",
-      payload: {
-        requestId: uuid(),
-        schemaId,
-        tableId,
-        saved,
-        errors,
+    await this.client.send(
+      message.peer.peerId.toString(),
+      {
+        topic: "/cinderlink/sync/save/response",
+        payload: {
+          requestId: uuid(),
+          schemaId,
+          tableId,
+          saved,
+          errors,
+        },
       },
-    });
+      { encrypt: true, sign: false },
+      { retries: 3, retryDelay: 1000 }
+    );
   }
 
   /**

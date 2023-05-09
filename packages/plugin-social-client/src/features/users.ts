@@ -221,7 +221,7 @@ export class SocialUsers {
       );
     }
 
-    return response.payload.results;
+    return response.payload?.results;
   }
 
   async setState(update: Partial<SocialUser>) {
