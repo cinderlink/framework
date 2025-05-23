@@ -103,7 +103,25 @@ Content: ${post.content}
     message: IncomingPubsubMessage<SocialClientEvents, "/social/posts/create">
   ) {
     this.logger.debug("received post pubsub", { message });
-    // TODO: save the post
+    const table = this.plugin.table<SocialPost>("posts");
+
+    // Skip if we already stored the post
+    const exists = await table
+      .query()
+      .where("cid", "=", message.payload.cid)
+      .select()
+      .execute()
+      .then((res) => res.first());
+
+    if (exists) {
+      this.logger.debug("post already exists, skipping", {
+        cid: message.payload.cid,
+      });
+      return;
+    }
+
+    const { id, uid, ...data } = message.payload;
+    await table.insert(data as Omit<SocialPost, "id" | "uid">);
   }
 
   async getPost(postUid: string) {
