@@ -221,6 +221,10 @@ export class SocialUsers {
 
           if (response?.payload?.results) {
             results.push(...response.payload.results);
+          } else {
+            this.plugin.client.logger?.warn(
+              `Invalid response from server ${server.peerId.toString()}: ${JSON.stringify(response)}`
+            );
           }
         })
     );
