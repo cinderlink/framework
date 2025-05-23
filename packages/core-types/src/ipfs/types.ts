@@ -1,4 +1,4 @@
-import type { IPFS } from "ipfs-core-types";
+import type { Helia } from "helia";
 
 export interface EventListener {
   addEventListener: (
@@ -7,6 +7,6 @@ export interface EventListener {
   ) => void;
 }
 
-export type IPFSWithLibP2P = IPFS & {
+export type IPFSWithLibP2P = Helia & {
   libp2p: any;
 };
