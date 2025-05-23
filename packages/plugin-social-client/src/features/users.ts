@@ -196,32 +196,44 @@ export class SocialUsers {
   }
 
   async searchUsers(query: string) {
-    // TODO: add method to send to all servers & aggregate unique responses
-    const requestId: string = uuid();
-    const server = this.plugin.client.peers.getServers()[0];
-    if (!server) {
+    const servers = this.plugin.client.peers.getServers();
+    if (!servers.length) {
       throw new Error("No servers found");
     }
 
-    const response = await this.plugin.client.request<
-      SocialClientEvents,
-      "/social/users/search/request",
-      "/social/users/search/response"
-    >(server.peerId.toString(), {
-      topic: "/social/users/search/request",
-      payload: {
-        requestId,
-        query,
-      },
-    });
+    const results: SocialUser[] = [];
 
-    if (!response) {
-      throw new Error(
-        `No response received from server (${server.peerId.toString()})`
-      );
+    await Promise.all(
+      servers
+        .filter((s) => s.connected)
+        .map(async (server) => {
+          const response = await this.plugin.client.request<
+            SocialClientEvents,
+            "/social/users/search/request",
+            "/social/users/search/response"
+          >(server.peerId.toString(), {
+            topic: "/social/users/search/request",
+            payload: {
+              requestId: uuid(),
+              query,
+            },
+          });
+
+          if (response?.payload?.results) {
+            results.push(...response.payload.results);
+          }
+        })
+    );
+
+    const unique = new Map<string, SocialUser>();
+    for (const user of results) {
+      const existing = unique.get(user.did);
+      if (!existing || Number(user.updatedAt) > Number(existing.updatedAt)) {
+        unique.set(user.did, user);
+      }
     }
 
-    return response.payload?.results;
+    return Array.from(unique.values());
   }
 
   async setState(update: Partial<SocialUser>) {
