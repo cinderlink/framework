@@ -29,3 +29,4 @@ pnpm-lock.yaml
 pnpm-debug.log
 **/broadcast/**
 wip/
+packages/plugin-offline-sync-client/dist
