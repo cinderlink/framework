@@ -6,7 +6,7 @@ import type {
 } from "@cinderlink/core-types";
 import { DIDDag } from "./did/dag";
 import { CID } from "multiformats";
-import { GetOptions } from "ipfs-core-types/src/root";
+import { type GetOptions } from "helia";
 import { removeUndefined } from "./did/util";
 
 export class ClientDag<Plugins extends PluginEventDef = PluginEventDef>

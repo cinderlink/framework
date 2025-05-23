@@ -1,4 +1,4 @@
-import { GetOptions } from "ipfs-core-types/src/root";
+import { type GetOptions } from "helia";
 import { JWE } from "did-jwt";
 import { DID } from "dids";
 import { CID } from "multiformats";

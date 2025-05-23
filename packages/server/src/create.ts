@@ -1,4 +1,4 @@
-import type { Options } from "ipfs-core";
+import type { HeliaInit } from "helia";
 import type {
   LogSeverity,
   LoggerInterface,
@@ -15,7 +15,7 @@ export interface CreateServerOptions {
   addressVerification: string;
   plugins?: [PluginConstructor<any>, Record<string, unknown>][];
   nodes?: string[];
-  options?: Partial<Options>;
+  options?: Partial<HeliaInit>;
 }
 
 export class ServerLogger implements LoggerInterface {

@@ -1,63 +1,24 @@
-import { create } from "ipfs-core";
-import type { Options } from "ipfs-core";
+import { createHelia } from "helia";
+import type { HeliaInit } from "helia";
 import { webSockets } from "@libp2p/websockets";
 import { all } from "@libp2p/websockets/filters";
 import { noise } from "@chainsafe/libp2p-noise";
 import { mplex } from "@libp2p/mplex";
 import { IPFSWithLibP2P } from "@cinderlink/core-types";
+import { createLibp2p } from "libp2p";
 
-export async function createIPFS(
+export async function createHeliaNode(
   nodes: string[] = [],
-  overrides: Partial<Options> = {}
+  overrides: Partial<HeliaInit> = {}
 ): Promise<IPFSWithLibP2P> {
-  const options: Options = {
-    init: {
-      allowNew: true,
-      emptyRepo: true,
-      algorithm: "Ed25519",
-    },
+  const libp2p = await createLibp2p({
+    transports: [webSockets({ filter: all })],
+    connectionEncryption: [noise()],
+    streamMuxers: [mplex()],
+    ...overrides as any,
+  });
 
-    start: false,
-    repo: "cinderlink",
-    repoAutoMigrate: false,
-    EXPERIMENTAL: {
-      ipnsPubsub: true,
-    },
+  const helia = await createHelia({ libp2p });
 
-    libp2p: {
-      connectionManager: {
-        autoDial: false,
-      },
-      connectionEncryption: [noise()],
-      streamMuxers: [mplex()],
-      transports: [
-        webSockets({
-          filter: all,
-        }),
-      ],
-    },
-
-    relay: {
-      enabled: true,
-      hop: {
-        enabled: true,
-        active: true,
-      },
-    },
-
-    ...overrides,
-    config: {
-      Pubsub: {
-        Enabled: true,
-        PubSubRouter: "gossipsub",
-      },
-      Addresses: {
-        Swarm: [],
-      },
-      ...overrides.config,
-      Bootstrap: nodes,
-    },
-  };
-  const ipfs = await create(options);
-  return ipfs as unknown as IPFSWithLibP2P;
+  return helia as unknown as IPFSWithLibP2P;
 }
