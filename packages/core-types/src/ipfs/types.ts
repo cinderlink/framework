@@ -7,6 +7,4 @@ export interface EventListener {
   ) => void;
 }
 
-export type IPFSWithLibP2P = Helia & {
-  libp2p: any;
-};
+export type IPFSWithLibP2P = Helia;

@@ -6,6 +6,7 @@ import type {
   SubLoggerInterface,
 } from "@cinderlink/core-types";
 import type { DID } from "dids";
+import { Libp2pOptions } from "libp2p"; // Import Libp2pOptions
 import { SubLogger, createClient } from "@cinderlink/client";
 import { CinderlinkServer } from "./server";
 
@@ -14,8 +15,9 @@ export interface CreateServerOptions {
   address: `0x${string}`;
   addressVerification: string;
   plugins?: [PluginConstructor<any>, Record<string, unknown>][];
-  nodes?: string[];
-  options?: Partial<HeliaInit>;
+  nodes?: string[]; // Peer multiaddrs
+  libp2pOptions?: Partial<Libp2pOptions>;
+  heliaOptions?: Partial<HeliaInit>;
 }
 
 export class ServerLogger implements LoggerInterface {
@@ -78,15 +80,17 @@ export async function createServer({
   address,
   addressVerification,
   plugins = [],
-  nodes = [],
-  options = {},
+  nodes = [], // These are still peer multiaddrs for the client to know about
+  libp2pOptions = {},
+  heliaOptions = {},
 }: CreateServerOptions) {
   const client = await createClient({
     did,
     address,
     addressVerification,
-    nodes,
-    options,
+    nodes, // Pass nodes for peer management
+    libp2pOptions,
+    heliaOptions,
     role: "server",
     logger: new ServerLogger(),
   });

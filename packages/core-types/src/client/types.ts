@@ -1,3 +1,4 @@
+import type { Libp2p } from "@libp2p/interface";
 import type { IPFSWithLibP2P } from "../ipfs";
 import type { IncomingP2PMessage, Peer, PeerRole } from "../p2p";
 import type { DID } from "dids";
@@ -17,6 +18,7 @@ import { LoggerInterface } from "../logger";
 
 export type CinderlinkConstructorOptions = {
   ipfs: IPFSWithLibP2P;
+  libp2p: Libp2p;
   did: DID;
   address: `0x${string}`;
   addressVerification: string;

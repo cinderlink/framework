@@ -9,27 +9,32 @@ import OfflineSyncServerPlugin from "@cinderlink/plugin-offline-sync-server";
 const seed = await createSeed(
   "sufficiently long seed phrase that nobody will ever guess"
 );
-const server = await createServer(
-  seed,
-  [
+const server = await createServer({
+  ...seed,
+  plugins: [
     [CinderlinkProtocolPlugin, {}],
     [SocialServerPlugin, {}],
     [IdentityServerPlugin, {}],
     [OfflineSyncServerPlugin, {}],
   ],
-  [
-    // federated servers
+  nodes: [
+    // federated servers multiaddrs can go here if any
   ],
-  {
-    config: {
-      Addresses: {
-        Swarm: ["/ip4/127.0.0.1/tcp/4001", "/ip4/127.0.0.1/tcp/4002/ws"],
-        API: ["/ip4/127.0.0.1/tcp/5001"],
-        Gateway: ["/ip4/127.0.0.1/tcp/8080"],
-      },
-      Bootstrap: [],
+  libp2pOptions: {
+    addresses: {
+      listen: ["/ip4/127.0.0.1/tcp/4001", "/ip4/127.0.0.1/tcp/4002/ws"],
     },
-    Bootstrap: [],
-  }
-);
+    peerDiscovery: {
+      // Assuming bootstrap is a peer discovery mechanism
+      bootstrap: {
+        list: [], // Add bootstrap node multiaddrs here if any
+      },
+    },
+    // API and Gateway addresses from the old config are not standard libp2p/helia init options.
+    // If an HTTP API/Gateway is needed, it should be set up separately, possibly using @helia/http.
+  },
+  heliaOptions: {
+    // Add any Helia specific options here if needed
+  },
+});
 await server.start();

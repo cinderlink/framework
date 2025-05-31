@@ -35,7 +35,8 @@ import type { OfflineSyncClientPluginInterface } from "@cinderlink/plugin-offlin
 import Emittery from "emittery";
 import * as json from "multiformats/codecs/json";
 import { PeerId } from "@libp2p/interface-peer-id";
-import { Connection } from "@libp2p/interface-connection";
+import type { Connection } from "@libp2p/interface-connection";
+import type { Libp2p } from "@libp2p/interface";
 import { Peerstore } from "./peerstore";
 import { ClientDIDDag } from "./dag";
 import { Identity } from "./identity";
@@ -72,6 +73,7 @@ export class CinderlinkClient<
     new Emittery();
 
   public ipfs: IPFSWithLibP2P;
+  public libp2p: Libp2p;
   public did: DID;
   public address: `0x${string}`;
   public addressVerification: string;
@@ -92,6 +94,7 @@ export class CinderlinkClient<
 
   constructor({
     ipfs,
+    libp2p,
     did,
     address,
     addressVerification,
@@ -100,6 +103,7 @@ export class CinderlinkClient<
   }: CinderlinkConstructorOptions) {
     super();
     this.ipfs = ipfs;
+    this.libp2p = libp2p;
     this.did = did;
     this.address = address;
     this.addressVerification = addressVerification;
@@ -170,9 +174,9 @@ export class CinderlinkClient<
 
     this.logger.info("ipfs", "registering libp2p listeners");
     const message = this.onPubsubMessage.bind(this);
-    this.ipfs.libp2p.pubsub.addEventListener("message", message);
+    this.libp2p.pubsub.addEventListener("message", message);
 
-    this.ipfs.libp2p.addEventListener(
+    this.libp2p.addEventListener(
       "peer:connect",
       async (event: CustomEvent<Connection>) => {
         if (!this.peerId) {
@@ -191,7 +195,7 @@ export class CinderlinkClient<
       }
     );
 
-    this.ipfs.libp2p.addEventListener(
+    this.libp2p.addEventListener(
       "peer:disconnect",
       (connection: CustomEvent<Connection>) => {
         const peerId = connection.detail.remotePeer.toString();
@@ -205,7 +209,7 @@ export class CinderlinkClient<
       }
     );
 
-    this.ipfs.libp2p.pubsub.addEventListener(
+    this.libp2p.pubsub.addEventListener(
       "subscription-change",
       (event: CustomEvent) => {
         this.logger.debug("pubsub", "subscription change", { event });
@@ -274,7 +278,7 @@ export class CinderlinkClient<
     });
 
     setTimeout(() => {
-      this.ipfs.repo.gc();
+      this.ipfs.blockstore.gc().catch(err => this.logger.warn("gc", "Error during blockstore GC", { err }));
     }, 3000);
   }
 
@@ -320,9 +324,9 @@ export class CinderlinkClient<
           this.logger.info("p2p", "connecting to node", { peerId: peerIdStr });
           this.relayAddresses.push(addr);
           const peerId = peerIdFromString(peerIdStr);
-          await this.ipfs.libp2p.peerStore.delete(peerId);
-          const connected = await this.ipfs.swarm
-            .connect(multiaddr(addr))
+          await this.libp2p.peerStore.delete(peerId);
+          const connection = await this.libp2p
+            .dial(multiaddr(addr))
             .catch((err) => {
               this.logger.error(
                 "p2p",
@@ -333,9 +337,9 @@ export class CinderlinkClient<
                   stack: err.stack,
                 }
               );
-              return false;
+              return undefined;
             });
-          if (connected !== false) {
+          if (connection) {
             await this.connect(peerId, "server").catch((err: Error) => {
               this.logger.error("p2p", "peer could not be dialed", {
                 peerId: peerIdStr,
@@ -346,7 +350,7 @@ export class CinderlinkClient<
           } else {
             this.logger.error("p2p", "peer could not be dialed", {
               peerId: peerIdStr,
-              localPeerId: this.ipfs.libp2p.peerId.toString(),
+              localPeerId: this.libp2p.peerId.toString(),
             });
           }
         }
@@ -373,8 +377,8 @@ export class CinderlinkClient<
       this.logger.info("identity", "no changes to save");
       return;
     }
-    if (!this.ipfs.isOnline()) {
-      this.logger.error("ipfs", "ipfs is offline");
+    if (this.libp2p.status !== 'started') {
+      this.logger.error("ipfs", "libp2p is not started, cannot save");
       return;
     }
 
@@ -522,13 +526,13 @@ export class CinderlinkClient<
     } else {
       peer = this.peers.getPeer(peerId.toString());
     }
-    if (peer.peerId.toString() === this.ipfs.libp2p.peerId.toString()) {
+    if (peer.peerId.toString() === this.libp2p.peerId.toString()) {
       return;
     }
     if (peer.connected) {
       return;
     }
-    const addr = await this.ipfs.libp2p.peerStore.addressBook.get(peer.peerId);
+    const addr = await this.libp2p.peerStore.addressBook.get(peer.peerId);
     if (addr[0]) {
       this.logger.debug(
         "p2p",
@@ -543,14 +547,14 @@ export class CinderlinkClient<
         "p2p",
         `connect - connecting to peer: ${peer.peerId}, via relay: ${relayAddr}`
       );
-      await this.ipfs.libp2p.peerStore.addressBook.set(peer.peerId, [
+      await this.libp2p.peerStore.addressBook.set(peer.peerId, [
         multiaddr(relayAddr),
       ]);
     }
-    const connected = await this.ipfs.swarm
-      .connect(peer.peerId)
+    const connection = await this.libp2p
+      .dial(peer.peerId)
       .catch(() => undefined);
-    if (connected) {
+    if (connection) {
       await this.send<ProtocolEvents, "/cinderlink/keepalive">(
         peer.peerId.toString(),
         {
@@ -650,7 +654,7 @@ export class CinderlinkClient<
       retryDelay?: number;
     } = {}
   ) {
-    if (!this.ipfs?.libp2p) {
+    if (!this.libp2p) {
       this.logger.error("p2p", "send - libp2p not initialized");
       throw new Error("libp2p not initialized");
     }
@@ -717,21 +721,21 @@ export class CinderlinkClient<
     }
 
     // check if we have a connection to the peer
-    const connections = this.ipfs.libp2p.getConnections(peer.peerId);
+    const connections = this.libp2p.getConnections(peer.peerId);
     if (!connections || connections.length === 0) {
-      const recovered = await this.ipfs.swarm.connect(peer.peerId).catch(() => {
+      const recoveredConn = await this.libp2p.dial(peer.peerId).catch(() => {
         this.logger.error("p2p", `send - no connection to peer: ${peerId}`, {
           peerId,
           message,
         });
-        return false;
+        return undefined;
       });
-      if (recovered === false) {
+      if (!recoveredConn) {
         throw new Error(`No connection to peer ${peerId}`);
       }
     }
 
-    const stream = await this.ipfs.libp2p
+    const stream = await this.libp2p
       ?.dialProtocol(peer.peerId, "/cinderlink/1.0.0")
       .catch((err: Error) => {
         if (!options.retries) {
@@ -828,14 +832,14 @@ export class CinderlinkClient<
   async subscribe(topic: keyof PluginEvents["subscribe"]) {
     if (this.subscriptions.includes(topic as string)) return;
     this.logger.debug("pubsub", `subscribing to topic: ${topic as string}`);
-    await this.ipfs.libp2p.pubsub.subscribe(topic as string);
+    await this.libp2p.pubsub.subscribe(topic as string);
     this.subscriptions.push(topic as string);
   }
 
   async unsubscribe(topic: keyof PluginEvents["subscribe"]) {
     if (!this.subscriptions.includes(topic as string)) return;
     this.logger.debug("pubsub", `unsubscribing from topic: ${topic as string}`);
-    await this.ipfs.libp2p.pubsub.unsubscribe(topic as string);
+    await this.libp2p.pubsub.unsubscribe(topic as string);
     this.subscriptions = this.subscriptions.filter((t) => t !== topic);
   }
 
@@ -872,7 +876,7 @@ export class CinderlinkClient<
       { message, options }
     );
     try {
-      await this.ipfs.libp2p.pubsub.publish(topic as string, bytes);
+      await this.libp2p.pubsub.publish(topic as string, bytes);
     } catch (e) {
       this.logger.error("pubsub", "failed to publish message", {
         topic: topic as string,

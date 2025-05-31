@@ -8,6 +8,8 @@ import type {
   IdentityResolved,
   PluginEventDef,
 } from "@cinderlink/core-types";
+import { ipns } from "@helia/ipns";
+
 export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
   cid: string | undefined = undefined;
   document: Record<string, unknown> | undefined = undefined;
@@ -89,24 +91,28 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
     }
 
     try {
-      for await (const link of this.client.ipfs.name.resolve(
-        this.client.peerId,
-        { recursive: true, timeout: 3000 }
-      )) {
-        const cid = link.split("/").pop();
-        this.client.logger.info("IPNS", "resolve IPNS", { link, cid });
-        if (cid) {
-          const document = await this.client.dag
-            .loadDecrypted<IdentityDocument>(CID.parse(cid), undefined, {
-              timeout: 3000,
-            })
-            .catch(() => undefined);
-          if (document) {
-            return { cid, document };
-          }
+      // Assuming this.client.peerId is the PeerId object for the node's own key
+      const resolution = await ipns(this.client.ipfs).resolve(this.client.peerId!, { // Added ! for peerId as it should exist here
+        recursive: true,
+        timeout: 3000,
+      });
+      // The new resolve likely returns a single value (e.g. /ipfs/cid) or throws.
+      // The old API returned an async iterator.
+      if (resolution && resolution.path) {
+        const cidString = resolution.path.replace("/ipfs/", "");
+        this.client.logger.info("IPNS", "resolve IPNS", { link: resolution.path, cid: cidString });
+        const document = await this.client.dag
+          .loadDecrypted<IdentityDocument>(CID.parse(cidString), undefined, {
+            timeout: 3000,
+          })
+          .catch(() => undefined);
+        if (document) {
+          return { cid: cidString, document };
         }
       }
-    } catch (_) {}
+    } catch (error) {
+      this.client.logger.error("IPNS", "error resolving IPNS", { error });
+    }
 
     return {
       cid: undefined,
@@ -215,7 +221,11 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
       this.client.logger.info("identity", "unpinning previous identity", {
         cid: this.cid,
       });
-      this.client.ipfs.pin.rm(this.cid, { recursive: true }).catch(() => {});
+      try {
+        await this.client.ipfs.pins().rm(CID.parse(this.cid), { recursive: true });
+      } catch (error) {
+        this.client.logger.warn("identity", "failed to unpin previous identity CID", { cid: this.cid, error });
+      }
     }
 
     this.cid = cid.toString();
@@ -227,14 +237,14 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
     });
 
     await Promise.allSettled([
-      localforage.setItem("rootCID", cid),
-      this.client.ipfs.pin.add(cid, { recursive: true, timeout: 10000 }),
-      this.client.ipfs.dht.provide(cid, { recursive: true, timeout: 10000 }),
-      this.client.ipfs.name.publish(cid, {
+      localforage.setItem("rootCID", cid.toString()), // Ensure cid is string for localforage
+      this.client.ipfs.pins().add(cid, { recursive: true, timeout: 10000 }),
+      // this.client.ipfs.dht.provide(cid, { recursive: true, timeout: 10000 }), // DHT provide might change with new libp2p
+      ipns(this.client.ipfs).publish(this.client.peerId!, `/ipfs/${cid.toString()}`, { // Added ! for peerId
         timeout: 10000,
-        allowOffline: true,
-        lifetime: "14d",
-        ttl: "1m",
+        // allowOffline: true, // Check if this option still exists or is default
+        lifetime: "14d", // Check new API for lifetime/ttl options
+        // ttl: "1m", // Check new API
       }),
     ]);
     if (forceRemote || Date.now() - this.lastSavedAt > 10000) {

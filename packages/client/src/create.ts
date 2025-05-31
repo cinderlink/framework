@@ -6,6 +6,7 @@ import type {
 } from "@cinderlink/core-types";
 import { peerIdFromString } from "@libp2p/peer-id";
 import { HeliaInit } from "helia";
+import { Libp2pOptions } from "libp2p"; // Import Libp2pOptions
 import { CinderlinkClient } from "./client";
 import { createHeliaNode } from "./ipfs/create";
 import { DID } from "dids";
@@ -14,8 +15,9 @@ export interface CreateClientOptions {
   did: DID;
   address: `0x${string}`;
   addressVerification: string;
-  nodes?: string[];
-  options?: Partial<HeliaInit>;
+  nodes?: string[]; // These are peer multiaddrs, not direct Helia/Libp2p config objects
+  libp2pOptions?: Partial<Libp2pOptions>;
+  heliaOptions?: Partial<HeliaInit>;
   role: PeerRole;
   logger?: LoggerInterface;
 }
@@ -26,15 +28,17 @@ export async function createClient<
   did,
   address,
   addressVerification,
-  nodes,
-  options,
+  // nodes, // nodes are used later to add peers
+  libp2pOptions = {},
+  heliaOptions = {},
   role,
   logger,
 }: CreateClientOptions) {
-  const ipfs = await createHeliaNode(nodes, options);
+  const heliaNode = await createHeliaNode(libp2pOptions, heliaOptions);
   const client: CinderlinkClientInterface<PluginEvents> =
     new CinderlinkClient<PluginEvents>({
-      ipfs,
+      ipfs: heliaNode.helia,
+      libp2p: heliaNode.libp2p,
       did,
       address,
       addressVerification,
