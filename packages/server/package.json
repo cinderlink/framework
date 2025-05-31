@@ -29,13 +29,13 @@
     "@cinderlink/tsconfig": "workspace:../tsconfig",
     "@types/node": "^18.16.6",
     "dids": "^4.0.1",
-    "helia": "^0.1.0",
+    "helia": "^1.0.0",
     "tsup": "^6.7.0",
     "typescript": "^5.0.4",
     "vitest": "^0.30.1"
   },
   "peerDependencies": {
     "dids": "^3.4.0",
-    "helia": "^0.1.0"
+    "helia": "^1.0.0"
   }
 }

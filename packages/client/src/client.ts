@@ -285,8 +285,10 @@ export class CinderlinkClient<
     });
     this.hasServerConnection = this.peers.getServerCount() > 0;
 
-    // TODO: should we not emit this for servers?
-    this.emit("/peer/connect", peer);
+    // Only emit /peer/connect for non-server peers
+    if (peer.role !== "server") {
+      this.emit("/peer/connect", peer);
+    }
 
     if (peer.role === "server") {
       this.emit("/server/connect", peer);
