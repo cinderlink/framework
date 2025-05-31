@@ -8,8 +8,8 @@ import {
   createSignerDID,
   signAddressVerification,
 } from "@cinderlink/identifiers";
-import { HttpApi } from "ipfs-http-server";
-import { HttpGateway } from "ipfs-http-gateway";
+import { HttpApi } from "@helia/http-api";
+import { HttpGateway } from "@helia/http-gateway";
 import events from "events";
 import dotenv from "dotenv";
 
