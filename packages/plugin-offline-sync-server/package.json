@@ -30,7 +30,7 @@
     "@cinderlink/protocol": "workspace:../protocol",
     "@cinderlink/tsconfig": "workspace:../tsconfig",
     "did-jwt": "^7.1.0",
-    "dids": "^4.0.1",
+    "dids": "^5.0.3",
     "tsup": "^6.7.0",
     "typescript": "^5.0.4",
     "vitest": "^0.30.1"
@@ -41,6 +41,6 @@
     "@cinderlink/plugin-offline-sync-core": "workspace:../plugin-offline-sync-core",
     "@cinderlink/protocol": "workspace:../protocol",
     "did-jwt": "^6.11.0",
-    "dids": "^3.4.0"
+    "dids": "^5.0.3"
   }
 }

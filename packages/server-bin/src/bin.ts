@@ -2,7 +2,7 @@ import minimist from "minimist";
 import fs from "fs";
 import path from "path";
 import chalk from "chalk";
-import { Wallet } from "ethers";
+import { Wallet, type Signer } from "ethers";
 import { createServer } from "@cinderlink/server";
 import {
   createSignerDID,
@@ -44,7 +44,7 @@ const initEnv = () => {
     envPath,
     usePkey
       ? `CINDERLINK_PRIVATE_KEY=${wallet.privateKey}`
-      : `CINDERLINK_MNEMONIC=${wallet.mnemonic.phrase}`
+      : `CINDERLINK_MNEMONIC=${wallet.mnemonic?.phrase || ""}`
   );
 };
 
@@ -127,12 +127,12 @@ if (command !== "start") {
   }
 
   const { default: config } = await import(resolvedConfigPath);
-  let wallet: Wallet;
+  let wallet: Signer;
 
   if (config.privateKey) {
     wallet = new Wallet(config.privateKey);
   } else if (config.mnemonic) {
-    wallet = Wallet.fromMnemonic(config.mnemonic);
+    wallet = Wallet.fromPhrase(config.mnemonic);
   } else {
     console.error(
       `no mnemonic or private key found in ${chalk.yellow(configPath)}`
@@ -198,7 +198,7 @@ if (command !== "start") {
   );
   const server = await createServer({
     did,
-    address: wallet.address as `0x${string}`,
+    address: (await wallet.getAddress()) as `0x${string}`,
     addressVerification,
     plugins,
     nodes: config.nodes,

@@ -34,7 +34,7 @@ import type {
 import type { OfflineSyncClientPluginInterface } from "@cinderlink/plugin-offline-sync-core";
 import Emittery from "emittery";
 import * as json from "multiformats/codecs/json";
-import { PeerId, Connection } from "@libp2p/interface";
+import { PeerId } from "@libp2p/interface";
 import { Peerstore } from "./peerstore";
 import { ClientDIDDag } from "./dag";
 import { Identity } from "./identity";
@@ -176,11 +176,11 @@ export class CinderlinkClient<
 
     this.ipfs.libp2p.addEventListener(
       "peer:connect",
-      async (event: CustomEvent<Connection>) => {
+      async (event: CustomEvent<PeerId>) => {
         if (!this.peerId) {
           throw new Error("peerId not set");
         }
-        const peerId = event.detail.remotePeer;
+        const peerId = event.detail;
         const peerIdString = peerId.toString();
         let peer: Peer;
         if (!this.peers.hasPeer(peerIdString)) {
@@ -195,8 +195,8 @@ export class CinderlinkClient<
 
     this.ipfs.libp2p.addEventListener(
       "peer:disconnect",
-      (connection: CustomEvent<Connection>) => {
-        const peerId = connection.detail.remotePeer.toString();
+      (event: CustomEvent<PeerId>) => {
+        const peerId = event.detail.toString();
         const peer = this.peers.getPeer(peerId);
         if (peer) {
           this.logger.info("p2p", "peer disconnected", { peerId, peer });

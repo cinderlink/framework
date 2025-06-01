@@ -33,7 +33,7 @@
     "@cinderlink/server": "workspace:../server",
     "chalk": "^5.2.0",
     "dotenv": "^16.0.3",
-    "ethers": "^5.7.2",
+    "ethers": "^6.14.3",
     "@helia/http": "^2.1.2",
     "minimist": "^1.2.8"
   },

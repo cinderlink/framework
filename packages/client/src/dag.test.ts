@@ -1,7 +1,7 @@
 import { rmSync } from "fs";
 import { describe, beforeAll, it, expect, afterAll } from "vitest";
 import { CinderlinkClientInterface, ProtocolEvents } from "../../core-types";
-import * as ethers from "ethers";
+import { ethers } from "ethers";
 import {
   createDID,
   createSeed,
@@ -21,13 +21,10 @@ describe("@cinderlink/client/dag", () => {
       clientWallet
     );
     client = await createClient<ProtocolEvents>({
-      did: clientDID,
+      did: clientDID as any,
       address: clientWallet.address as `0x${string}`,
       addressVerification: clientAV,
       role: "peer",
-      options: {
-        repo: "dag-test",
-      },
     });
     client.initialConnectTimeout = 0;
     await client.start([]);
@@ -65,10 +62,5 @@ describe("@cinderlink/client/dag", () => {
     const loaded = cid ? await client.dag.loadDecrypted(cid) : undefined;
     console.info(loaded);
     expect(loaded).toEqual(document);
-  });
-
-  afterAll(async () => {
-    await client?.stop();
-    rmSync("./dag-test", { recursive: true, force: true });
   });
 });
