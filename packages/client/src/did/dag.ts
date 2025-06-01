@@ -1,4 +1,3 @@
-import { type GetOptions } from "helia";
 import { JWE } from "did-jwt";
 import { DID } from "dids";
 import { CID } from "multiformats";
@@ -7,6 +6,7 @@ import {
   DAGStoreOptions,
   DIDDagInterface,
   SubLoggerInterface,
+  GetOptions,
 } from "@cinderlink/core-types";
 import { removeUndefined } from "./util";
 

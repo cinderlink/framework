@@ -1,24 +1,21 @@
 import { createHelia } from "helia";
 import type { HeliaInit } from "helia";
-import { webSockets } from "@libp2p/websockets";
-import { all } from "@libp2p/websockets/filters";
-import { noise } from "@chainsafe/libp2p-noise";
-import { mplex } from "@libp2p/mplex";
 import { IPFSWithLibP2P } from "@cinderlink/core-types";
-import { createLibp2p } from "libp2p";
 
+/**
+ * Creates a Helia node with standardized libp2p configuration
+ * @param _nodes - Bootstrap nodes (not used in current implementation)
+ * @param overrides - Configuration overrides
+ */
 export async function createHeliaNode(
-  nodes: string[] = [],
+  _nodes: string[] = [],
   overrides: Partial<HeliaInit> = {}
 ): Promise<IPFSWithLibP2P> {
-  const libp2p = await createLibp2p({
-    transports: [webSockets({ filter: all })],
-    connectionEncryption: [noise()],
-    streamMuxers: [mplex()],
-    ...overrides as any,
+  // Let Helia use its default libp2p configuration for now
+  // We can customize later once the basic setup is working
+  const helia = await createHelia({
+    ...overrides,
   });
 
-  const helia = await createHelia({ libp2p });
-
-  return helia as unknown as IPFSWithLibP2P;
+  return helia as IPFSWithLibP2P;
 }

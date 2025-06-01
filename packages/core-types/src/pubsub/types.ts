@@ -7,7 +7,7 @@ import {
   ProtocolMessage,
 } from "../protocol";
 import { Peer } from "../p2p";
-import { PeerId } from "@libp2p/interface-peer-id";
+import { PeerId } from "@libp2p/interface";
 
 export type LibP2PPubsubMessage<
   Events extends PluginEventDef = PluginEventDef,

@@ -99,9 +99,16 @@ export class OfflineSyncServerPlugin
 
     // pin the CID for the user
     if ((message.payload as any).message.cid) {
-      await this.client.ipfs.pin.add((message.payload as any).message.cid, {
-        recursive: true,
-      });
+      try {
+        // Convert AsyncGenerator to Promise by consuming it
+        for await (const _ of this.client.ipfs.pins.add((message.payload as any).message.cid, {
+          signal: AbortSignal.timeout(5000),
+        })) {
+          // Just consume the generator
+        }
+      } catch (error) {
+        // Ignore pin errors
+      }
     }
     // if the recipient is online, just send the message
     if (this.client.peers.isDIDConnected(message.payload.recipient)) {

@@ -14,7 +14,7 @@ import {
   SubLoggerInterface,
   IncomingP2PMessage,
 } from "@cinderlink/core-types";
-import { Connection, Stream } from "@libp2p/interface-connection";
+import { Connection, Stream } from "@libp2p/interface";
 import * as json from "multiformats/codecs/json";
 import * as lp from "it-length-prefixed";
 import { pipe } from "it-pipe";
@@ -140,7 +140,9 @@ export class CinderlinkProtocolPlugin<
             peer as any
           );
           try {
-            this.client.ipfs.swarm.disconnect(peer.peerId);
+            this.client.ipfs.libp2p.getConnections(peer.peerId).forEach((connection: Connection) => {
+              connection.close();
+            });
             this.client.emit("/peer/disconnect", peer);
             this.client.peers.removePeer(peer.peerId.toString());
           } catch (_) {}

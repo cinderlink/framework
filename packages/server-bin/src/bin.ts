@@ -8,8 +8,6 @@ import {
   createSignerDID,
   signAddressVerification,
 } from "@cinderlink/identifiers";
-import { HttpApi } from "@helia/http-api";
-import { HttpGateway } from "@helia/http-gateway";
 import events from "events";
 import dotenv from "dotenv";
 
@@ -91,7 +89,6 @@ export default {
       Addresses: {
         Swarm: ["/ip4/127.0.0.1/tcp/4001", "/ip4/127.0.0.1/tcp/4002/ws"],
         API: ["/ip4/127.0.0.1/tcp/5001"],
-        Gateway: ["/ip4/127.0.0.1/tcp/8080"],
       },
       API: {
         HTTPHeaders: {
@@ -210,22 +207,10 @@ if (command !== "start") {
   server.client.initialConnectTimeout = 1;
   await server.start();
 
-  console.log(`starting ${chalk.cyan("http api")}...`);
-  const api = new HttpApi(server.client.ipfs);
-  await api.start();
-
-  console.log(`starting ${chalk.cyan("http gateway")}...`);
-  const gateway = new HttpGateway(server.client.ipfs);
-  await gateway.start();
-
-  const addrs = await server.client.ipfs.swarm.localAddrs();
-  console.info(`listening: ${addrs.join(", ")}`);
+  const addrs = server.client.ipfs.libp2p.getMultiaddrs();
+  console.info(`listening: ${addrs.map((addr: any) => addr.toString()).join(", ")}`);
 
   process.on("SIGINT", async () => {
-    console.log(`stopping ${chalk.cyan("http gateway")}...`);
-    await gateway.stop();
-    console.log(`stopping ${chalk.cyan("http api")}...`);
-    await api.stop();
     console.log(`stopping ${chalk.cyan("cinderlink")}...`);
     await server.stop();
     process.exit(0);

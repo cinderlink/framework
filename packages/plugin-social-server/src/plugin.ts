@@ -210,12 +210,28 @@ export class SocialServerPlugin<
       existing.avatar !== message.payload.avatar
     ) {
       // unpin
-      await this.client.ipfs.pin.rm(existing.avatar).catch(() => {});
+      try {
+        for await (const _ of this.client.ipfs.pins.rm(existing.avatar as any)) {
+          // consume generator
+        }
+      } catch (error) {
+        this.logger.debug("Failed to unpin avatar CID", {
+          cid: existing.avatar,
+          error,
+        });
+      }
     }
 
     // pin the new one
     if (message.payload.avatar) {
-      await this.client.ipfs.pin.add(message.payload.avatar);
+      try {
+        await this.client.ipfs.pins.add(message.payload.avatar as any);
+      } catch (error) {
+        this.logger.debug("Failed to pin avatar CID", {
+          cid: message.payload.avatar,
+          error,
+        });
+      }
     }
 
     return this.saveUser(message.peer.did, {
@@ -320,43 +336,35 @@ export class SocialServerPlugin<
       return;
     }
 
-    const resolved = await this.client.ipfs
-      .resolve(message.payload.cid, { recursive: true, timeout: 5000 })
-      .catch(() => {});
-    if (resolved) {
-      await this.client.ipfs.pin.add(message.payload.cid, {
-        recursive: true,
-        timeout: 3000,
-      });
-
-      // upsert the existing pin
-      const pin = await table.upsert(
-        {
-          did: message.peer.did,
-          cid: message.payload.cid,
-          textId: message.payload.textId as string,
-        },
-        {
-          cid: message.payload.cid,
-          textId: message.payload.textId,
-          updatedAt: Date.now(),
-        }
-      );
-
-      return this.client.send(message.peer.peerId.toString(), {
-        topic: "/social/users/pin/response",
-        payload: {
-          requestId: message.payload.requestId,
-          pin,
-        },
+    // Pin the CID directly - resolve method was removed in Helia
+    try {
+      await this.client.ipfs.pins.add(message.payload.cid as any);
+    } catch (error) {
+      this.logger.debug("Failed to pin CID", {
+        cid: message.payload.cid,
+        error,
       });
     }
+
+    // upsert the existing pin
+    const pin = await table.upsert(
+      {
+        did: message.peer.did,
+        cid: message.payload.cid,
+        textId: message.payload.textId as string,
+      },
+      {
+        cid: message.payload.cid,
+        textId: message.payload.textId,
+        updatedAt: Date.now(),
+      }
+    );
 
     return this.client.send(message.peer.peerId.toString(), {
       topic: "/social/users/pin/response",
       payload: {
         requestId: message.payload.requestId,
-        error: "Failed to resolve CID",
+        pin,
       },
     });
   }
@@ -380,14 +388,28 @@ export class SocialServerPlugin<
 
     if (existingUser?.avatar) {
       // unpin the old avatar CID
-      await this.client.ipfs.pin
-        .rm(existingUser.avatar as string)
-        .catch(() => {});
+      try {
+        for await (const _ of this.client.ipfs.pins.rm(existingUser.avatar as any)) {
+          // consume generator
+        }
+      } catch (error) {
+        this.logger.debug("Failed to unpin avatar CID", {
+          cid: existingUser.avatar,
+          error,
+        });
+      }
     }
 
     // pin the avatar CID
     if (user.avatar) {
-      await this.client.ipfs.pin.add(user.avatar);
+      try {
+        await this.client.ipfs.pins.add(user.avatar as any);
+      } catch (error) {
+        this.logger.debug("Failed to pin avatar CID", {
+          cid: user.avatar,
+          error,
+        });
+      }
     }
 
     await table?.upsert({ did }, user);

@@ -102,9 +102,7 @@ Message: ${message.message}
       });
       throw new Error("failed to store chat message");
     }
-    const pinned = await this.plugin.client.ipfs.pin.add(cid, {
-      recursive: true,
-    });
+    const pinned = await this.plugin.client.ipfs.pins.add(cid);
     this.logger.debug(`message pinned`, {
       pinned: pinned.toString(),
     });

@@ -6,6 +6,7 @@ import {
   SignedProtocolPayload,
 } from "@cinderlink/core-types";
 import * as json from "multiformats/codecs/json";
+import * as multiformats from "multiformats";
 import { DagJWS, DID, VerifyJWSResult } from "dids";
 import { JWE } from "did-jwt";
 
@@ -34,13 +35,13 @@ export async function decodePayload<
     if (!did) {
       throw new Error("did required to decrypt JWE");
     }
-    const decrypted: json.ByteView<Record<string, unknown>> | undefined =
+    const decrypted: multiformats.ByteView<Record<string, unknown>> | undefined =
       await did?.decryptJWE(encoded.payload as JWE).catch(() => undefined);
     if (!decrypted) {
       throw new Error("failed to decrypt JWE");
     }
     payload = json.decode(
-      decrypted as json.ByteView<DecodedProtocolPayload<Encoded>["payload"]>
+      decrypted as multiformats.ByteView<DecodedProtocolPayload<Encoded>["payload"]>
     );
   } else {
     payload = (

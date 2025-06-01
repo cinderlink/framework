@@ -1,5 +1,5 @@
 import type { Peer, PeerStoreInterface } from "@cinderlink/core-types";
-import { PeerId } from "@libp2p/interface-peer-id";
+import type { PeerId } from "@libp2p/interface";
 
 export class Peerstore implements PeerStoreInterface {
   peers: Record<string, Peer> = {};

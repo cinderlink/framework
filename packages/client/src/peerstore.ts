@@ -1,5 +1,5 @@
-import type { Peer, PeerStoreInterface } from "@cinderlink/core-types";
-import { PeerId } from "@libp2p/interface-peer-id";
+import type { PeerId } from "@libp2p/interface";
+import type { Peer, PeerStoreInterface, PeerRole } from "@cinderlink/core-types";
 
 export class Peerstore implements PeerStoreInterface {
   peers: Record<string, Peer> = {};
@@ -7,7 +7,7 @@ export class Peerstore implements PeerStoreInterface {
 
   constructor(public localPeerId: string) {}
 
-  addPeer(peerId: PeerId, role: "server" | "peer" = "peer", did?: string) {
+  addPeer(peerId: PeerId, role: PeerRole = "peer", did?: string) {
     if (peerId.toString() === this.localPeerId) {
       throw new Error("cannot add self as peer");
     }

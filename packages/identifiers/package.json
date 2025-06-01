@@ -24,11 +24,11 @@
     "did": "^0.5.0",
     "did-jwt": "^7.1.0",
     "did-resolver": "^4.1.0",
-    "dids": "^4.0.1",
+    "dids": "^5.0.3",
     "ethers": "^5.7.2",
     "key-did-provider-ed25519": "^3.0.1",
     "key-did-resolver": "^3.0.0",
-    "multiformats": "^11.0.2"
+    "multiformats": "^13.3.4"
   },
   "devDependencies": {
     "@cinderlink/tsconfig": "workspace:../tsconfig",
