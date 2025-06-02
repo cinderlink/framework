@@ -353,16 +353,12 @@ export class CinderlinkClient<
               );
               return false;
             });
-          if (connected !== false) {
-            await this.connect(peerId, "server").catch((err: Error) => {
-              this.logger.error("p2p", "peer could not be dialed", {
-                peerId: peerIdStr,
-                error: err.message,
-                stack: err.stack,
-              });
-            });
+          if (connected) { // Check for truthiness (true)
+            this.logger.info("p2p", `Initial dial to node ${addr} successful. Proceeding with full connection setup.`, { peerId: peerIdStr });
+            await this.connect(peerId, "server"); // Removed .catch here, connect() should handle its own errors comprehensively
           } else {
-            this.logger.error("p2p", "peer could not be dialed", {
+            // This block is hit if dial(multiaddr(addr)) explicitly returned false (due to its own catch)
+            this.logger.error("p2p", `Initial dial to node ${addr} failed. Cannot establish connection.`, {
               peerId: peerIdStr,
               localPeerId: this.ipfs.libp2p.peerId.toString(),
             });
@@ -548,40 +544,22 @@ export class CinderlinkClient<
       return;
     }
     const addr = await this.ipfs.libp2p.peerStore.addressBook.get(peerId);
-    if (addr[0]) {
-      this.logger.debug(
-        "p2p",
-        `connect - connecting to ${role}: ${peer.peerId}`,
-        {
-          addr: addr[0].multiaddr.toString(),
-        }
-      );
+    let targetAddressInfo = "via discovered address";
+    if (addr && addr.length > 0 && addr[0]) {
+      targetAddressInfo = `via ${addr[0].multiaddr.toString()}`;
+      this.logger.info("p2p", `Attempting to connect to ${role} ${peer.peerId.toString()} ${targetAddressInfo}`);
+    } else if (this.relayAddresses.length > 0) {
+      const relayAddr = `${this.relayAddresses[0]}/p2p-circuit/p2p/${peer.peerId.toString()}`;
+      targetAddressInfo = `via relay ${this.relayAddresses[0]}`;
+      this.logger.info("p2p", `Attempting to connect to ${role} ${peer.peerId.toString()} ${targetAddressInfo}`);
+      await this.ipfs.libp2p.peerStore.addressBook.set(peerId, [multiaddr(relayAddr)]);
     } else {
-      const relayAddr = `${this.relayAddresses[0]}/p2p-circuit/p2p/${peer.peerId}`;
-      this.logger.debug(
-        "p2p",
-        `connect - connecting to peer: ${peer.peerId}, via relay: ${relayAddr}`
-      );
-      await this.ipfs.libp2p.peerStore.addressBook.set(peerId, [
-        multiaddr(relayAddr),
-      ]);
+      this.logger.warn("p2p", `No known address or relay for ${role} ${peer.peerId.toString()}. Dial may fail or use other discovery.`, { peerId: peer.peerId.toString() });
     }
-    const connected = await this.ipfs.libp2p
-      .dial(peerId)
-      .then(() => true)
-      .catch((err: Error) => {
-        this.logger.error(
-          "p2p",
-          `error connecting to peer: ${err.message}`,
-          {
-            peerId: peerId.toString(),
-            error: err.message,
-            stack: err.stack,
-          }
-        );
-        return false;
-      });
-    if (connected) {
+
+    try {
+      await this.ipfs.libp2p.dial(peerId);
+      this.logger.info("p2p", `Successfully dialed ${role} ${peer.peerId.toString()} ${targetAddressInfo}. Sending keepalive.`);
       await this.send<ProtocolEvents, "/cinderlink/keepalive">(
         peerId.toString(),
         {
@@ -591,6 +569,19 @@ export class CinderlinkClient<
           },
         }
       );
+    } catch (err: any) {
+      this.logger.error(
+        "p2p",
+        `Failed to dial ${role} ${peer.peerId.toString()} ${targetAddressInfo}. Error: ${err.message}`,
+        {
+          peerId: peerId.toString(),
+          role: role,
+          addressInfo: targetAddressInfo,
+          error: err.message,
+          stack: err.stack,
+        }
+      );
+      // Optionally re-throw or handle specific errors if needed for control flow
     }
   }
 

@@ -33,15 +33,16 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
         this.resolveServer().catch(() => emptyResult),
       ]);
       results.forEach((result) => {
-        if (
-          !Object.keys(resolved.document?.schemas || {}).length ||
-          (result?.cid !== undefined &&
-            result.document?.updatedAt &&
-            Number(result.document.updatedAt || 0) >
-              Number(resolved?.document?.updatedAt || 0))
-        ) {
-          resolved.cid = result.cid;
-          resolved.document = result.document;
+        // Only consider results that successfully loaded a document
+        if (result?.document) {
+          if (
+            !resolved.document || // If we currently have no document
+            (result.document.updatedAt && // Or if the new result's document is more recent
+            Number(result.document.updatedAt || 0) > Number(resolved.document.updatedAt || 0))
+          ) {
+            resolved.cid = result.cid;
+            resolved.document = result.document;
+          }
         }
       });
       this.cid = resolved?.cid;
