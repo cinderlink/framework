@@ -2,14 +2,15 @@ import minimist from "minimist";
 import fs from "fs";
 import path from "path";
 import chalk from "chalk";
-import { Wallet } from "ethers";
+import { privateKeyToAccount, mnemonicToAccount, generatePrivateKey, generateMnemonic } from "viem/accounts";
+import { english } from "viem/accounts";
+import { createWalletClient, http } from "viem";
+import { mainnet } from "viem/chains";
 import { createServer } from "@cinderlink/server";
 import {
   createSignerDID,
   signAddressVerification,
 } from "@cinderlink/identifiers";
-import { HttpApi } from "@helia/http-api";
-import { HttpGateway } from "@helia/http-gateway";
 import events from "events";
 import dotenv from "dotenv";
 
@@ -38,16 +39,26 @@ ${chalk.yellow("options")}:
 const initEnv = () => {
   const envPath = argv.file || ".env";
   const usePkey = argv.pkey;
-  const wallet = Wallet.createRandom();
-  console.log(
-    `initializing ${chalk.cyan("cinderlink")} .env at ${chalk.yellow(envPath)}`
-  );
-  fs.writeFileSync(
-    envPath,
-    usePkey
-      ? `CINDERLINK_PRIVATE_KEY=${wallet.privateKey}`
-      : `CINDERLINK_MNEMONIC=${wallet.mnemonic.phrase}`
-  );
+  
+  if (usePkey) {
+    const privateKey = generatePrivateKey();
+    console.log(
+      `initializing ${chalk.cyan("cinderlink")} .env at ${chalk.yellow(envPath)}`
+    );
+    fs.writeFileSync(
+      envPath,
+      `CINDERLINK_PRIVATE_KEY=${privateKey}`
+    );
+  } else {
+    const mnemonic = generateMnemonic(english);
+    console.log(
+      `initializing ${chalk.cyan("cinderlink")} .env at ${chalk.yellow(envPath)}`
+    );
+    fs.writeFileSync(
+      envPath,
+      `CINDERLINK_MNEMONIC=${mnemonic}`
+    );
+  }
 };
 
 if (command === "init") {
@@ -91,7 +102,6 @@ export default {
       Addresses: {
         Swarm: ["/ip4/127.0.0.1/tcp/4001", "/ip4/127.0.0.1/tcp/4002/ws"],
         API: ["/ip4/127.0.0.1/tcp/5001"],
-        Gateway: ["/ip4/127.0.0.1/tcp/8080"],
       },
       API: {
         HTTPHeaders: {
@@ -130,12 +140,13 @@ if (command !== "start") {
   }
 
   const { default: config } = await import(resolvedConfigPath);
-  let wallet: Wallet;
+  let account;
+  let walletClient;
 
   if (config.privateKey) {
-    wallet = new Wallet(config.privateKey);
+    account = privateKeyToAccount(config.privateKey as `0x${string}`);
   } else if (config.mnemonic) {
-    wallet = Wallet.fromMnemonic(config.mnemonic);
+    account = mnemonicToAccount(config.mnemonic);
   } else {
     console.error(
       `no mnemonic or private key found in ${chalk.yellow(configPath)}`
@@ -143,12 +154,19 @@ if (command !== "start") {
     process.exit(1);
   }
 
-  if (!wallet) {
+  if (!account) {
     console.error(
       `invalid mnemonic or private key in ${chalk.yellow(configPath)}`
     );
     process.exit(1);
   }
+
+  // Create wallet client for signing
+  walletClient = createWalletClient({
+    account,
+    chain: mainnet,
+    transport: http(),
+  });
 
   console.log(`loading ${chalk.cyan("plugins")}...`);
   const plugins = (
@@ -189,20 +207,33 @@ if (command !== "start") {
   ).filter((p) => !!p);
 
   console.log(`starting ${chalk.cyan("cinderlink")}...`);
-  const { did } = await createSignerDID(
+  const { did, signature } = await createSignerDID(
     config.app,
-    wallet,
-    config.accountNonce
+    account,
+    walletClient,
+    config.accountNonce || 0
   );
-  const addressVerification = await signAddressVerification(
+
+  const addressSignature = await signAddressVerification(
     config.app,
     did.id,
-    wallet
+    account,
+    walletClient
   );
+
+  // log did, address, signature
+  const address = account.address;
+  console.log(`  ${chalk.gray("DID")}: ${chalk.cyan(did.id)}`);
+  console.log(`  ${chalk.gray("address")}: ${chalk.cyan(address)}`);
+  console.log(`  ${chalk.gray("signature")}: ${chalk.cyan(signature)}`);
+  console.log(
+    `  ${chalk.gray("address signature")}: ${chalk.cyan(addressSignature)}`
+  );
+
   const server = await createServer({
     did,
-    address: wallet.address as `0x${string}`,
-    addressVerification,
+    address: (account.address as `0x${string}`),
+    addressVerification: addressSignature,
     plugins,
     nodes: config.nodes,
     options: config.ipfs,
@@ -210,22 +241,10 @@ if (command !== "start") {
   server.client.initialConnectTimeout = 1;
   await server.start();
 
-  console.log(`starting ${chalk.cyan("http api")}...`);
-  const api = new HttpApi(server.client.ipfs);
-  await api.start();
-
-  console.log(`starting ${chalk.cyan("http gateway")}...`);
-  const gateway = new HttpGateway(server.client.ipfs);
-  await gateway.start();
-
-  const addrs = await server.client.ipfs.swarm.localAddrs();
-  console.info(`listening: ${addrs.join(", ")}`);
+  const addrs = server.client.ipfs.libp2p.getMultiaddrs();
+  console.info(`listening: ${addrs.map((addr: any) => addr.toString()).join(", ")}`);
 
   process.on("SIGINT", async () => {
-    console.log(`stopping ${chalk.cyan("http gateway")}...`);
-    await gateway.stop();
-    console.log(`stopping ${chalk.cyan("http api")}...`);
-    await api.stop();
     console.log(`stopping ${chalk.cyan("cinderlink")}...`);
     await server.stop();
     process.exit(0);

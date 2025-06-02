@@ -1,23 +1,31 @@
-import * as ethers from "ethers";
+import { verifyMessage, type Account, type WalletClient } from "viem";
 import { createAddressVerificationMessage } from "./create";
 
 export async function signAddressVerification(
   app: string,
   did: string,
-  signer: ethers.Signer
+  account: Account,
+  walletClient: WalletClient
 ) {
-  const address = await signer.getAddress();
+  const address = account.address;
   const message = createAddressVerificationMessage(app, did, address);
-  return signer.signMessage(message);
+  return walletClient.signMessage({
+    account,
+    message,
+  });
 }
 
 export async function checkAddressVerification(
   app: string,
   did: string,
   address: string,
-  signature: string
+  signature: `0x${string}`
 ) {
   const message = createAddressVerificationMessage(app, did, address);
-  const signer = ethers.utils.verifyMessage(message, signature);
-  return signer === address;
+  const recoveredAddress = await verifyMessage({
+    address: address as `0x${string}`,
+    message,
+    signature,
+  });
+  return recoveredAddress;
 }

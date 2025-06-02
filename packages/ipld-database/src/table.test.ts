@@ -1,4 +1,6 @@
-import * as ethers from "ethers";
+import { privateKeyToAccount } from "viem/accounts";
+import { createWalletClient, http } from "viem";
+import { mainnet } from "viem/chains";
 import {
   createDID,
   signAddressVerification,
@@ -92,12 +94,22 @@ describe("@cinderlink/ipld-database/table", () => {
   beforeEach(async (tst) => {
     const seed = await createSeed("test seed");
     const did = await createDID(seed);
-    const wallet = ethers.Wallet.createRandom();
-    const address = wallet.address as `0x${string}`;
+    
+    // Create a random account with viem
+    const privateKey = `0x${Math.random().toString(16).slice(2).padStart(64, '0')}` as `0x${string}`;
+    const account = privateKeyToAccount(privateKey);
+    const walletClient = createWalletClient({
+      account,
+      chain: mainnet,
+      transport: http(),
+    });
+    
+    const address = account.address;
     const addressVerification = await signAddressVerification(
       "test",
       did.id,
-      wallet
+      account,
+      walletClient
     );
     client = (await createClient({
       address,

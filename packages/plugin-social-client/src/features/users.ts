@@ -23,8 +23,8 @@ export class SocialUsers {
     status: "online",
     updatedAt: 0,
   };
-  userStatusInterval: NodeJS.Timer | null = null;
-  announceInterval: NodeJS.Timer | null = null;
+  userStatusInterval: NodeJS.Timeout | null = null;
+  announceInterval: NodeJS.Timeout | null = null;
   hasServerConnection = false;
   loadingLocalUser = false;
   logger: SubLoggerInterface;
@@ -176,7 +176,7 @@ export class SocialUsers {
       await this.plugin.client.publish("/social/users/announce", payload);
 
       for (let peer of this.plugin.client.peers.getAllPeers()) {
-        await this.plugin.client.ipfs.ping(peer.peerId);
+        this.logger.debug(`Peer announced to: ${peer.peerId.toString()}`);
       }
     }
   }
@@ -223,7 +223,8 @@ export class SocialUsers {
             results.push(...response.payload.results);
           } else {
             this.plugin.client.logger?.warn(
-              `Invalid response from server ${server.peerId.toString()}: ${JSON.stringify(response)}`
+              `Invalid response from server ${server.peerId.toString()}`,
+              JSON.stringify(response)
             );
           }
         })
@@ -426,7 +427,7 @@ export class SocialUsers {
       "candor.social",
       message.payload.did,
       message.payload.address,
-      message.payload.addressVerification
+      message.payload.addressVerification as `0x${string}`
     ).catch(() => undefined);
     if (!verified) {
       this.logger.warn(

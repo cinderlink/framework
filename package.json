@@ -14,7 +14,7 @@
   ],
   "scripts": {
     "watch": "turbo watch --filter='./packages/*' --parallel --concurrency 24",
-    "build": "turbo build --filter='./packages/*' --concurrency 8",
+    "build": "turbo build --filter='./packages/*' --concurrency 2",
     "dev": "turbo dev",
     "test": "pnpm --filter=./packages/* -r test"
   },
@@ -23,8 +23,13 @@
   "license": "ISC",
   "devDependencies": {
     "@changesets/cli": "^2.26.1",
+    "@types/jsdom": "^21.1.7",
     "chokidar": "^3.5.3",
+    "jsdom": "^26.1.0",
     "minimist": "^1.2.8",
     "turbo": "^1.9.3"
+  },
+  "dependencies": {
+    "viem": "^2.30.5"
   }
 }

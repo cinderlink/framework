@@ -1,8 +1,15 @@
-import { GetOptions } from "ipfs-core-types/src/root";
 import type { CID } from "multiformats";
 import type { DID } from "dids";
 import type { JWE } from "did-jwt";
 import { DAGStoreOptions } from "./types";
+
+// Define GetOptions locally since Helia doesn't have a direct equivalent
+// This matches the interface from ipfs-core-types
+export interface GetOptions {
+  timeout?: number;
+  signal?: AbortSignal;
+  path?: string;
+}
 
 export interface DAGInterface {
   store<Data = unknown>(

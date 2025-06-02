@@ -1,6 +1,6 @@
 import { JWE } from "did-jwt";
 import { DagJWS, VerifyJWSResult } from "dids";
-import { ByteView } from "multiformats/codecs/json";
+import * as multiformats from "multiformats";
 import { Peer } from "./../p2p";
 import { PluginEventDef } from "./../plugin/types";
 
@@ -51,7 +51,7 @@ export type SignedProtocolPayload<
 export type EncryptedProtocolPayload<
   Payload = ProtocolRequest,
   Decrypted extends boolean = false
-> = Decrypted extends true ? ByteView<Payload> : JWE;
+> = Decrypted extends true ? multiformats.ByteView<Payload> : JWE;
 
 export type ProtocolPayload<
   Payload = ProtocolRequest,

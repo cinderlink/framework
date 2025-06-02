@@ -54,7 +54,7 @@ export class SyncDBPlugin<
   syncRows?: TableInterface<SyncRowsRow>;
   syncTables?: TableInterface<SyncTablesRow>;
   syncing: Record<string, Record<string, SyncConfig<any>>> = {};
-  timers: Record<string, NodeJS.Timer> = {};
+  timers: Record<string, ReturnType<typeof setInterval>> = {};
   logger: SubLoggerInterface;
   started = false;
 

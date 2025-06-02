@@ -1,7 +1,9 @@
 import { rmSync } from "fs";
 import { describe, beforeAll, it, expect, afterAll } from "vitest";
 import { CinderlinkClientInterface, ProtocolEvents } from "../../core-types";
-import * as ethers from "ethers";
+import { privateKeyToAccount } from "viem/accounts";
+import { createWalletClient, http } from "viem";
+import { mainnet } from "viem/chains";
 import {
   createDID,
   createSeed,
@@ -13,21 +15,24 @@ let client: CinderlinkClientInterface<ProtocolEvents>;
 describe("@cinderlink/client/dag", () => {
   beforeAll(async () => {
     rmSync("./dag-test", { recursive: true, force: true });
-    const clientWallet = ethers.Wallet.createRandom();
-    const clientDID = await createDID(await createSeed("dag-test-client"));
-    const clientAV = await signAddressVerification(
-      "test",
-      clientDID.id,
-      clientWallet
-    );
-    client = await createClient<ProtocolEvents>({
-      did: clientDID,
-      address: clientWallet.address as `0x${string}`,
-      addressVerification: clientAV,
+    
+    // Create a random account with viem
+    const privateKey = "0x0123456789012345678901234567890123456789012345678901234567890123" as const;
+    const account = privateKeyToAccount(privateKey);
+    const walletClient = createWalletClient({
+      account,
+      chain: mainnet,
+      transport: http(),
+    });
+    
+    const did = await createDID(await createSeed("test"));
+    const av = await signAddressVerification("test", did.id, account, walletClient);
+    
+    client = await createClient({
+      did: did as any,
+      address: account.address,
+      addressVerification: av,
       role: "peer",
-      options: {
-        repo: "dag-test",
-      },
     });
     client.initialConnectTimeout = 0;
     await client.start([]);
@@ -65,10 +70,5 @@ describe("@cinderlink/client/dag", () => {
     const loaded = cid ? await client.dag.loadDecrypted(cid) : undefined;
     console.info(loaded);
     expect(loaded).toEqual(document);
-  });
-
-  afterAll(async () => {
-    await client?.stop();
-    rmSync("./dag-test", { recursive: true, force: true });
   });
 });

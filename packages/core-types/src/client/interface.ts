@@ -13,7 +13,7 @@ import type {
 } from "../p2p";
 import type { IPFSWithLibP2P } from "../ipfs";
 import type { DID } from "dids";
-import type { PeerId } from "@libp2p/interface-peer-id";
+import type { PeerId } from "@libp2p/interface";
 import type { DIDDagInterface } from "../dag";
 import type { IdentityInterface } from "../identity";
 import { SchemaInterface } from "../database/schema";

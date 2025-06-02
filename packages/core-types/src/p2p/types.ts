@@ -1,4 +1,4 @@
-import { PeerId } from "@libp2p/interface-peer-id";
+import { PeerId } from "@libp2p/interface";
 import { PluginEventDef, PluginEventHandlers } from "../plugin/types";
 import {
   EncodingOptions,
