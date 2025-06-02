@@ -1,4 +1,4 @@
-import { ethers } from "ethers";
+import type { Account, WalletClient } from "viem";
 import * as json from "multiformats/codecs/json";
 import { base58btc } from "multiformats/bases/base58";
 import { sha256 } from "multiformats/hashes/sha2";
@@ -15,12 +15,16 @@ export async function createDID(seed: Uint8Array) {
 
 export async function createSignerDID(
   app: string,
-  signer: ethers.Signer,
+  account: Account,
+  walletClient: WalletClient,
   nonce: number = 0
 ) {
-  const address = await signer.getAddress();
+  const address = account.address;
   const entropy = createAccountEntropyMessage(app, address, nonce);
-  const signature = await signer.signMessage(entropy);
+  const signature = await walletClient.signMessage({
+    account,
+    message: entropy,
+  });
   const seed = await createSeed(signature);
   const did = await createDID(seed);
   return { did, signature };

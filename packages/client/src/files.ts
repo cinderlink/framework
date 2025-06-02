@@ -13,7 +13,7 @@ export class Files<Plugins extends PluginEventDef> {
     const cid = await fs.addBytes(new Uint8Array(file));
     // Pin the uploaded file
     try {
-      for await (const _ of this.client.ipfs.pins.add(cid as any)) {
+      for await (const _ of this.client.ipfs.pins.add(cid)) {
         // consume generator
       }
     } catch {
@@ -26,7 +26,7 @@ export class Files<Plugins extends PluginEventDef> {
     const fs = unixfs(this.client.ipfs);
     const parsedCid = CID.parse(cid);
     const chunks = [];
-    for await (const chunk of fs.cat(parsedCid as any)) {
+    for await (const chunk of fs.cat(parsedCid)) {
       chunks.push(chunk);
     }
     const content = Buffer.concat(chunks);

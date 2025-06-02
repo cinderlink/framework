@@ -1,4 +1,7 @@
 import { rmSync } from "fs";
+import { privateKeyToAccount } from "viem/accounts";
+import { createWalletClient, http } from "viem";
+import { mainnet } from "viem/chains";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { createClient } from "./create";
 import { IdentityServerPlugin } from "../../plugin-identity-server";
@@ -9,16 +12,13 @@ import {
 } from "../../identifiers";
 import {
   CinderlinkClientInterface,
+  SubLoggerInterface,
   PluginInterface,
   PluginEventDef,
-  ProtocolEvents,
-  EncodingOptions,
   IncomingP2PMessage,
   ReceiveEventHandlers,
-  SubLoggerInterface,
+  EncodingOptions,
 } from "../../core-types";
-import * as ethers from "ethers";
-import Emittery from "emittery";
 
 const response = vi.fn();
 interface TestClientEvents extends PluginEventDef {
@@ -97,44 +97,31 @@ describe("CinderlinkClient", () => {
   beforeAll(async () => {
     await rmSync("./client-test-client", { recursive: true, force: true });
     await rmSync("./client-test-server", { recursive: true, force: true });
-    const clientWallet = ethers.Wallet.createRandom();
-    const clientDID = await createDID(await createSeed("test client"));
-    const clientAV = await signAddressVerification(
-      "test",
-      clientDID.id,
-      clientWallet
-    );
-    client = await createClient<ProtocolEvents>({
-      did: clientDID,
-      address: clientWallet.address as `0x${string}`,
-      addressVerification: clientAV,
-      role: "peer",
-      options: {
-        repo: "client-test-client",
-      },
+    const serverPrivateKey = `0x${Math.random().toString(16).slice(2).padStart(64, '0')}` as `0x${string}`;
+    const serverAccount = privateKeyToAccount(serverPrivateKey);
+    const serverWalletClient = createWalletClient({
+      account: serverAccount,
+      chain: mainnet,
+      transport: http(),
     });
-    client.initialConnectTimeout = 0;
-    client.addPlugin(new TestClientPlugin(client));
-
-    const serverWallet = ethers.Wallet.createRandom();
-    const serverDID = await createDID(await createSeed("test server"));
+    
+    const serverDID = await createDID(await createSeed("test-server"));
     const serverAV = await signAddressVerification(
       "test",
       serverDID.id,
-      serverWallet
+      serverAccount,
+      serverWalletClient
     );
-    server = await createClient<ProtocolEvents>({
-      did: serverDID,
-      address: serverWallet.address as `0x${string}`,
+    server = await createClient({
+      did: serverDID as any,
+      address: serverAccount.address,
       addressVerification: serverAV,
       role: "server",
       options: {
-        repo: "client-test-server",
         config: {
           Addresses: {
             Swarm: ["/ip4/127.0.0.1/tcp/7356", "/ip4/127.0.0.1/tcp/7357/ws"],
-            API: "/ip4/127.0.0.1/tcp/7358",
-            Gateway: "/ip4/127.0.0.1/tcp/7359",
+            API: "/ip4/127.0.0.1/tcp/7355",
           },
           Bootstrap: [],
         },
@@ -142,21 +129,44 @@ describe("CinderlinkClient", () => {
     });
     server.initialConnectTimeout = 0;
     server.addPlugin(new IdentityServerPlugin(server));
+    await server.start([]);
+    expect(server.did).toBeDefined();
     server.addPlugin(new TestServerPlugin(server));
 
-    await Promise.all([server.start([]), server.once("/client/ready")]);
-    const serverPeer = await server.ipfs.id();
+    const clientPrivateKey = `0x${Math.random().toString(16).slice(2).padStart(64, '0')}` as `0x${string}`;
+    const clientAccount = privateKeyToAccount(clientPrivateKey);
+    const clientWalletClient = createWalletClient({
+      account: clientAccount,
+      chain: mainnet,
+      transport: http(),
+    });
+    
+    const clientDID = await createDID(await createSeed("test-client"));
+    const clientAV = await signAddressVerification(
+      "test",
+      clientDID.id,
+      clientAccount,
+      clientWalletClient
+    );
+    client = await createClient({
+      did: clientDID as any,
+      address: clientAccount.address,
+      addressVerification: clientAV,
+      role: "peer",
+    });
+    client.initialConnectTimeout = 0;
+    client.addPlugin(new TestClientPlugin(client));
+
     await Promise.all([
-      client.start([`/ip4/127.0.0.1/tcp/7357/ws/p2p/${serverPeer.id}`]),
+      client.start([`/ip4/127.0.0.1/tcp/7357/ws/p2p/${server.peerId!}`]),
       client.once("/client/ready"),
       client.once("/server/connect"),
     ]);
   });
 
   it("can execute a request lifecycle", async () => {
-    const serverPeer = await server.ipfs.id();
     await client.request<TestClientEvents, "/test/request", "/test/response">(
-      serverPeer.id.toString(),
+      server.peerId!.toString(),
       {
         topic: "/test/request",
         payload: { message: "hello" },

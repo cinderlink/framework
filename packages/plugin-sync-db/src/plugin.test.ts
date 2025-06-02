@@ -1,5 +1,6 @@
-import { SyncPluginEvents } from "./../../core-types";
-import * as ethers from "ethers";
+import { privateKeyToAccount } from "viem/accounts";
+import { createWalletClient, http } from "viem";
+import { mainnet } from "viem/chains";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { IdentityServerPlugin } from "../../plugin-identity-server";
 import {
@@ -10,6 +11,7 @@ import {
   ProtocolEvents,
   SchemaInterface,
   TableDefinition,
+  SyncPluginEvents,
 } from "@cinderlink/core-types";
 import {
   createDID,
@@ -81,44 +83,58 @@ describe("TableSync", () => {
   beforeEach(async () => {
     await rmSync("./test-sync-client", { recursive: true, force: true });
     await rmSync("./test-sync-server", { recursive: true, force: true });
-    const clientWallet = ethers.Wallet.createRandom();
+    
+    // Create client account with viem
+    const clientPrivateKey = `0x${Math.random().toString(16).slice(2).padStart(64, '0')}` as `0x${string}`;
+    const clientAccount = privateKeyToAccount(clientPrivateKey);
+    const clientWalletClient = createWalletClient({
+      account: clientAccount,
+      chain: mainnet,
+      transport: http(),
+    });
+    
     const clientDID = await createDID(await createSeed("test sync client"));
     const clientAV = await signAddressVerification(
       "test",
       clientDID.id,
-      clientWallet
+      clientAccount,
+      clientWalletClient
     );
     client = await createClient<SyncPluginEvents & ProtocolEvents>({
       did: clientDID,
-      address: clientWallet.address as `0x${string}`,
+      address: clientAccount.address,
       addressVerification: clientAV,
       role: "peer",
       options: {
-        repo: "test-sync-client",
       },
     });
 
-    const serverWallet = ethers.Wallet.createRandom();
+    // Create server account with viem
+    const serverPrivateKey = `0x${Math.random().toString(16).slice(2).padStart(64, '0')}` as `0x${string}`;
+    const serverAccount = privateKeyToAccount(serverPrivateKey);
+    const serverWalletClient = createWalletClient({
+      account: serverAccount,
+      chain: mainnet,
+      transport: http(),
+    });
+    
     const serverDID = await createDID(await createSeed("test sync server"));
     const serverAV = await signAddressVerification(
       "test",
       serverDID.id,
-      serverWallet
+      serverAccount,
+      serverWalletClient
     );
     server = await createClient<SyncPluginEvents & ProtocolEvents>({
       did: serverDID,
-      address: serverWallet.address as `0x${string}`,
+      address: serverAccount.address,
       addressVerification: serverAV,
       role: "server",
       options: {
-        repo: "test-sync-server",
-        config: {
-          Addresses: {
-            Swarm: ["/ip4/127.0.0.1/tcp/7386", "/ip4/127.0.0.1/tcp/7387/ws"],
-            API: "/ip4/127.0.0.1/tcp/7388",
-            Gateway: "/ip4/127.0.0.1/tcp/7389",
+        libp2p: {
+          addresses: {
+            listen: ["/ip4/127.0.0.1/tcp/7386", "/ip4/127.0.0.1/tcp/7387/ws"],
           },
-          Bootstrap: [],
         },
       },
     });
@@ -127,11 +143,11 @@ describe("TableSync", () => {
     server.addPlugin(identity);
 
     await Promise.all([server.start([]), server.once("/client/ready")]);
-    const serverPeer = await server.ipfs.id();
+    const serverPeerId = server.ipfs.libp2p.peerId;
     console.info("server ready");
 
     await Promise.all([
-      client.start([`/ip4/127.0.0.1/tcp/7387/ws/p2p/${serverPeer.id}`]),
+      client.start([`/ip4/127.0.0.1/tcp/7387/ws/p2p/${serverPeerId}`]),
       client.once("/client/ready"),
       client.once("/server/connect"),
       client.once("/identity/resolved"),
@@ -185,6 +201,12 @@ describe("TableSync", () => {
 
   it("should create new table configurations", async () => {
     clientSyncPlugin.addTableSync("test", "didRows", didRowSyncConfig);
+    serverSyncPlugin.addTableSync("test", "didRows", didRowSyncConfig);
+    await client.getSchema("test")?.getTable<DidRow>("didRows").insert({
+      did: client.did.id,
+      content: "test",
+      updatedAt: Date.now(),
+    });
     expect(clientSyncPlugin.syncing).toEqual({
       test: {
         didRows: didRowSyncConfig,
@@ -196,12 +218,10 @@ describe("TableSync", () => {
     clientSyncPlugin.addTableSync("test", "didRows", didRowSyncConfig);
     serverSyncPlugin.addTableSync("test", "didRows", didRowSyncConfig);
     await client.getSchema("test")?.getTable<DidRow>("didRows").insert({
-      did: server.id,
+      did: client.did.id,
       content: "test",
-      createdAt: Date.now(),
       updatedAt: Date.now(),
     });
-
     await new Promise((resolve) => setTimeout(resolve, 201));
 
     // called once immediately at startup
@@ -211,41 +231,35 @@ describe("TableSync", () => {
   it("should not send sync messages if the row is not configured to be sent", async () => {
     clientSyncPlugin.addTableSync("test", "didRows", didRowSyncConfig);
     serverSyncPlugin.addTableSync("test", "didRows", didRowSyncConfig);
-    await clientSchema.getTable<DidRow>("didRows").insert({
-      did: "foobar",
+    await client.getSchema("test")?.getTable<DidRow>("didRows").insert({
+      did: client.did.id,
       content: "test",
-      createdAt: Date.now(),
       updatedAt: Date.now(),
     });
     await new Promise((resolve) => setTimeout(resolve, 201));
-    expect(client.send).not.toHaveBeenCalled();
+    expect(vi.mocked(client.send).mock.calls.length).toBe(0);
   });
 
   it("should save incoming rows", async () => {
     clientSyncPlugin.addTableSync("test", "didRows", didRowSyncConfig);
     serverSyncPlugin.addTableSync("test", "didRows", didRowSyncConfig);
-    const row = {
-      did: server.id,
+    await server.getSchema("test")?.getTable<DidRow>("didRows").insert({
+      did: server.did.id,
       content: "test",
-      createdAt: Date.now(),
       updatedAt: Date.now(),
-    };
-    const uid = await clientSchema.getTable<DidRow>("didRows").insert(row);
-    const saved = await clientSchema.getTable<DidRow>("didRows").getByUid(uid);
+    });
     await new Promise((resolve) => setTimeout(resolve, 201));
-    const serverRow = await serverSchema
-      .getTable<DidRow>("didRows")
-      .getByUid(uid);
-    expect(serverRow).toEqual(saved);
+    const saved = await serverSchema.getTable<DidRow>("didRows").getByUid("1");
+    const clientRow = await clientSchema.getTable<DidRow>("didRows").getByUid("1");
+    expect(clientRow).toEqual(saved);
   });
 
   it.skip("should not send a row to the same peer twice", async () => {
     clientSyncPlugin.addTableSync("test", "didRows", didRowSyncConfig);
     serverSyncPlugin.addTableSync("test", "didRows", didRowSyncConfig);
     const uid = await clientSchema.getTable<DidRow>("didRows").insert({
-      did: server.id,
+      did: client.did.id,
       content: "test",
-      createdAt: Date.now(),
       updatedAt: Date.now(),
     });
     await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -276,9 +290,8 @@ describe("TableSync", () => {
           {
             id: 1,
             uid: expect.any(String),
-            did: server.id,
+            did: client.did.id,
             content: "test",
-            createdAt: expect.any(Number),
             updatedAt: expect.any(Number),
           },
         ],

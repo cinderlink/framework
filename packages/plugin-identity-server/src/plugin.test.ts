@@ -1,4 +1,3 @@
-import { rmSync } from "fs";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createClient } from "../../client";
 import { ServerLogger } from "../../server";
@@ -8,16 +7,28 @@ import {
   signAddressVerification,
 } from "../../identifiers";
 import { CinderlinkClientInterface, ProtocolEvents } from "../../core-types";
-import * as ethers from "ethers";
+import { privateKeyToAccount } from "viem/accounts";
+import { createWalletClient, http } from "viem";
+import { mainnet } from "viem/chains";
 import IdentityServerPlugin from "./plugin";
 import { IdentityServerEvents } from "./types";
+import { rmSync } from "fs";
 
-const clientWallet = ethers.Wallet.createRandom();
+// Create client account with viem
+const clientPrivateKey = `0x${Math.random().toString(16).slice(2).padStart(64, '0')}` as `0x${string}`;
+const clientAccount = privateKeyToAccount(clientPrivateKey);
+const clientWalletClient = createWalletClient({
+  account: clientAccount,
+  chain: mainnet,
+  transport: http(),
+});
+
 const clientDID = await createDID(await createSeed("test identity client"));
 const clientAV = await signAddressVerification(
   "test",
   clientDID.id,
-  clientWallet
+  clientAccount,
+  clientWalletClient
 );
 
 const testIdentityDoc = { hello: "world", updatedAt: 1 };
@@ -35,7 +46,7 @@ describe("IdentityServerPlugin", () => {
 
     client = await createClient({
       did: clientDID,
-      address: clientWallet.address as `0x${string}`,
+      address: clientAccount.address,
       addressVerification: clientAV,
       role: "peer",
       options: {
@@ -44,16 +55,25 @@ describe("IdentityServerPlugin", () => {
       logger: new ServerLogger(),
     });
 
-    const serverWallet = ethers.Wallet.createRandom();
+    // Create server account with viem
+    const serverPrivateKey = `0x${Math.random().toString(16).slice(2).padStart(64, '0')}` as `0x${string}`;
+    const serverAccount = privateKeyToAccount(serverPrivateKey);
+    const serverWalletClient = createWalletClient({
+      account: serverAccount,
+      chain: mainnet,
+      transport: http(),
+    });
+    
     const serverDID = await createDID(await createSeed("test identity server"));
     const serverAV = await signAddressVerification(
       "test",
       serverDID.id,
-      serverWallet
+      serverAccount,
+      serverWalletClient
     );
     server = await createClient<ProtocolEvents<IdentityServerEvents>>({
       did: serverDID,
-      address: serverWallet.address as `0x${string}`,
+      address: serverAccount.address,
       addressVerification: serverAV,
       role: "server",
       options: {
@@ -138,7 +158,7 @@ describe("IdentityServerPlugin", () => {
 
     const clientB = await createClient({
       did: clientDID,
-      address: clientWallet.address as `0x${string}`,
+      address: clientAccount.address,
       addressVerification: clientAV,
       role: "peer",
       options: {

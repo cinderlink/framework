@@ -21,14 +21,15 @@
     "watch": "pnpm build --watch"
   },
   "dependencies": {
+    "@noble/curves": "^1.8.0",
     "did": "^0.5.0",
     "did-jwt": "^7.1.0",
     "did-resolver": "^4.1.0",
     "dids": "^5.0.3",
-    "ethers": "^5.7.2",
     "key-did-provider-ed25519": "^3.0.1",
     "key-did-resolver": "^3.0.0",
-    "multiformats": "^13.3.4"
+    "multiformats": "^13.3.4",
+    "viem": "^2.30.5"
   },
   "devDependencies": {
     "@cinderlink/tsconfig": "workspace:../tsconfig",

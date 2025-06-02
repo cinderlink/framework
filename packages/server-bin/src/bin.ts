@@ -2,7 +2,10 @@ import minimist from "minimist";
 import fs from "fs";
 import path from "path";
 import chalk from "chalk";
-import { Wallet, type Signer } from "ethers";
+import { privateKeyToAccount, mnemonicToAccount, generatePrivateKey, generateMnemonic } from "viem/accounts";
+import { english } from "viem/accounts";
+import { createWalletClient, http } from "viem";
+import { mainnet } from "viem/chains";
 import { createServer } from "@cinderlink/server";
 import {
   createSignerDID,
@@ -36,16 +39,26 @@ ${chalk.yellow("options")}:
 const initEnv = () => {
   const envPath = argv.file || ".env";
   const usePkey = argv.pkey;
-  const wallet = Wallet.createRandom();
-  console.log(
-    `initializing ${chalk.cyan("cinderlink")} .env at ${chalk.yellow(envPath)}`
-  );
-  fs.writeFileSync(
-    envPath,
-    usePkey
-      ? `CINDERLINK_PRIVATE_KEY=${wallet.privateKey}`
-      : `CINDERLINK_MNEMONIC=${wallet.mnemonic?.phrase || ""}`
-  );
+  
+  if (usePkey) {
+    const privateKey = generatePrivateKey();
+    console.log(
+      `initializing ${chalk.cyan("cinderlink")} .env at ${chalk.yellow(envPath)}`
+    );
+    fs.writeFileSync(
+      envPath,
+      `CINDERLINK_PRIVATE_KEY=${privateKey}`
+    );
+  } else {
+    const mnemonic = generateMnemonic(english);
+    console.log(
+      `initializing ${chalk.cyan("cinderlink")} .env at ${chalk.yellow(envPath)}`
+    );
+    fs.writeFileSync(
+      envPath,
+      `CINDERLINK_MNEMONIC=${mnemonic}`
+    );
+  }
 };
 
 if (command === "init") {
@@ -127,12 +140,13 @@ if (command !== "start") {
   }
 
   const { default: config } = await import(resolvedConfigPath);
-  let wallet: Signer;
+  let account;
+  let walletClient;
 
   if (config.privateKey) {
-    wallet = new Wallet(config.privateKey);
+    account = privateKeyToAccount(config.privateKey as `0x${string}`);
   } else if (config.mnemonic) {
-    wallet = Wallet.fromPhrase(config.mnemonic);
+    account = mnemonicToAccount(config.mnemonic);
   } else {
     console.error(
       `no mnemonic or private key found in ${chalk.yellow(configPath)}`
@@ -140,12 +154,19 @@ if (command !== "start") {
     process.exit(1);
   }
 
-  if (!wallet) {
+  if (!account) {
     console.error(
       `invalid mnemonic or private key in ${chalk.yellow(configPath)}`
     );
     process.exit(1);
   }
+
+  // Create wallet client for signing
+  walletClient = createWalletClient({
+    account,
+    chain: mainnet,
+    transport: http(),
+  });
 
   console.log(`loading ${chalk.cyan("plugins")}...`);
   const plugins = (
@@ -186,20 +207,33 @@ if (command !== "start") {
   ).filter((p) => !!p);
 
   console.log(`starting ${chalk.cyan("cinderlink")}...`);
-  const { did } = await createSignerDID(
+  const { did, signature } = await createSignerDID(
     config.app,
-    wallet,
-    config.accountNonce
+    account,
+    walletClient,
+    config.accountNonce || 0
   );
-  const addressVerification = await signAddressVerification(
+
+  const addressSignature = await signAddressVerification(
     config.app,
     did.id,
-    wallet
+    account,
+    walletClient
   );
+
+  // log did, address, signature
+  const address = account.address;
+  console.log(`  ${chalk.gray("DID")}: ${chalk.cyan(did.id)}`);
+  console.log(`  ${chalk.gray("address")}: ${chalk.cyan(address)}`);
+  console.log(`  ${chalk.gray("signature")}: ${chalk.cyan(signature)}`);
+  console.log(
+    `  ${chalk.gray("address signature")}: ${chalk.cyan(addressSignature)}`
+  );
+
   const server = await createServer({
     did,
-    address: (await wallet.getAddress()) as `0x${string}`,
-    addressVerification,
+    address: (account.address as `0x${string}`),
+    addressVerification: addressSignature,
     plugins,
     nodes: config.nodes,
     options: config.ipfs,

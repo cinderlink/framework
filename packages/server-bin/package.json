@@ -32,10 +32,11 @@
     "@cinderlink/protocol": "workspace:../protocol",
     "@cinderlink/server": "workspace:../server",
     "chalk": "^5.2.0",
-    "dotenv": "^16.0.3",
-    "ethers": "^6.14.3",
+    "dotenv": "^16.5.0",
     "@helia/http": "^2.1.2",
-    "minimist": "^1.2.8"
+    "minimist": "^1.2.8",
+    "multiformats": "^13.3.4",
+    "viem": "^2.21.58"
   },
   "peerDependencies": {
     "@cinderlink/client": "workspace:../client"

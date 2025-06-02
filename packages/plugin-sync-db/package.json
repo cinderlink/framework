@@ -20,7 +20,8 @@
   "scripts": {
     "build": "tsup",
     "watch": "tsup --watch",
-    "test": "vitest run"
+    "test": "vitest run src/plugin.mock.test.ts",
+    "test:integration": "vitest run src/plugin.test.ts"
   },
   "devDependencies": {
     "@cinderlink/core-types": "workspace:../core-types",
@@ -28,14 +29,17 @@
     "@cinderlink/ipld-database": "workspace:../ipld-database",
     "@cinderlink/test-adapters": "workspace:../test-adapters",
     "@cinderlink/tsconfig": "workspace:../tsconfig",
+    "@ipld/car": "^5.1.1",
     "@types/node": "^18.16.6",
     "@types/uuid": "^9.0.1",
+    "dids": "^5.0.3",
     "emittery": "^1.0.1",
-    "ethers": "^5.7.2",
-    "multiformats": "^11.0.2",
+    "it-all": "^3.0.1",
+    "multiformats": "^13.3.4",
     "tsup": "^6.7.0",
     "typescript": "^5.0.4",
     "uuid": "^9.0.0",
+    "viem": "^2.21.58",
     "vitest": "^0.30.1"
   },
   "peerDependencies": {

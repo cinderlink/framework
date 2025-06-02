@@ -46,5 +46,8 @@
     "libp2p": "^2.8.8",
     "minisearch": "^6.0.1",
     "multiformats": "^13.3.4"
+  },
+  "dependencies": {
+    "@helia/remote-pinning": "^2.0.3"
   }
 }

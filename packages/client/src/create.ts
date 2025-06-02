@@ -44,7 +44,7 @@ export async function createClient<
 
   nodes?.forEach((node) => {
     const peerId = peerIdFromString(node.split("/p2p/")[1]);
-    client.peers.addPeer(peerId as any, "server");
+    client.peers.addPeer(peerId, "server");
   });
 
   return client;

@@ -1,5 +1,14 @@
 import { vi } from 'vitest'
 import { EventEmitter } from 'events'
+import { TextEncoder, TextDecoder } from 'util'
+
+// Polyfill TextEncoder/TextDecoder for jsdom
+if (!global.TextEncoder) {
+  global.TextEncoder = TextEncoder
+}
+if (!global.TextDecoder) {
+  global.TextDecoder = TextDecoder as any
+}
 
 // Enhanced EventTarget polyfill for libp2p compatibility
 class EventTargetPolyfill extends EventEmitter {

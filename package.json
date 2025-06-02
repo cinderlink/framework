@@ -28,5 +28,8 @@
     "jsdom": "^26.1.0",
     "minimist": "^1.2.8",
     "turbo": "^1.9.3"
+  },
+  "dependencies": {
+    "viem": "^2.30.5"
   }
 }

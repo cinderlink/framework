@@ -427,7 +427,7 @@ export class SocialUsers {
       "candor.social",
       message.payload.did,
       message.payload.address,
-      message.payload.addressVerification
+      message.payload.addressVerification as `0x${string}`
     ).catch(() => undefined);
     if (!verified) {
       this.logger.warn(
