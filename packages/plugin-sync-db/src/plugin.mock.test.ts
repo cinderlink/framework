@@ -1,5 +1,8 @@
 import { describe, it, expect, vi, beforeEach, beforeAll } from "vitest";
 import type { DID } from "dids";
+import type { PeerId } from "@libp2p/interface";
+import { CID } from "multiformats/cid";
+import { base58btc } from "multiformats/bases/base58";
 import SyncDBPlugin from "./plugin";
 import type {
   TableRow,
@@ -8,10 +11,43 @@ import type {
   TableDefinition,
   SyncPluginEvents,
   ProtocolEvents,
+  Peer,
+  P2PMessage,
+  P2PMessageWithPeer,
 } from "@cinderlink/core-types";
 import { TestClient, TestLogger } from "@cinderlink/test-adapters";
 import { createDID, createSeed } from "@cinderlink/identifiers";
 import { Schema } from "@cinderlink/ipld-database";
+
+// Types for our test mocks
+interface MockPeerId extends PeerId {
+  toString(): string;
+  toBytes(): Uint8Array;
+  toCID(): CID;
+  type: string;
+  equals(other: PeerId): boolean;
+  multihash: Uint8Array;
+}
+
+interface MockPeer extends Peer {
+  peerId: MockPeerId;
+  did: string;
+  role: 'client' | 'server';
+  subscriptions: string[];
+  metadata: Record<string, unknown>;
+  connected: boolean;
+}
+
+interface MockIncomingMessage extends P2PMessageWithPeer<unknown> {
+  topic: string;
+  peer: MockPeer;
+  payload: {
+    requestId: string;
+    schemaId: string;
+    tableId: string;
+    rows: Array<Record<string, unknown>>;
+  };
+}
 
 interface DidRow extends TableRow {
   did: string;
@@ -137,21 +173,25 @@ describe("SyncDBPlugin Unit Tests", () => {
     vi.spyOn(didRowsTable!, 'getByUid').mockResolvedValue(null);
     const upsertSpy = vi.spyOn(didRowsTable!, 'upsert').mockResolvedValue("uid-1");
     
-    const mockPeerId = {
+    // Create a mock CID for testing
+    const mockCid = CID.parse('bafybeihq6x5q3v5s4y4v5q3v5s4y4v5q3v5s4y4v5q3v5s4y4v5q3v5s4y4');
+    
+    const mockPeerId: MockPeerId = {
       toString: () => "peer-123",
       toBytes: () => new Uint8Array(),
-      toCID: () => ({} as any),
+      toCID: () => mockCid,
       type: "Ed25519",
       equals: () => false,
-      multihash: {} as any,
+      multihash: new Uint8Array([0x12, 0x20, ...new Uint8Array(32).fill(1)]),
+      bytes: new Uint8Array(),
     };
     
-    const incomingMessage = {
-      topic: "/cinderlink/sync/save/request" as const,
+    const incomingMessage: MockIncomingMessage = {
+      topic: "/cinderlink/sync/save/request",
       peer: {
-        peerId: mockPeerId as any,
+        peerId: mockPeerId,
         did: "did:test:peer1",
-        role: "server" as const,
+        role: "server",
         subscriptions: [],
         metadata: {},
         connected: true,
@@ -170,10 +210,14 @@ describe("SyncDBPlugin Unit Tests", () => {
           },
         ],
       },
+      from: "peer-123",
+      to: undefined,
+      timestamp: Date.now(),
+      id: "msg-123",
     };
     
     // Call the handler directly
-    await syncPlugin.onSyncSaveRequest(incomingMessage as any);
+    await syncPlugin.onSyncSaveRequest(incomingMessage);
     
     // Verify permission check was called with correct parameters
     expect(didRowSyncConfig.allowNewFrom).toHaveBeenCalledWith(
@@ -195,19 +239,23 @@ describe("SyncDBPlugin Unit Tests", () => {
   it("should handle peer connections", async () => {
     const sendSpy = vi.spyOn(client, 'send');
     
-    const mockPeerId = {
+    // Create a mock CID for testing
+    const mockCid = CID.parse('bafybeihq6x5q3v5s4y4v5q3v5s4y4v5q3v5s4y4v5q3v5s4y4v5q3v5s4y4');
+    
+    const mockPeerId: MockPeerId = {
       toString: () => "peer-123",
       toBytes: () => new Uint8Array(),
-      toCID: () => ({} as any),
+      toCID: () => mockCid,
       type: "Ed25519",
       equals: () => false,
-      multihash: {} as any,
+      multihash: new Uint8Array([0x12, 0x20, ...new Uint8Array(32).fill(1)]),
+      bytes: new Uint8Array(),
     };
     
-    const peer = {
-      peerId: mockPeerId as any,
+    const peer: MockPeer = {
+      peerId: mockPeerId,
       did: "did:test:peer1",
-      role: "server" as const,
+      role: "server",
       subscriptions: [],
       metadata: {},
       connected: true,
