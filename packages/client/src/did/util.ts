@@ -1,6 +1,5 @@
 import type { PeerId } from "@libp2p/interface";
 import { keys } from "@libp2p/crypto";
-import { peerIdFromPrivateKey } from "@libp2p/peer-id";
 import { encodeDID } from "key-did-provider-ed25519";
 import { DID } from "dids";
 
@@ -12,20 +11,6 @@ export function fromPeerId(peerId: PeerId): string {
   return fromPublicKey(publicKeyBytes.slice(4));
 }
 
-export async function toPeerId(_did: string): Promise<PeerId> {
-  // TODO: Properly decode DID and extract public key bytes for reconstruction
-  // const base = _did.substring("did:key:".length);
-  // const bytes = base58btc.decode(base);
-  // const pubKeyBytes = bytes.slice(2);
-  
-  // TEMPORARY IMPLEMENTATION: Generate a new private key since libp2p v2 requires private keys for PeerId creation
-  // This is a limitation of the new API - ideally we'd reconstruct the original PeerId from the DID public key
-  // The proper approach would use the pubKeyBytes to recreate the exact same PeerId
-  const keyPair = await keys.generateKeyPair('Ed25519');
-  const peerId = peerIdFromPrivateKey(keyPair);
-  
-  return peerId;
-}
 
 export function fromPublicKey(publicKey: Uint8Array) {
   return encodeDID(publicKey);
