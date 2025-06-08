@@ -133,9 +133,6 @@ importers:
       '@multiformats/multiaddr':
         specifier: ^12.4.0
         version: 12.4.0
-      '@stablelib/ed25519':
-        specifier: ^1.0.3
-        version: 1.0.3
       did-jwt:
         specifier: ^8.0.4
         version: 8.0.16
@@ -212,16 +209,19 @@ importers:
 
   packages/core-types:
     dependencies:
+      '@helia/interface':
+        specifier: ^5.3.2
+        version: 5.3.2
       '@helia/remote-pinning':
         specifier: ^2.0.3
         version: 2.0.3(react-native@0.79.2(@babel/core@7.27.3)(react@19.1.0))
+      '@libp2p/interface':
+        specifier: ^2.10.2
+        version: 2.10.2
     devDependencies:
       '@cinderlink/tsconfig':
         specifier: workspace:../tsconfig
         version: link:../tsconfig
-      '@libp2p/interface':
-        specifier: ^2.10.2
-        version: 2.10.2
       '@types/node':
         specifier: ^22.12.6
         version: 22.15.29
@@ -238,7 +238,7 @@ importers:
         specifier: ^1.0.1
         version: 1.1.0
       helia:
-        specifier: ^5.4.2
+        specifier: ^5.3.2
         version: 5.4.2(react-native@0.79.2(@babel/core@7.27.3)(react@19.1.0))
       it-pushable:
         specifier: ^3.1.3
