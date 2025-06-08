@@ -104,9 +104,18 @@ _(This section will contain a summary for each audited package, outlining its pu
             *   `schema.ts`: Defines `SyncSchemaDef` for the internal `"sync"` schema.
         *   **Key Functionalities**: Allows peers to discover data state using "sync since"; facilitates data exchange; tracks sync status at table/row levels; supports configurable sync strategies via `SyncConfig`.
         *   **DID-to-PeerID Discovery**: Consumes PeerIDs/DIDs but doesn't perform discovery itself. Relies on external discovery if a target PeerID for a DID is unknown.
-        *   **Documentation Status**: No `README.md`. Complex logic.
-        *   **Recommendation**: Create `README.md` explaining purpose, high-level mechanism (internal schema, messages, `SyncConfig`), configuration, topics used, and emitted events.
-
+        *   **Documentation Status**: `README.md` created with comprehensive documentation.
+        *   **Documentation Includes**: Installation, quick start, sync configuration, API reference, conflict resolution, and example usage.
+*   **`@cinderlink/plugin-identity-server`**:
+    *   **Purpose**: Acts as a server-side service to store and resolve mappings between DIDs and CIDs, where the CID typically points to an IPLD object containing detailed identity information (e.g., user profile).
+    *   **Structure**:
+        *   `plugin.ts`: Contains `IdentityServerPlugin`. Manages an internal, encrypted IPLD schema (`"identity"`) with a `"pins"` table to store `(did, cid)` mappings.
+        *   Defines P2P handlers for `"/identity/set/request"` (to store DID-CID mapping) and `"/identity/resolve/request"` (to retrieve CID for a DID).
+        *   `types.ts`: Defines plugin-specific events and payload structures.
+    *   **Key Functionalities**: Allows users to associate a CID (of identity data) with their DID on the server; allows querying by DID to resolve the identity data CID; stores mappings in an encrypted table.
+    *   **DID-to-PeerID Discovery**: Focuses on DID-to-CID (identity data) resolution, not DID-to-PeerID (network location). Complementary to a potential discovery protocol.
+    *   **Documentation Status**: `README.md` created with comprehensive documentation.
+    *   **Documentation Includes**: Installation, quick start, identity management, access control, identity linking, and example usage.
 *   **Other Packages**: _(To be listed and summarized as audited)_
 
 ## 3. High-Level Architecture Guide
@@ -123,17 +132,24 @@ _(To be developed. This section will explain how the different packages and comp
 *   `[D]` - Documentation Complete
 
 **Core Packages:**
-*   `[x][R]` `core-types`
-*   `[x][R]` `identifiers`
-*   `[x][R]` `ipld-database`
-*   `[x][R]` `protocol`
-*   `[x][R]` `client`
-*   `[x][R]` `server`
+*   `[x][D]` `core-types` - Documentation complete
+*   `[x][D]` `identifiers` - Documentation complete
+*   `[x][D]` `ipld-database` - Documentation complete
+*   `[x][D]` `protocol` - Documentation complete
+*   `[x][D]` `client` - Documentation complete
+*   `[x][D]` `server` - Documentation complete
 
 **Plugins (General & Specific):**
-*   `[x][R]` _(General plugin architecture)_
-*   `[x][R]` `plugin-sync-db`
-*   `[x][R]` `plugin-identity-server`
+*   `[x][D]` _(General plugin architecture)_ - Documented in `@cinderlink/core-types`
+*   `[x][D]` `plugin-sync-db` - Documentation complete
+*   `[x][D]` `plugin-identity-server` - Documentation complete
+*   `[x][D]` `plugin-offline-sync-core` - Core types and interfaces for offline sync
+*   `[x][D]` `plugin-offline-sync-client` - Client implementation for offline sync
+*   `[x][D]` `plugin-offline-sync-server` - Server implementation for offline sync
+*   `[x][D]` `plugin-social-core` - Core types and interfaces for social features
+*   `[x][D]` `plugin-social-client` - Client implementation for social features
+*   `[x][D]` `plugin-social-server` - Server implementation for social features
+*   `[x][D]` `plugin-rcon-server` - Remote console server for administration
     *   **Purpose**: Acts as a server-side service to store and resolve mappings between DIDs and CIDs, where the CID typically points to an IPLD object containing detailed identity information (e.g., user profile).
     *   **Structure**:
         *   `plugin.ts`: Contains `IdentityServerPlugin`. Manages an internal, encrypted IPLD schema (`"identity"`) with a `"pins"` table to store `(did, cid)` mappings.
@@ -141,8 +157,8 @@ _(To be developed. This section will explain how the different packages and comp
         *   `types.ts`: Defines plugin-specific events and payload structures.
     *   **Key Functionalities**: Allows users to associate a CID (of identity data) with their DID on the server; allows querying by DID to resolve the identity data CID; stores mappings in an encrypted table.
     *   **DID-to-PeerID Discovery**: Focuses on DID-to-CID (identity data) resolution, not DID-to-PeerID (network location). Complementary to a potential discovery protocol.
-    *   **Documentation Status**: No `README.md`.
-    *   **Recommendation**: Create `README.md` explaining purpose, P2P topics/payloads, internal schema, and its role in Cinderlink identity management.
+    *   **Documentation Status**: `README.md` created with comprehensive documentation.
+    *   **Documentation Includes**: Installation, quick start, identity management, access control, identity linking, and example usage.
 *   `[x][R]` `plugin-offline-sync-client`
     *   **Purpose**: Enables a Cinderlink client to send encrypted messages to offline users and receive them when coming online. Messages are stored by an "offline sync server" component.
     *   **Structure**:
