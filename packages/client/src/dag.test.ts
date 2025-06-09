@@ -33,6 +33,9 @@ describe("@cinderlink/client/dag", () => {
       address: account.address,
       addressVerification: av,
       role: "peer",
+      options: {
+        testMode: true,
+      },
     });
     client.initialConnectTimeout = 0;
     await client.start([]);

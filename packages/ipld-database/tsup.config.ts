@@ -13,7 +13,6 @@ export default defineConfig({
     "did-jwt",
     "dids",
     "emittery",
-    "ethers",
     "multiformats",
   ],
 });

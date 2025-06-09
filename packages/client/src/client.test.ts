@@ -118,6 +118,7 @@ describe("CinderlinkClient", () => {
       addressVerification: serverAV,
       role: "server",
       options: {
+        testMode: true,
         config: {
           Addresses: {
             Swarm: ["/ip4/127.0.0.1/tcp/7356", "/ip4/127.0.0.1/tcp/7357/ws"],
@@ -153,6 +154,9 @@ describe("CinderlinkClient", () => {
       address: clientAccount.address,
       addressVerification: clientAV,
       role: "peer",
+      options: {
+        testMode: true,
+      },
     });
     client.initialConnectTimeout = 0;
     client.addPlugin(new TestClientPlugin(client));

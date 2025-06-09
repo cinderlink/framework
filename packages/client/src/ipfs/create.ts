@@ -7,16 +7,18 @@ import { createRemotePins, RemotePins } from '@helia/remote-pinning';
 // Libp2p transports
 import { tcp } from '@libp2p/tcp';
 import { noise } from '@chainsafe/libp2p-noise';
-import { mplex } from '@libp2p/mplex';
+import { yamux } from '@chainsafe/libp2p-yamux';
 
 // Libp2p services
 import { dcutr } from '@libp2p/dcutr';
 import { kadDHT } from '@libp2p/kad-dht';
 import { pubsubPeerDiscovery } from '@libp2p/pubsub-peer-discovery';
+import { bootstrap } from '@libp2p/bootstrap';
 import { gossipsub } from '@chainsafe/libp2p-gossipsub';
 import { identify } from '@libp2p/identify';
 import { circuitRelayServer } from '@libp2p/circuit-relay-v2';
 import { autoNAT } from '@libp2p/autonat';
+import { ping } from '@libp2p/ping';
 
 // Types
 import type { GossipsubOpts } from '@chainsafe/libp2p-gossipsub';
@@ -41,15 +43,21 @@ export interface CinderlinkHeliaOptions {
   
   /** Custom Helia configuration */
   helia?: any;
+  
+  /** Test mode - use minimal configuration to avoid native dependencies */
+  testMode?: boolean;
 }
 
 /**
  * Create a Helia node with Cinderlink defaults
  */
 export async function createHeliaNode(
-  _bootstrapNodes: string[] = [],
+  bootstrapNodes: string[] = [],
   overrides: CinderlinkHeliaOptions = {}
 ): Promise<CinderlinkHelia> {
+  // In test mode, use minimal configuration to avoid native dependencies
+  const isTestMode = overrides.testMode || process.env.NODE_ENV === 'test' || process.env.VITEST;
+  
   // Create libp2p instance with recommended configuration
   const libp2p = await createLibp2p({
     addresses: {
@@ -57,28 +65,40 @@ export async function createHeliaNode(
     },
     transports: [tcp()],
     connectionEncryption: [noise()],
-    streamMuxers: [mplex()],
+    streamMuxers: [yamux()],
     peerDiscovery: [
       pubsubPeerDiscovery({
         interval: 1000,
       }),
+      ...(bootstrapNodes.length > 0 ? [
+        bootstrap({
+          list: bootstrapNodes,
+          timeout: 1000,
+          tagName: 'bootstrap',
+          tagValue: 50,
+          tagTTL: 120000
+        })
+      ] : [])
     ],
     services: {
       pubsub: gossipsub({ allowPublishToZeroTopicPeers: true } as GossipsubOpts),
       identify: identify(),
-      dht: kadDHT({
-        clientMode: false,
-        providers: {
-          cacheSize: 1000,
-          cleanupInterval: 1000 * 60 * 10, // 10 minutes
-          provideValidity: 1000 * 60 * 60 * 24 // 1 day
-        },
-        log: (message: string) => console.log(`[kad-dht] ${message}`)
-      }),
-      autonat: autoNAT(),
-      dcutr: dcutr(),
-      relay: circuitRelayServer({
-        advertise: true,
+      ping: ping(),
+      ...(isTestMode ? {} : {
+        dht: kadDHT({
+          clientMode: false,
+          providers: {
+            cacheSize: 1000,
+            cleanupInterval: 1000 * 60 * 10, // 10 minutes
+            provideValidity: 1000 * 60 * 60 * 24 // 1 day
+          },
+          log: (message: string) => console.log(`[kad-dht] ${message}`)
+        }),
+        autonat: autoNAT(),
+        dcutr: dcutr(),
+        relay: circuitRelayServer({
+          advertise: true,
+        }),
       }),
     },
     ...overrides.libp2p,
