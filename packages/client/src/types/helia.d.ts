@@ -3,7 +3,7 @@ declare module '@helia/interface' {
   import { Blockstore } from 'interface-blockstore';
   import { Datastore } from 'interface-datastore';
   import { CID } from 'multiformats/cid';
-  import { PeerId } from '@libp2p/interface/peer-id';
+  import { PeerId } from '@libp2p/peer-id';
   import { Multiaddr } from '@multiformats/multiaddr';
 
   export interface Helia {

@@ -41,10 +41,11 @@ export class ClientDag<Plugins extends PluginEventDef = PluginEventDef>
         if (pinResults.errors.length > 0) {
           console.warn('Some pinning operations failed:', pinResults.errors);
         } else {
-          const locations = [];
-          if (pinResults.local) locations.push('local');
-          if (pinResults.peers.length > 0) locations.push(`${pinResults.peers.length} peers`);
-          if (pinResults.remote) locations.push('Pinata');
+          const locations = [
+            ...(pinResults.local ? ['local'] : []),
+            ...(pinResults.peers.length > 0 ? [`${pinResults.peers.length} peers`] : []),
+            ...(pinResults.remote ? ['Pinata'] : []),
+          ];
           console.log(`✅ Pinned to: ${locations.join(', ')}`);
         }
         

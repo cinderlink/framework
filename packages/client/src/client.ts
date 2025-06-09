@@ -31,6 +31,7 @@ import type {
   LoggerInterface,
   IPFSWithLibP2P,
 } from "@cinderlink/core-types";
+import type { PubSub } from '@libp2p/interface-pubsub';
 import type { OfflineSyncClientPluginInterface } from "@cinderlink/plugin-offline-sync-core";
 import Emittery from "emittery";
 import * as json from "multiformats/codecs/json";
@@ -174,8 +175,8 @@ export class CinderlinkClient<
     const message = this.onPubsubMessage.bind(this);
     
     // Check if pubsub is available before using it
-    if (this.ipfs.libp2p.pubsub) {
-      this.ipfs.libp2p.pubsub.addEventListener("message", message);
+    if (this.ipfs.libp2p.services.pubsub) {
+      (this.ipfs.libp2p.services.pubsub as PubSub).addEventListener("message", message);
     } else {
       this.logger.warn("ipfs", "pubsub not available in libp2p");
     }
@@ -213,8 +214,8 @@ export class CinderlinkClient<
       }
     );
 
-    if (this.ipfs.libp2p.pubsub) {
-      this.ipfs.libp2p.pubsub.addEventListener(
+    if (this.ipfs.libp2p.services.pubsub) {
+      (this.ipfs.libp2p.services.pubsub as PubSub).addEventListener(
         "subscription-change",
         (event: CustomEvent) => {
           this.logger.debug("pubsub", "subscription change", { event });
@@ -547,7 +548,7 @@ export class CinderlinkClient<
     if (peer.connected) {
       return;
     }
-    const addr = await this.ipfs.libp2p.peerStore.addressBook.get(peerId);
+    const addr = await this.ipfs.libp2p.peerStore.get(peerId);
     if (addr[0]) {
       this.logger.debug(
         "p2p",
@@ -562,9 +563,7 @@ export class CinderlinkClient<
         "p2p",
         `connect - connecting to peer: ${peer.peerId}, via relay: ${relayAddr}`
       );
-      await this.ipfs.libp2p.peerStore.addressBook.set(peerId, [
-        multiaddr(relayAddr),
-      ]);
+      await this.ipfs.libp2p.peerStore.patch(peerId, { multiaddrs: [multiaddr(relayAddr)] });
     }
     const connected = await this.ipfs.libp2p
       .dial(peerId)
@@ -856,8 +855,8 @@ export class CinderlinkClient<
   async subscribe(topic: keyof PluginEvents["subscribe"]) {
     if (this.subscriptions.includes(topic as string)) return;
     this.logger.debug("pubsub", `subscribing to topic: ${topic as string}`);
-    if (this.ipfs.libp2p.pubsub) {
-      await this.ipfs.libp2p.pubsub.subscribe(topic as string);
+    if (this.ipfs.libp2p.services.pubsub) {
+      await (this.ipfs.libp2p.services.pubsub as PubSub).subscribe(topic as string);
     } else {
       this.logger.warn("pubsub", `cannot subscribe to ${topic as string} - pubsub not available`);
     }
@@ -867,7 +866,7 @@ export class CinderlinkClient<
   async unsubscribe(topic: keyof PluginEvents["subscribe"]) {
     if (!this.subscriptions.includes(topic as string)) return;
     this.logger.debug("pubsub", `unsubscribing from topic: ${topic as string}`);
-    await this.ipfs.libp2p.pubsub.unsubscribe(topic as string);
+    await (this.ipfs.libp2p.services.pubsub as PubSub).unsubscribe(topic as string);
     this.subscriptions = this.subscriptions.filter((t) => t !== topic);
   }
 
@@ -904,8 +903,8 @@ export class CinderlinkClient<
       { message, options }
     );
     try {
-      if (this.ipfs.libp2p.pubsub) {
-        await this.ipfs.libp2p.pubsub.publish(topic as string, bytes);
+      if (this.ipfs.libp2p.services.pubsub) {
+        await (this.ipfs.libp2p.services.pubsub as PubSub).publish(topic as string, bytes);
       } else {
         this.logger.warn("pubsub", `cannot publish to ${topic as string} - pubsub not available`);
       }
