@@ -845,7 +845,7 @@ export class CinderlinkClient<
         })
       ),
     ]).then(async () => {
-      await this.ipfs.stop().catch(() => {});
+      await this.ipfs.libp2p.stop().catch(() => {});
     });
   }
 

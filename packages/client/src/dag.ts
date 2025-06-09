@@ -48,12 +48,10 @@ export class ClientDag<Plugins extends PluginEventDef = PluginEventDef>
           console.log(`✅ Pinned to: ${locations.join(', ')}`);
         }
         
-        // DHT provide
-        try {
-          this.client.ipfs.libp2p.contentRouting.provide(cid);
-        } catch (error) {
-          // Ignore DHT errors
-        }
+        // DHT provide (async but don't await to avoid blocking)
+        this.client.ipfs.libp2p.contentRouting.provide(cid).catch(() => {
+          // Ignore DHT errors in test mode or when no DHT is available
+        });
       } catch (error) {
         console.error(error);
       }

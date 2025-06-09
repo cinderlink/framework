@@ -8,6 +8,8 @@ import { createRemotePins, RemotePins } from '@helia/remote-pinning';
 import { tcp } from '@libp2p/tcp';
 import { noise } from '@chainsafe/libp2p-noise';
 import { yamux } from '@chainsafe/libp2p-yamux';
+import { generateKeyPair } from '@libp2p/crypto/keys';
+import { peerIdFromPrivateKey } from '@libp2p/peer-id';
 
 // Libp2p services
 import { dcutr } from '@libp2p/dcutr';
@@ -58,8 +60,14 @@ export async function createHeliaNode(
   // In test mode, use minimal configuration to avoid native dependencies
   const isTestMode = overrides.testMode || process.env.NODE_ENV === 'test' || process.env.VITEST;
   
+  // Generate a peer ID for test mode to ensure gossipsub can sign messages
+  const peerId = isTestMode ? 
+    peerIdFromPrivateKey(await generateKeyPair('Ed25519')) :
+    undefined;
+  
   // Create libp2p instance with recommended configuration
   const libp2p = await createLibp2p({
+    ...(peerId ? { peerId } : {}),
     addresses: {
       listen: ['/ip4/0.0.0.0/tcp/0', '/ip4/0.0.0.0/tcp/0/ws'],
     },
@@ -67,9 +75,11 @@ export async function createHeliaNode(
     connectionEncryption: [noise()],
     streamMuxers: [yamux()],
     peerDiscovery: [
-      pubsubPeerDiscovery({
-        interval: 1000,
-      }),
+      ...(isTestMode ? [] : [
+        pubsubPeerDiscovery({
+          interval: 1000,
+        })
+      ]),
       ...(bootstrapNodes.length > 0 ? [
         bootstrap({
           list: bootstrapNodes,
@@ -81,7 +91,24 @@ export async function createHeliaNode(
       ] : [])
     ],
     services: {
-      pubsub: gossipsub({ allowPublishToZeroTopicPeers: true } as GossipsubOpts),
+      pubsub: gossipsub({
+        allowPublishToZeroTopicPeers: true,
+        ...(isTestMode ? {
+          // Disable message signing in test mode
+          globalSignaturePolicy: 'StrictNoSign',
+          scoreParams: {
+            IPColocationFactorThreshold: Infinity,
+            behaviourPenaltyThreshold: Infinity,
+          },
+          scoreThresholds: {
+            gossipThreshold: -Infinity,
+            publishThreshold: -Infinity,
+            graylistThreshold: -Infinity,
+            acceptPXThreshold: -Infinity,
+            opportunisticGraftThreshold: -Infinity,
+          }
+        } : {})
+      } as GossipsubOpts),
       identify: identify(),
       ping: ping(),
       ...(isTestMode ? {} : {
@@ -105,7 +132,7 @@ export async function createHeliaNode(
   });
 
   // Create Helia instance with the libp2p instance
-  const blockstore = new FsBlockstore();
+  const blockstore = new FsBlockstore(isTestMode ? './test-blockstore' : undefined);
   const helia = await createHelia({
     libp2p,
     blockstore,
