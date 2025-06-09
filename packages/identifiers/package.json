@@ -2,7 +2,7 @@
   "name": "@cinderlink/identifiers",
   "description": "Account verification and derivation tools for Cinderlink Protocol",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "0.1.0",
+  "version": "1.0.0-next.0",
   "type": "module",
   "main": "src/index.ts",
   "types": "dist/index.d.ts",

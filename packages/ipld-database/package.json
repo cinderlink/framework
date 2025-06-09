@@ -2,7 +2,7 @@
   "name": "@cinderlink/ipld-database",
   "description": "IPLD database for @cinderlink/client",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "0.1.1",
+  "version": "1.0.0-next.0",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
