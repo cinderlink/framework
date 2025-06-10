@@ -4,10 +4,12 @@ import {
   TableDefinition,
 } from "@cinderlink/core-types";
 import { OfflineSyncRecord } from "./types";
+import { offlineSyncSchemas } from "./zod-schemas";
 
 export const OfflineSyncSchemaDef: Record<string, TableDefinition<any>> = {
   messages: {
-    schemaId: "offlineSync",
+    schemaId: "offlineSync.messages",
+    schemaVersion: 1,
     encrypted: false,
     aggregate: {},
     indexes: {
@@ -27,18 +29,6 @@ export const OfflineSyncSchemaDef: Record<string, TableDefinition<any>> = {
         "attemptedAt",
       ],
     },
-    schema: {
-      type: "object",
-      properties: {
-        sender: { type: "string" },
-        recipient: { type: "string" },
-        message: { type: "object", additionalProperties: true, properties: {} },
-        updatedAt: { type: "number" },
-        deliveredAt: { type: "number" },
-        attemptedAt: { type: "number" },
-        attempts: { type: "number" },
-      },
-    },
   } as TableDefinition<OfflineSyncRecord>,
 };
 
@@ -48,12 +38,24 @@ export async function loadOfflineSyncSchema(
   client: CinderlinkClientInterface<any>
 ) {
   client.logger?.info("offline-sync", "loading offline sync schema");
+  
+  // Register Zod schemas with the schema registry
+  if (client.schemaRegistry) {
+    Object.entries(offlineSyncSchemas).forEach(([tableName, { schema, version }]) => {
+      client.schemaRegistry!.registerSchema(`offlineSync.${tableName}`, version, {
+        schema,
+        migrate: async (data: unknown) => data, // No migration needed for v1
+      });
+    });
+  }
+  
   if (!client.schemas["offlineSync"]) {
     const schema = new Schema(
       "offlineSync",
       OfflineSyncSchemaDef,
       client.dag,
-      client.logger.module("db").submodule(`schema:offlineSync`)
+      client.logger.module("db").submodule(`schema:offlineSync`),
+      client.schemaRegistry
     );
     await client.addSchema("offlineSync", schema);
   } else {

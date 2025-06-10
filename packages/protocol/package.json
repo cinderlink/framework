@@ -35,7 +35,7 @@
     "@libp2p/identify": "^3.0.32",
     "@libp2p/interface": "^2.10.2",
     "@libp2p/tcp": "^10.1.13",
-    "@types/node": "^18.16.6",
+    "@types/node": "^18.19.107",
     "@types/uuid": "^9.0.1",
     "did-jwt": "^7.1.0",
     "dids": "^5.0.3",

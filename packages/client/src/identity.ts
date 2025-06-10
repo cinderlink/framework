@@ -122,7 +122,7 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
       return { cid: undefined, document: undefined };
     }
 
-    let requestId = uuid();
+    const requestId = uuid();
     let cid: string | undefined = undefined;
     let document: IdentityDocument | undefined = undefined;
 

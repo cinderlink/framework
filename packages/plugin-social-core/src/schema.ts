@@ -15,10 +15,12 @@ import {
   SocialNotification,
   SocialSetting,
 } from "./types";
+import { socialSchemas } from "./zod-schemas";
 
 export const SocialSchemaDef = {
   users: {
-    schemaId: "social",
+    schemaId: "social.users",
+    schemaVersion: 1,
     encrypted: false,
     aggregate: {},
     indexes: {
@@ -31,22 +33,10 @@ export const SocialSchemaDef = {
     searchOptions: {
       fields: ["id", "name", "did"],
     },
-    schema: {
-      type: "object",
-      properties: {
-        did: { type: "string" },
-        address: { type: "string" },
-        addressVerification: { type: "string" },
-        name: { type: "string" },
-        bio: { type: "string" },
-        avatar: { type: "string" },
-        status: { type: "string" },
-        updatedAt: { type: "number" },
-      },
-    },
   } as TableDefinition<SocialUser>,
   user_pins: {
-    schemaId: "social",
+    schemaId: "social.user_pins",
+    schemaVersion: 1,
     encrypted: true,
     aggregate: {},
     indexes: {
@@ -59,18 +49,10 @@ export const SocialSchemaDef = {
     searchOptions: {
       fields: ["did", "textId"],
     },
-    schema: {
-      type: "object",
-      properties: {
-        did: { type: "string" },
-        textId: { type: "string" },
-        createdAt: { type: "number" },
-        updatedAt: { type: "number" },
-      },
-    },
   } as TableDefinition<SocialUserPin>,
   profiles: {
-    schemaId: "social",
+    schemaId: "social.profiles",
+    schemaVersion: 1,
     encrypted: false,
     aggregate: {},
     indexes: {
@@ -83,35 +65,10 @@ export const SocialSchemaDef = {
     searchOptions: {
       fields: ["userUid"],
     },
-    schema: {
-      type: "object",
-      properties: {
-        userUid: { type: "string" },
-        banner: { type: "string" },
-        albums: {
-          type: "array",
-          items: {
-            type: "string",
-          },
-        },
-        favoritePosts: {
-          type: "array",
-          items: {
-            type: "string",
-          },
-        },
-        favoriteConnections: {
-          type: "array",
-          items: {
-            type: "string",
-          },
-        },
-        updatedAt: { type: "number" },
-      },
-    },
   } as TableDefinition<SocialProfile>,
   connections: {
-    schemaId: "social",
+    schemaId: "social.connections",
+    schemaVersion: 1,
     encrypted: true,
     aggregate: {},
     indexes: {
@@ -124,19 +81,10 @@ export const SocialSchemaDef = {
     searchOptions: {
       fields: ["from", "to"],
     },
-    schema: {
-      type: "object",
-      properties: {
-        from: { type: "string" },
-        to: { type: "string" },
-        follow: { type: "boolean" },
-        seenAt: { type: "number" },
-        createdAt: { type: "number" },
-      },
-    },
   } as TableDefinition<SocialConnection>,
   posts: {
-    schemaId: "social",
+    schemaId: "social.posts",
+    schemaVersion: 1,
     encrypted: true,
     aggregate: {},
     indexes: {
@@ -153,33 +101,10 @@ export const SocialSchemaDef = {
     searchOptions: {
       fields: ["did", "content", "attachments", "tags", "comments"],
     },
-    schema: {
-      type: "object",
-      properties: {
-        cid: { type: "string" },
-        did: { type: "string" },
-        content: { type: "string" },
-        attachments: { type: "array", items: { type: "string" } },
-        reactions: {
-          type: "array",
-          items: {
-            type: "string",
-          },
-        },
-        comments: {
-          type: "array",
-          items: {
-            type: "string",
-          },
-        },
-        tags: { type: "array", items: { type: "string" } },
-        seenAt: { type: "number" },
-        createdAt: { type: "number" },
-      },
-    },
   } as TableDefinition<SocialPost>,
   comments: {
-    schemaId: "social",
+    schemaId: "social.comments",
+    schemaVersion: 1,
     encrypted: true,
     aggregate: {},
     indexes: {
@@ -192,25 +117,10 @@ export const SocialSchemaDef = {
     searchOptions: {
       fields: ["did", "content", "postUid"],
     },
-    schema: {
-      type: "object",
-      properties: {
-        did: { type: "string" },
-        content: { type: "string" },
-        postUid: { type: "string" },
-        reactions: {
-          type: "array",
-          items: {
-            type: "string",
-          },
-        },
-        seenAt: { type: "number" },
-        createdAt: { type: "number" },
-      },
-    },
   } as TableDefinition<SocialComment>,
   reactions: {
-    schemaId: "social",
+    schemaId: "social.reactions",
+    schemaVersion: 1,
     encrypted: true,
     aggregate: {},
     indexes: {
@@ -223,23 +133,10 @@ export const SocialSchemaDef = {
     searchOptions: {
       fields: ["postUid", "from"],
     },
-    schema: {
-      type: "object",
-      properties: {
-        emoji: {
-          type: "string",
-        },
-        from: { type: "string" },
-        type: { type: "string" },
-        postUid: { type: "string" },
-        commentUid: { type: "string" },
-        createdAt: { type: "number" },
-        updatedAt: { type: "number" },
-      },
-    },
   } as TableDefinition<SocialReaction>,
   chat_messages: {
-    schemaId: "social",
+    schemaId: "social.chat_messages",
+    schemaVersion: 1,
     encrypted: true,
     aggregate: {
       createdAt: "range",
@@ -258,26 +155,10 @@ export const SocialSchemaDef = {
     searchOptions: {
       fields: ["from", "to", "content", "tags", "comments"],
     },
-    schema: {
-      type: "object",
-      properties: {
-        from: { type: "string" },
-        to: { type: "string" },
-        message: { type: "string" },
-        attachments: {
-          type: "array",
-          items: {
-            type: "string",
-          },
-        },
-        seenAt: { type: "number" },
-        updatedAt: { type: "number" },
-        createdAt: { type: "number" },
-      },
-    },
   } as TableDefinition<SocialChatMessage>,
   notifications: {
-    schemaId: "social",
+    schemaId: "social.notifications",
+    schemaVersion: 1,
     encrypted: false,
     aggregate: {},
     indexes: {
@@ -290,23 +171,10 @@ export const SocialSchemaDef = {
     searchOptions: {
       fields: ["sourceUid", "type"],
     },
-    schema: {
-      type: "object",
-      properties: {
-        type: { type: "string" },
-        sourceUid: { type: "string" },
-        title: { type: "string" },
-        body: { type: "string" },
-        dismissed: { type: "boolean" },
-        createdAt: { type: "number" },
-        read: { type: "boolean" },
-        link: { type: "string" },
-        metaData: { type: "object" },
-      },
-    },
   } as TableDefinition<SocialNotification>,
   settings: {
-    schemaId: "social",
+    schemaId: "social.settings",
+    schemaVersion: 1,
     encrypted: true,
     aggregate: {},
     indexes: {
@@ -319,16 +187,6 @@ export const SocialSchemaDef = {
     searchOptions: {
       fields: ["section", "key", "value"],
     },
-    schema: {
-      type: "object",
-      properties: {
-        section: { type: "string" },
-        key: { type: "string" },
-        value: { type: "string" },
-        createdAt: { type: "number" },
-        updatedAt: { type: "number" },
-      },
-    },
   } as TableDefinition<SocialSetting>,
 };
 
@@ -339,12 +197,24 @@ export async function loadSocialSchema(client: CinderlinkClientInterface<any>) {
     "plugins",
     "social-core/loadSocialSchema: preparing schema"
   );
+  
+  // Register Zod schemas with the schema registry
+  if (client.schemaRegistry) {
+    Object.entries(socialSchemas).forEach(([tableName, { schema, version }]) => {
+      client.schemaRegistry!.registerSchema(`social.${tableName}`, version, {
+        schema,
+        migrate: async (data: unknown) => data, // No migration needed for v1
+      });
+    });
+  }
+  
   if (!client.schemas["social"]) {
     const schema = new Schema(
       "social",
       SocialSchemaDef as any,
       client.dag,
-      client.logger.module("db").submodule(`schema:social`)
+      client.logger.module("db").submodule(`schema:social`),
+      client.schemaRegistry
     );
     await client.addSchema("social", schema as any);
   } else {

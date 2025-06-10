@@ -8,7 +8,7 @@ import type {
 } from "@cinderlink/core-types";
 import { CID } from "multiformats";
 import Emittery from "emittery";
-import Ajv, { ValidateFunction, ErrorObject } from "ajv";
+import type { SchemaRegistryInterface } from "@cinderlink/schema-registry";
 
 import {
   TableDefinition,
@@ -20,8 +20,6 @@ import {
 import { TableBlock } from "./block.js";
 import { TableQuery } from "./query.js";
 import { cache } from "./cache.js";
-
-const ajv = new Ajv();
 
 export class Table<
     Row extends TableRow = TableRow,
@@ -41,7 +39,8 @@ export class Table<
     public tableId: string,
     public def: Def,
     public dag: DIDDagInterface,
-    public logger: SubLoggerInterface
+    public logger: SubLoggerInterface,
+    public schemaRegistry?: SchemaRegistryInterface
   ) {
     super();
     this.encrypted = def.encrypted;
@@ -316,14 +315,24 @@ export class Table<
   }
 
   assertValid(data: Partial<Row>) {
-    const validate = ajv.compile(this.def.schema);
-    const valid = validate(data);
-    if (!valid) {
-      this.logger.error(`invalid data`, { data, errors: validate.errors });
+    if (!this.schemaRegistry) {
+      // Legacy behavior - skip validation if no registry
+      this.logger.warn('No schema registry provided, skipping validation');
+      return;
+    }
+
+    const result = this.schemaRegistry.validate(
+      this.def.schemaId,
+      this.def.schemaVersion,
+      data
+    );
+
+    if (!result.success) {
+      this.logger.error(`invalid data`, { data, error: result.error });
       throw new Error(
-        `Invalid data: ${validate.errors?.map(
-          (e: ErrorObject) => `(${e.instancePath}: ${e.message})`
-        )}`
+        `Invalid data: ${result.error.errors.map(
+          (e: { path: (string | number)[]; message: string }) => `(${e.path.join('.')}: ${e.message})`
+        ).join(', ')}`
       );
     }
   }
@@ -342,8 +351,18 @@ export class Table<
   }
 
   isValid(data: Partial<Row>) {
-    const validate = ajv.compile(this.def.schema);
-    return validate(data);
+    if (!this.schemaRegistry) {
+      // Legacy behavior - assume valid if no registry
+      return true;
+    }
+
+    const result = this.schemaRegistry.validate(
+      this.def.schemaId,
+      this.def.schemaVersion,
+      data
+    );
+
+    return result.success;
   }
 
   query(): TableQuery<Row, Def> {

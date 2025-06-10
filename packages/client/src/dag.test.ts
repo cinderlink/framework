@@ -29,7 +29,7 @@ describe("@cinderlink/client/dag", () => {
     const av = await signAddressVerification("test", did.id, account, walletClient);
     
     client = await createClient({
-      did: did as any,
+      did: did,
       address: account.address,
       addressVerification: av,
       role: "peer",

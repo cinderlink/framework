@@ -8,7 +8,7 @@ import { SubLoggerInterface } from "../logger";
 
 export type SchemaDef = {
   schemaId: string;
-  tables: Record<string, TableDefinition<any>>;
+  tables: Record<string, TableDefinition<TableRow>>;
 };
 
 export type SchemaEvents = {
@@ -18,18 +18,18 @@ export type SchemaEvents = {
 export type SavedSchema = {
   schemaId: string;
   defs: Record<string, TableDefinition>;
-  tables: Record<string, BlockData<any, any> | undefined>;
+  tables: Record<string, BlockData<TableRow> | undefined>;
 };
 
 export interface SchemaInterface extends Emittery<SchemaEvents> {
-  tables: Record<string, TableInterface<any>>;
+  tables: Record<string, TableInterface<TableRow>>;
   schemaId: string;
-  defs: Record<string, TableDefinition<any>>;
+  defs: Record<string, TableDefinition<TableRow>>;
   dag: DIDDagInterface;
   encrypted: boolean;
   logger: SubLoggerInterface;
 
-  createTable<Def extends TableDefinition<any> = TableDefinition<any>>(
+  createTable<Def extends TableDefinition<TableRow> = TableDefinition<TableRow>>(
     name: string,
     def: Def
   ): Promise<void>;

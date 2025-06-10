@@ -16,6 +16,7 @@ import type {
   TableDefinition,
   TableInterface,
 } from "@cinderlink/core-types";
+import type { SchemaRegistryInterface } from "@cinderlink/schema-registry";
 import { Table } from "./table.js";
 
 export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
@@ -25,7 +26,8 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
     public defs: Record<string, TableDefinition<any>>,
     public dag: DIDDagInterface,
     public logger: SubLoggerInterface,
-    public encrypted = true
+    public encrypted = true,
+    public schemaRegistry?: SchemaRegistryInterface
   ) {
     super();
     this.logger.info(`creating schema "${schemaId}"`);
@@ -35,7 +37,8 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
         tableId,
         def,
         this.dag,
-        this.logger.submodule(`table:${tableId}`)
+        this.logger.submodule(`table:${tableId}`),
+        this.schemaRegistry
       );
     });
   }
@@ -133,26 +136,28 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
   static async load(
     cid: string | CID,
     dag: DIDDagInterface,
-    logger: SubLoggerInterface
+    logger: SubLoggerInterface,
+    schemaRegistry?: SchemaRegistryInterface
   ) {
     const data = await dag.load<SavedSchema>(cid).catch(() => undefined);
     if (!data) {
       logger.error(`failed to load schema ${cid}`);
       throw new Error("Failed to load schema");
     }
-    return Schema.fromSavedSchema(data, dag, logger);
+    return Schema.fromSavedSchema(data, dag, logger, true, schemaRegistry);
   }
 
   static async fromSavedSchema(
     data: SavedSchema,
     dag: DIDDagInterface,
     logger: SubLoggerInterface,
-    encrypted = true
+    encrypted = true,
+    schemaRegistry?: SchemaRegistryInterface
   ): Promise<SchemaInterface> {
     if (!data) {
       throw new Error("Invalid schema data");
     }
-    const schema = new Schema(data.schemaId, data.defs, dag, logger, encrypted);
+    const schema = new Schema(data.schemaId, data.defs, dag, logger, encrypted, schemaRegistry);
     logger.debug(`hydrating schema "${data.schemaId}"`);
     await Promise.all(
       Object.entries(data.tables).map(async ([name, tableData]) => {

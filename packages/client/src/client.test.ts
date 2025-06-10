@@ -92,8 +92,8 @@ export class TestServerPlugin implements PluginInterface {
 }
 
 describe("CinderlinkClient", () => {
-  let client: CinderlinkClientInterface<any>;
-  let server: CinderlinkClientInterface<any>;
+  let client: CinderlinkClientInterface<PluginEventDef>;
+  let server: CinderlinkClientInterface<PluginEventDef>;
   beforeAll(async () => {
     await rmSync("./client-test-client", { recursive: true, force: true });
     await rmSync("./client-test-server", { recursive: true, force: true });
@@ -113,7 +113,7 @@ describe("CinderlinkClient", () => {
       serverWalletClient
     );
     server = await createClient({
-      did: serverDID as any,
+      did: serverDID,
       address: serverAccount.address,
       addressVerification: serverAV,
       role: "server",
@@ -150,7 +150,7 @@ describe("CinderlinkClient", () => {
       clientWalletClient
     );
     client = await createClient({
-      did: clientDID as any,
+      did: clientDID,
       address: clientAccount.address,
       addressVerification: clientAV,
       role: "peer",

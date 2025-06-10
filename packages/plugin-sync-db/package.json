@@ -2,7 +2,7 @@
   "name": "@cinderlink/plugin-sync-db",
   "description": "Database sync plugin for the Cinderlink framework",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "0.1.1",
+  "version": "0.1.1-next.0",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -21,12 +21,14 @@
     "build": "tsup",
     "watch": "tsup --watch",
     "test": "vitest run src/plugin.mock.test.ts",
-    "test:integration": "vitest run src/plugin.test.ts"
+    "test:integration": "vitest run src/plugin.test.ts",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@cinderlink/core-types": "workspace:../core-types",
     "@cinderlink/identifiers": "workspace:../identifiers",
     "@cinderlink/ipld-database": "workspace:../ipld-database",
+    "@cinderlink/schema-registry": "workspace:../schema-registry",
     "@cinderlink/test-adapters": "workspace:../test-adapters",
     "@cinderlink/tsconfig": "workspace:../tsconfig",
     "@ipld/car": "^5.1.1",

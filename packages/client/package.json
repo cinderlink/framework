@@ -29,7 +29,7 @@
   },
   "devDependencies": {
     "@cinderlink/tsconfig": "workspace:*",
-    "@types/node": "^22.12.6",
+    "@types/node": "^22.15.29",
     "@types/uuid": "^10.0.0",
     "@types/ws": "^8.5.13",
     "multiformats": "^13.3.4",

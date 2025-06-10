@@ -1,5 +1,5 @@
 import { CID } from "multiformats";
-import { IncomingP2PMessage } from "@cinderlink/core-types/src/p2p";
+import { IncomingP2PMessage } from "@cinderlink/core-types";
 import {
   PluginInterface,
   CinderlinkClientInterface,
@@ -40,6 +40,7 @@ export class IdentityServerPlugin
         {
           pins: {
             schemaId: "identity",
+            schemaVersion: 1,
             encrypted: true,
             aggregate: {},
             indexes: {

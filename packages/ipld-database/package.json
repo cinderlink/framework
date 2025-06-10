@@ -8,19 +8,15 @@
     "dist"
   ],
   "scripts": {
-    "build": "tshy",
+    "build": "tsup",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
-  "tshy": {
-    "exclude": [
-      "**/*.test.ts",
-      "**/benchmark/**",
-      "**/sandbox/**"
-    ],
-    "exports": {
-      "./package.json": "./package.json",
-      ".": "./src/index.ts"
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
     }
   },
   "devDependencies": {
@@ -28,8 +24,7 @@
     "@cinderlink/identifiers": "workspace:../identifiers",
     "@cinderlink/test-adapters": "workspace:../test-adapters",
     "@cinderlink/tsconfig": "workspace:../tsconfig",
-    "@types/ajv": "^1.0.0",
-    "@types/node": "^18.16.6",
+    "@types/node": "^18.19.107",
     "did-jwt": "^7.1.0",
     "dids": "^5.0.3",
     "emittery": "^1.0.1",
@@ -38,7 +33,7 @@
     "sqlite3": "^5.1.6",
     "tinybench": "^2.5.0",
     "ts-node": "^10.9.1",
-    "tshy": "^1.12.0",
+    "tsup": "^8.0.0",
     "typescript": "^5.0.4",
     "vite": "^4.3.5",
     "vitest": "^0.30.1"
@@ -52,7 +47,7 @@
     "viem": "^2.21.58"
   },
   "dependencies": {
-    "ajv": "^8.12.0",
+    "@cinderlink/schema-registry": "workspace:../schema-registry",
     "minisearch": "^6.0.1",
     "object-sizeof": "^2.6.1",
     "viem": "^2.21.58"

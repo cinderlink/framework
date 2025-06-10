@@ -956,9 +956,8 @@ export class CinderlinkClient<
     } as OutgoingP2PMessage<Events, OutTopic>;
 
     const result = new Promise((resolve) => {
-      let _timeout: NodeJS.Timeout | undefined;
       const wait = this.once(`/cinderlink/request/${requestId}`);
-      _timeout = setTimeout(() => {
+      const _timeout = setTimeout(() => {
         this.logger.error("p2p", "request timed out", {
           requestId,
           peerId,

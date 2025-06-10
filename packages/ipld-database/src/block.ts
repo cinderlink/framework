@@ -107,7 +107,7 @@ export class TableBlock<
 
     if (!this.cache.headers) {
       this.cache.headers = {
-        schema: this.table.def.schema.id as string,
+        schema: this.table.def.schema?.id as string || this.table.def.schemaId,
         table: this.table.tableId,
         encrypted: this.table.def.encrypted,
         index: 0,

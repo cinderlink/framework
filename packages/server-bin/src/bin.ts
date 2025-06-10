@@ -162,7 +162,7 @@ if (command !== "start") {
   }
 
   // Create wallet client for signing
-  walletClient = createWalletClient({
+  const walletClient = createWalletClient({
     account,
     chain: mainnet,
     transport: http(),
