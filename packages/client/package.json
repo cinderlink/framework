@@ -5,31 +5,27 @@
   "authors": "Drew Ewing <drew@cinderlink.com>",
   "version": "1.0.0-next.0",
   "type": "module",
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+  "tshy": {
+    "exports": {
+      ".": "./src/index.ts",
+      "./package.json": "./package.json"
     },
-    "./*": {
-      "types": "./dist/*.d.ts",
-      "import": "./dist/*.js",
-      "require": "./dist/*.cjs"
-    }
+    "exclude": [
+      "src/**/*.test.ts",
+      "src/**/*.spec.ts"
+    ]
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsup",
-    "watch": "tsup --watch",
+    "build": "tshy",
+    "watch": "tshy --watch",
     "watch:browser": "vite build --watch",
     "build:browser": "vite build",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@cinderlink/tsconfig": "workspace:*",
@@ -37,7 +33,7 @@
     "@types/uuid": "^10.0.0",
     "@types/ws": "^8.5.13",
     "multiformats": "^13.3.4",
-    "tsup": "^8.0.0",
+    "tshy": "^2.0.1",
     "typescript": "^5.7.3",
     "viem": "^2.21.58",
     "vite": "^4.3.5",
@@ -119,5 +115,21 @@
     "@libp2p/utils": "^6.6.6",
     "helia": "^5.4.2",
     "libp2p": "^2.8.9"
-  }
+  },
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/esm/index.d.ts",
+        "default": "./dist/esm/index.js"
+      },
+      "require": {
+        "types": "./dist/commonjs/index.d.ts",
+        "default": "./dist/commonjs/index.js"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "main": "./dist/commonjs/index.js",
+  "types": "./dist/commonjs/index.d.ts",
+  "module": "./dist/esm/index.js"
 }

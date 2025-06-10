@@ -3,13 +3,13 @@ import { privateKeyToAccount } from "viem/accounts";
 import { createWalletClient, http } from "viem";
 import { mainnet } from "viem/chains";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { createClient } from "./create";
-import { IdentityServerPlugin } from "../../plugin-identity-server";
+import { createClient } from "./create.js";
+import { IdentityServerPlugin } from "@cinderlink/plugin-identity-server";
 import {
   createSeed,
   createDID,
   signAddressVerification,
-} from "../../identifiers";
+} from "@cinderlink/identifiers";
 import {
   CinderlinkClientInterface,
   SubLoggerInterface,
@@ -18,7 +18,7 @@ import {
   IncomingP2PMessage,
   ReceiveEventHandlers,
   EncodingOptions,
-} from "../../core-types";
+} from "@cinderlink/core-types";
 
 const response = vi.fn();
 interface TestClientEvents extends PluginEventDef {

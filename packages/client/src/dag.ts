@@ -4,11 +4,11 @@ import {
   DAGStoreOptions,
   PluginEventDef,
 } from "@cinderlink/core-types";
-import { DIDDag } from "./did/dag";
+import { DIDDag } from "./did/dag.js";
 import { CID } from "multiformats";
-import { removeUndefined } from "./did/util";
+import { removeUndefined } from "./did/util.js";
 import { dagCbor } from "@helia/dag-cbor";
-import { DistributedPinningManager } from "./distributed-pinning";
+import { DistributedPinningManager } from "./distributed-pinning.js";
 
 export class ClientDag<Plugins extends PluginEventDef = PluginEventDef>
   implements DAGInterface

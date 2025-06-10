@@ -67,14 +67,14 @@ pnpm cinderlink
   - Plugin packages (`plugin-*`) for extensibility
 
 ### Key Technologies
-- **TypeScript** with ESM modules
+- **TypeScript** with ESM modules (strict type safety required)
+- **tshy** for hybrid ESM/CommonJS package builds
 - **libp2p** for P2P networking
 - **IPFS/Helia** with IPLD for distributed storage
 - **DIDs** (did:key) for decentralized identity
 - **viem** for Ethereum wallet integration
 - **Vitest** for testing (both jsdom and node environments)
 - **Turbo** for monorepo orchestration
-- **tsup** for building packages
 
 ### Plugin Architecture
 Plugins follow the pattern `@cinderlink/plugin-[name]` and include:
@@ -115,3 +115,21 @@ Packages have interdependencies managed by Turbo. Common dependency order:
 - Tests: `src/**/*.test.ts` or `src/**/*.spec.ts`
 - Build output: `dist/`
 - Types: `dist/*.d.ts`
+
+## TypeScript Best Practices
+
+- **Never use `any` types** - Always create proper, thoughtful type definitions
+- Use strict TypeScript configuration with `noImplicitAny: true` 
+- Prefer type safety over convenience - take the time to define proper types
+- Use union types, generics, and conditional types to create flexible yet safe APIs
+- When importing from external libraries, ensure proper type definitions are available
+- ESLint is configured to prevent `any` type usage with strict rules
+- All commits are protected by pre-commit hooks that run linting and type checking
+
+## Code Quality & Linting
+
+- ESLint configured with strict TypeScript rules
+- Pre-commit hooks enforce linting and type checking
+- Run `pnpm lint` to check code style
+- Run `pnpm lint:fix` to auto-fix issues
+- Run `pnpm typecheck` to verify TypeScript types

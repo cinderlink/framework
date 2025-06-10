@@ -9,9 +9,9 @@
   "types": "./dist/bin.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/bin.d.ts",
       "import": "./dist/bin.js",
-      "require": "./dist/bin.cjs",
-      "types": "./dist/bin.d.ts"
+      "require": "./dist/bin.cjs"
     }
   },
   "bin": {

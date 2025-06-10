@@ -8,7 +8,7 @@ import type {
 } from "@cinderlink/core-types";
 import { CID } from "multiformats";
 import Emittery from "emittery";
-import Ajv from "ajv";
+import Ajv, { ValidateFunction, ErrorObject } from "ajv";
 
 import {
   TableDefinition,
@@ -16,10 +16,10 @@ import {
   TableInterface,
   TableRow,
   TableUnwindEvent,
-} from "@cinderlink/core-types/src/database/table";
-import { TableBlock } from "./block";
-import { TableQuery } from "./query";
-import { cache } from "./cache";
+} from "@cinderlink/core-types";
+import { TableBlock } from "./block.js";
+import { TableQuery } from "./query.js";
+import { cache } from "./cache.js";
 
 const ajv = new Ajv();
 
@@ -149,8 +149,8 @@ export class Table<
         .then((uid) => {
           saved.push(uid);
         })
-        .catch((err) => {
-          errors[index] = err;
+        .catch((err: Error) => {
+          errors[index] = err.message;
         });
     }
     return { saved, errors };
@@ -269,7 +269,7 @@ export class Table<
   }
 
   async deserialize(cache: BlockData<Row, Def>) {
-    const block = TableBlock.fromJSON<Row, Def>(this as any, cache);
+    const block = TableBlock.fromJSON<Row, Def>(this, cache);
     await block.load();
     this.setBlock(block);
   }
@@ -322,7 +322,7 @@ export class Table<
       this.logger.error(`invalid data`, { data, errors: validate.errors });
       throw new Error(
         `Invalid data: ${validate.errors?.map(
-          (e) => `(${e.instancePath}: ${e.message})`
+          (e: ErrorObject) => `(${e.instancePath}: ${e.message})`
         )}`
       );
     }

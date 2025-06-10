@@ -18,7 +18,8 @@
   },
   "scripts": {
     "build": "tsup",
-    "watch": "pnpm build --watch"
+    "watch": "pnpm build --watch",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@noble/curves": "^1.8.0",

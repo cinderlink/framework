@@ -89,8 +89,8 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
     }
 
     try {
-      const ipns = this.client.ipfs.libp2p.services?.ipns;
-      if (ipns) {
+      const ipns = this.client.ipfs.libp2p.services?.ipns as any;
+      if (ipns && typeof ipns.resolve === 'function') {
         const resolvedPath = await ipns.resolve(this.client.peerId);
         if (resolvedPath) {
           const cid = resolvedPath.split("/").pop();

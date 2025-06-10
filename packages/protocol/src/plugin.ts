@@ -22,7 +22,7 @@ import { Pushable } from "it-pushable";
 import map from "it-map";
 
 import type { CinderlinkClientInterface } from "@cinderlink/core-types";
-import { decodePayload, encodePayload } from "./encoding";
+import { decodePayload, encodePayload } from "./encoding.js";
 
 export interface ProtocolHandler {
   buffer: Pushable<Uint8Array>;

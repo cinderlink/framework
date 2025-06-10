@@ -11,14 +11,15 @@
   ],
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
-      "require": "./dist/index.cjs",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.cjs"
     }
   },
   "scripts": {
     "build": "tsup",
-    "watch": "pnpm build --watch"
+    "watch": "pnpm build --watch",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@cinderlink/tsconfig": "workspace:../tsconfig",

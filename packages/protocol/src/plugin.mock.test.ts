@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { CinderlinkProtocolPlugin } from "./plugin";
+import { CinderlinkProtocolPlugin } from "./plugin.js";
 import type { CinderlinkClientInterface, ProtocolEvents } from "@cinderlink/core-types";
 
 describe("CinderlinkProtocolPlugin", () => {

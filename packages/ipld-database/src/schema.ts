@@ -11,12 +11,12 @@ import type {
   SavedSchema,
   SchemaEvents,
   SchemaInterface,
-} from "@cinderlink/core-types/src/database/schema";
+} from "@cinderlink/core-types";
 import type {
   TableDefinition,
   TableInterface,
-} from "@cinderlink/core-types/src/database/table";
-import { Table } from "./table";
+} from "@cinderlink/core-types";
+import { Table } from "./table.js";
 
 export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
   public tables: Record<string, TableInterface<any, any>> = {};

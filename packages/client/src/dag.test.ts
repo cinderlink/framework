@@ -1,6 +1,6 @@
 import { rmSync } from "fs";
 import { describe, beforeAll, it, expect, afterAll } from "vitest";
-import { CinderlinkClientInterface, ProtocolEvents } from "../../core-types";
+import { CinderlinkClientInterface, ProtocolEvents } from "@cinderlink/core-types";
 import { privateKeyToAccount } from "viem/accounts";
 import { createWalletClient, http } from "viem";
 import { mainnet } from "viem/chains";
@@ -8,8 +8,8 @@ import {
   createDID,
   createSeed,
   signAddressVerification,
-} from "../../identifiers";
-import { createClient } from "./create";
+} from "@cinderlink/identifiers";
+import { createClient } from "./create.js";
 
 let client: CinderlinkClientInterface<ProtocolEvents>;
 describe("@cinderlink/client/dag", () => {

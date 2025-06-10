@@ -1,0 +1,1 @@
+{"version":3,"file":"interface.js","sourceRoot":"","sources":["../../../src/files/interface.ts"],"names":[],"mappings":"","sourcesContent":["export interface FilesInterface {\n  upload(file: ArrayBuffer): Promise<string | undefined>;\n  download(cid: string): Promise<Buffer | undefined>;\n}\n"]}

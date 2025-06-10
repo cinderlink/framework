@@ -1,6 +1,6 @@
 import type { Helia } from '@helia/interface';
 import type { Libp2p } from 'libp2p';
-import type { RemotePin } from '@helia/remote-pinning';
+import type { RemotePins } from '@helia/remote-pinning';
 
 /**
  * Extended Helia interface with additional properties used by Cinderlink
@@ -10,7 +10,7 @@ export interface CinderlinkHelia extends Helia {
   libp2p: Libp2p;
   
   /** Remote pinning service interface */
-  remotePins?: RemotePin;
+  remotePins?: RemotePins;
 }
 
 /**

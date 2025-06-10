@@ -14,6 +14,7 @@ import { peerIdFromPrivateKey } from '@libp2p/peer-id';
 // Libp2p services
 import { dcutr } from '@libp2p/dcutr';
 import { kadDHT } from '@libp2p/kad-dht';
+// @ts-ignore - ESM package with CommonJS build issues
 import { pubsubPeerDiscovery } from '@libp2p/pubsub-peer-discovery';
 import { bootstrap } from '@libp2p/bootstrap';
 import { gossipsub } from '@chainsafe/libp2p-gossipsub';
@@ -23,17 +24,13 @@ import { autoNAT } from '@libp2p/autonat';
 import { ping } from '@libp2p/ping';
 
 // Types
-import type { GossipsubOpts } from '@chainsafe/libp2p-gossipsub';
-import type { Helia } from '@helia/interface';
-import type { Libp2p } from 'libp2p';
+import type { CinderlinkHelia as BaseCinderlinkHelia } from '@cinderlink/core-types';
 
 /**
- * Extended Helia interface with libp2p and remote pins
+ * Extended Helia interface with additional properties
  */
-export interface CinderlinkHelia extends Helia {
-  libp2p: Libp2p;
+export interface CinderlinkHelia extends BaseCinderlinkHelia {
   remotePins: RemotePins;
-  blockstore: FsBlockstore;
 }
 
 /**
@@ -92,10 +89,10 @@ export async function createHeliaNode(
     ],
     services: {
       pubsub: gossipsub({
-        allowPublishToZeroTopicPeers: true,
+        allowPublishToZeroPeers: true,
         ...(isTestMode ? {
           // Disable message signing in test mode
-          globalSignaturePolicy: 'StrictNoSign',
+          globalSignaturePolicy: 'StrictNoSign' as const,
           scoreParams: {
             IPColocationFactorThreshold: Infinity,
             behaviourPenaltyThreshold: Infinity,
@@ -108,7 +105,7 @@ export async function createHeliaNode(
             opportunisticGraftThreshold: -Infinity,
           }
         } : {})
-      } as GossipsubOpts),
+      }),
       identify: identify(),
       ping: ping(),
       ...(isTestMode ? {} : {
@@ -118,13 +115,15 @@ export async function createHeliaNode(
             cacheSize: 1000,
             cleanupInterval: 1000 * 60 * 10, // 10 minutes
             provideValidity: 1000 * 60 * 60 * 24 // 1 day
-          },
-          log: (message: string) => console.log(`[kad-dht] ${message}`)
+          }
         }),
         autonat: autoNAT(),
         dcutr: dcutr(),
         relay: circuitRelayServer({
-          advertise: true,
+          hopTimeout: 30 * 1000,
+          reservations: {
+            maxReservations: 15
+          }
         }),
       }),
     },
@@ -132,7 +131,7 @@ export async function createHeliaNode(
   });
 
   // Create Helia instance with the libp2p instance
-  const blockstore = new FsBlockstore(isTestMode ? './test-blockstore' : undefined);
+  const blockstore = new FsBlockstore(isTestMode ? './test-blockstore' : './blockstore');
   const helia = await createHelia({
     libp2p,
     blockstore,
@@ -141,13 +140,11 @@ export async function createHeliaNode(
 
   const remotePins = createRemotePins(helia);
 
-  // Extend the helia instance with libp2p, remotePins, and blockstore
+  // Extend the helia instance with remotePins
   const cinderlinkHelia = {
     ...helia,
-    libp2p,
-    remotePins,
-    blockstore
-  } as unknown as CinderlinkHelia;
+    remotePins
+  } as CinderlinkHelia;
 
   return cinderlinkHelia;
 }
