@@ -141,7 +141,6 @@ if (command !== "start") {
 
   const { default: config } = await import(resolvedConfigPath);
   let account;
-  let walletClient;
 
   if (config.privateKey) {
     account = privateKeyToAccount(config.privateKey as `0x${string}`);
@@ -242,7 +241,7 @@ if (command !== "start") {
   await server.start();
 
   const addrs = server.client.ipfs.libp2p.getMultiaddrs();
-  console.info(`listening: ${addrs.map((addr: any) => addr.toString()).join(", ")}`);
+  console.info(`listening: ${addrs.map((addr) => addr.toString()).join(", ")}`);
 
   process.on("SIGINT", async () => {
     console.log(`stopping ${chalk.cyan("cinderlink")}...`);

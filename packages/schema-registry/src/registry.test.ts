@@ -102,11 +102,11 @@ describe('SchemaRegistry', () => {
         .registerSchema('users', 1, { schema: v1 })
         .registerSchema('users', 2, { schema: v2 })
         .registerSchema('users', 3, { schema: v3 })
-        .registerMigration('users', 1, 2, (data: any) => ({
+        .registerMigration('users', 1, 2, (data) => ({
           ...data,
           displayName: data.name,
         }))
-        .registerMigration('users', 2, 3, (data: any) => ({
+        .registerMigration('users', 2, 3, (data) => ({
           ...data,
           createdAt: Date.now(),
         }));

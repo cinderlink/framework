@@ -20,10 +20,10 @@ import type { SchemaRegistryInterface } from "@cinderlink/schema-registry";
 import { Table } from "./table.js";
 
 export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
-  public tables: Record<string, TableInterface<any, any>> = {};
+  public tables: Record<string, TableInterface<TableRow, TableDefinition<TableRow>>> = {};
   constructor(
     public schemaId: string,
-    public defs: Record<string, TableDefinition<any>>,
+    public defs: Record<string, TableDefinition<TableRow>>,
     public dag: DIDDagInterface,
     public logger: SubLoggerInterface,
     public encrypted = true,
@@ -61,7 +61,7 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
     });
   }
 
-  async createTable(tableId: string, def: TableDefinition<any>) {
+  async createTable(tableId: string, def: TableDefinition<TableRow>) {
     if (this.tables[tableId]) {
       throw new Error(`table already exists: ${tableId}`);
     }
@@ -84,12 +84,17 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
   getTable<
     Row extends TableRow = TableRow,
     Def extends TableDefinition<Row> = TableDefinition<Row>
-  >(tableId: string) {
-    return this.tables[tableId] as TableInterface<Row, Def>;
+  >(tableId: string): TableInterface<Row, Def> {
+    // Use unknown as intermediate type for safe casting
+    const table = this.tables[tableId];
+    if (!table) {
+      throw new Error(`Table ${tableId} not found`);
+    }
+    return table as unknown as TableInterface<Row, Def>;
   }
 
   async serialize() {
-    const tables: Record<string, BlockData<any> | undefined> = {};
+    const tables: Record<string, BlockData<TableRow> | undefined> = {};
     try {
       await Promise.all(
         Object.entries(this.tables).map(async ([name]) => {
@@ -100,10 +105,10 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
           }
         })
       ).catch((error) => {
-        this.logger.error(`table "${name}" serialize error`, { error });
+        this.logger.error(`table serialize error`, { error });
       });
     } catch (error) {
-      this.logger.error(`table "${name}" serialize error`, { error });
+      this.logger.error(`schema serialize error`, { error });
     }
     if (!Object.keys(tables).length) return undefined;
 

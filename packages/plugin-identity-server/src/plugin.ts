@@ -1,5 +1,5 @@
 import { CID } from "multiformats";
-import { IncomingP2PMessage } from "@cinderlink/core-types";
+import { IncomingP2PMessage, TableDefinition, TableRow } from "@cinderlink/core-types";
 import {
   PluginInterface,
   CinderlinkClientInterface,
@@ -35,35 +35,37 @@ export class IdentityServerPlugin
   async start() {
     this.logger.info("starting social server plugin");
     if (!this.client.hasSchema("identity")) {
+      const pinsDef: TableDefinition<IdentityPinsRecord> = {
+        schemaId: "identity",
+        schemaVersion: 1,
+        encrypted: true,
+        aggregate: {},
+        indexes: {
+          did: {
+            unique: true,
+            fields: ["did"],
+          },
+          name: {
+            fields: ["cid"],
+          },
+        },
+        rollup: 1000,
+        searchOptions: {
+          fields: ["cid", "did"],
+        },
+        schema: {
+          type: "object",
+          properties: {
+            did: { type: "string" },
+            cid: { type: "string" },
+          },
+        },
+      };
+      
       const schema = new Schema(
         "identity",
         {
-          pins: {
-            schemaId: "identity",
-            schemaVersion: 1,
-            encrypted: true,
-            aggregate: {},
-            indexes: {
-              did: {
-                unique: true,
-                fields: ["did"],
-              },
-              name: {
-                fields: ["cid"],
-              },
-            },
-            rollup: 1000,
-            searchOptions: {
-              fields: ["cid", "did"],
-            },
-            schema: {
-              type: "object",
-              properties: {
-                did: { type: "string" },
-                cid: { type: "string" },
-              },
-            },
-          },
+          pins: pinsDef as TableDefinition<TableRow>,
         },
         this.client.dag,
         this.client.logger.module("db").submodule(`schema:identity`)
@@ -111,7 +113,7 @@ export class IdentityServerPlugin
     let success = false;
     if (message.payload.cid) {
       const cid = CID.parse(message.payload.cid);
-      const resolved = await this.client.ipfs.blockstore.get(cid as any, {
+      const resolved = await this.client.ipfs.blockstore.get(cid, {
         signal: AbortSignal.timeout(5000),
       });
 
@@ -122,10 +124,10 @@ export class IdentityServerPlugin
       if (resolved) {
         try {
           // Convert AsyncGenerator to Promise by consuming it
-          for await (const _ of this.client.ipfs.pins.add(cid as any, { signal: AbortSignal.timeout(5000) })) {
+          for await (const _ of this.client.ipfs.pins.add(cid, { signal: AbortSignal.timeout(5000) })) {
             // Just consume the generator
           }
-        } catch (error) {
+        } catch {
           // Ignore pin errors
         }
         success = true;
