@@ -1,0 +1,32 @@
+{
+  "name": "@cinderlink/schema-registry",
+  "description": "Schema registry with versioning and migration support for Cinderlink",
+  "authors": "Drew <drew@cinderlink.com>",
+  "version": "1.0.0-next.0",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "devDependencies": {
+    "@cinderlink/tsconfig": "workspace:../tsconfig",
+    "@types/node": "^18.19.107",
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.4",
+    "vitest": "^0.30.1"
+  },
+  "dependencies": {
+    "zod": "^3.23.8"
+  }
+}

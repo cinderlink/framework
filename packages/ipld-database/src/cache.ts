@@ -1,4 +1,4 @@
-import { TableDefinition } from "@cinderlink/core-types/src/database/table";
+import { TableDefinition } from "@cinderlink/core-types";
 import {
   BlockData,
   QueryResult,

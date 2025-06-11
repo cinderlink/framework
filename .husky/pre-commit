@@ -1,0 +1,5 @@
+# Run lint-staged for linting
+npx lint-staged
+
+# Run type checking
+pnpm typecheck

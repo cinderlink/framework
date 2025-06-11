@@ -7,7 +7,7 @@ import type {
 } from "@cinderlink/core-types";
 import type { DID } from "dids";
 import { SubLogger, createClient } from "@cinderlink/client";
-import { CinderlinkServer } from "./server";
+import { CinderlinkServer } from "./server.js";
 
 export interface CreateServerOptions {
   did: DID;

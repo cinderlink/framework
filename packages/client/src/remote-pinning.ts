@@ -53,7 +53,7 @@ export class RemotePinningManager {
     for await (const pin of this.client.ipfs.pins.ls()) {
       pins.push({
         cid: pin.cid,
-        metadata: pin.metadata,
+        metadata: pin.metadata as Record<string, string>,
       });
     }
 
@@ -66,7 +66,7 @@ export class RemotePinningManager {
    */
   async isPinned(cid: CID): Promise<boolean> {
     try {
-      for await (const pin of this.client.ipfs.pins.ls({ cids: [cid] })) {
+      for await (const pin of this.client.ipfs.pins.ls({ cid })) {
         if (pin.cid.equals(cid)) {
           return true;
         }

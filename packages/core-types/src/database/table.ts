@@ -1,4 +1,5 @@
-import type { SchemaObject } from "ajv";
+// JSON Schema type - compatible with both ajv and zod
+export type SchemaObject = Record<string, unknown>;
 import type { CID } from "multiformats";
 import type Emittery from "emittery";
 import type { Options as SearchOptions } from "minisearch";
@@ -56,7 +57,9 @@ export interface TableBlockInterface<
 export interface TableDefinition<Row extends TableRow = TableRow> {
   encrypted: boolean;
   schemaId: string;
-  schema: SchemaObject;
+  schemaVersion: number;
+  // Legacy support - will be removed
+  schema?: SchemaObject;
   indexes: Record<string, BlockIndexDef<Row>>;
   aggregate: Partial<Record<keyof Row, BlockAggregator>>;
   searchOptions: SearchOptions;
@@ -114,7 +117,7 @@ export interface TableInterface<
   ): Promise<Row>;
   search(query: string, limit: number): Promise<Row[]>;
   save(): Promise<CID | undefined>;
-  query<Params extends any[] = any[]>(
+  query<Params extends unknown[] = unknown[]>(
     fn?: (
       qb: QueryBuilderInterface<Row>,
       ...params: Params

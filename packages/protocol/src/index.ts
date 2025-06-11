@@ -1,3 +1,3 @@
-export * from "./encoding";
-export * from "./plugin";
-export { default } from "./plugin";
+export * from "./encoding.js";
+export * from "./plugin.js";
+export { default } from "./plugin.js";

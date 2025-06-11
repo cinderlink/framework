@@ -1,43 +1,18 @@
 {
-  "extends": "./node_modules/@cinderlink/tsconfig/tsconfig.json",
   "compilerOptions": {
-    "rootDir": ".",
-    "moduleResolution": "node",
+    "declaration": true,
+    "declarationMap": true,
     "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "inlineSources": true,
+    "jsx": "react",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "noUncheckedIndexedAccess": true,
+    "resolveJsonModule": true,
     "skipLibCheck": true,
+    "sourceMap": true,
     "strict": true,
-    "noImplicitAny": false,
-    "module": "esnext",
-    "target": "es2020",
-    "jsx": "react-jsx",
-    "lib": ["es2020", "dom"],
-    "types": ["node"],
-    "baseUrl": ".",
-    "paths": {
-      "@cinderlink/*": ["../*/src"],
-      "@libp2p/*": [
-        "./node_modules/@libp2p/*/dist/src/index.d.ts",
-        "./node_modules/@libp2p/*/dist/src/index.d.mts"
-      ],
-      "@helia/*": [
-        "./node_modules/@helia/*/dist/src/index.d.ts",
-        "./node_modules/@helia/*/dist/src/index.d.mts"
-      ],
-      "blockstore-fs": ["./src/types/blockstore-fs.d.ts"]
-    },
-    "typeRoots": [
-      "./node_modules/@types",
-      "./src/types"
-    ]
-  },
-  "include": ["src/**/*", "src/types/**/*.d.ts", "vite.config.ts"],
-  "exclude": ["node_modules", "dist", "**/*.test.ts"],
-  "ts-node": {
-    "esm": true,
-    "experimentalSpecifierResolution": "node"
-  },
-  "references": [
-    { "path": "./tsconfig.node.json" }
-  ]
+    "target": "es2022"
+  }
 }

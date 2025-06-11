@@ -1,7 +1,7 @@
 import { TestDIDDag, TestLogger } from "../../test-adapters";
 import type { DID } from "dids";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { Schema } from "./schema";
+import { Schema } from "./schema.js";
 import { TableDefinition } from "../../core-types";
 import { createSeed, createDID } from "../../identifiers";
 

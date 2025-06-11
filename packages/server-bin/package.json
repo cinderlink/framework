@@ -2,16 +2,16 @@
   "name": "@cinderlink/server-bin",
   "description": "Cinderlink server binary",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "0.1.0",
+  "version": "0.1.0-next.0",
   "main": "dist/bin.js",
   "type": "module",
   "module": "./dist/bin.js",
   "types": "./dist/bin.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/bin.d.ts",
       "import": "./dist/bin.js",
-      "require": "./dist/bin.cjs",
-      "types": "./dist/bin.d.ts"
+      "require": "./dist/bin.cjs"
     }
   },
   "bin": {
@@ -22,7 +22,8 @@
   ],
   "scripts": {
     "build": "tsup",
-    "watch": "tsup --watch"
+    "watch": "tsup --watch",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@cinderlink/identifiers": "workspace:../identifiers",

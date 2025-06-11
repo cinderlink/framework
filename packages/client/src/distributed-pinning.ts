@@ -1,6 +1,6 @@
 import type { CID } from "multiformats/cid";
 import type { CinderlinkClientInterface, PluginEventDef } from "@cinderlink/core-types";
-import { RemotePinningManager } from "./remote-pinning";
+import { RemotePinningManager } from "./remote-pinning.js";
 
 /**
  * Configuration for distributed pinning across multiple nodes
@@ -248,7 +248,10 @@ export class DistributedPinningManager<Plugins extends PluginEventDef = PluginEv
     }
 
     if (errors.length > 0) {
-      throw new AggregateError(errors, 'Failed to unpin from some locations');
+      // AggregateError is ES2021, use a custom error for compatibility
+      const error = new Error('Failed to unpin from some locations');
+      (error as any).errors = errors;
+      throw error;
     }
   }
 
@@ -313,7 +316,7 @@ export class DistributedPinningManager<Plugins extends PluginEventDef = PluginEv
 
     // Check local pin
     try {
-      for await (const pin of this.client.ipfs.pins.ls({ cids: [cid] })) {
+      for await (const pin of this.client.ipfs.pins.ls({ cid })) {
         if (pin.cid.equals(cid)) {
           status.local = true;
           break;

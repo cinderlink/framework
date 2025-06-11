@@ -8,7 +8,7 @@ import {
   SubLoggerInterface,
   GetOptions,
 } from "@cinderlink/core-types";
-import { removeUndefined } from "./util";
+import { removeUndefined } from "./util.js";
 
 export class DIDDag implements DIDDagInterface {
   constructor(

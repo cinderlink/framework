@@ -9,7 +9,7 @@ import {
 import { rmSync } from "fs";
 import { createClient, CinderlinkClient } from "../../client";
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { Table } from "./table";
+import { Table } from "./table.js";
 import { BlockData, TableDefinition, TableRow } from "../../core-types";
 
 interface NonUniqueRow extends TableRow {

@@ -7,7 +7,7 @@ export class Peerstore implements PeerStoreInterface {
 
   constructor(public localPeerId: string) {}
 
-  addPeer(peerId: PeerId, role: PeerRole = "peer", did?: string) {
+  addPeer(peerId: PeerId, role: PeerRole = "peer", did?: string): Peer {
     if (peerId.toString() === this.localPeerId) {
       throw new Error("cannot add self as peer");
     }
@@ -28,7 +28,11 @@ export class Peerstore implements PeerStoreInterface {
       connected: false,
       seenAt: Date.now(),
     };
-    return this.peers[peerId.toString()];
+    const peer = this.peers[peerId.toString()];
+    if (!peer) {
+      throw new Error(`Failed to retrieve peer ${peerId.toString()}`);
+    }
+    return peer;
   }
 
   hasPeer(peerId: string) {
@@ -36,7 +40,8 @@ export class Peerstore implements PeerStoreInterface {
   }
 
   hasServer(peerId: string) {
-    return this.getPeer(peerId)?.role === "server" ? true : false;
+    const peer = this.peers[peerId.toString()];
+    return peer?.role === "server" ? true : false;
   }
 
   getServers() {
@@ -68,31 +73,44 @@ export class Peerstore implements PeerStoreInterface {
     delete this.peers[peerId.toString()];
   }
 
-  getPeer(peerId: string) {
-    return this.peers[peerId.toString()];
+  getPeer(peerId: string): Peer {
+    const peer = this.peers[peerId.toString()];
+    if (!peer) {
+      throw new Error(`Peer ${peerId.toString()} not found`);
+    }
+    return peer;
   }
 
   updatePeer(peerId: string, peer: Partial<Peer>) {
+    const existingPeer = this.peers[peerId.toString()];
+    if (!existingPeer) {
+      throw new Error(`Peer ${peerId.toString()} not found`);
+    }
     this.peers[peerId.toString()] = {
-      ...this.peers[peerId.toString()],
+      ...existingPeer,
       ...peer,
     };
     if (peer.did) this.peerIds[peer.did] = peerId.toString();
   }
 
   setMetadata(peerId: string, key: string, value: string) {
-    if (!this.peers[peerId.toString()]) {
+    const peer = this.peers[peerId.toString()];
+    if (!peer) {
       throw new Error("peer not found");
     }
-    this.peers[peerId.toString()].metadata[key] = value;
+    peer.metadata[key] = value;
   }
 
-  isConnected(peerId: string) {
-    return this.peers[peerId.toString()]?.connected;
+  isConnected(peerId: string): boolean {
+    const peer = this.peers[peerId.toString()];
+    return peer ? peer.connected || false : false;
   }
 
-  isDIDConnected(did: string) {
-    return this.peers[this.peerIds[did]]?.connected;
+  isDIDConnected(did: string): boolean {
+    const peerId = this.peerIds[did];
+    if (!peerId) return false;
+    const peer = this.peers[peerId];
+    return peer ? peer.connected || false : false;
   }
 
   hasPeerByDID(did: string) {
@@ -104,7 +122,8 @@ export class Peerstore implements PeerStoreInterface {
       return undefined;
     }
 
-    return this.peers[this.peerIds[did]];
+    const peerId = this.peerIds[did];
+    return peerId ? this.peers[peerId] : undefined;
   }
 
   getPeerIdByDID(did: string) {
@@ -116,6 +135,7 @@ export class Peerstore implements PeerStoreInterface {
   }
 
   getDIDByPeerId(peerId: string) {
-    return this.peers[peerId.toString()]?.did;
+    const peer = this.peers[peerId.toString()];
+    return peer?.did;
   }
 }

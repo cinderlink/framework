@@ -17,6 +17,7 @@
       "outputs": ["dist/**"],
       "persistent": true
     },
-    "lint": {}
+    "lint": {},
+    "typecheck": {}
   }
 }

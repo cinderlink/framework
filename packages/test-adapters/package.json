@@ -2,12 +2,13 @@
   "name": "@cinderlink/test-adapters",
   "description": "Test adapters for Cinderlink",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "0.1.0",
+  "version": "0.1.0-next.0",
   "main": "src/index.ts",
   "types": "src/index.ts",
   "scripts": {
     "build": "tsup",
-    "watch": "tsup --watch"
+    "watch": "tsup --watch",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@cinderlink/core-types": "workspace:../core-types",

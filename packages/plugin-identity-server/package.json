@@ -2,7 +2,7 @@
   "name": "@cinderlink/plugin-identity-server",
   "description": "Identity server plugin for Cinderlink",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "0.1.0",
+  "version": "0.1.0-next.0",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -20,7 +20,8 @@
   "scripts": {
     "build": "tsup",
     "watch": "tsup --watch",
-    "test": "vitest run"
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
     "@cinderlink/core-types": "workspace:../core-types",

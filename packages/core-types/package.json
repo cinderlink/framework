@@ -2,7 +2,7 @@
   "name": "@cinderlink/core-types",
   "description": "Core types for @cinderlink/client",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "0.1.0",
+  "version": "1.0.0-next.0",
   "type": "module",
   "main": "src/index.ts",
   "types": "dist/index.d.ts",
@@ -11,14 +11,15 @@
   ],
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
-      "require": "./dist/index.cjs",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.cjs"
     }
   },
   "scripts": {
     "build": "tsup",
-    "watch": "pnpm build --watch"
+    "watch": "pnpm build --watch",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@cinderlink/tsconfig": "workspace:../tsconfig",

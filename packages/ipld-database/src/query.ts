@@ -13,7 +13,7 @@ import {
   TableRow,
   TableInterface,
   TableBlockInterface,
-} from "@cinderlink/core-types/src/database/table";
+} from "@cinderlink/core-types";
 import {
   TableQueryInterface,
   QueryInstruction,
@@ -26,9 +26,9 @@ import {
   DeleteInstruction,
   SelectInstruction,
   ReturningInstruction,
-} from "@cinderlink/core-types/src/database/query";
-import { TableBlock } from "./block";
-import { cache } from "./cache";
+} from "@cinderlink/core-types";
+import { TableBlock } from "./block.js";
+import { cache } from "./cache.js";
 
 export type QueryUnwindState<
   Row extends TableRow = TableRow,
