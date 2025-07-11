@@ -4,11 +4,11 @@ import {
   DAGStoreOptions,
   PluginEventDef,
 } from "@cinderlink/core-types";
-import { DIDDag } from "./did/dag";
+import { DIDDag } from "./did/dag.js";
 import { CID } from "multiformats";
-import { removeUndefined } from "./did/util";
+import { removeUndefined } from "./did/util.js";
 import { dagCbor } from "@helia/dag-cbor";
-import { DistributedPinningManager } from "./distributed-pinning";
+import { DistributedPinningManager } from "./distributed-pinning.js";
 
 export class ClientDag<Plugins extends PluginEventDef = PluginEventDef>
   implements DAGInterface
@@ -41,19 +41,17 @@ export class ClientDag<Plugins extends PluginEventDef = PluginEventDef>
         if (pinResults.errors.length > 0) {
           console.warn('Some pinning operations failed:', pinResults.errors);
         } else {
-          const locations = [];
+          const locations: string[] = [];
           if (pinResults.local) locations.push('local');
           if (pinResults.peers.length > 0) locations.push(`${pinResults.peers.length} peers`);
           if (pinResults.remote) locations.push('Pinata');
           console.log(`✅ Pinned to: ${locations.join(', ')}`);
         }
         
-        // DHT provide
-        try {
-          this.client.ipfs.libp2p.contentRouting.provide(cid);
-        } catch (error) {
-          // Ignore DHT errors
-        }
+        // DHT provide (async but don't await to avoid blocking)
+        this.client.ipfs.libp2p.contentRouting.provide(cid).catch(() => {
+          // Ignore DHT errors in test mode or when no DHT is available
+        });
       } catch (error) {
         console.error(error);
       }

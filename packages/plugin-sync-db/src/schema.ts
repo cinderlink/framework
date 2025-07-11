@@ -6,7 +6,8 @@ import {
 
 export const SyncSchemaDef = {
   tables: {
-    schemaId: "sync",
+    schemaId: "sync.tables",
+    schemaVersion: 1,
     encrypted: false,
     aggregate: {},
     indexes: {
@@ -23,19 +24,10 @@ export const SyncSchemaDef = {
     searchOptions: {
       fields: ["id", "schemaId", "tableId", "did"],
     },
-    schema: {
-      type: "object",
-      properties: {
-        schemaId: { type: "string" },
-        tableId: { type: "string" },
-        did: { type: "string" },
-        lastSyncedAt: { type: "number" },
-        lastFetchedAt: { type: "number" },
-      },
-    },
   } as TableDefinition<SyncTablesRow>,
   rows: {
-    schemaId: "sync",
+    schemaId: "sync.rows",
+    schemaVersion: 1,
     encrypted: false,
     aggregate: {},
     indexes: {
@@ -47,19 +39,6 @@ export const SyncSchemaDef = {
     rollup: 1000,
     searchOptions: {
       fields: ["id", "schemaId", "tableId", "rowUid"],
-    },
-    schema: {
-      type: "object",
-      properties: {
-        schemaId: { type: "string" },
-        tableId: { type: "string" },
-        rowUid: { type: "string" },
-        did: { type: "string" },
-        success: { type: "boolean" },
-        error: { type: "string" },
-        attempts: { type: "number" },
-        lastSyncedAt: { type: "number" },
-      },
     },
   } as TableDefinition<SyncRowsRow>,
 };

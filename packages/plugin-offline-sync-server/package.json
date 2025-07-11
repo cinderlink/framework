@@ -2,7 +2,7 @@
   "name": "@cinderlink/plugin-offline-sync-server",
   "description": "Offline messaging sync server plugin for Cinderlink",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "0.1.0",
+  "version": "0.1.0-next.0",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -19,7 +19,8 @@
   ],
   "scripts": {
     "build": "tsup",
-    "watch": "tsup --watch"
+    "watch": "tsup --watch",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@cinderlink/plugin-offline-sync-core": "workspace:../plugin-offline-sync-core"

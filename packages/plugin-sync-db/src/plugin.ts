@@ -8,6 +8,7 @@ import {
   Peer,
   PluginEventHandlers,
   PluginInterface,
+  TableDefinition,
   ProtocolEvents,
   ReceiveEvents,
   SchemaInterface,
@@ -53,7 +54,7 @@ export class SyncDBPlugin<
   schema?: Schema;
   syncRows?: TableInterface<SyncRowsRow>;
   syncTables?: TableInterface<SyncTablesRow>;
-  syncing: Record<string, Record<string, SyncConfig<any>>> = {};
+  syncing: Record<string, Record<string, SyncConfig<TableRow>>> = {};
   timers: Record<string, ReturnType<typeof setInterval>> = {};
   logger: SubLoggerInterface;
   started = false;
@@ -93,7 +94,7 @@ export class SyncDBPlugin<
     if (!this.client.hasSchema("sync")) {
       this.schema = new Schema(
         "sync",
-        SyncSchemaDef,
+        SyncSchemaDef as Record<string, TableDefinition<TableRow>>,
         this.client.dag,
         this.client.logger.module("db").submodule(`schema:sync`)
       );
@@ -451,7 +452,7 @@ export class SyncDBPlugin<
     const peers = this.client.peers.getAllPeers().filter((p) => !!p.did);
 
     let recipients = await sync.fetchFrom?.(peers, table, this.client);
-    if ([undefined, true].includes(recipients as any)) {
+    if (recipients === undefined || recipients === true) {
       recipients = peers.map((p) => p.did) as string[];
     } else if (recipients === false) {
       recipients = [];
@@ -587,7 +588,8 @@ export class SyncDBPlugin<
     const saved: string[] = [];
     const errors: Record<string, string> = {};
 
-    for (const { id, ...row } of rows) {
+    for (const fullRow of rows) {
+      const { id, ...row } = fullRow;
       if (!row.uid) {
         this.logger.warn(`received row without uid, skipping`);
         continue;
@@ -599,7 +601,7 @@ export class SyncDBPlugin<
         existing &&
         sync.allowUpdateFrom &&
         !(await sync.allowUpdateFrom?.(
-          row,
+          fullRow,
           message.peer.did,
           table,
           this.client
@@ -632,18 +634,17 @@ export class SyncDBPlugin<
       }
       if (save) {
         saved.push(row.uid);
-        const { id, ...data } = row as any;
         const existing = await table
           .getByUid(row.uid as string)
           .catch(() => undefined);
         if ((existing?.updatedAt || 0) > (row.updatedAt || 0)) {
           continue;
         }
-        if (!data.updatedAt) {
-          data.updatedAt = Date.now();
+        if (!row.updatedAt) {
+          row.updatedAt = Date.now();
         }
-        this.logger.info(`saving row`, data);
-        await table.upsert({ uid: row.uid }, data).catch(() => {});
+        this.logger.info(`saving row`, row);
+        await table.upsert({ uid: row.uid }, row as Omit<TableRow, 'id'>).catch(() => {});
       }
     }
 
@@ -820,7 +821,7 @@ export class SyncDBPlugin<
       .then((r) => r.first());
 
     const lastFetchedAt = Number(syncTable?.lastFetchedAt || 0);
-    let since = message.payload.since || lastFetchedAt;
+    const since = message.payload.since || lastFetchedAt;
     if (lastFetchedAt > since) {
       return;
     }
@@ -839,8 +840,8 @@ export class SyncDBPlugin<
           if (
             message.peer.did &&
             (await sync.allowFetchRowFrom?.(
+              row,
               message.peer.did,
-              row.uid,
               table,
               this.client
             ))
@@ -914,7 +915,7 @@ export class SyncDBPlugin<
         continue;
       } else if (
         existing &&
-        !sync.allowUpdateFrom?.(row.uid, message.peer.did, table, this.client)
+        !sync.allowUpdateFrom?.(row, message.peer.did, table, this.client)
       ) {
         continue;
       } else if (

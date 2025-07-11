@@ -2,7 +2,7 @@
   "name": "@cinderlink/plugin-social-client",
   "description": "Social client plugin for cinderlink enabling following and unfollowing of other users & posting of messages to the social network",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "0.1.1",
+  "version": "0.1.1-next.0",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -19,7 +19,8 @@
   ],
   "scripts": {
     "build": "tsup",
-    "watch": "tsup --watch"
+    "watch": "tsup --watch",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@cinderlink/client": "workspace:../client",

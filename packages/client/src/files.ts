@@ -25,11 +25,11 @@ export class Files<Plugins extends PluginEventDef> {
   async download(cid: string): Promise<Buffer | undefined> {
     const fs = unixfs(this.client.ipfs);
     const parsedCid = CID.parse(cid);
-    const chunks = [];
+    const chunks: Uint8Array[] = [];
     for await (const chunk of fs.cat(parsedCid)) {
       chunks.push(chunk);
     }
-    const content = Buffer.concat(chunks);
+    const content = Buffer.concat(chunks.map(c => Buffer.from(c)));
     return content;
   }
 }

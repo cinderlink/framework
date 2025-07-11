@@ -3,13 +3,13 @@ import { privateKeyToAccount } from "viem/accounts";
 import { createWalletClient, http } from "viem";
 import { mainnet } from "viem/chains";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { createClient } from "./create";
-import { IdentityServerPlugin } from "../../plugin-identity-server";
+import { createClient } from "./create.js";
+import { IdentityServerPlugin } from "@cinderlink/plugin-identity-server";
 import {
   createSeed,
   createDID,
   signAddressVerification,
-} from "../../identifiers";
+} from "@cinderlink/identifiers";
 import {
   CinderlinkClientInterface,
   SubLoggerInterface,
@@ -18,7 +18,7 @@ import {
   IncomingP2PMessage,
   ReceiveEventHandlers,
   EncodingOptions,
-} from "../../core-types";
+} from "@cinderlink/core-types";
 
 const response = vi.fn();
 interface TestClientEvents extends PluginEventDef {
@@ -92,8 +92,8 @@ export class TestServerPlugin implements PluginInterface {
 }
 
 describe("CinderlinkClient", () => {
-  let client: CinderlinkClientInterface<any>;
-  let server: CinderlinkClientInterface<any>;
+  let client: CinderlinkClientInterface<PluginEventDef>;
+  let server: CinderlinkClientInterface<PluginEventDef>;
   beforeAll(async () => {
     await rmSync("./client-test-client", { recursive: true, force: true });
     await rmSync("./client-test-server", { recursive: true, force: true });
@@ -113,11 +113,12 @@ describe("CinderlinkClient", () => {
       serverWalletClient
     );
     server = await createClient({
-      did: serverDID as any,
+      did: serverDID,
       address: serverAccount.address,
       addressVerification: serverAV,
       role: "server",
       options: {
+        testMode: true,
         config: {
           Addresses: {
             Swarm: ["/ip4/127.0.0.1/tcp/7356", "/ip4/127.0.0.1/tcp/7357/ws"],
@@ -149,10 +150,13 @@ describe("CinderlinkClient", () => {
       clientWalletClient
     );
     client = await createClient({
-      did: clientDID as any,
+      did: clientDID,
       address: clientAccount.address,
       addressVerification: clientAV,
       role: "peer",
+      options: {
+        testMode: true,
+      },
     });
     client.initialConnectTimeout = 0;
     client.addPlugin(new TestClientPlugin(client));

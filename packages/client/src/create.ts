@@ -6,8 +6,8 @@ import type {
 } from "@cinderlink/core-types";
 import { peerIdFromString } from "@libp2p/peer-id";
 import { HeliaInit } from "helia";
-import { CinderlinkClient } from "./client";
-import { createHeliaNode } from "./ipfs/create";
+import { CinderlinkClient } from "./client.js";
+import { createHeliaNode } from "./ipfs/create.js";
 import { DID } from "dids";
 
 export interface CreateClientOptions {
@@ -43,8 +43,11 @@ export async function createClient<
     });
 
   nodes?.forEach((node) => {
-    const peerId = peerIdFromString(node.split("/p2p/")[1]);
-    client.peers.addPeer(peerId, "server");
+    const peerIdString = node.split("/p2p/")[1];
+    if (peerIdString) {
+      const peerId = peerIdFromString(peerIdString);
+      client.peers.addPeer(peerId, "server");
+    }
   });
 
   return client;

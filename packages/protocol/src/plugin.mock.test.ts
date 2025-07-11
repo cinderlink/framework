@@ -1,6 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { CinderlinkProtocolPlugin } from "./plugin";
-import type { CinderlinkClientInterface, ProtocolEvents } from "@cinderlink/core-types";
+import { CinderlinkProtocolPlugin } from "./plugin.js";
+import type { 
+  CinderlinkClientInterface, 
+  ProtocolEvents, 
+  IncomingP2PMessage,
+  EncodingOptions
+} from "@cinderlink/core-types";
+import type { PeerId } from "@libp2p/interface";
 
 describe("CinderlinkProtocolPlugin", () => {
   let plugin: CinderlinkProtocolPlugin;
@@ -89,19 +95,31 @@ describe("CinderlinkProtocolPlugin", () => {
   });
 
   it("should handle keepalive messages", async () => {
-    const keepAliveMessage = {
-      type: "request",
-      from: "test-peer",
+    const keepAliveMessage: IncomingP2PMessage<
+      ProtocolEvents,
+      "/cinderlink/keepalive",
+      EncodingOptions
+    > = {
+      topic: "/cinderlink/keepalive",
+      payload: { timestamp: Date.now() },
       peer: {
-        peerId: { toString: () => "test-peer-id" }
-      }
+        did: "test-did",
+        peerId: { toString: () => "test-peer-id" } as PeerId,
+        role: "peer",
+        subscriptions: [],
+        metadata: {},
+        connected: true,
+        seenAt: Date.now()
+      },
+      signed: false,
+      encrypted: false
     };
 
     // Call the onKeepAlive method directly since it's bound in p2p
-    await plugin.p2p["/cinderlink/keepalive"].call(plugin, keepAliveMessage as any, {} as any);
+    await plugin.onKeepAlive(keepAliveMessage);
     
     // For keepalive requests, it should update peer seen time
-    if (keepAliveMessage.type === "request" && plugin.respondToKeepAlive) {
+    if (plugin.respondToKeepAlive) {
       expect(mockClient.peers.updatePeer).toHaveBeenCalledWith("test-peer-id", {
         seenAt: expect.any(Number)
       });

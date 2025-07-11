@@ -1,6 +1,4 @@
 import { createClient, DistributedPinningManager } from '@cinderlink/client';
-import { CID } from 'multiformats/cid';
-import type { CinderlinkClientInterface } from '@cinderlink/core-types';
 
 /**
  * Example demonstrating distributed pinning with Cinderlink
@@ -111,8 +109,8 @@ async function distributedPinningExample() {
   const connections = client.ipfs.libp2p.getConnections();
   console.log(`Connected to ${connections.length} peer(s)`);
   
-  // Show server nodes if any
-  const peers = client.peers as any;
+  // Show server nodes if any  
+  const peers = client.peers as { getPeersByRole?: (role: string) => Set<string> };
   const serverPeers = Array.from(peers.getPeersByRole?.('server') || []);
   if (serverPeers.length > 0) {
     console.log(`Server nodes: ${serverPeers.length}`);

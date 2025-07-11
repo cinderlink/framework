@@ -2,7 +2,7 @@
   "name": "@cinderlink/plugin-offline-sync-core",
   "description": "Core types and utilities for the Cinderlink offline sync plugin",
   "authors": "Drew <drew@cinderlink.com>",
-  "version": "0.1.0",
+  "version": "0.1.0-next.0",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -19,15 +19,19 @@
   ],
   "scripts": {
     "build": "tsup",
-    "watch": "tsup --watch"
+    "watch": "tsup --watch",
+    "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
     "@cinderlink/core-types": "workspace:../core-types",
     "@cinderlink/ipld-database": "workspace:../ipld-database"
   },
-  "devDependencies": {
+  "dependencies": {
     "@cinderlink/core-types": "workspace:../core-types",
-    "@cinderlink/ipld-database": "workspace:../ipld-database",
+    "@cinderlink/ipld-database": "workspace:../ipld-database"
+  },
+  "devDependencies": {
+    "@cinderlink/schema-registry": "workspace:../schema-registry",
     "@cinderlink/tsconfig": "workspace:../tsconfig",
     "tsup": "^6.7.0",
     "typescript": "^5.0.4",

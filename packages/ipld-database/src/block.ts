@@ -15,7 +15,7 @@ import type { CID } from "multiformats/cid";
 
 import * as json from "multiformats/codecs/json";
 import { base58btc } from "multiformats/bases/base58";
-import { cache } from "./cache";
+import { cache } from "./cache.js";
 
 export class TableBlock<
   Row extends TableRow = TableRow,
@@ -39,7 +39,7 @@ export class TableBlock<
   }
 
   buildSearchIndex() {
-    if (this.cache.filters?.search) {
+    if (this.cache.filters?.search && typeof this.cache.filters.search === 'object') {
       try {
         this.index = Minisearch.loadJS(
           this.cache.filters.search,
@@ -107,7 +107,7 @@ export class TableBlock<
 
     if (!this.cache.headers) {
       this.cache.headers = {
-        schema: this.table.def.schema.id as string,
+        schema: this.table.def.schema?.id as string || this.table.def.schemaId,
         table: this.table.tableId,
         encrypted: this.table.def.encrypted,
         index: 0,
