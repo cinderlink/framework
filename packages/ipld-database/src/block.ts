@@ -92,7 +92,7 @@ export class TableBlock<
     return this.cache.prevCID;
   }
 
-  getCID(): Promise<CID | undefined> {
+  async getCID(): Promise<CID | undefined> {
     return this.cid ? this.cid : this.save();
   }
 
@@ -262,7 +262,7 @@ export class TableBlock<
    * @param value
    * @param id
    */
-  addIndexWithValues(
+  async addIndexWithValues(
     index: keyof Def["indexes"],
     values: Row[keyof Row][],
     id: number
@@ -319,7 +319,7 @@ export class TableBlock<
       .flat();
   }
 
-  aggregate() {
+  async aggregate() {
     if (this.cache.filters?.aggregates && !this.changed) {
       return this.cache.filters.aggregates;
     }
