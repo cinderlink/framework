@@ -236,7 +236,7 @@ describe("SyncDBPlugin Unit Tests", () => {
     );
   });
 
-  it("should handle peer connections", () => {
+  it("should handle peer connections", async () => {
     const sendSpy = vi.spyOn(client, 'send');
     
     // Create a mock CID for testing

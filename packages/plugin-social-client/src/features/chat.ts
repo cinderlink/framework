@@ -78,7 +78,7 @@ Message: ${message.message}
     this.plugin.notifications.disableGenerator("social/chatMessage");
   }
 
-  sendChatMessage(
+  async sendChatMessage(
     message: Partial<SocialChatMessage>
   ): Promise<SocialChatMessage> {
     if (!message.to) {

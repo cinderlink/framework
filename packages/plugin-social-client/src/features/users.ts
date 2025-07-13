@@ -55,7 +55,7 @@ export class SocialUsers {
       await this.loadLocalUser();
     });
 
-    this.plugin.client.on("/peer/authenticated", (peer) => {
+    this.plugin.client.on("/peer/authenticated", async (peer) => {
       if (peer.role === "server") {
         this.hasServerConnection = true;
       } else {

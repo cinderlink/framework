@@ -113,7 +113,7 @@ export class OfflineSyncClientPlugin extends ZodPluginBase<typeof offlineSyncCli
     (this.client as any).emit(`/send/response/${requestId}`, payload);
   }
 
-  onGetRequest(message: TypedIncomingMessage<EventPayloadType<typeof offlineSyncClientSchemas, 'receive', '/offline/get/request'>>) {
+  async onGetRequest(message: TypedIncomingMessage<EventPayloadType<typeof offlineSyncClientSchemas, 'receive', '/offline/get/request'>>) {
     const { payload } = message;
     
     const { requestId, limit } = payload;
@@ -162,7 +162,7 @@ export class OfflineSyncClientPlugin extends ZodPluginBase<typeof offlineSyncCli
     );
   }
 
-  onGetResponse(response: TypedIncomingMessage<EventPayloadType<typeof offlineSyncClientSchemas, 'receive', '/offline/get/response'>>) {
+  async onGetResponse(response: TypedIncomingMessage<EventPayloadType<typeof offlineSyncClientSchemas, 'receive', '/offline/get/response'>>) {
     const { payload } = response;
     
     const { requestId, messages } = payload;
@@ -224,7 +224,7 @@ export class OfflineSyncClientPlugin extends ZodPluginBase<typeof offlineSyncCli
     });
   }
 
-  onGetConfirmation(response: TypedIncomingMessage<EventPayloadType<typeof offlineSyncClientSchemas, 'receive', '/offline/get/confirmation'>>) {
+  async onGetConfirmation(response: TypedIncomingMessage<EventPayloadType<typeof offlineSyncClientSchemas, 'receive', '/offline/get/confirmation'>>) {
     const { payload } = response;
     
     const { requestId, saved, errors } = payload;

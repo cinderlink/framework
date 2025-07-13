@@ -812,7 +812,7 @@ export class SyncDBPlugin extends ZodPluginBase<typeof syncDbSchemas> {
    * @param message
    * @returns
    */
-  onSyncFetchResponse(
+  async onSyncFetchResponse(
     message: TypedIncomingMessage<EventPayloadType<typeof syncDbSchemas, 'receive', '/cinderlink/sync/fetch/response'>>
   ) {
     const { payload } = message;

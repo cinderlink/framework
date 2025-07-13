@@ -123,7 +123,7 @@ export class CinderlinkProtocolPlugin<
     });
   }
 
-  keepAliveCheck() {
+  async keepAliveCheck() {
     const now = Date.now();
     for (const peer of this.client.peers.getAllPeers()) {
       if (peer.connected) {
@@ -174,7 +174,7 @@ export class CinderlinkProtocolPlugin<
     this.logger.info(`closing cinderlink protocol ${readablePeer(peer)}`);
   }
 
-  handleProtocolMessage(
+  async handleProtocolMessage(
     connection: Connection,
     encoded: ProtocolMessage<ProtocolRequest, string>
   ) {

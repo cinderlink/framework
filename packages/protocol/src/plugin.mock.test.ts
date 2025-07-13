@@ -99,7 +99,7 @@ describe("CinderlinkProtocolPlugin", () => {
     expect(plugin.started).toBe(false);
   });
 
-  it("should handle keepalive messages", () => {
+  it("should handle keepalive messages", async () => {
     const keepAliveMessage: IncomingP2PMessage<
       ProtocolEvents,
       "/cinderlink/keepalive",
