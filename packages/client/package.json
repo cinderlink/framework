@@ -37,8 +37,7 @@
     "viem": "^2.21.58",
     "vite": "^4.3.5",
     "vite-plugin-dts": "^2.3.0",
-    "vitest": "^3.2.4",
-    "bun-dts": "^0.1.70"
+    "vitest": "^3.2.4"
   },
   "dependencies": {
     "@chainsafe/libp2p-gossipsub": "^9.0.0",

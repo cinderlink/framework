@@ -35,8 +35,7 @@
     "emittery": "^1.0.1",
     "multiformats": "^13.3.7",
     "typescript": "^5.8.3",
-    "vitest": "^0.30.1",
-    "bun-dts": "^0.1.70"
+    "vitest": "^0.30.1"
   },
   "peerDependencies": {
     "@cinderlink/core-types": "workspace:*",
