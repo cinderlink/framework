@@ -649,7 +649,7 @@ describe("@cinderlink/ipld-database/table", () => {
       expect(computed).toMatch(inserted);
     });
 
-    it("should create deterministic identifiers for records without unique indexes", () => {
+    it("should create deterministic identifiers for records without unique indexes", async () => {
       const nonUniqueDef: TableDefinition<NonUniqueRow> = {
         schemaId: "test",
         aggregate: {},

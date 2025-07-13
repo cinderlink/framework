@@ -198,7 +198,7 @@ export class CinderlinkProtocolZodPlugin extends ZodPluginBase<
   /**
    * Handle identity messages
    */
-  private handleIdentity(message: IncomingP2PMessage) {
+  private async handleIdentity(message: IncomingP2PMessage) {
     const payload = this.validateEventPayload('receive', '/cinderlink/identity', message.payload);
     
     // Update peer identity
