@@ -161,7 +161,7 @@ export abstract class ZodPluginBase<
   /**
    * Type-safe emit method with full schema validation and inference
    */
-  protected async emit<TEvent extends ZodEmitEvents<TSchemas>>(
+  protected emit<TEvent extends ZodEmitEvents<TSchemas>>(
     event: TEvent,
     payload: EventPayloadType<TSchemas, 'emit', TEvent>
   ): Promise<void> {

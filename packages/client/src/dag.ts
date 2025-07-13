@@ -53,7 +53,7 @@ export class ClientDag<Plugins extends PluginEventDef = PluginEventDef>
           // Ignore DHT errors in test mode or when no DHT is available
         });
       } catch (_error) {
-        console.error(error);
+        console.error(_error);
       }
     }
     return cid;

@@ -70,7 +70,7 @@ export class DistributedPinningManager<Plugins extends PluginEventDef = PluginEv
         this.pinataConfigured = true;
         console.log('✅ Pinata remote pinning service available');
       } catch (_error) {
-        console.warn('⚠️ Failed to configure Pinata:', error);
+        console.warn('⚠️ Failed to configure Pinata:', _error);
       }
     }
   }
@@ -110,7 +110,7 @@ export class DistributedPinningManager<Plugins extends PluginEventDef = PluginEv
     } catch (_error) {
       results.errors.push({ 
         location: 'local', 
-        error: error as Error 
+        error: _error as Error 
       });
     }
 
@@ -139,7 +139,7 @@ export class DistributedPinningManager<Plugins extends PluginEventDef = PluginEv
       } catch (_error) {
         results.errors.push({ 
           location: 'pinata', 
-          error: error as Error 
+          error: _error as Error 
         });
       }
     }
@@ -205,7 +205,7 @@ export class DistributedPinningManager<Plugins extends PluginEventDef = PluginEv
       } catch (_error) {
         results.errors.push({
           peer: peerId,
-          error: error as Error,
+          error: _error as Error,
         });
       }
     }
@@ -234,7 +234,7 @@ export class DistributedPinningManager<Plugins extends PluginEventDef = PluginEv
           // Consume the async generator
         }
       } catch (_error) {
-        errors.push(error as Error);
+        errors.push(_error as Error);
       }
     }
 
@@ -243,7 +243,7 @@ export class DistributedPinningManager<Plugins extends PluginEventDef = PluginEv
       try {
         await this.remotePinManager.removeRemotePin(cid);
       } catch (_error) {
-        errors.push(error as Error);
+        errors.push(_error as Error);
       }
     }
 
@@ -276,7 +276,7 @@ export class DistributedPinningManager<Plugins extends PluginEventDef = PluginEv
           results.local.push(pin.cid);
         }
       } catch (_error) {
-        console.error('Failed to list local pins:', error);
+        console.error('Failed to list local pins:', _error);
       }
     }
 
@@ -293,7 +293,7 @@ export class DistributedPinningManager<Plugins extends PluginEventDef = PluginEv
           name: pin.metadata?.name,
         }));
       } catch (_error) {
-        console.error('Failed to list remote pins:', error);
+        console.error('Failed to list remote pins:', _error);
       }
     }
 

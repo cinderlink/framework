@@ -17,7 +17,7 @@ export class SocialConnections {
     this.logger = plugin.logger.submodule("connections");
   }
 
-  async start() {
+  start() {
     this.plugin.notifications.addGenerator({
       id: "social/follower",
       schemaId: "social",

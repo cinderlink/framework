@@ -383,7 +383,7 @@ export class SocialUsers {
       .then((result) => result.first() as SocialUser | undefined);
   }
 
-  onAnnounce(
+  async onAnnounce(
     message:
       | IncomingP2PMessage<
           SocialClientEvents,
@@ -519,7 +519,7 @@ export class SocialUsers {
     });
   }
 
-  onSearchResponse(
+  async onSearchResponse(
     message: IncomingP2PMessage<
       SocialClientEvents,
       "/social/users/search/response",

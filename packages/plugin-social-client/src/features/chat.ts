@@ -15,7 +15,7 @@ export class SocialChat {
     this.logger = plugin.logger.submodule("chat");
   }
 
-  async start() {
+  start() {
     this.plugin.notifications.addGenerator({
       id: "social/chatMessage",
       schemaId: "social",

@@ -80,11 +80,11 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
     return table as unknown as TableInterface<Row, Def>;
   }
 
-  serialize() {
+  async serialize() {
     const tables: Record<string, BlockData<TableRow> | undefined> = {};
     try {
       await Promise.all(
-        Object.entries(this.tables).map(([name]) => {
+        Object.entries(this.tables).map(async ([name]) => {
           this.logger.debug(`serializing table ${name}`);
           const table = await this.tables[name].serialize();
           if (table) {
@@ -94,7 +94,7 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
       ).catch((error) => {
         this.logger.error(`table serialize error`, { error });
       });
-    } catch (_error) {
+    } catch (error) {
       this.logger.error(`schema serialize error`, { error });
     }
     if (!Object.keys(tables).length) return undefined;
@@ -139,7 +139,7 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
     return Schema.fromSavedSchema(data, dag, logger, true, schemaRegistry);
   }
 
-  static fromSavedSchema(
+  static async fromSavedSchema(
     data: SavedSchema,
     dag: DIDDagInterface,
     logger: SubLoggerInterface,
@@ -152,7 +152,7 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
     const schema = new Schema(data.schemaId, data.defs, dag, logger, encrypted, schemaRegistry);
     logger.debug(`hydrating schema "${data.schemaId}"`);
     await Promise.all(
-      Object.entries(data.tables).map(([name, tableData]) => {
+      Object.entries(data.tables).map(async ([name, tableData]) => {
         logger.debug(`hydrating table "${name}"`);
         if (tableData) {
           await schema.tables[name]?.deserialize(tableData);
