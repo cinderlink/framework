@@ -258,7 +258,7 @@ export class DistributedPinningManager<Plugins extends PluginEventDef = PluginEv
   /**
    * List all pins across all locations
    */
-  listPins(options?: {
+  async listPins(options?: {
     type?: 'all' | 'local' | 'remote';
   }): Promise<{
     local: CID[];
@@ -303,7 +303,7 @@ export class DistributedPinningManager<Plugins extends PluginEventDef = PluginEv
   /**
    * Get pinning status for a specific CID
    */
-  getStatus(cid: CID): Promise<{
+  async getStatus(cid: CID): Promise<{
     local: boolean;
     peers: string[];
     remote: boolean;

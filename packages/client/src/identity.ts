@@ -247,7 +247,7 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
     if (forceRemote || Date.now() - this.lastSavedAt > 10000) {
       this.lastSavedAt = Date.now();
       await Promise.all(
-        this.client.peers.getServers().map((server) => {
+        this.client.peers.getServers().map(async (server) => {
           if (server.did) {
             this.client.logger.info("identity", "sending identity to server", {
               server,
