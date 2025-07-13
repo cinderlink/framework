@@ -631,7 +631,7 @@ export class SyncDBPlugin extends ZodPluginBase<typeof syncDbSchemas> {
    * @param message
    * @returns
    */
-  onSyncSaveResponse(
+  async onSyncSaveResponse(
     message: TypedIncomingMessage<EventPayloadType<typeof syncDbSchemas, 'receive', '/cinderlink/sync/save/response'>>
   ) {
     const { payload } = message;
@@ -878,7 +878,7 @@ export class SyncDBPlugin extends ZodPluginBase<typeof syncDbSchemas> {
    * Handle a sync since request from a peer
    * @param message
    */
-  onSyncSince(message: TypedIncomingMessage<EventPayloadType<typeof syncDbSchemas, 'receive', '/cinderlink/sync/since'>>) {
+  async onSyncSince(message: TypedIncomingMessage<EventPayloadType<typeof syncDbSchemas, 'receive', '/cinderlink/sync/since'>>) {
     const { payload } = message;
     
     if (!message.peer.did) {
