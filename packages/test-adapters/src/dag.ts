@@ -17,7 +17,7 @@ export class TestDag implements DAGInterface {
     this.cache[cid.toString()] = data;
     return cid;
   }
-  async load<Data = unknown>(cid: CID, path?: string): Promise<Data> {
+  load<Data = unknown>(cid: CID, path?: string): Promise<Data> {
     if (!cid) return undefined as any;
     const cached = this.cache[cid.toString()] as Data;
     if (path) {
@@ -38,11 +38,11 @@ export class TestDIDDag implements DIDDagInterface {
     this.dag = new TestDag();
   }
 
-  async store<Data = unknown>(data: Data): Promise<CID | undefined> {
+  store<Data = unknown>(data: Data): Promise<CID | undefined> {
     return this.dag.store(data);
   }
 
-  async load<Data = unknown>(
+  load<Data = unknown>(
     cid: CID,
     path?: string
   ): Promise<Data | undefined> {

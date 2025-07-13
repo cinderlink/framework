@@ -1,7 +1,7 @@
 import { verifyMessage, type Account, type WalletClient } from "viem";
 import { createAddressVerificationMessage } from "./create";
 
-export async function signAddressVerification(
+export function signAddressVerification(
   app: string,
   did: string,
   account: Account,
