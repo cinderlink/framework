@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach, beforeAll } from "vitest";
 import type { DID } from "dids";
 import type { PeerId } from "@libp2p/interface";
 import { CID } from "multiformats/cid";
-import { base58btc } from "multiformats/bases/base58";
 import SyncDBPlugin from "./plugin";
 import type {
   TableRow,
@@ -12,7 +11,6 @@ import type {
   SyncPluginEvents,
   ProtocolEvents,
   Peer,
-  P2PMessage,
   P2PMessageWithPeer,
 } from "@cinderlink/core-types";
 import { TestClient, TestLogger } from "@cinderlink/test-adapters";

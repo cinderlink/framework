@@ -1,6 +1,4 @@
 import {
-  EncodedProtocolPayload,
-  DecodedProtocolMessage,
   EncodingOptions,
   OutgoingP2PMessage,
   ProtocolEvents,
@@ -9,7 +7,6 @@ import {
   ProtocolRequest,
   Peer,
   PluginEventDef,
-  PluginBaseInterface,
   ReceiveEventHandlers,
   SubLoggerInterface,
   IncomingP2PMessage,
