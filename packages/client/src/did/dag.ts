@@ -22,7 +22,7 @@ export class DIDDag implements DIDDagInterface {
     options?: DAGStoreOptions
   ): Promise<CID | undefined> {
     this.logger.debug("storing data", { data });
-    return this.dag.store(data, options).catch((err: Error) => {
+    return await this.dag.store(data, options).catch((err: Error) => {
       this.logger.error("failed to store data", { data, err });
       throw new Error("Client DAG failed to store data: " + err.message);
     });
