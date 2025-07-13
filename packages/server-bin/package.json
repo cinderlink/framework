@@ -15,14 +15,14 @@
     }
   },
   "bin": {
-    "cinderlink": "dist/bin.js"
+    "cinderlink": "dist/cinderlink"
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsup",
-    "watch": "tsup --watch",
+    "build": "bun run build.ts",
+    "watch": "bun run build.ts --watch",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -50,7 +50,6 @@
     "@types/node": "^18.16.6",
     "make-error": "^1.3.6",
     "ts-node": "^10.9.1",
-    "tsup": "^6.7.0",
     "typescript": "^5.8.3",
     "vitest": "^0.30.1",
     "yn": "^5.0.0"

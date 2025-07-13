@@ -19,8 +19,8 @@
     "dist"
   ],
   "scripts": {
-    "build": "tshy",
-    "watch": "tshy --watch",
+    "build": "bun run build.ts",
+    "watch": "bun run build.ts --watch",
     "watch:browser": "vite build --watch",
     "build:browser": "vite build",
     "preview": "vite preview",
@@ -33,12 +33,12 @@
     "@types/uuid": "^10.0.0",
     "@types/ws": "^8.5.13",
     "multiformats": "^13.3.7",
-    "tshy": "^3.0.2",
     "typescript": "^5.8.3",
     "viem": "^2.21.58",
     "vite": "^4.3.5",
     "vite-plugin-dts": "^2.3.0",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "bun-dts": "^0.1.70"
   },
   "dependencies": {
     "@chainsafe/libp2p-gossipsub": "^9.0.0",
@@ -125,11 +125,12 @@
       "require": {
         "types": "./dist/commonjs/index.d.ts",
         "default": "./dist/commonjs/index.js"
-      }
+      },
+      "types": "./dist/index.d.ts"
     },
     "./package.json": "./package.json"
   },
   "main": "./dist/commonjs/index.js",
-  "types": "./dist/commonjs/index.d.ts",
+  "types": "dist/index.d.ts",
   "module": "./dist/esm/index.js"
 }

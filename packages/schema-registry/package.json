@@ -8,9 +8,10 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup",
+    "build": "bun run build.ts",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "watch": "bun run build.ts --watch"
   },
   "exports": {
     ".": {
@@ -22,11 +23,12 @@
   "devDependencies": {
     "@cinderlink/tsconfig": "workspace:*",
     "@types/node": "^18.19.107",
-    "tsup": "^8.0.0",
     "typescript": "^5.8.3",
-    "vitest": "^0.30.1"
+    "vitest": "^0.30.1",
+    "bun-dts": "^0.1.70"
   },
   "dependencies": {
     "zod": "^4.0.5"
-  }
+  },
+  "types": "dist/index.d.ts"
 }

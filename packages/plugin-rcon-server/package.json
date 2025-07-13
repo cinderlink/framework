@@ -6,7 +6,7 @@
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "types": "dist/index.d.ts",
   "files": [
     "dist"
   ],
@@ -18,8 +18,8 @@
     }
   },
   "scripts": {
-    "build": "tsup",
-    "watch": "tsup --watch",
+    "build": "bun run build.ts",
+    "watch": "bun run build.ts --watch",
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
@@ -38,8 +38,8 @@
     "@cinderlink/test-adapters": "workspace:*",
     "@cinderlink/tsconfig": "workspace:*",
     "@types/ws": "^8.5.4",
-    "tsup": "^6.7.0",
     "typescript": "^5.8.3",
-    "vitest": "^0.30.1"
+    "vitest": "^0.30.1",
+    "bun-dts": "^0.1.70"
   }
 }

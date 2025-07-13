@@ -6,7 +6,7 @@
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "import": "./dist/index.js",
@@ -18,8 +18,8 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup",
-    "watch": "tsup --watch",
+    "build": "bun run build.ts",
+    "watch": "bun run build.ts --watch",
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
@@ -33,8 +33,8 @@
   "devDependencies": {
     "@cinderlink/schema-registry": "workspace:*",
     "@cinderlink/tsconfig": "workspace:*",
-    "tsup": "^6.7.0",
     "typescript": "^5.8.3",
-    "vitest": "^0.30.1"
+    "vitest": "^0.30.1",
+    "bun-dts": "^0.1.70"
   }
 }

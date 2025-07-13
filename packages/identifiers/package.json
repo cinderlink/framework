@@ -5,17 +5,19 @@
   "version": "1.0.0-next.0",
   "type": "module",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "files": [
     "dist"
   ],
   "exports": {
     ".": {
-      "import": "./dist/index.js"
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
     }
   },
   "scripts": {
-    "build": "bun build src/index.ts --outdir dist --target node --format esm --sourcemap",
-    "watch": "bun build src/index.ts --outdir dist --target node --format esm --sourcemap --watch",
+    "build": "bun run build.ts",
+    "watch": "bun run build.ts --watch",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -31,6 +33,7 @@
   },
   "devDependencies": {
     "@cinderlink/tsconfig": "workspace:*",
+    "bun-dts": "^0.1.70",
     "typescript": "^5.8.3",
     "vitest": "^0.30.1"
   }

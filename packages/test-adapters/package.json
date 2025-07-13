@@ -4,10 +4,10 @@
   "authors": "Drew <drew@cinderlink.com>",
   "version": "0.1.0-next.0",
   "main": "src/index.ts",
-  "types": "src/index.ts",
+  "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsup",
-    "watch": "tsup --watch",
+    "build": "bun run build.ts",
+    "watch": "bun run build.ts --watch",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
@@ -20,9 +20,9 @@
     "dids": "^5.0.3",
     "emittery": "^1.0.1",
     "multiformats": "^13.3.7",
-    "tsup": "^6.7.0",
     "typescript": "^5.8.3",
-    "vitest": "^0.30.1"
+    "vitest": "^0.30.1",
+    "bun-dts": "^0.1.70"
   },
   "peerDependencies": {
     "did-jwt": "^8.0.17",
