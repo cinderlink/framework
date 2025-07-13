@@ -76,7 +76,7 @@ export class TableBlock<
     }
   }
 
-  prevCID(): Promise<string | undefined> {
+  async prevCID(): Promise<string | undefined> {
     if (this.cache.prevCID) {
       return this.cache.prevCID;
     }
@@ -147,7 +147,7 @@ export class TableBlock<
     return this.cache.filters;
   }
 
-  records() {
+  async records() {
     if (!this.cache.records && this.cid) {
       this.logger.debug(`loading records from ${this.cid || "new block"}`);
       this.cache.records = await this.loadData<Row[]>(this.cid!, "/records", {
@@ -172,7 +172,7 @@ export class TableBlock<
     return this.cache.records;
   }
 
-  recordById(id: number) {
+  async recordById(id: number) {
     if (this.cache.records) {
       return this.cache.records[id];
     }
@@ -477,7 +477,7 @@ export class TableBlock<
     return records[id];
   }
 
-  deleteRecord(id: number) {
+  async deleteRecord(id: number) {
     this.logger.debug(`deleting record ${id}`);
     // delete from indexes
     const indexes = this.table.def.indexes;
@@ -493,7 +493,7 @@ export class TableBlock<
     this.changed = true;
   }
 
-  search(query: string): Promise<Row[]> {
+  async search(query: string): Promise<Row[]> {
     const results = this.index?.search(query, { fuzzy: 0.2 }) || [];
     this.logger.info(`${results.length} search results for ${query}`, {
       query,
@@ -510,7 +510,7 @@ export class TableBlock<
     return records;
   }
 
-  load(force = false) {
+  async load(force = false) {
     if (this.changed && !force) {
       this.logger.error(
         `block has unsaved changes, refusing to load without [force=true]`,
@@ -542,7 +542,7 @@ export class TableBlock<
     }
   }
 
-  serialize(): Promise<BlockData<Row> | undefined> {
+  async serialize(): Promise<BlockData<Row> | undefined> {
     if (!this.changed) {
       if (
         !Object.keys(this.cache?.records || {}).length &&
