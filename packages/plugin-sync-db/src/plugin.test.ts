@@ -192,9 +192,15 @@ describe("TableSync", () => {
     vi.resetAllMocks();
     // vi.useRealTimers();
     try {
-      await client.stop().catch(() => {});
-      await server.stop().catch(() => {});
-    } catch (__) {}
+      await client.stop().catch(() => {
+        // Ignore stop errors in cleanup
+      });
+      await server.stop().catch(() => {
+        // Ignore stop errors in cleanup
+      });
+    } catch (_error) {
+      // Ignore cleanup errors
+    }
     await rmSync("./test-sync-client", { recursive: true, force: true });
     await rmSync("./test-sync-server", { recursive: true, force: true });
   });
