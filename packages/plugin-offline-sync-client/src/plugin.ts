@@ -79,7 +79,7 @@ export class OfflineSyncClientPlugin extends ZodPluginBase<typeof offlineSyncCli
     }
     return saved;
   }
-  onPeerConnect(peer: Peer) {
+  async onPeerConnect(peer: Peer) {
     this.logger.info(`peer connected, asking for offline messages`, {
       peerId: peer.peerId.toString(),
     });
