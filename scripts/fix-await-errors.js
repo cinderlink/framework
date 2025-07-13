@@ -17,7 +17,7 @@ for (let i = 0; i < lines.length; i++) {
       if (match) {
         awaitErrors.push({
           file: match[1],
-          line: parseInt(match[2])
+          line: parseInt(match[2], 10)
         });
       }
     }
@@ -49,7 +49,6 @@ for (const [filePath, lineNumbers] of Object.entries(fileErrors)) {
     for (const lineNum of lineNumbers) {
       const lineIndex = lineNum - 1; // Convert to 0-based index
       if (lineIndex >= 0 && lineIndex < lines.length) {
-        const line = lines[lineIndex];
         
         // Look backwards to find the function declaration
         for (let i = lineIndex; i >= 0; i--) {
