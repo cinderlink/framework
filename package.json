@@ -12,13 +12,13 @@
     "./apps/*"
   ],
   "scripts": {
-    "watch": "turbo watch --filter='./packages/*' --parallel --concurrency 24",
-    "build": "turbo build --filter='./packages/*' --concurrency 2",
-    "dev": "turbo dev",
-    "test": "bun --filter=./packages/* -r test",
+    "watch": "bun --filter='./packages/*' run watch",
+    "build": "bun --filter='./packages/*' run build",
+    "dev": "bun --filter='./examples/*' --filter='./apps/*' run dev",
+    "test": "bun --filter='./packages/*' run test",
     "lint": "oxlint .",
     "lint:fix": "oxlint . --fix",
-    "typecheck": "turbo typecheck --filter='./packages/*'",
+    "typecheck": "bun --filter='./packages/*' run typecheck",
     "prepare": "husky",
     "docs:build": "typedoc",
     "docs:watch": "typedoc --watch"
@@ -40,8 +40,6 @@
     "minimist": "^1.2.8",
     "multiformats": "^13.3.7",
     "oxlint": "^1.6.0",
-    "tshy": "^3.0.2",
-    "turbo": "^2.5.4",
     "typedoc": "^0.28.7",
     "typedoc-plugin-markdown": "^4.7.0",
     "vitest": "3.2.4"

@@ -4,21 +4,18 @@
   "authors": "Drew <drew@cinderlink.com>",
   "version": "1.0.0-next.0",
   "type": "module",
-  "main": "src/index.ts",
-  "types": "dist/index.d.ts",
+  "main": "dist/index.js",
   "files": [
     "dist"
   ],
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs",
-      "types": "./dist/index.d.ts"
+      "import": "./dist/index.js"
     }
   },
   "scripts": {
-    "build": "tsup",
-    "watch": "bun build --watch",
+    "build": "bun build src/index.ts --outdir dist --target node --format esm --sourcemap",
+    "watch": "bun build src/index.ts --outdir dist --target node --format esm --sourcemap --watch",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -29,12 +26,11 @@
     "dids": "^5.0.3",
     "key-did-provider-ed25519": "^3.0.1",
     "key-did-resolver": "^3.0.0",
-    "multiformats": "^13.3.4",
+    "multiformats": "^13.3.7",
     "viem": "^2.30.5"
   },
   "devDependencies": {
     "@cinderlink/tsconfig": "workspace:*",
-    "tsup": "^6.7.0",
     "typescript": "^5.8.3",
     "vitest": "^0.30.1"
   }

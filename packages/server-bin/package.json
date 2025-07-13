@@ -36,7 +36,7 @@
     "dotenv": "^16.5.0",
     "@helia/http": "^2.1.2",
     "minimist": "^1.2.8",
-    "multiformats": "^13.3.4",
+    "multiformats": "^13.3.7",
     "viem": "^2.21.58"
   },
   "peerDependencies": {

@@ -41,7 +41,7 @@
     "@cinderlink/plugin-offline-sync-client": "workspace:*",
     "@cinderlink/plugin-offline-sync-core": "workspace:*",
     "@cinderlink/protocol": "workspace:*",
-    "did-jwt": "^6.11.0",
+    "did-jwt": "^8.0.17",
     "dids": "^5.0.3"
   }
 }

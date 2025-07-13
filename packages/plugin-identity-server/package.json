@@ -27,7 +27,7 @@
     "@cinderlink/core-types": "workspace:*",
     "@cinderlink/identifiers": "workspace:*",
     "@cinderlink/ipld-database": "workspace:*",
-    "multiformats": "^13.3.4"
+    "multiformats": "^13.3.7"
   },
   "devDependencies": {
     "@cinderlink/core-types": "workspace:*",
@@ -38,7 +38,7 @@
     "@ipld/car": "^5.1.1",
     "@types/node": "^18.16.6",
     "it-all": "^3.0.1",
-    "multiformats": "^13.3.4",
+    "multiformats": "^13.3.7",
     "tsup": "^6.7.0",
     "typescript": "^5.8.3",
     "viem": "^2.21.58",

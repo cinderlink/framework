@@ -28,7 +28,7 @@
     "did-jwt": "^8.0.17",
     "dids": "^5.0.3",
     "emittery": "^1.0.1",
-    "multiformats": "^13.3.4",
+    "multiformats": "^13.3.7",
     "sqlite": "^4.2.0",
     "sqlite3": "^5.1.6",
     "tinybench": "^2.5.0",
@@ -40,10 +40,10 @@
   },
   "peerDependencies": {
     "@cinderlink/identifiers": "workspace:*",
-    "did-jwt": "^7.1.0",
+    "did-jwt": "^8.0.17",
     "dids": "^5.0.3",
     "emittery": "^1.0.1",
-    "multiformats": "^13.3.4",
+    "multiformats": "^13.3.7",
     "viem": "^2.21.58"
   },
   "dependencies": {

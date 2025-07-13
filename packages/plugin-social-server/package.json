@@ -40,7 +40,7 @@
     "@cinderlink/plugin-social-client": "workspace:*",
     "@cinderlink/plugin-social-core": "workspace:*",
     "@cinderlink/plugin-sync-db": "workspace:*",
-    "did-jwt": "^7.1.0",
+    "did-jwt": "^8.0.17",
     "dids": "^5.0.3"
   }
 }
