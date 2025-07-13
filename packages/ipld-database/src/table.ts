@@ -127,7 +127,7 @@ export class Table<
     ).toString();
   }
 
-  bulkInsert(data: Omit<Omit<Row, "id">, "uid">[]) {
+  async bulkInsert(data: Omit<Omit<Row, "id">, "uid">[]) {
     const saved: string[] = [];
     const errors: Record<number, string> = {};
     for (const index in data) {
@@ -180,7 +180,7 @@ export class Table<
     );
   }
 
-  update(uid: string, update: Partial<Row>) {
+  async update(uid: string, update: Partial<Row>) {
     if (!update) {
       this.logger.error(`update failed: no data provided`);
       throw new Error(`update failed: no data provided`);
@@ -238,7 +238,7 @@ export class Table<
     return results.slice(0, limit);
   }
 
-  save() {
+  async save() {
     if (!this.currentBlock.changed) {
       return this.currentBlock.cid;
     }

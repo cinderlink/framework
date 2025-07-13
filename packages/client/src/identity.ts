@@ -115,7 +115,7 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
     };
   }
 
-  resolveServer(): Promise<IdentityResolved> {
+  async resolveServer(): Promise<IdentityResolved> {
     const servers = this.client.peers.getServers();
     if (!servers.length) {
       this.client.logger.module("identity").warn("no servers found");
@@ -195,7 +195,7 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
     }, 10000);
   }
 
-  _save({
+  async _save({
     cid,
     document,
     forceRemote,

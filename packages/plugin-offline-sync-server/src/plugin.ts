@@ -54,7 +54,7 @@ export class OfflineSyncServerPlugin extends ZodPluginBase<typeof offlineSyncSer
     return table;
   }
 
-  onSendRequest(message: TypedIncomingMessage<EventPayloadType<typeof offlineSyncServerSchemas, 'receive', '/offline/send/request'>>) {
+  async onSendRequest(message: TypedIncomingMessage<EventPayloadType<typeof offlineSyncServerSchemas, 'receive', '/offline/send/request'>>) {
     const { payload } = message;
     
     if (!message.peer.peerId) {
@@ -142,7 +142,7 @@ export class OfflineSyncServerPlugin extends ZodPluginBase<typeof offlineSyncSer
       );
   }
 
-  onGetRequest(message: TypedIncomingMessage<EventPayloadType<typeof offlineSyncServerSchemas, 'receive', '/offline/get/request'>>) {
+  async onGetRequest(message: TypedIncomingMessage<EventPayloadType<typeof offlineSyncServerSchemas, 'receive', '/offline/get/request'>>) {
     const { payload } = message;
     
     if (!message.peer.did) {
@@ -170,7 +170,7 @@ export class OfflineSyncServerPlugin extends ZodPluginBase<typeof offlineSyncSer
     });
   }
 
-  onGetConfirmation(message: TypedIncomingMessage<EventPayloadType<typeof offlineSyncServerSchemas, 'receive', '/offline/get/confirmation'>>) {
+  async onGetConfirmation(message: TypedIncomingMessage<EventPayloadType<typeof offlineSyncServerSchemas, 'receive', '/offline/get/confirmation'>>) {
     const { payload } = message;
     
     if (!message.peer.did) {

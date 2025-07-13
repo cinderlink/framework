@@ -62,7 +62,7 @@ describe("@cinderlink/ipld-database/schema", () => {
     expect(schema.tables.test?.currentBlock).toMatchSnapshot();
   });
 
-  it("should save and restore from dag", () => {
+  it("should save and restore from dag", async () => {
     const schema = new Schema(
       "test",
       { test: tableDefinition },
