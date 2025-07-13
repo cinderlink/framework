@@ -171,7 +171,7 @@ if (command !== "start") {
   const plugins = (
     await Promise.all(
       (config.plugins || []).map(
-        ([pathname, options]: [string, Record<string, unknown>]) => {
+        async ([pathname, options]: [string, Record<string, unknown>]) => {
           // resolve the plugin relative to the config file
           const dirname = path.resolve(
             path.dirname(configPath),
