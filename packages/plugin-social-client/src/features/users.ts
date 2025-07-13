@@ -132,7 +132,7 @@ export class SocialUsers {
     }
   }
 
-  setUserStatus(did: string, status: SocialUserStatus) {
+  async setUserStatus(did: string, status: SocialUserStatus) {
     const table = this.plugin.table<SocialUser>("users");
     this.logger.info(`user ${did} status changed to '${status}'`, {
       did,
@@ -145,7 +145,7 @@ export class SocialUsers {
       .execute();
   }
 
-  announce(to: string | undefined = undefined) {
+  async announce(to: string | undefined = undefined) {
     if (!this.plugin.client.address.length) {
       throw new Error("client address not set");
     }
@@ -195,7 +195,7 @@ export class SocialUsers {
     return user?.uid;
   }
 
-  searchUsers(query: string) {
+  async searchUsers(query: string) {
     const servers = this.plugin.client.peers.getServers();
     if (!servers.length) {
       throw new Error("No servers found");
@@ -241,7 +241,7 @@ export class SocialUsers {
     return Array.from(unique.values());
   }
 
-  setState(update: Partial<SocialUser>) {
+  async setState(update: Partial<SocialUser>) {
     this.localUser = {
       ...this.localUser,
       ...update,
@@ -280,7 +280,7 @@ export class SocialUsers {
     }
   }
 
-  loadLocalUser() {
+  async loadLocalUser() {
     if (!this.plugin.client.identity.hasResolved) {
       this.logger.info(`identity not resolved, waiting...`);
       return;
