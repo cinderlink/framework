@@ -160,7 +160,7 @@ export class CinderlinkClient<
     return this.plugins[id] !== undefined;
   }
 
-  start(nodeAddrs: string[] = []) {
+  async start(nodeAddrs: string[] = []) {
     this.nodeAddresses = nodeAddrs;
 
     // In Helia, peer ID is directly available from libp2p
@@ -229,7 +229,7 @@ export class CinderlinkClient<
       this.hasServerConnection = true;
     });
 
-    this.on("/client/loaded", () => {
+    this.on("/client/loaded", async () => {
       this.hasServerConnection = this.peers.getServerCount() > 0;
       this.logger.info("plugins", "loading plugins", {
         plugins: Object.keys(this.plugins),
@@ -312,7 +312,7 @@ export class CinderlinkClient<
     });
   }
 
-  onPeerDisconnect(peer: Peer) {
+  async onPeerDisconnect(peer: Peer) {
     this.logger.info("p2p", `peer disconnected ${this.peerReadable(peer)}`, {
       peer,
     });
@@ -380,7 +380,7 @@ export class CinderlinkClient<
     });
   }
 
-  save(forceRemote = false, forceImmediate = false) {
+  async save(forceRemote = false, forceImmediate = false) {
     if (this.saving) return;
     if (!this.identity.hasResolved || this.identity.resolving) {
       this.logger.warn("identity", "identity not resolved, refusing to save");
@@ -449,7 +449,7 @@ export class CinderlinkClient<
     this.saving = false;
   }
 
-  load() {
+  async load() {
     this.logger.info("client", "loading client");
     if (!this.hasServerConnection && this.role !== "server") {
       this.logger.info("p2p", "waiting for server connection", {
@@ -533,7 +533,7 @@ export class CinderlinkClient<
     this.emit("/client/loaded", true);
   }
 
-  connect(peerId: PeerId, role: PeerRole = "peer") {
+  async connect(peerId: PeerId, role: PeerRole = "peer") {
     let peer: Peer;
     if (!this.peers.hasPeer(peerId.toString())) {
       peer = this.peers.addPeer(peerId, role);
@@ -593,7 +593,7 @@ export class CinderlinkClient<
     }
   }
 
-  onPubsubMessage(evt: CustomEvent) {
+  async onPubsubMessage(evt: CustomEvent) {
     const message = evt as CustomEvent<any>;
     const peerId = message.detail.from;
     if (peerId.toString() === this.peerId?.toString()) {
@@ -833,7 +833,7 @@ export class CinderlinkClient<
     return this.did.id;
   }
 
-  subscribe(topic: keyof PluginEvents["subscribe"]) {
+  async subscribe(topic: keyof PluginEvents["subscribe"]) {
     if (this.subscriptions.includes(topic as string)) return;
     this.logger.debug("pubsub", `subscribing to topic: ${topic as string}`);
     const pubsub = this.ipfs.libp2p.services.pubsub as PubSubService | undefined;
@@ -845,7 +845,7 @@ export class CinderlinkClient<
     this.subscriptions.push(topic as string);
   }
 
-  unsubscribe(topic: keyof PluginEvents["subscribe"]) {
+  async unsubscribe(topic: keyof PluginEvents["subscribe"]) {
     if (!this.subscriptions.includes(topic as string)) return;
     this.logger.debug("pubsub", `unsubscribing from topic: ${topic as string}`);
     const pubsub = this.ipfs.libp2p.services.pubsub as PubSubService | undefined;
