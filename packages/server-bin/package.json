@@ -26,12 +26,12 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@cinderlink/identifiers": "workspace:../identifiers",
-    "@cinderlink/plugin-identity-server": "workspace:../plugin-identity-server",
-    "@cinderlink/plugin-offline-sync-server": "workspace:../plugin-offline-sync-server",
-    "@cinderlink/plugin-social-server": "workspace:../plugin-social-server",
-    "@cinderlink/protocol": "workspace:../protocol",
-    "@cinderlink/server": "workspace:../server",
+    "@cinderlink/identifiers": "workspace:*",
+    "@cinderlink/plugin-identity-server": "workspace:*",
+    "@cinderlink/plugin-offline-sync-server": "workspace:*",
+    "@cinderlink/plugin-social-server": "workspace:*",
+    "@cinderlink/protocol": "workspace:*",
+    "@cinderlink/server": "workspace:*",
     "chalk": "^5.2.0",
     "dotenv": "^16.5.0",
     "@helia/http": "^2.1.2",
@@ -40,18 +40,18 @@
     "viem": "^2.21.58"
   },
   "peerDependencies": {
-    "@cinderlink/client": "workspace:../client"
+    "@cinderlink/client": "workspace:*"
   },
   "devDependencies": {
-    "@cinderlink/plugin-social-core": "workspace:^0.1.1",
-    "@cinderlink/plugin-sync-db": "workspace:^0.1.1",
-    "@cinderlink/tsconfig": "workspace:../tsconfig",
+    "@cinderlink/plugin-social-core": "workspace:*",
+    "@cinderlink/plugin-sync-db": "workspace:*",
+    "@cinderlink/tsconfig": "workspace:*",
     "@types/minimist": "^1.2.2",
     "@types/node": "^18.16.6",
     "make-error": "^1.3.6",
     "ts-node": "^10.9.1",
     "tsup": "^6.7.0",
-    "typescript": "^5.0.4",
+    "typescript": "^5.8.3",
     "vitest": "^0.30.1",
     "yn": "^5.0.0"
   }

@@ -101,3 +101,105 @@ exports[`@cinderlink/ipld-database/table > should rollup records with indexes 1`
   },
 }
 `;
+
+exports[`@cinderlink/ipld-database/table should index records 1`] = `
+{
+  "name": {
+    "z4TJrksEjp8": {
+      "ids": [
+        1,
+      ],
+      "values": [
+        "foo",
+      ],
+    },
+  },
+}
+`;
+
+exports[`@cinderlink/ipld-database/table should rollup records with indexes 1`] = `
+{
+  "name": {
+    "zPbkLwYJQbRmZQwe": {
+      "ids": {
+        "0": 1,
+      },
+      "values": {
+        "0": "test #0",
+      },
+    },
+    "zPbkLwYJQbRmZkRa": {
+      "ids": {
+        "0": 2,
+      },
+      "values": {
+        "0": "test #1",
+      },
+    },
+    "zPbkLwYJQbRma5uW": {
+      "ids": {
+        "0": 3,
+      },
+      "values": {
+        "0": "test #2",
+      },
+    },
+    "zPbkLwYJQbRmaRPS": {
+      "ids": {
+        "0": 4,
+      },
+      "values": {
+        "0": "test #3",
+      },
+    },
+    "zPbkLwYJQbRmaksN": {
+      "ids": {
+        "0": 5,
+      },
+      "values": {
+        "0": "test #4",
+      },
+    },
+    "zPbkLwYJQbRmb6MJ": {
+      "ids": {
+        "0": 6,
+      },
+      "values": {
+        "0": "test #5",
+      },
+    },
+    "zPbkLwYJQbRmbRqE": {
+      "ids": {
+        "0": 7,
+      },
+      "values": {
+        "0": "test #6",
+      },
+    },
+    "zPbkLwYJQbRmbmKA": {
+      "ids": {
+        "0": 8,
+      },
+      "values": {
+        "0": "test #7",
+      },
+    },
+    "zPbkLwYJQbRmc6o6": {
+      "ids": {
+        "0": 9,
+      },
+      "values": {
+        "0": "test #8",
+      },
+    },
+    "zPbkLwYJQbRmcSH2": {
+      "ids": {
+        "0": 10,
+      },
+      "values": {
+        "0": "test #9",
+      },
+    },
+  },
+}
+`;

@@ -1,15 +1,14 @@
 import { CID } from "multiformats";
-import { IncomingP2PMessage, TableDefinition, TableRow } from "@cinderlink/core-types";
-import {
-  PluginInterface,
+import { 
+  TableDefinition, 
+  TableRow,
+  ZodPluginBase,
   CinderlinkClientInterface,
-  CinderlinkClientEvents,
-  EncodingOptions,
-  ReceiveEventHandlers,
-  SubLoggerInterface,
+  TypedIncomingMessage,
+  EventPayloadType
 } from "@cinderlink/core-types";
 import { Schema } from "@cinderlink/ipld-database";
-import { IdentityServerEvents } from "./types";
+import { identityServerSchemas } from "./schemas";
 
 export type IdentityPinsRecord = {
   id: number;
@@ -20,20 +19,18 @@ export type IdentityPinsRecord = {
   cid: string;
 };
 
-export class IdentityServerPlugin
-  implements PluginInterface<IdentityServerEvents>
-{
-  id = "identityServer";
-  logger: SubLoggerInterface;
-  started = false;
+export class IdentityServerPlugin extends ZodPluginBase<typeof identityServerSchemas> {
   constructor(
-    public client: CinderlinkClientInterface<IdentityServerEvents>,
+    client: CinderlinkClientInterface,
     public options: Record<string, unknown> = {}
   ) {
-    this.logger = client.logger.module("plugins").submodule("identityServer");
+    super("identityServer", client, identityServerSchemas);
   }
   async start() {
-    this.logger.info("starting social server plugin");
+    await this.initializeHandlers();
+    this.logger.info("starting identity server plugin");
+    
+    // Set up database schema first
     if (!this.client.hasSchema("identity")) {
       const pinsDef: TableDefinition<IdentityPinsRecord> = {
         schemaId: "identity",
@@ -74,45 +71,47 @@ export class IdentityServerPlugin
     } else {
       this.logger.info("identity schema already exists");
     }
+    
+    // Mark as started
     this.started = true;
   }
-  async stop() {
-    this.logger.info("social server plugin stopped");
+  
+  stop() {
+    this.logger.info("identity server plugin stopped");
     this.started = false;
   }
-  p2p: ReceiveEventHandlers<IdentityServerEvents> = {
-    "/identity/set/request": this.onSetRequest,
-    "/identity/resolve/request": this.onResolveRequest,
-  };
-  pubsub = {};
-  events = {};
+  
+  // Define typed event handlers using the new type-safe approach
+  protected getEventHandlers() {
+    return {
+      p2p: {
+        '/identity/set/request': this.onSetRequest.bind(this),
+        '/identity/resolve/request': this.onResolveRequest.bind(this)
+      }
+    };
+  }
 
-  async onSetRequest(
-    message: IncomingP2PMessage<
-      IdentityServerEvents,
-      "/identity/set/request",
-      EncodingOptions
-    >
-  ) {
+  async onSetRequest(message: TypedIncomingMessage<EventPayloadType<typeof identityServerSchemas, 'receive', '/identity/set/request'>>) {
+    const { payload } = message;
+    
     if (!message.peer.did) {
       this.logger.warn("refusing to save identity for peer without DID");
-      return this.client.send<IdentityServerEvents, "/identity/set/response">(
+      return this.send(
         message.peer.peerId.toString(),
+        "/identity/set/response",
         {
-          topic: "/identity/set/response",
-          payload: {
-            requestId: message.payload.requestId,
-            success: false,
-            error: "did not found, peer does not have a DID",
-          },
+          requestId: payload.requestId,
+          success: false,
+          error: "did not found, peer does not have a DID",
+          timestamp: Date.now()
         }
       );
     }
-    this.logger.info("setting identity for peer", message.payload);
+    this.logger.info("setting identity for peer", payload);
 
     let success = false;
-    if (message.payload.cid) {
-      const cid = CID.parse(message.payload.cid);
+    if (payload.cid) {
+      const cid = CID.parse(payload.cid);
       const resolved = await this.client.ipfs.blockstore.get(cid, {
         signal: AbortSignal.timeout(5000),
       });
@@ -139,35 +138,35 @@ export class IdentityServerPlugin
       ?.getTable<IdentityPinsRecord>("pins")
       .upsert(
         { did: message.peer.did },
-        { cid: success ? message.payload.cid : undefined }
+        { cid: success ? payload.cid : undefined }
       );
 
-    return this.client.send(message.peer.peerId.toString(), {
-      topic: "/identity/set/response",
-      payload: {
-        requestId: message.payload.requestId,
+    return this.send(
+      message.peer.peerId.toString(),
+      "/identity/set/response",
+      {
+        requestId: payload.requestId,
         success,
-      },
-    });
+        timestamp: Date.now()
+      }
+    );
   }
 
-  async onResolveRequest(
-    message: IncomingP2PMessage<
-      IdentityServerEvents,
-      "/identity/resolve/request",
-      EncodingOptions
-    >
-  ) {
+  async onResolveRequest(message: TypedIncomingMessage<EventPayloadType<typeof identityServerSchemas, 'receive', '/identity/resolve/request'>>) {
+    const { payload } = message;
+    
     if (!message.peer.did) {
       this.logger.warn("refusing peer without DID");
-      return this.client.send(message.peer.peerId.toString(), {
-        topic: "/identity/resolve/response",
-        payload: {
-          requestId: message.payload.requestId,
+      return this.send(
+        message.peer.peerId.toString(),
+        "/identity/resolve/response",
+        {
+          requestId: payload.requestId,
           error: "DID not found, peer is not authenticated",
           cid: undefined,
-        },
-      });
+          timestamp: Date.now()
+        }
+      );
     }
 
     const identity = await this.client
@@ -180,19 +179,17 @@ export class IdentityServerPlugin
       .then((r) => r.first());
 
     this.logger.info("resolving identity for peer", {
-      payload: message.payload,
+      payload,
       identity,
     });
 
-    return this.client.send<CinderlinkClientEvents>(
+    return this.send(
       message.peer.peerId.toString(),
+      "/identity/resolve/response",
       {
-        topic: "/identity/resolve/response",
-        payload: {
-          requestId: message.payload.requestId,
-          since: message.payload.since,
-          cid: identity?.cid,
-        },
+        requestId: payload.requestId,
+        cid: identity?.cid,
+        timestamp: Date.now()
       }
     );
   }

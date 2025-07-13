@@ -15,13 +15,13 @@ Command-line interface for running a Cinderlink server node with support for var
 Install globally:
 
 ```bash
-pnpm add -g @cinderlink/server-bin
+bun add -g @cinderlink/server-bin
 ```
 
-Or use with npx:
+Or use with bunx:
 
 ```bash
-npx @cinderlink/server-bin <command>
+bunx @cinderlink/server-bin <command>
 ```
 
 ## Quick Start
@@ -110,9 +110,9 @@ export default {
   ipfs: {
     config: {
       Addresses: {
-        Swarm: ["/ip4/0.0.0.0/tcp/4001", "/ip4/0.0.0.0/tcp/4002/ws"],
-        API: "/ip4/0.0.0.0/tcp/5001",
-        Gateway: "/ip4/0.0.0.0/tcp/8080",
+        Swarm: ["/ip4/0.0.0.0/tcp/4500", "/ip4/0.0.0.0/tcp/4501/ws"],
+        API: "/ip4/0.0.0.0/tcp/4502",
+        Gateway: "/ip4/0.0.0.0/tcp/4503",
       },
       API: {
         HTTPHeaders: {
@@ -162,10 +162,10 @@ git clone https://github.com/cinderlink/framework.git
 cd framework
 
 # Install dependencies
-pnpm install
+bun install
 
 # Build all packages
-pnpm build
+bun run build
 
 # Run the server binary
 node packages/server-bin/dist/bin.js start

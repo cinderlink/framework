@@ -55,7 +55,7 @@ export class SocialUsers {
       await this.loadLocalUser();
     });
 
-    this.plugin.client.on("/peer/authenticated", async (peer) => {
+    this.plugin.client.on("/peer/authenticated", (peer) => {
       if (peer.role === "server") {
         this.hasServerConnection = true;
       } else {
@@ -88,7 +88,7 @@ export class SocialUsers {
       }
     });
 
-    this.plugin.client.on("/peer/disconnect", async (peer: Peer) => {
+    this.plugin.client.on("/peer/disconnect", (peer: Peer) => {
       this.logger.info(`peer disconnected`, { peer });
       this.hasServerConnection = this.plugin.client.peers.getServerCount() > 0;
     });
@@ -123,7 +123,7 @@ export class SocialUsers {
     await this.announce();
   }
 
-  async stop() {
+  stop() {
     if (this.userStatusInterval) {
       clearInterval(this.userStatusInterval);
     }
@@ -132,7 +132,7 @@ export class SocialUsers {
     }
   }
 
-  async setUserStatus(did: string, status: SocialUserStatus) {
+  setUserStatus(did: string, status: SocialUserStatus) {
     const table = this.plugin.table<SocialUser>("users");
     this.logger.info(`user ${did} status changed to '${status}'`, {
       did,
@@ -145,7 +145,7 @@ export class SocialUsers {
       .execute();
   }
 
-  async announce(to: string | undefined = undefined) {
+  announce(to: string | undefined = undefined) {
     if (!this.plugin.client.address.length) {
       throw new Error("client address not set");
     }
@@ -181,7 +181,7 @@ export class SocialUsers {
     }
   }
 
-  async getLocalUser(): Promise<SocialUser | undefined> {
+  getLocalUser(): Promise<SocialUser | undefined> {
     return this.getUserByDID(this.plugin.client.id);
   }
 
@@ -195,7 +195,7 @@ export class SocialUsers {
     return user?.uid;
   }
 
-  async searchUsers(query: string) {
+  searchUsers(query: string) {
     const servers = this.plugin.client.peers.getServers();
     if (!servers.length) {
       throw new Error("No servers found");
@@ -241,7 +241,7 @@ export class SocialUsers {
     return Array.from(unique.values());
   }
 
-  async setState(update: Partial<SocialUser>) {
+  setState(update: Partial<SocialUser>) {
     this.localUser = {
       ...this.localUser,
       ...update,
@@ -280,7 +280,7 @@ export class SocialUsers {
     }
   }
 
-  async loadLocalUser() {
+  loadLocalUser() {
     if (!this.plugin.client.identity.hasResolved) {
       this.logger.info(`identity not resolved, waiting...`);
       return;
@@ -373,7 +373,7 @@ export class SocialUsers {
     return undefined;
   }
 
-  async getUser(uid: string): Promise<SocialUser | undefined> {
+  getUser(uid: string): Promise<SocialUser | undefined> {
     return this.plugin
       .table("users")
       ?.query()
@@ -383,7 +383,7 @@ export class SocialUsers {
       .then((result) => result.first() as SocialUser | undefined);
   }
 
-  async onAnnounce(
+  onAnnounce(
     message:
       | IncomingP2PMessage<
           SocialClientEvents,
@@ -493,7 +493,7 @@ export class SocialUsers {
     }
   }
 
-  async onPinResponse(
+  onPinResponse(
     message: IncomingP2PMessage<
       SocialClientEvents,
       "/social/users/pin/response",
@@ -506,7 +506,7 @@ export class SocialUsers {
     });
   }
 
-  async onGetResponse(
+  onGetResponse(
     message: IncomingP2PMessage<
       SocialClientEvents,
       "/social/users/get/response",
@@ -519,7 +519,7 @@ export class SocialUsers {
     });
   }
 
-  async onSearchResponse(
+  onSearchResponse(
     message: IncomingP2PMessage<
       SocialClientEvents,
       "/social/users/search/response",

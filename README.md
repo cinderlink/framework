@@ -48,7 +48,7 @@ Cinderlink is built with a modular architecture that separates concerns and prom
 ### Prerequisites
 
 - Node.js v16 or later
-- pnpm package manager
+- Bun runtime and package manager
 
 ### Installation
 
@@ -60,12 +60,12 @@ Cinderlink is built with a modular architecture that separates concerns and prom
 
 2. Install dependencies:
    ```bash
-   pnpm i -r
+   bun install
    ```
 
 3. Build all packages:
    ```bash
-   pnpm build
+   bun run build
    ```
 
 ### Running the Example Server
@@ -73,7 +73,8 @@ Cinderlink is built with a modular architecture that separates concerns and prom
 An example server is provided in the `examples/server-example` directory. To start it:
 
 ```bash
-pnpm --filter ./examples/server-example ts
+cd examples/server-example
+bun run example
 ```
 
 This will start a Cinderlink server with default plugins.
@@ -105,7 +106,7 @@ Cinderlink's functionality can be extended through plugins:
 To build all packages:
 
 ```bash
-pnpm build
+bun run build
 ```
 
 ### Testing
@@ -113,14 +114,14 @@ pnpm build
 Run all tests:
 
 ```bash
-pnpm test
+bun test
 ```
 
 Run tests for a specific package:
 
 ```bash
 cd packages/package-name
-pnpm test
+bun test
 ```
 
 ### Code Style
@@ -128,7 +129,7 @@ pnpm test
 We use [ESLint](https://eslint.org/) and [Prettier](https://prettier.io/) for code style. To format your code:
 
 ```bash
-pnpm format
+bun run format
 ```
 
 ## 🤝 Contributing

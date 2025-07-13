@@ -36,7 +36,7 @@ export interface DistributedPinningConfig {
  * Manages distributed pinning across network nodes and remote services
  */
 export class DistributedPinningManager<Plugins extends PluginEventDef = PluginEventDef> {
-  private remotePinManager: RemotePinningManager;
+  private remotePinManager: RemotePinningManager<Plugins>;
   private config: DistributedPinningConfig;
   private pinataConfigured = false;
 
@@ -44,7 +44,7 @@ export class DistributedPinningManager<Plugins extends PluginEventDef = PluginEv
     private client: CinderlinkClientInterface<Plugins>,
     config: DistributedPinningConfig = {}
   ) {
-    this.remotePinManager = new RemotePinningManager(client as any);
+    this.remotePinManager = new RemotePinningManager<Plugins>(client);
     this.config = {
       pinToPeers: true,
       minPeerPins: 1,
@@ -60,7 +60,7 @@ export class DistributedPinningManager<Plugins extends PluginEventDef = PluginEv
   /**
    * Configure Pinata service if API key is available
    */
-  private async configurePinataIfAvailable(): Promise<void> {
+  private configurePinataIfAvailable(): Promise<void> {
     const apiKey = this.config.pinataApiKey || process.env.PINATA_API_KEY;
     
     if (this.config.usePinata && apiKey) {
@@ -69,7 +69,7 @@ export class DistributedPinningManager<Plugins extends PluginEventDef = PluginEv
         // when using @helia/remote-pinning
         this.pinataConfigured = true;
         console.log('✅ Pinata remote pinning service available');
-      } catch (error) {
+      } catch (_error) {
         console.warn('⚠️ Failed to configure Pinata:', error);
       }
     }
@@ -107,7 +107,7 @@ export class DistributedPinningManager<Plugins extends PluginEventDef = PluginEv
         // Consume the async generator
       }
       results.local = true;
-    } catch (error) {
+    } catch (_error) {
       results.errors.push({ 
         location: 'local', 
         error: error as Error 
@@ -136,7 +136,7 @@ export class DistributedPinningManager<Plugins extends PluginEventDef = PluginEv
           },
         });
         results.remote = true;
-      } catch (error) {
+      } catch (_error) {
         results.errors.push({ 
           location: 'pinata', 
           error: error as Error 
@@ -157,7 +157,7 @@ export class DistributedPinningManager<Plugins extends PluginEventDef = PluginEv
   /**
    * Pin content to connected peer nodes
    */
-  private async pinToPeers(
+  private pinToPeers(
     cid: CID
   ): Promise<{
     successful: string[];
@@ -170,21 +170,21 @@ export class DistributedPinningManager<Plugins extends PluginEventDef = PluginEv
 
     // Get all connected peers
     const connections = this.client.ipfs.libp2p.getConnections();
-    const peers = this.client.peers as any; // Type assertion needed for custom peers interface
-    const serverPeers = Array.from(peers.getPeersByRole?.('server') || []);
+    const peers = this.client.peers;
+    const serverPeers = peers.getServers();
     
     // Prioritize server peers, then other connected peers
     const peersToPin = new Set<string>();
     
     // Add server peers first
-    serverPeers.forEach((peer: any) => {
-      if (peer?.peerId) {
+    serverPeers.forEach((peer) => {
+      if (peer.peerId) {
         peersToPin.add(peer.peerId.toString());
       }
     });
     
     // Add other connected peers
-    connections.forEach((conn: any) => {
+    connections.forEach((conn) => {
       peersToPin.add(conn.remotePeer.toString());
     });
 
@@ -202,7 +202,7 @@ export class DistributedPinningManager<Plugins extends PluginEventDef = PluginEv
         // via a custom protocol. For now, we mark it as successful
         // if we can provide the content to them
         results.successful.push(peerId);
-      } catch (error) {
+      } catch (_error) {
         results.errors.push({
           peer: peerId,
           error: error as Error,
@@ -233,7 +233,7 @@ export class DistributedPinningManager<Plugins extends PluginEventDef = PluginEv
         })) {
           // Consume the async generator
         }
-      } catch (error) {
+      } catch (_error) {
         errors.push(error as Error);
       }
     }
@@ -242,7 +242,7 @@ export class DistributedPinningManager<Plugins extends PluginEventDef = PluginEv
     if (this.pinataConfigured && !options?.skipRemote) {
       try {
         await this.remotePinManager.removeRemotePin(cid);
-      } catch (error) {
+      } catch (_error) {
         errors.push(error as Error);
       }
     }
@@ -250,7 +250,7 @@ export class DistributedPinningManager<Plugins extends PluginEventDef = PluginEv
     if (errors.length > 0) {
       // AggregateError is ES2021, use a custom error for compatibility
       const error = new Error('Failed to unpin from some locations');
-      (error as any).errors = errors;
+      (error as Error & { errors?: Error[] }).errors = errors;
       throw error;
     }
   }
@@ -258,7 +258,7 @@ export class DistributedPinningManager<Plugins extends PluginEventDef = PluginEv
   /**
    * List all pins across all locations
    */
-  async listPins(options?: {
+  listPins(options?: {
     type?: 'all' | 'local' | 'remote';
   }): Promise<{
     local: CID[];
@@ -275,7 +275,7 @@ export class DistributedPinningManager<Plugins extends PluginEventDef = PluginEv
         for await (const pin of this.client.ipfs.pins.ls()) {
           results.local.push(pin.cid);
         }
-      } catch (error) {
+      } catch (_error) {
         console.error('Failed to list local pins:', error);
       }
     }
@@ -292,7 +292,7 @@ export class DistributedPinningManager<Plugins extends PluginEventDef = PluginEv
           status: 'pinned',
           name: pin.metadata?.name,
         }));
-      } catch (error) {
+      } catch (_error) {
         console.error('Failed to list remote pins:', error);
       }
     }
@@ -303,7 +303,7 @@ export class DistributedPinningManager<Plugins extends PluginEventDef = PluginEv
   /**
    * Get pinning status for a specific CID
    */
-  async getStatus(cid: CID): Promise<{
+  getStatus(cid: CID): Promise<{
     local: boolean;
     peers: string[];
     remote: boolean;

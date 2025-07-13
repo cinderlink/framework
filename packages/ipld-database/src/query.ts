@@ -1,32 +1,5 @@
-import {
-  BlockAggregates,
-  BlockFilters,
-  BlockHeaders,
-  BlockIndexes,
-  InstructionType,
-  OrderByInstruction,
-  QueryBuilderInterface,
-  SubLoggerInterface,
-  TableDefinition,
-} from "@cinderlink/core-types";
-import {
-  TableRow,
-  TableInterface,
-  TableBlockInterface,
-} from "@cinderlink/core-types";
-import {
-  TableQueryInterface,
-  QueryInstruction,
-  Operation,
-  WhereInstruction,
-  QueryResult,
-  AndInstruction,
-  OrInstruction,
-  UpdateInstruction,
-  DeleteInstruction,
-  SelectInstruction,
-  ReturningInstruction,
-} from "@cinderlink/core-types";
+import { BlockAggregates, BlockFilters, BlockHeaders, BlockIndexes, InstructionType, OrderByInstruction, QueryBuilderInterface, SubLoggerInterface, TableDefinition, TableRow, TableInterface, TableBlockInterface, TableQueryInterface, QueryInstruction, Operation, WhereInstruction, QueryResult, AndInstruction, OrInstruction, UpdateInstruction, DeleteInstruction, SelectInstruction, ReturningInstruction } from "@cinderlink/core-types";
+
 import { TableBlock } from "./block.js";
 import { cache } from "./cache.js";
 
@@ -220,7 +193,7 @@ export class QueryBuilder<Row extends TableRow = TableRow>
           match = false;
           break;
         }
-      } else if (operation === "!=") {
+      } else if (operation === "!==") {
         if (record[field] === value) {
           match = false;
           break;
@@ -287,7 +260,7 @@ export class QueryBuilder<Row extends TableRow = TableRow>
     return this;
   }
 
-  async execute(this: QueryBuilderInterface<Row>): Promise<QueryResult<Row>> {
+  execute(this: QueryBuilderInterface<Row>): Promise<QueryResult<Row>> {
     throw new Error(
       "Execute not implemented in base QueryBuilder class. TableQuery extends this class."
     );
@@ -692,7 +665,7 @@ export class TableQuery<
       const relatedIndexes = Object.entries(this.table.def.indexes).filter(
         ([, index]) => index.fields.includes(field)
       );
-      if (operation === "=" || operation === "!=") {
+      if (operation === "=" || operation === "!==") {
         for (const [indexName, index] of relatedIndexes) {
           const valuePosition = index.fields.indexOf(field);
           const hasValidIndex = Object.values(

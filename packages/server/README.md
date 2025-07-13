@@ -81,7 +81,7 @@ const server = await createServer({
     // Metrics
     metrics: {
       enabled: true,
-      port: 9090, // Metrics server port
+      port: 4504, // Metrics server port
       path: '/metrics' // Metrics endpoint path
     }
   }
@@ -203,7 +203,7 @@ await server.addPlugin(new MyServerPlugin(server));
 | `blacklist` | string[] | `[]` | List of blocked peer IDs or DIDs |
 | `rateLimit` | object | `{ enabled: true, points: 10, duration: 1, blockDuration: 3600 }` | Rate limiting configuration |
 | `storage` | object | `{ path: './.cinderlink-server', maxSize: 1073741824, gc: { enabled: true, interval: 3600, age: 2592000000 } }` | Storage configuration |
-| `metrics` | object | `{ enabled: true, port: 9090, path: '/metrics' }` | Metrics configuration |
+| `metrics` | object | `{ enabled: true, port: 4504, path: '/metrics' }` | Metrics configuration |
 
 ## Security Considerations
 
@@ -227,7 +227,7 @@ RUN npm install --production
 
 COPY . .
 
-EXPOSE 4001 5001 8080 9090
+EXPOSE 4500 4502 4503 4504
 
 CMD ["node", "dist/index.js"]
 ```
@@ -262,7 +262,7 @@ scrape_configs:
   - job_name: 'cinderlink-server'
     scrape_interval: 15s
     static_configs:
-      - targets: ['localhost:9090']
+      - targets: ['localhost:4504']
 ```
 
 ### Logging

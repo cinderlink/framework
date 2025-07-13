@@ -18,13 +18,13 @@
   },
   "scripts": {
     "build": "tsup",
-    "watch": "pnpm build --watch",
+    "watch": "bun build --watch",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@noble/curves": "^1.8.0",
     "did": "^0.5.0",
-    "did-jwt": "^7.1.0",
+    "did-jwt": "^8.0.17",
     "did-resolver": "^4.1.0",
     "dids": "^5.0.3",
     "key-did-provider-ed25519": "^3.0.1",
@@ -33,9 +33,9 @@
     "viem": "^2.30.5"
   },
   "devDependencies": {
-    "@cinderlink/tsconfig": "workspace:../tsconfig",
+    "@cinderlink/tsconfig": "workspace:*",
     "tsup": "^6.7.0",
-    "typescript": "^5.0.4",
+    "typescript": "^5.8.3",
     "vitest": "^0.30.1"
   }
 }

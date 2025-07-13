@@ -51,7 +51,7 @@ export interface CinderlinkClientEvents<
     "/peer/disconnect": Peer;
     "/peer/handshake": Peer;
     "/peer/authenticated": Peer;
-    "/peer/message": IncomingP2PMessage<PluginEvents>;
+    "/peer/message": IncomingP2PMessage<PluginEvents, keyof PluginEvents["receive"]>;
     "/pubsub/message": IncomingPubsubMessage<PluginEvents>;
     "/identity/resolved": IdentityResolved;
   };

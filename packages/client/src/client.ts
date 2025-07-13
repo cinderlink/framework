@@ -4,6 +4,7 @@ import {
   decodePayload,
   encodePayload,
 } from "@cinderlink/protocol";
+import type { PubSubService } from "./types/libp2p.js";
 import type {
   Peer,
   PluginInterface,
@@ -30,11 +31,13 @@ import type {
   PluginBaseInterface,
   LoggerInterface,
   IPFSWithLibP2P,
+  IdentityInterface,
 } from "@cinderlink/core-types";
 import type { OfflineSyncClientPluginInterface } from "@cinderlink/plugin-offline-sync-core";
 import Emittery from "emittery";
 import * as json from "multiformats/codecs/json";
 import { PeerId } from "@libp2p/interface";
+import { CID } from "multiformats/cid";
 import { Peerstore } from "./peerstore.js";
 import { ClientDIDDag } from "./dag.js";
 import { Identity } from "./identity.js";
@@ -78,7 +81,7 @@ export class CinderlinkClient<
   public dag: ClientDIDDag;
   public files: Files<PluginEvents>;
   public schemas: Record<string, SchemaInterface> = {};
-  public identity: Identity<PluginEvents>;
+  public identity: IdentityInterface<Record<string, unknown>>;
   public relayAddresses: string[] = [];
   public role: PeerRole;
   public initialConnectTimeout: number = 3000;
@@ -105,9 +108,9 @@ export class CinderlinkClient<
     this.logger = logger || new Logger();
     this.role = role;
     this.plugins = {};
-    this.dag = new ClientDIDDag<PluginEvents>(this);
-    this.identity = new Identity<PluginEvents>(this);
-    this.files = new Files<PluginEvents>(this);
+    this.dag = new ClientDIDDag<PluginEvents>(this as unknown as CinderlinkClientInterface<PluginEvents>);
+    this.identity = new Identity<PluginEvents>(this as unknown as CinderlinkClientInterface<PluginEvents>) as unknown as IdentityInterface<Record<string, unknown>>;
+    this.files = new Files<PluginEvents>(this as unknown as CinderlinkClientInterface<PluginEvents>);
     this.peers = new Peerstore("");
   }
 
@@ -157,7 +160,7 @@ export class CinderlinkClient<
     return this.plugins[id] !== undefined;
   }
 
-  async start(nodeAddrs: string[] = []) {
+  start(nodeAddrs: string[] = []) {
     this.nodeAddresses = nodeAddrs;
 
     // In Helia, peer ID is directly available from libp2p
@@ -174,7 +177,7 @@ export class CinderlinkClient<
     const message = this.onPubsubMessage.bind(this);
     
     // Check if pubsub is available before using it
-    const pubsub = this.ipfs.libp2p.services.pubsub as any;
+    const pubsub = this.ipfs.libp2p.services.pubsub as PubSubService | undefined;
     if (pubsub) {
       pubsub.addEventListener("message", message);
     } else {
@@ -212,7 +215,7 @@ export class CinderlinkClient<
       }
     );
 
-    const pubsubService = this.ipfs.libp2p.services.pubsub as any;
+    const pubsubService = this.ipfs.libp2p.services.pubsub as PubSubService | undefined;
     if (pubsubService) {
       pubsubService.addEventListener(
         "subscription-change",
@@ -226,7 +229,7 @@ export class CinderlinkClient<
       this.hasServerConnection = true;
     });
 
-    this.on("/client/loaded", async () => {
+    this.on("/client/loaded", () => {
       this.hasServerConnection = this.peers.getServerCount() > 0;
       this.logger.info("plugins", "loading plugins", {
         plugins: Object.keys(this.plugins),
@@ -289,7 +292,7 @@ export class CinderlinkClient<
     }, 3000);
   }
 
-  async onPeerConnect(peer: Peer) {
+  onPeerConnect(peer: Peer) {
     if (!peer?.role) return;
     this.logger.info("p2p", `peer connected ${this.peerReadable(peer)}`, {
       peer,
@@ -309,7 +312,7 @@ export class CinderlinkClient<
     });
   }
 
-  async onPeerDisconnect(peer: Peer) {
+  onPeerDisconnect(peer: Peer) {
     this.logger.info("p2p", `peer disconnected ${this.peerReadable(peer)}`, {
       peer,
     });
@@ -321,7 +324,7 @@ export class CinderlinkClient<
 
   async connectToNodes() {
     await Promise.all(
-      this.nodeAddresses.map(async (addr) => {
+      this.nodeAddresses.map((addr) => {
         const peerIdStr = addr.split("/").pop();
         if (peerIdStr === this.peerId?.toString()) return;
         if (peerIdStr) {
@@ -377,7 +380,7 @@ export class CinderlinkClient<
     });
   }
 
-  async save(forceRemote = false, forceImmediate = false) {
+  save(forceRemote = false, forceImmediate = false) {
     if (this.saving) return;
     if (!this.identity.hasResolved || this.identity.resolving) {
       this.logger.warn("identity", "identity not resolved, refusing to save");
@@ -397,7 +400,7 @@ export class CinderlinkClient<
     const savedSchemas: Record<string, JWE | SavedSchema> = {};
     await Promise.all(
       Object.entries(this.schemas).map(async ([name, schema]) => {
-        const exported: any = await schema.export();
+        const exported = await schema.export();
         if (exported) {
           savedSchemas[name] = exported;
         }
@@ -446,7 +449,7 @@ export class CinderlinkClient<
     this.saving = false;
   }
 
-  async load() {
+  load() {
     this.logger.info("client", "loading client");
     if (!this.hasServerConnection && this.role !== "server") {
       this.logger.info("p2p", "waiting for server connection", {
@@ -478,7 +481,7 @@ export class CinderlinkClient<
         schemas: document.schemas,
       });
       await Promise.all(
-        Object.entries(document.schemas).map(async ([name, schema]) => {
+        Object.entries(document.schemas).map(([name, schema]) => {
           let saved: SavedSchema | undefined = undefined;
           if (typeof schema === "string") {
             // legacy schema support from CID
@@ -487,12 +490,12 @@ export class CinderlinkClient<
               schema,
             });
             saved = (await this.dag
-              .loadDecrypted(schema, undefined, {
+              .loadDecrypted(CID.parse(schema), undefined, {
                 timeout: 3000,
               })
               .catch(() =>
                 this.dag
-                  .load(schema, undefined, { timeout: 3000 })
+                  .load(CID.parse(schema), undefined, { timeout: 3000 })
                   .catch(() => undefined)
               )) as SavedSchema | undefined;
           } else if ((schema as SavedSchema).schemaId) {
@@ -530,7 +533,7 @@ export class CinderlinkClient<
     this.emit("/client/loaded", true);
   }
 
-  async connect(peerId: PeerId, role: PeerRole = "peer") {
+  connect(peerId: PeerId, role: PeerRole = "peer") {
     let peer: Peer;
     if (!this.peers.hasPeer(peerId.toString())) {
       peer = this.peers.addPeer(peerId, role);
@@ -590,16 +593,8 @@ export class CinderlinkClient<
     }
   }
 
-  async onPubsubMessage<Encoding extends EncodingOptions = EncodingOptions>(
-    evt: CustomEvent
-  ) {
-    const message = evt as CustomEvent<
-      LibP2PPubsubMessage<
-        PluginEvents,
-        keyof PluginEvents["subscribe"],
-        Encoding
-      >
-    >;
+  onPubsubMessage(evt: CustomEvent) {
+    const message = evt as CustomEvent<any>;
     const peerId = message.detail.from;
     if (peerId.toString() === this.peerId?.toString()) {
       return;
@@ -610,19 +605,9 @@ export class CinderlinkClient<
       peer = this.peers.addPeer(peerId, "peer");
     }
 
-    const encodedPayload: EncodedProtocolPayload<
-      PluginEvents["subscribe"][keyof PluginEvents["subscribe"]],
-      Encoding
-    > = json.decode(message.detail.data);
+    const encodedPayload = json.decode(message.detail.data) as EncodedProtocolPayload;
 
-    const decoded = await decodePayload<
-      PluginEvents["subscribe"][keyof PluginEvents["subscribe"]],
-      Encoding,
-      EncodedProtocolPayload<
-        PluginEvents["subscribe"][keyof PluginEvents["subscribe"]],
-        Encoding
-      >
-    >(encodedPayload, this.did);
+    const decoded = await decodePayload(encodedPayload, this.did);
 
     if (!decoded.sender) {
       this.logger.warn("pubsub", "ignoring unidentifiable pubsub message", {
@@ -636,15 +621,11 @@ export class CinderlinkClient<
       this.emit("/peer/authenticated", peer);
     }
 
-    const incoming: IncomingPubsubMessage<
-      PluginEvents,
-      keyof PluginEvents["subscribe"],
-      Encoding
-    > = {
+    const incoming = {
       peer,
-      topic: message.detail.topic as keyof PluginEvents["subscribe"],
+      topic: message.detail.topic,
       ...decoded,
-    };
+    } as any;
 
     if (decoded.signed && decoded.sender) {
       const sender = await this.did.resolve(decoded.sender);
@@ -852,10 +833,10 @@ export class CinderlinkClient<
     return this.did.id;
   }
 
-  async subscribe(topic: keyof PluginEvents["subscribe"]) {
+  subscribe(topic: keyof PluginEvents["subscribe"]) {
     if (this.subscriptions.includes(topic as string)) return;
     this.logger.debug("pubsub", `subscribing to topic: ${topic as string}`);
-    const pubsub = this.ipfs.libp2p.services.pubsub as any;
+    const pubsub = this.ipfs.libp2p.services.pubsub as PubSubService | undefined;
     if (pubsub) {
       await pubsub.subscribe(topic as string);
     } else {
@@ -864,10 +845,10 @@ export class CinderlinkClient<
     this.subscriptions.push(topic as string);
   }
 
-  async unsubscribe(topic: keyof PluginEvents["subscribe"]) {
+  unsubscribe(topic: keyof PluginEvents["subscribe"]) {
     if (!this.subscriptions.includes(topic as string)) return;
     this.logger.debug("pubsub", `unsubscribing from topic: ${topic as string}`);
-    const pubsub = this.ipfs.libp2p.services.pubsub as any;
+    const pubsub = this.ipfs.libp2p.services.pubsub as PubSubService | undefined;
     if (pubsub) {
       await pubsub.unsubscribe(topic as string);
     }
@@ -892,11 +873,9 @@ export class CinderlinkClient<
     }
 
     const encoded = await encodePayload<
-      P["publish"][K] extends string | Record<string, unknown>
-        ? P["publish"][K]
-        : never,
+      Record<string, unknown>,
       typeof options
-    >(message, { ...options, did: this.did });
+    >(message as Record<string, unknown>, { ...options, did: this.did });
 
     const bytes = json.encode(encoded);
     this.logger.debug(
@@ -907,7 +886,7 @@ export class CinderlinkClient<
       { message, options }
     );
     try {
-      const pubsub = this.ipfs.libp2p.services.pubsub as any;
+      const pubsub = this.ipfs.libp2p.services.pubsub as PubSubService | undefined;
       if (pubsub) {
         await pubsub.publish(topic as string, bytes);
       } else {

@@ -1,35 +1,18 @@
-import Emittery from "emittery";
 import { Schema } from "@cinderlink/ipld-database";
-import {
-  CinderlinkClientInterface,
-  EncodingOptions,
-  IncomingP2PMessage,
-  IncomingPubsubMessage,
-  Peer,
-  PluginEventHandlers,
-  PluginInterface,
-  TableDefinition,
-  ProtocolEvents,
-  ReceiveEvents,
-  SchemaInterface,
-  SubLoggerInterface,
-  SubscribeEvents,
-  SyncConfig,
-  SyncPluginEvents,
-  SyncPluginOptions,
-  SyncRowsRow,
-  SyncTablesRow,
-  TableInterface,
-  TableRow,
-} from "@cinderlink/core-types";
+import { CinderlinkClientInterface, Peer, SyncConfig, SyncRowsRow, SyncTablesRow, TableDefinition, TableInterface, TableRow, ZodPluginBase, TypedIncomingMessage, EventPayloadType } from "@cinderlink/core-types";
+
 import SyncSchemaDef from "./schema";
 import { v4 as uuid } from "uuid";
+import { syncDbSchemas } from "./schemas";
+
+export interface SyncPluginOptions<TRow extends TableRow = TableRow> {
+  syncing: Record<string, SyncConfig<TRow>>;
+}
 
 /**
  * SyncDBPlugin
  * @class
- * @extends Emittery<SyncPluginEvents>
- * @implements PluginInterface<SyncPluginEvents>
+ * @extends ZodPluginBase
  * @param client
  * @param options
  * @returns SyncDBPlugin
@@ -42,80 +25,75 @@ import { v4 as uuid } from "uuid";
  * const syncPlugin = new SyncDBPlugin(client);
  * ```
  */
-export class SyncDBPlugin<
-    Client extends CinderlinkClientInterface<
-      SyncPluginEvents & ProtocolEvents
-    > = CinderlinkClientInterface<SyncPluginEvents & ProtocolEvents>
-  >
-  extends Emittery<SyncPluginEvents>
-  implements PluginInterface<SyncPluginEvents>
-{
-  id = "sync";
+export class SyncDBPlugin extends ZodPluginBase<typeof syncDbSchemas> {
   schema?: Schema;
   syncRows?: TableInterface<SyncRowsRow>;
   syncTables?: TableInterface<SyncTablesRow>;
   syncing: Record<string, Record<string, SyncConfig<TableRow>>> = {};
   timers: Record<string, ReturnType<typeof setInterval>> = {};
-  logger: SubLoggerInterface;
-  started = false;
-
-  pubsub: PluginEventHandlers<SubscribeEvents<SyncPluginEvents>> = {
-    "/cinderlink/sync/save/request": this.onSyncSaveRequest,
-    "/cinderlink/sync/save/response": this.onSyncSaveResponse,
-    "/cinderlink/sync/fetch/request": this.onSyncFetchRequest,
-    "/cinderlink/sync/fetch/response": this.onSyncFetchResponse,
-  };
-  p2p: PluginEventHandlers<ReceiveEvents<SyncPluginEvents>> = {
-    "/cinderlink/sync/save/request": this.onSyncSaveRequest,
-    "/cinderlink/sync/save/response": this.onSyncSaveResponse,
-    "/cinderlink/sync/fetch/request": this.onSyncFetchRequest,
-    "/cinderlink/sync/fetch/response": this.onSyncFetchResponse,
-    "/cinderlink/sync/since": this.onSyncSince,
-  };
 
   constructor(
-    public client: Client,
+    client: CinderlinkClientInterface,
     public options: Partial<SyncPluginOptions> = {}
   ) {
-    super();
-    this.logger = this.client.logger.module("sync");
+    super("sync", client, syncDbSchemas);
     this.logger.info(`initializing`, { options });
   }
 
-  coreEvents = {};
-  pluginEvents = {};
+  // Define typed event handlers using the new type-safe approach
+  protected getEventHandlers() {
+    return {
+      p2p: {
+        '/cinderlink/sync/save/request': this.onSyncSaveRequest.bind(this),
+        '/cinderlink/sync/save/response': this.onSyncSaveResponse.bind(this),
+        '/cinderlink/sync/fetch/request': this.onSyncFetchRequest.bind(this),
+        '/cinderlink/sync/fetch/response': this.onSyncFetchResponse.bind(this),
+        '/cinderlink/sync/since': this.onSyncSince.bind(this)
+      },
+      pubsub: {
+        '/cinderlink/sync/save/request': this.onSyncSaveRequest.bind(this),
+        '/cinderlink/sync/save/response': this.onSyncSaveResponse.bind(this),
+        '/cinderlink/sync/fetch/request': this.onSyncFetchRequest.bind(this),
+        '/cinderlink/sync/fetch/response': this.onSyncFetchResponse.bind(this)
+      }
+    };
+  }
 
   /**
    * Start the plugin
    * @returns void
    */
   async start() {
+    await this.initializeHandlers();
+    
     this.logger.info(`initializing table watchers`);
     if (!this.client.hasSchema("sync")) {
       this.schema = new Schema(
         "sync",
-        SyncSchemaDef as Record<string, TableDefinition<TableRow>>,
+        SyncSchemaDef as unknown as Record<string, TableDefinition<TableRow>>,
         this.client.dag,
-        this.client.logger.module("db").submodule(`schema:sync`)
+        this.client.logger.module("db").submodule(`schema:sync`),
+        true,
+        this.client.schemaRegistry
       );
-      this.client.addSchema("sync", this.schema as SchemaInterface);
+      this.client.addSchema("sync", this.schema);
     } else {
-      this.schema = this.client.getSchema("sync") as Schema;
+      this.schema = this.client.getSchema("sync");
     }
 
-    this.syncRows = this.schema.getTable<SyncRowsRow>("rows");
-    this.syncTables = this.schema.getTable<SyncTablesRow>("tables");
+    this.syncRows = this.schema!.getTable<SyncRowsRow>("rows");
+    this.syncTables = this.schema!.getTable<SyncTablesRow>("tables");
 
-    this.client.on("/peer/authenticated", this.onPeerConnect.bind(this));
+    (this.client as any).on("/peer/authenticated", this.onPeerConnect.bind(this));
     this.started = true;
   }
 
-  async stop() {
+  stop() {
     this.started = false;
     this.logger.info(`stopping`);
     Object.values(this.timers).forEach((timer) => clearInterval(timer));
     this.timers = {};
-    this.client.off("/peer/authenticated", this.onPeerConnect.bind(this));
+    (this.client as any).off("/peer/authenticated", this.onPeerConnect.bind(this));
   }
 
   /**
@@ -124,11 +102,9 @@ export class SyncDBPlugin<
    */
   async onPeerConnect(peer: Peer) {
     const minLastSyncedAt = await this.getMinLastSyncedAt(peer.did as string);
-    await this.client.send(peer.peerId.toString(), {
-      topic: "/cinderlink/sync/since",
-      payload: {
-        since: minLastSyncedAt,
-      },
+    await this.send(peer.peerId.toString(), "/cinderlink/sync/since", {
+      timestamp: Date.now(),
+      since: minLastSyncedAt,
     });
   }
 
@@ -163,7 +139,7 @@ export class SyncDBPlugin<
     config: SyncConfig<Row>
   ) {
     this.syncing[schemaId] = this.syncing[schemaId] || {};
-    this.syncing[schemaId][tableId] = config;
+    this.syncing[schemaId][tableId] = config as unknown as SyncConfig<TableRow>;
     if (config.syncInterval || config.syncTo) {
       this.timers[`${schemaId}/${tableId}/sync`] = setInterval(
         () => this.syncTableRows(schemaId, tableId),
@@ -224,7 +200,7 @@ export class SyncDBPlugin<
    * @param tableId
    * @returns
    */
-  async removeTableSync(schemaId: string, tableId: string) {
+  removeTableSync(schemaId: string, tableId: string) {
     delete this.syncing[schemaId]?.[tableId];
     clearInterval(this.timers[`${schemaId}/${tableId}/sync`]);
     clearInterval(this.timers[`${schemaId}/${tableId}/fetch`]);
@@ -473,7 +449,7 @@ export class SyncDBPlugin<
    * @param since
    * @returns
    */
-  async sendFetchRequest(
+  sendFetchRequest(
     schemaId: string,
     tableId: string,
     did: string,
@@ -484,14 +460,12 @@ export class SyncDBPlugin<
       return;
     }
 
-    return this.client.send(peer.peerId.toString(), {
-      topic: "/cinderlink/sync/fetch/request",
-      payload: {
-        requestId: uuid(),
-        schemaId,
-        tableId,
-        since,
-      },
+    return this.send(peer.peerId.toString(), "/cinderlink/sync/fetch/request", {
+      timestamp: Date.now(),
+      requestId: uuid(),
+      schemaId,
+      tableId,
+      since,
     });
   }
 
@@ -520,19 +494,17 @@ export class SyncDBPlugin<
       did,
       rows,
     });
-    await this.client.send(
+    await this.send(
       peer.peerId.toString(),
+      "/cinderlink/sync/save/request",
       {
-        topic: "/cinderlink/sync/save/request",
-        payload: {
-          requestId: uuid(),
-          schemaId,
-          tableId,
-          rows,
-        },
+        timestamp: Date.now(),
+        requestId: uuid(),
+        schemaId,
+        tableId,
+        rows,
       },
-      { encrypt: true, sign: false },
-      { retries: 3, retryDelay: 1000 }
+      { encrypt: true, sign: false }
     );
   }
 
@@ -542,18 +514,9 @@ export class SyncDBPlugin<
    * @returns
    */
   async onSyncSaveRequest(
-    message:
-      | IncomingP2PMessage<
-          SyncPluginEvents,
-          "/cinderlink/sync/save/request",
-          EncodingOptions
-        >
-      | IncomingPubsubMessage<
-          SyncPluginEvents,
-          "/cinderlink/sync/save/request",
-          EncodingOptions
-        >
+    message: TypedIncomingMessage<EventPayloadType<typeof syncDbSchemas, 'receive', '/cinderlink/sync/save/request'>>
   ) {
+    const { payload } = message;
     if (!message.peer.did) {
       this.client.logger.warn(
         "sync",
@@ -562,7 +525,7 @@ export class SyncDBPlugin<
       return;
     }
     if (message.peer.did === this.client.id) return;
-    const { schemaId, tableId, rows } = message.payload;
+    const { schemaId, tableId, rows } = payload;
     // we have received a sync table message from another peer
     if (!this.syncing[schemaId]?.[tableId]) {
       this.client.logger.warn(
@@ -601,7 +564,7 @@ export class SyncDBPlugin<
         existing &&
         sync.allowUpdateFrom &&
         !(await sync.allowUpdateFrom?.(
-          fullRow,
+          fullRow as TableRow,
           message.peer.did,
           table,
           this.client
@@ -648,20 +611,18 @@ export class SyncDBPlugin<
       }
     }
 
-    await this.client.send(
+    await this.send(
       message.peer.peerId.toString(),
+      "/cinderlink/sync/save/response",
       {
-        topic: "/cinderlink/sync/save/response",
-        payload: {
-          requestId: uuid(),
-          schemaId,
-          tableId,
-          saved,
-          errors,
-        },
+        timestamp: Date.now(),
+        requestId: uuid(),
+        schemaId,
+        tableId,
+        saved,
+        errors,
       },
-      { encrypt: true, sign: false },
-      { retries: 3, retryDelay: 1000 }
+      { encrypt: true, sign: false }
     );
   }
 
@@ -670,19 +631,11 @@ export class SyncDBPlugin<
    * @param message
    * @returns
    */
-  async onSyncSaveResponse(
-    message:
-      | IncomingP2PMessage<
-          SyncPluginEvents,
-          "/cinderlink/sync/save/response",
-          EncodingOptions
-        >
-      | IncomingPubsubMessage<
-          SyncPluginEvents,
-          "/cinderlink/sync/save/response",
-          EncodingOptions
-        >
+  onSyncSaveResponse(
+    message: TypedIncomingMessage<EventPayloadType<typeof syncDbSchemas, 'receive', '/cinderlink/sync/save/response'>>
   ) {
+    const { payload } = message;
+    
     if (!message.peer.did) {
       this.logger.warn(
         `received sync message from peer without DID: \`${message.peer.peerId}\``
@@ -690,7 +643,7 @@ export class SyncDBPlugin<
       return;
     }
 
-    const { tableId, schemaId, saved, errors } = message.payload;
+    const { tableId, schemaId, saved, errors } = payload;
     if (!this.syncing[schemaId]?.[tableId]) {
       this.logger.warn(
         `received sync message for unknown table: \`${schemaId}\`.\`${tableId}\``
@@ -751,7 +704,7 @@ export class SyncDBPlugin<
         }
       );
       await this.syncRows?.upsert(
-        { schemaId, tableId, rowUid: uid, did: message.peer.did },
+        { schemaId, tableId, rowUid: uid, did: message.peer.did! },
         {
           success: false,
           error,
@@ -766,18 +719,10 @@ export class SyncDBPlugin<
    * @returns
    */
   async onSyncFetchRequest(
-    message:
-      | IncomingP2PMessage<
-          SyncPluginEvents,
-          "/cinderlink/sync/fetch/request",
-          EncodingOptions
-        >
-      | IncomingPubsubMessage<
-          SyncPluginEvents,
-          "/cinderlink/sync/fetch/request",
-          EncodingOptions
-        >
+    message: TypedIncomingMessage<EventPayloadType<typeof syncDbSchemas, 'receive', '/cinderlink/sync/fetch/request'>>
   ) {
+    const { payload } = message;
+    
     if (!message.peer.did) {
       this.logger.warn(
         `received sync message from peer without DID: \`${message.peer.peerId}\``
@@ -785,7 +730,7 @@ export class SyncDBPlugin<
       return;
     }
 
-    const { schemaId, tableId } = message.payload;
+    const { schemaId, tableId } = payload;
     if (!this.syncing[schemaId]?.[tableId]) {
       this.logger.warn(
         `received sync message for unknown table: \`${schemaId}\`.\`${tableId}\``
@@ -821,7 +766,7 @@ export class SyncDBPlugin<
       .then((r) => r.first());
 
     const lastFetchedAt = Number(syncTable?.lastFetchedAt || 0);
-    const since = message.payload.since || lastFetchedAt;
+    const since = payload.since || lastFetchedAt;
     if (lastFetchedAt > since) {
       return;
     }
@@ -853,14 +798,12 @@ export class SyncDBPlugin<
       )
     ).filter(Boolean) as TableRow[];
 
-    await this.client.send(message.peer.peerId.toString(), {
-      topic: "/cinderlink/sync/fetch/response",
-      payload: {
-        requestId: message.payload.requestId,
-        schemaId,
-        tableId,
-        rows: allowedRows,
-      },
+    await this.send(message.peer.peerId.toString(), "/cinderlink/sync/fetch/response", {
+      timestamp: Date.now(),
+      requestId: payload.requestId,
+      schemaId,
+      tableId,
+      rows: allowedRows,
     });
   }
 
@@ -869,19 +812,11 @@ export class SyncDBPlugin<
    * @param message
    * @returns
    */
-  async onSyncFetchResponse(
-    message:
-      | IncomingP2PMessage<
-          SyncPluginEvents,
-          "/cinderlink/sync/fetch/response",
-          EncodingOptions
-        >
-      | IncomingPubsubMessage<
-          SyncPluginEvents,
-          "/cinderlink/sync/fetch/response",
-          EncodingOptions
-        >
+  onSyncFetchResponse(
+    message: TypedIncomingMessage<EventPayloadType<typeof syncDbSchemas, 'receive', '/cinderlink/sync/fetch/response'>>
   ) {
+    const { payload } = message;
+    
     if (!message.peer.did) {
       this.logger.warn(
         `received sync message from peer without DID: \`${message.peer.peerId}\``
@@ -889,7 +824,7 @@ export class SyncDBPlugin<
       return;
     }
 
-    const { tableId, schemaId, rows } = message.payload;
+    const { tableId, schemaId, rows } = payload;
     if (!this.syncing[schemaId]?.[tableId]) {
       this.logger.warn(
         `received sync message for unknown table: \`${schemaId}\`.\`${tableId}\``
@@ -915,7 +850,7 @@ export class SyncDBPlugin<
         continue;
       } else if (
         existing &&
-        !sync.allowUpdateFrom?.(row, message.peer.did, table, this.client)
+        !sync.allowUpdateFrom?.(row as TableRow, message.peer.did, table, this.client)
       ) {
         continue;
       } else if (
@@ -925,7 +860,7 @@ export class SyncDBPlugin<
         continue;
       }
 
-      await table.upsert({ uid: row.uid }, row);
+      await table.upsert({ uid: row.uid }, row as TableRow);
 
       this.logger.info(`${schemaId}/${tableId} > saving fetched row`, {
         row,
@@ -943,13 +878,9 @@ export class SyncDBPlugin<
    * Handle a sync since request from a peer
    * @param message
    */
-  async onSyncSince(
-    message: IncomingP2PMessage<
-      SyncPluginEvents,
-      "/cinderlink/sync/since",
-      EncodingOptions
-    >
-  ) {
+  onSyncSince(message: TypedIncomingMessage<EventPayloadType<typeof syncDbSchemas, 'receive', '/cinderlink/sync/since'>>) {
+    const { payload } = message;
+    
     if (!message.peer.did) {
       this.logger.warn(
         `received sync message from peer without DID: \`${message.peer.peerId}\``
@@ -957,7 +888,7 @@ export class SyncDBPlugin<
       return;
     }
 
-    const { since } = message.payload;
+    const { since } = payload;
     // update the last sync time of all tables for this peer
     await this.syncTables
       ?.query()

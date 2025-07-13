@@ -1,6 +1,8 @@
 // Core dependencies
-import { createHelia } from 'helia';
-import { createLibp2p } from 'libp2p';
+import { createHelia, HeliaInit } from "helia";
+
+import { createLibp2p, Libp2pOptions } from "libp2p";
+
 import { FsBlockstore } from 'blockstore-fs';
 import { createRemotePins, RemotePins } from '@helia/remote-pinning';
 
@@ -14,7 +16,6 @@ import { peerIdFromPrivateKey } from '@libp2p/peer-id';
 // Libp2p services
 import { dcutr } from '@libp2p/dcutr';
 import { kadDHT } from '@libp2p/kad-dht';
-// @ts-ignore - ESM package with CommonJS build issues
 import { pubsubPeerDiscovery } from '@libp2p/pubsub-peer-discovery';
 import { bootstrap } from '@libp2p/bootstrap';
 import { gossipsub } from '@chainsafe/libp2p-gossipsub';
@@ -36,13 +37,7 @@ export interface CinderlinkHelia extends BaseCinderlinkHelia {
 /**
  * Options for creating a Helia node with Cinderlink defaults
  */
-export interface CinderlinkHeliaOptions {
-  /** Custom libp2p configuration */
-  libp2p?: any;
-  
-  /** Custom Helia configuration */
-  helia?: any;
-  
+export interface CinderlinkHeliaOptions extends Partial<HeliaInit<any>> {
   /** Test mode - use minimal configuration to avoid native dependencies */
   testMode?: boolean;
 }
@@ -57,6 +52,9 @@ export async function createHeliaNode(
   // In test mode, use minimal configuration to avoid native dependencies
   const isTestMode = overrides.testMode || process.env.NODE_ENV === 'test' || process.env.VITEST;
   
+  // Separate testMode from the rest of the options
+  const { testMode, ...heliaOptions } = overrides;
+  
   // Generate a peer ID for test mode to ensure gossipsub can sign messages
   const peerId = isTestMode ? 
     peerIdFromPrivateKey(await generateKeyPair('Ed25519')) :
@@ -69,13 +67,13 @@ export async function createHeliaNode(
       listen: ['/ip4/0.0.0.0/tcp/0', '/ip4/0.0.0.0/tcp/0/ws'],
     },
     transports: [tcp()],
-    connectionEncryption: [noise()],
+    connectionEncrypters: [noise()],
     streamMuxers: [yamux()],
     peerDiscovery: [
       ...(isTestMode ? [] : [
         pubsubPeerDiscovery({
           interval: 1000,
-        })
+        }) as any
       ]),
       ...(bootstrapNodes.length > 0 ? [
         bootstrap({
@@ -84,7 +82,7 @@ export async function createHeliaNode(
           tagName: 'bootstrap',
           tagValue: 50,
           tagTTL: 120000
-        })
+        }) as any
       ] : [])
     ],
     services: {
@@ -126,8 +124,8 @@ export async function createHeliaNode(
           }
         }),
       }),
-    },
-    ...overrides.libp2p,
+    } as any,
+    ...heliaOptions.libp2p,
   });
 
   // Create Helia instance with the libp2p instance
@@ -135,7 +133,7 @@ export async function createHeliaNode(
   const helia = await createHelia({
     libp2p,
     blockstore,
-    ...overrides.helia,
+    ...heliaOptions,
   });
 
   const remotePins = createRemotePins(helia);

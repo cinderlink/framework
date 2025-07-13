@@ -22,11 +22,11 @@ export class SocialSettings {
     return table;
   }
 
-  async all() {
+  all() {
     return this.table.query().select().execute();
   }
 
-  async bulkSet(settings: SocialSetting[]) {
+  bulkSet(settings: SocialSetting[]) {
     return Promise.all(
       settings.map((setting) =>
         this.table.upsert({ key: setting.key }, setting)
@@ -48,7 +48,7 @@ export class SocialSettings {
     return !!row;
   }
 
-  async set({
+  set({
     key,
     section,
     value,
@@ -60,19 +60,19 @@ export class SocialSettings {
     return this.table.upsert({ key }, { section, value });
   }
 
-  async delete(key: string) {
+  delete(key: string) {
     return this.table.query().where("key", "=", key).delete().execute();
   }
 
-  async clear() {
+  clear() {
     return this.table.query().delete().execute();
   }
 
-  async getSection(section: string) {
+  getSection(section: string) {
     return this.table.query().where("section", "=", section).select().execute();
   }
 
-  async clearSection(section: string) {
+  clearSection(section: string) {
     return this.table.query().where("section", "=", section).delete().execute();
   }
 }

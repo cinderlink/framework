@@ -2,9 +2,9 @@
 export type SchemaObject = Record<string, unknown>;
 import type { CID } from "multiformats";
 import type Emittery from "emittery";
-import type { Options as SearchOptions } from "minisearch";
+import { Options as SearchOptions } from "minisearch";
 import type { DIDDagInterface } from "../dag";
-import type Minisearch from "minisearch";
+
 import { QueryBuilderInterface, TableQueryInterface } from "./query";
 import {
   BlockData,
@@ -22,6 +22,7 @@ export interface TableRow {
   uid: string;
   createdAt?: number;
   updatedAt?: number;
+  [key: string]: unknown;
 }
 
 export interface TableBlockInterface<

@@ -174,7 +174,7 @@ describe("SyncDBPlugin Unit Tests", () => {
     const upsertSpy = vi.spyOn(didRowsTable!, 'upsert').mockResolvedValue("uid-1");
     
     // Create a mock CID for testing
-    const mockCid = CID.parse('bafybeihq6x5q3v5s4y4v5q3v5s4y4v5q3v5s4y4v5q3v5s4y4v5q3v5s4y4');
+    const mockCid = CID.parse('bagaaierayznfrmozv5ray667nqjphakwi3pjwfuus6ddnkhu37zuvmjxchsq');
     
     const mockPeerId: MockPeerId = {
       toString: () => "peer-123",
@@ -236,11 +236,11 @@ describe("SyncDBPlugin Unit Tests", () => {
     );
   });
 
-  it("should handle peer connections", async () => {
+  it("should handle peer connections", () => {
     const sendSpy = vi.spyOn(client, 'send');
     
     // Create a mock CID for testing
-    const mockCid = CID.parse('bafybeihq6x5q3v5s4y4v5q3v5s4y4v5q3v5s4y4v5q3v5s4y4v5q3v5s4y4');
+    const mockCid = CID.parse('bagaaierayznfrmozv5ray667nqjphakwi3pjwfuus6ddnkhu37zuvmjxchsq');
     
     const mockPeerId: MockPeerId = {
       toString: () => "peer-123",
@@ -274,7 +274,7 @@ describe("SyncDBPlugin Unit Tests", () => {
     );
   });
 
-  it("should filter rows based on sync config", async () => {
+  it("should filter rows based on sync config", () => {
     const didRowSyncConfig: SyncConfig<DidRow> = {
       query: vi.fn().mockReturnValue({
         where: vi.fn().mockReturnThis(),

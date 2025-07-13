@@ -1,64 +1,40 @@
-import type {
-  PluginInterface,
-  CinderlinkClientInterface,
-  IncomingP2PMessage,
-  EncodingOptions,
-  ProtocolEvents,
-  SubLoggerInterface,
-} from "@cinderlink/core-types";
+import { CinderlinkClientInterface, ZodPluginBase, TypedIncomingMessage, EventPayloadType } from "@cinderlink/core-types";
+
 import {
   loadOfflineSyncSchema,
-  OfflineSyncGetConfirmation,
-  OfflineSyncGetRequest,
-  OfflineSyncGetResponse,
   OfflineSyncRecord,
-  OfflineSyncSendRequest,
-  OfflineSyncSendResponse,
 } from "@cinderlink/plugin-offline-sync-core";
+import { offlineSyncServerSchemas } from "./schemas";
 
-export type OfflineSyncServerEvents = {
-  publish: {};
-  subscribe: {};
-  send: {
-    "/offline/get/response": OfflineSyncGetResponse;
-    "/offline/send/response": OfflineSyncSendResponse;
-  };
-  receive: {
-    "/offline/get/request": OfflineSyncGetRequest;
-    "/offline/get/confirmation": OfflineSyncGetConfirmation;
-    "/offline/send/request": OfflineSyncSendRequest;
-  };
-  emit: {};
-};
-
-export class OfflineSyncServerPlugin
-  implements PluginInterface<OfflineSyncServerEvents, ProtocolEvents>
-{
-  id = "offline-sync-server";
-  logger: SubLoggerInterface;
-  started = false;
+export class OfflineSyncServerPlugin extends ZodPluginBase<typeof offlineSyncServerSchemas> {
   constructor(
-    public client: CinderlinkClientInterface<OfflineSyncServerEvents>,
+    client: CinderlinkClientInterface,
     public options: Record<string, unknown> = {}
   ) {
-    this.logger = this.client.logger.module("plugins").submodule("offlineSync");
+    super("offline-sync-server", client, offlineSyncServerSchemas);
   }
   async start() {
+    await this.initializeHandlers();
     this.logger.info(`loading schema`);
     await loadOfflineSyncSchema(this.client);
     this.started = true;
   }
-  async stop() {
+  
+  stop() {
     this.logger.info(`plugin stopped`);
     this.started = false;
   }
-  p2p = {
-    "/offline/get/request": this.onGetRequest,
-    "/offline/get/confirmation": this.onGetConfirmation,
-    "/offline/send/request": this.onSendRequest,
-  };
-  pubsub = {};
-  events = {};
+
+  // Define typed event handlers using the new type-safe approach
+  protected getEventHandlers() {
+    return {
+      p2p: {
+        '/offline/get/request': this.onGetRequest.bind(this),
+        '/offline/get/confirmation': this.onGetConfirmation.bind(this),
+        '/offline/send/request': this.onSendRequest.bind(this)
+      }
+    };
+  }
 
   get db() {
     const schema = this.client.getSchema("offlineSync");
@@ -78,61 +54,55 @@ export class OfflineSyncServerPlugin
     return table;
   }
 
-  async onSendRequest(
-    message: IncomingP2PMessage<
-      OfflineSyncServerEvents,
-      "/offline/send/request",
-      EncodingOptions
-    >
-  ) {
+  onSendRequest(message: TypedIncomingMessage<EventPayloadType<typeof offlineSyncServerSchemas, 'receive', '/offline/send/request'>>) {
+    const { payload } = message;
+    
     if (!message.peer.peerId) {
       this.logger.warn(`peer does not have peerId`, message.peer);
-
       return;
     }
 
     if (!message.peer.did) {
       this.logger.warn(`peer does not have did`, message.peer);
-
       return;
     }
 
     // pin the CID for the user
-    if ((message.payload as any).message.cid) {
+    if ((payload.message as any).cid) {
       try {
         // Convert AsyncGenerator to Promise by consuming it
-        for await (const _ of this.client.ipfs.pins.add((message.payload as any).message.cid, {
+        for await (const _ of (this.client as any).ipfs.pins.add((payload.message as any).cid, {
           signal: AbortSignal.timeout(5000),
         })) {
           // Just consume the generator
         }
-      } catch (error) {
+      } catch (_error) {
         // Ignore pin errors
       }
     }
     // if the recipient is online, just send the message
-    if (this.client.peers.isDIDConnected(message.payload.recipient)) {
-      const peer = this.client.peers.getPeerByDID(message.payload.recipient);
+    if ((this.client as any).peers.isDIDConnected(payload.recipient)) {
+      const peer = (this.client as any).peers.getPeerByDID(payload.recipient);
 
       if (peer && peer.connected) {
         this.logger.info(`received offline message for online peer, relaying`, {
           peer,
-          message: message.payload,
+          message: payload,
         });
 
-        this.client.send(peer.peerId.toString(), {
-          topic: "/offline/get/response",
-          payload: {
-            requestId: message.payload.requestId,
-            messages: [
-              {
-                sender: message.peer.did,
-                createdAt: Date.now(),
-                attempts: 0,
-                ...message.payload,
-              } as OfflineSyncRecord,
-            ],
-          },
+        await this.send(peer.peerId.toString(), "/offline/get/response", {
+          timestamp: Date.now(),
+          requestId: payload.requestId,
+          messages: [
+            {
+              sender: message.peer.did,
+              createdAt: Date.now(),
+              attempts: 0,
+              requestId: payload.requestId,
+              recipient: payload.recipient,
+              message: payload.message,
+            } as OfflineSyncRecord,
+          ],
         });
         return;
       } else {
@@ -140,7 +110,7 @@ export class OfflineSyncServerPlugin
           `received offline message for online peer, but no protocol handler found`,
           {
             peer,
-            message: message.payload,
+            message: payload,
           }
         );
       }
@@ -148,48 +118,40 @@ export class OfflineSyncServerPlugin
 
     await this.table()
       .insert({
-        ...message.payload,
+        requestId: payload.requestId,
+        recipient: payload.recipient,
+        message: payload.message,
         sender: message.peer.did,
         createdAt: Date.now(),
         attempts: 0,
-      })
+      } as any)
       .then(() =>
-        this.client.send(message.peer.peerId.toString(), {
-          topic: "/offline/send/response",
-          payload: {
-            requestId: message.payload.requestId,
-            saved: true,
-          },
+        this.send(message.peer.peerId.toString(), "/offline/send/response", {
+          timestamp: Date.now(),
+          requestId: payload.requestId,
+          saved: true,
         })
       )
       .catch((e) =>
-        this.client.send(message.peer.peerId.toString(), {
-          topic: "/offline/send/response",
-          payload: {
-            requestId: message.payload.requestId,
-            saved: false,
-            error: e.message,
-          },
+        this.send(message.peer.peerId.toString(), "/offline/send/response", {
+          timestamp: Date.now(),
+          requestId: payload.requestId,
+          saved: false,
+          error: e.message,
         })
       );
   }
 
-  async onGetRequest(
-    message: IncomingP2PMessage<
-      OfflineSyncServerEvents,
-      "/offline/get/request",
-      EncodingOptions
-    >
-  ) {
+  onGetRequest(message: TypedIncomingMessage<EventPayloadType<typeof offlineSyncServerSchemas, 'receive', '/offline/get/request'>>) {
+    const { payload } = message;
+    
     if (!message.peer.did) {
       this.logger.warn(`peer does not have did`, message.peer);
-
       return;
     }
 
     if (!message.peer.peerId) {
       this.logger.warn(`peer does not have peerId`, message.peer);
-
       return;
     }
 
@@ -197,26 +159,20 @@ export class OfflineSyncServerPlugin
       .query()
       .where("recipient", "=", message.peer.did)
       .select()
-      .limit(message.payload.limit)
+      .limit(payload.limit)
       .execute()
       .then((rows) => rows.all());
 
-    await this.client.send(message.peer.peerId.toString(), {
-      topic: "/offline/get/response",
-      payload: {
-        requestId: message.payload.requestId,
-        messages,
-      },
+    await this.send(message.peer.peerId.toString(), "/offline/get/response", {
+      timestamp: Date.now(),
+      requestId: payload.requestId,
+      messages,
     });
   }
 
-  async onGetConfirmation(
-    message: IncomingP2PMessage<
-      OfflineSyncServerEvents,
-      "/offline/get/confirmation",
-      EncodingOptions
-    >
-  ) {
+  onGetConfirmation(message: TypedIncomingMessage<EventPayloadType<typeof offlineSyncServerSchemas, 'receive', '/offline/get/confirmation'>>) {
+    const { payload } = message;
+    
     if (!message.peer.did) {
       this.logger.error(`peer does not have did`, message.peer);
       return;
@@ -224,22 +180,21 @@ export class OfflineSyncServerPlugin
 
     if (!message.peer.peerId) {
       this.logger.error(`peer does not have peerId`, message.peer);
-
       return;
     }
 
     await this.table()
       .query()
       .where("recipient", "=", message.peer.did)
-      .where("id", "in", message.payload.saved)
+      .where("id", "in", payload.saved)
       .delete()
       .execute();
 
-    if (message.payload.errors) {
+    if (payload.errors) {
       await this.table()
         .query()
         .where("recipient", "=", message.peer.did)
-        .where("id", "in", Object.keys(message.payload.errors).map(Number))
+        .where("id", "in", Object.keys(payload.errors).map(Number))
         .update((row: OfflineSyncRecord) => {
           row.attempts = row.attempts + 1;
           return row;

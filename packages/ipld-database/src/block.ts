@@ -45,7 +45,7 @@ export class TableBlock<
           this.cache.filters.search,
           this.table.def.searchOptions
         );
-      } catch (error) {
+      } catch (_error) {
         this.logger.warn(`failed to load search index from cache`, { error });
         this.index = new Minisearch(this.table.def.searchOptions);
         this.index.addAll(Object.values(this.cache.records || {}));
@@ -76,7 +76,7 @@ export class TableBlock<
     }
   }
 
-  async prevCID(): Promise<string | undefined> {
+  prevCID(): Promise<string | undefined> {
     if (this.cache.prevCID) {
       return this.cache.prevCID;
     }
@@ -92,7 +92,7 @@ export class TableBlock<
     return this.cache.prevCID;
   }
 
-  async getCID(): Promise<CID | undefined> {
+  getCID(): Promise<CID | undefined> {
     return this.cid ? this.cid : this.save();
   }
 
@@ -147,7 +147,7 @@ export class TableBlock<
     return this.cache.filters;
   }
 
-  async records() {
+  records() {
     if (!this.cache.records && this.cid) {
       this.logger.debug(`loading records from ${this.cid || "new block"}`);
       this.cache.records = await this.loadData<Row[]>(this.cid!, "/records", {
@@ -172,7 +172,7 @@ export class TableBlock<
     return this.cache.records;
   }
 
-  async recordById(id: number) {
+  recordById(id: number) {
     if (this.cache.records) {
       return this.cache.records[id];
     }
@@ -207,8 +207,8 @@ export class TableBlock<
       indexes[name] &&
       Object.values(indexes[name]).some((index) => {
         return key === undefined
-          ? index.values.some((v) => v == value)
-          : index.values[key] == value;
+          ? index.values.some((v) => v === value)
+          : index.values[key] === value;
       })
     );
   }
@@ -262,7 +262,7 @@ export class TableBlock<
    * @param value
    * @param id
    */
-  async addIndexWithValues(
+  addIndexWithValues(
     index: keyof Def["indexes"],
     values: Row[keyof Row][],
     id: number
@@ -319,7 +319,7 @@ export class TableBlock<
       .flat();
   }
 
-  async aggregate() {
+  aggregate() {
     if (this.cache.filters?.aggregates && !this.changed) {
       return this.cache.filters.aggregates;
     }
@@ -477,7 +477,7 @@ export class TableBlock<
     return records[id];
   }
 
-  async deleteRecord(id: number) {
+  deleteRecord(id: number) {
     this.logger.debug(`deleting record ${id}`);
     // delete from indexes
     const indexes = this.table.def.indexes;
@@ -493,7 +493,7 @@ export class TableBlock<
     this.changed = true;
   }
 
-  async search(query: string): Promise<Row[]> {
+  search(query: string): Promise<Row[]> {
     const results = this.index?.search(query, { fuzzy: 0.2 }) || [];
     this.logger.info(`${results.length} search results for ${query}`, {
       query,
@@ -510,7 +510,7 @@ export class TableBlock<
     return records;
   }
 
-  async load(force = false) {
+  load(force = false) {
     if (this.changed && !force) {
       this.logger.error(
         `block has unsaved changes, refusing to load without [force=true]`,
@@ -542,7 +542,7 @@ export class TableBlock<
     }
   }
 
-  async serialize(): Promise<BlockData<Row> | undefined> {
+  serialize(): Promise<BlockData<Row> | undefined> {
     if (!this.changed) {
       if (
         !Object.keys(this.cache?.records || {}).length &&
@@ -687,7 +687,7 @@ export class TableBlock<
         continue;
       }
       if (typeof value === "object") {
-        if (Object.keys(value as Object).length === 0) {
+        if (Object.keys(value as object).length === 0) {
           continue;
         } else {
           const pruned = TableBlock.pruneObject(

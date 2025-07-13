@@ -1,22 +1,10 @@
 import { sha256 } from "multiformats/hashes/sha2";
 import * as json from "multiformats/codecs/json";
-import type {
-  BlockData,
-  DIDDagInterface,
-  SubLoggerInterface,
-  TableBlockInterface,
-} from "@cinderlink/core-types";
+import { BlockData, DIDDagInterface, SubLoggerInterface, TableBlockInterface, TableDefinition, TableEvents, TableInterface, TableRow, TableUnwindEvent } from "@cinderlink/core-types";
 import { CID } from "multiformats";
 import Emittery from "emittery";
 import type { SchemaRegistryInterface } from "@cinderlink/schema-registry";
 
-import {
-  TableDefinition,
-  TableEvents,
-  TableInterface,
-  TableRow,
-  TableUnwindEvent,
-} from "@cinderlink/core-types";
 import { TableBlock } from "./block.js";
 import { TableQuery } from "./query.js";
 import { cache } from "./cache.js";
@@ -78,11 +66,11 @@ export class Table<
     await this.awaitLock();
     const id = this.currentIndex + 1;
     this.currentIndex = id + 0;
-    if (!data.createdAt) {
-      data.createdAt = Date.now();
+    if (!(data as any).createdAt) {
+      (data as any).createdAt = Date.now();
     }
-    if (!data.updatedAt) {
-      data.updatedAt = Date.now();
+    if (!(data as any).updatedAt) {
+      (data as any).updatedAt = Date.now();
     }
     const sorted = Table.sortObject(data) as Omit<Omit<Row, "id">, "uid">;
     const uid = await this.computeUid(sorted);
@@ -118,7 +106,7 @@ export class Table<
       }, {} as Record<string, unknown>);
   }
 
-  async computeUid(data: Omit<Omit<Row, "id">, "uid">): Promise<string> {
+  computeUid(data: Omit<Omit<Row, "id">, "uid">): Promise<string> {
     const sorted = Table.sortObject(data) as Omit<Omit<Row, "id">, "uid">;
     const uniqueFields: (keyof Row)[] | undefined = Object.values(
       this.def.indexes
@@ -139,7 +127,7 @@ export class Table<
     ).toString();
   }
 
-  async bulkInsert(data: Omit<Omit<Row, "id">, "uid">[]) {
+  bulkInsert(data: Omit<Omit<Row, "id">, "uid">[]) {
     const saved: string[] = [];
     const errors: Record<number, string> = {};
     for (const index in data) {
@@ -192,7 +180,7 @@ export class Table<
     );
   }
 
-  async update(uid: string, update: Partial<Row>) {
+  update(uid: string, update: Partial<Row>) {
     if (!update) {
       this.logger.error(`update failed: no data provided`);
       throw new Error(`update failed: no data provided`);
@@ -235,7 +223,7 @@ export class Table<
 
   async search(query: string, limit = 10): Promise<Row[]> {
     let results: Row[] = [];
-    await this.unwind(async (event) => {
+    await this.unwind((event) => {
       if (!event.block.index) {
         event.block.buildSearchIndex();
       }
@@ -250,7 +238,7 @@ export class Table<
     return results.slice(0, limit);
   }
 
-  async save() {
+  save() {
     if (!this.currentBlock.changed) {
       return this.currentBlock.cid;
     }
@@ -263,7 +251,7 @@ export class Table<
     return this.currentBlock.cid;
   }
 
-  async serialize() {
+  serialize() {
     return this.currentBlock.serialize();
   }
 
@@ -330,8 +318,8 @@ export class Table<
     if (!result.success) {
       this.logger.error(`invalid data`, { data, error: result.error });
       throw new Error(
-        `Invalid data: ${result.error.errors.map(
-          (e: { path: (string | number)[]; message: string }) => `(${e.path.join('.')}: ${e.message})`
+        `Invalid data: ${result.error.issues.map(
+          (e) => `(${e.path.join('.')}: ${e.message})`
         ).join(', ')}`
       );
     }
@@ -398,7 +386,7 @@ export class Table<
     return this.once("/write/finished").then(() => {});
   }
 
-  async awaitLock(): Promise<void> {
+  awaitLock(): Promise<void> {
     if (!this.writing) {
       return Promise.resolve(this.lock());
     }

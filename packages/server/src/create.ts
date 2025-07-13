@@ -15,7 +15,7 @@ export interface CreateServerOptions {
   addressVerification: string;
   plugins?: [PluginConstructor<any>, Record<string, unknown>][];
   nodes?: string[];
-  options?: Partial<HeliaInit>;
+  options?: any;
 }
 
 export class ServerLogger implements LoggerInterface {

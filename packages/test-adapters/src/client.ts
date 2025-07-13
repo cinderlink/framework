@@ -187,7 +187,7 @@ export class TestClient<PluginEvents extends PluginEventDef>
     return !!this.plugins[id];
   }
 
-  async start() {
+  start() {
     console.info(
       `plugins > ${
         Object.keys(this.plugins).length
@@ -195,7 +195,7 @@ export class TestClient<PluginEvents extends PluginEventDef>
     );
     console.info(`plugins > initializing message handlers`);
     await Promise.all(
-      Object.values(this.plugins).map(async (plugin: PluginInterface<any>) => {
+      Object.values(this.plugins).map((plugin: PluginInterface<any>) => {
         console.info(`/plugin/${plugin.id} > starting...`, plugin);
         await plugin.start?.();
         console.info(`/plugin/${plugin.id} > registering event handlers...`);
@@ -229,40 +229,39 @@ export class TestClient<PluginEvents extends PluginEventDef>
     this.running = true;
   }
 
-  async stop() {
+  stop() {
     this.running = false;
   }
 
-  async save() {
+  save() {
     return;
   }
 
-  async load() {
+  load() {
     return;
   }
 
-  async connect() {
+  connect() {
     this.hasServerConnection = true;
   }
 
-  async send() {}
+  send() {}
 
-  async subscribe(_: string) {}
+  subscribe(_: string) {}
 
-  async unsubscribe() {}
+  unsubscribe() {}
 
-  async publish() {}
+  publish() {}
 
   async request<
     Events extends PluginEventDef = PluginEvents,
     OutTopic extends keyof Events["send"] = keyof Events["send"],
-    InTopic extends keyof Events["receive"] = keyof Events["receive"],
-    Encoding extends EncodingOptions = EncodingOptions
+    InTopic extends keyof Events["receive"] = keyof Events["receive"]
   >(
     peerId: string,
     message: OutgoingP2PMessage<Events, OutTopic>,
-    options: Encoding = { sign: false, encrypt: false } as Encoding
-  ): Promise<IncomingP2PMessage<Events, InTopic, Encoding> | undefined> {
+    options: EncodingOptions = { sign: false, encrypt: false }
+  ): Promise<IncomingP2PMessage<Events, InTopic> | undefined> {
     console.info("TestClient.request", peerId, message, options);
     return;
   }
@@ -275,7 +274,7 @@ export class TestClient<PluginEvents extends PluginEventDef>
     return this.schemas[id];
   }
 
-  async addSchema(id: string, schema: SchemaInterface) {
+  addSchema(id: string, schema: SchemaInterface) {
     this.schemas[id] = schema;
   }
 }

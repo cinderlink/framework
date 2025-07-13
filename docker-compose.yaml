@@ -5,9 +5,9 @@ services:
   #   image: ipfs/kubo:latest
   #   container_name: ipfs
   #   ports:
-  #     - 4001:4001
-  #     - 5001:5001
-  #     - 8080:8080
+  #     - 4500:4500
+  #     - 4502:4502
+  #     - 4503:4503
   #   volumes:
   #     - ./docker/data:/data/ipfs
   #   environment:
@@ -16,7 +16,7 @@ services:
     image: libp2p/js-libp2p-webrtc-star
     container_name: libp2p-webrtc-star
     ports:
-      - 9090:9090
+      - 4504:4504
   testnet:
     build: ./docker/testnet
     container_name: testnet

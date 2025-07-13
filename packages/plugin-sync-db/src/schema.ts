@@ -4,7 +4,10 @@ import {
   TableDefinition,
 } from "@cinderlink/core-types";
 
-export const SyncSchemaDef = {
+export const SyncSchemaDef: {
+  tables: TableDefinition<SyncTablesRow>;
+  rows: TableDefinition<SyncRowsRow>;
+} = {
   tables: {
     schemaId: "sync.tables",
     schemaVersion: 1,
@@ -24,7 +27,7 @@ export const SyncSchemaDef = {
     searchOptions: {
       fields: ["id", "schemaId", "tableId", "did"],
     },
-  } as TableDefinition<SyncTablesRow>,
+  },
   rows: {
     schemaId: "sync.rows",
     schemaVersion: 1,
@@ -40,6 +43,6 @@ export const SyncSchemaDef = {
     searchOptions: {
       fields: ["id", "schemaId", "tableId", "rowUid"],
     },
-  } as TableDefinition<SyncRowsRow>,
+  },
 };
 export default SyncSchemaDef;

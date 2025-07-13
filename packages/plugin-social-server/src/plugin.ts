@@ -1,17 +1,6 @@
 import { SyncDBPlugin } from "@cinderlink/plugin-sync-db";
-import { SocialSyncConfig } from "@cinderlink/plugin-social-core";
-import {
-  loadSocialSchema,
-  SocialUser,
-  SocialUsersGetRequest,
-  SocialUsersGetResponse,
-  SocialUsersSearchRequest,
-  SocialUsersSearchResponse,
-  SocialClientEvents,
-  SocialUserPin,
-  SocialUsersPinResponse,
-  SocialUsersPinRequest,
-} from "@cinderlink/plugin-social-core";
+import { SocialSyncConfig, loadSocialSchema, SocialUser, SocialUsersGetRequest, SocialUsersGetResponse, SocialUsersSearchRequest, SocialUsersSearchResponse, SocialClientEvents, SocialUserPin, SocialUsersPinResponse, SocialUsersPinRequest,  } from "@cinderlink/plugin-social-core";
+
 import type {
   PluginInterface,
   CinderlinkClientInterface,
@@ -23,7 +12,6 @@ import type {
   SubLoggerInterface,
 } from "@cinderlink/core-types";
 import { checkAddressVerification } from "@cinderlink/identifiers";
-import {} from "@cinderlink/plugin-social-core";
 
 export type SocialServerEvents = {
   publish: {};
@@ -61,7 +49,7 @@ export class SocialServerPlugin<
     await loadSocialSchema(this.client);
 
     this.logger.info(`registering sync config`);
-    const syncDb: SyncDBPlugin = this.client.getPlugin("sync");
+    const syncDb = this.client.getPlugin("sync") as unknown as SyncDBPlugin;
     if (syncDb) {
       Object.entries(SocialSyncConfig).map(([table, config]) => {
         syncDb.addTableSync("social", table, config);
@@ -69,9 +57,9 @@ export class SocialServerPlugin<
     }
     this.started = true;
   }
-  async stop() {
+  stop() {
     this.logger.info(`plugin stopped`);
-    const syncDb: SyncDBPlugin = this.client.getPlugin("sync");
+    const syncDb = this.client.getPlugin("sync") as unknown as SyncDBPlugin;
     if (syncDb) {
       Object.entries(SocialSyncConfig).map(([table]) => {
         syncDb.removeTableSync("social", table);
@@ -94,8 +82,8 @@ export class SocialServerPlugin<
 
   events = {};
 
-  async onPostCreate() {}
-  async onConnectionCreate() {}
+  onPostCreate() {}
+  onConnectionCreate() {}
 
   get db() {
     const schema = this.client.getSchema("social");
@@ -116,7 +104,7 @@ export class SocialServerPlugin<
     return table;
   }
 
-  async getUserByDID(did: string): Promise<SocialUser | undefined> {
+  getUserByDID(did: string): Promise<SocialUser | undefined> {
     return this.table<SocialUser>("users")
       .query()
       .where("did", "=", did)
@@ -125,7 +113,7 @@ export class SocialServerPlugin<
       .then((result) => result.first() as SocialUser | undefined);
   }
 
-  async getUser(uid: string): Promise<SocialUser | undefined> {
+  getUser(uid: string): Promise<SocialUser | undefined> {
     return this.table("users")
       ?.query()
       .where("uid", "=", uid)
@@ -161,7 +149,7 @@ export class SocialServerPlugin<
     });
   }
 
-  async onPeerAnnounce(
+  onPeerAnnounce(
     message: IncomingP2PMessage<
       SocialClientEvents,
       "/social/users/announce",
@@ -214,7 +202,7 @@ export class SocialServerPlugin<
         for await (const _ of this.client.ipfs.pins.rm(existing.avatar as any)) {
           // consume generator
         }
-      } catch (error) {
+      } catch (_error) {
         this.logger.debug("Failed to unpin avatar CID", {
           cid: existing.avatar,
           error,
@@ -226,7 +214,7 @@ export class SocialServerPlugin<
     if (message.payload.avatar) {
       try {
         await this.client.ipfs.pins.add(message.payload.avatar as any);
-      } catch (error) {
+      } catch (_error) {
         this.logger.debug("Failed to pin avatar CID", {
           cid: message.payload.avatar,
           error,
@@ -246,7 +234,7 @@ export class SocialServerPlugin<
     });
   }
 
-  async onUserSearchRequest(
+  onUserSearchRequest(
     message: IncomingP2PMessage<
       SocialServerEvents,
       "/social/users/search/request",
@@ -281,7 +269,7 @@ export class SocialServerPlugin<
     });
   }
 
-  async onUserGetRequest(
+  onUserGetRequest(
     message: IncomingP2PMessage<
       SocialServerEvents,
       "/social/users/get/request",
@@ -339,7 +327,7 @@ export class SocialServerPlugin<
     // Pin the CID directly - resolve method was removed in Helia
     try {
       await this.client.ipfs.pins.add(message.payload.cid as any);
-    } catch (error) {
+    } catch (_error) {
       this.logger.debug("Failed to pin CID", {
         cid: message.payload.cid,
         error,
@@ -392,7 +380,7 @@ export class SocialServerPlugin<
         for await (const _ of this.client.ipfs.pins.rm(existingUser.avatar as any)) {
           // consume generator
         }
-      } catch (error) {
+      } catch (_error) {
         this.logger.debug("Failed to unpin avatar CID", {
           cid: existingUser.avatar,
           error,
@@ -404,7 +392,7 @@ export class SocialServerPlugin<
     if (user.avatar) {
       try {
         await this.client.ipfs.pins.add(user.avatar as any);
-      } catch (error) {
+      } catch (_error) {
         this.logger.debug("Failed to pin avatar CID", {
           cid: user.avatar,
           error,

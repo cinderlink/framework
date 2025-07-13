@@ -47,11 +47,11 @@ describe("@cinderlink/ipld-database/schema", () => {
     did = await createDID(seed);
   });
 
-  beforeEach(async () => {
+  beforeEach(() => {
     dag = new TestDIDDag(did);
   });
 
-  it("should create tables", async () => {
+  it("should create tables", () => {
     const schema = new Schema(
       "test",
       { test: tableDefinition },
@@ -62,7 +62,7 @@ describe("@cinderlink/ipld-database/schema", () => {
     expect(schema.tables.test?.currentBlock).toMatchSnapshot();
   });
 
-  it("should save and restore from dag", async () => {
+  it("should save and restore from dag", () => {
     const schema = new Schema(
       "test",
       { test: tableDefinition },

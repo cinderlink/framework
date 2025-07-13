@@ -13,6 +13,9 @@ import {
   ReceiveEventHandlers,
   SubLoggerInterface,
   IncomingP2PMessage,
+  CinderlinkClientInterface,
+  PluginEventHandlers,
+  CinderlinkClientEvents,
 } from "@cinderlink/core-types";
 import { Connection, Stream } from "@libp2p/interface";
 import * as json from "multiformats/codecs/json";
@@ -21,7 +24,7 @@ import { pipe } from "it-pipe";
 import { Pushable } from "it-pushable";
 import map from "it-map";
 
-import type { CinderlinkClientInterface } from "@cinderlink/core-types";
+// Removed duplicate import - already imported above
 import { decodePayload, encodePayload } from "./encoding.js";
 
 export interface ProtocolHandler {
@@ -33,14 +36,8 @@ export interface ProtocolHandler {
 }
 
 export class CinderlinkProtocolPlugin<
-  PeerEvents extends PluginEventDef = {
-    send: {};
-    receive: {};
-    emit: {};
-    subscribe: {};
-    publish: {};
-  }
-> implements PluginBaseInterface, PluginInterface<ProtocolEvents>
+  PeerEvents extends PluginEventDef = PluginEventDef
+> implements PluginInterface<ProtocolEvents, PeerEvents, CinderlinkClientInterface<ProtocolEvents & PeerEvents>>
 {
   id = "cinderlink";
   logger: SubLoggerInterface;
@@ -55,20 +52,22 @@ export class CinderlinkProtocolPlugin<
   }
 
   p2p: ReceiveEventHandlers<ProtocolEvents> = {
-    "/cinderlink/keepalive": this.onKeepAlive,
+    "/cinderlink/keepalive": this.onKeepAlive.bind(this),
   };
 
   pubsub = {};
-  coreEvents = {
+  coreEvents: Partial<PluginEventHandlers<CinderlinkClientEvents["emit"]>> = {
     "/peer/connect": this.onPeerConnect.bind(this),
     "/peer/disconnect": this.onPeerDisconnect.bind(this),
   };
+  
+  pluginEvents?: PluginEventHandlers<PeerEvents["emit"]>;
 
-  async start() {
+  start() {
     this.logger.info(`registering protocol /cinderlink/1.0.0`);
     this.client.ipfs.libp2p.handle(
       "/cinderlink/1.0.0",
-      this.handleProtocol.bind(this) as any,
+      this.handleProtocol.bind(this),
       {
         maxInboundStreams: 128,
         maxOutboundStreams: 128,
@@ -80,11 +79,11 @@ export class CinderlinkProtocolPlugin<
     );
   }
 
-  async stop() {
+  stop() {
     clearInterval(this.keepAliveHandler);
   }
 
-  async handleProtocol({
+  handleProtocol({
     stream,
     connection,
   }: {
@@ -96,14 +95,12 @@ export class CinderlinkProtocolPlugin<
       stream,
       lp.decode,
       (source: any) => {
-        return map(source, (buf: Buffer) => {
-          return json.decode<
-            ProtocolMessage<
-              ProtocolEvents["receive"][keyof ProtocolEvents["receive"]] &
-                ProtocolRequest,
-              keyof ProtocolEvents["receive"]
-            >
-          >(buf.subarray());
+        return map(source, (buf: any) => {
+          return json.decode(buf) as ProtocolMessage<
+            ProtocolEvents["receive"][keyof ProtocolEvents["receive"]] &
+              ProtocolRequest,
+            keyof ProtocolEvents["receive"]
+          >;
         });
       },
       async function (source: any) {
@@ -111,10 +108,10 @@ export class CinderlinkProtocolPlugin<
           for await (const encoded of source) {
             await self.handleProtocolMessage(connection, encoded);
           }
-        } catch (error: any) {
+        } catch (_error) {
           self.logger.error(`error handling protocol message`, {
-            message: error.message,
-            trace: error.trace,
+            message: (error as Error).message,
+            trace: (error as Error).stack,
           });
         }
       }
@@ -126,7 +123,7 @@ export class CinderlinkProtocolPlugin<
     });
   }
 
-  async keepAliveCheck() {
+  keepAliveCheck() {
     const now = Date.now();
     for (const peer of this.client.peers.getAllPeers()) {
       if (peer.connected) {
@@ -135,17 +132,14 @@ export class CinderlinkProtocolPlugin<
           now - peer.seenAt >= (this.client.keepAliveTimeout || 10000)
         ) {
           this.logger.info(`peer ${readablePeer(peer)} timed out`);
-          await this.client.pluginEvents.emit(
-            "/cinderlink/keepalive/timeout",
-            peer as any
-          );
+          await this.client.emit("/cinderlink/keepalive/timeout", peer);
           try {
             this.client.ipfs.libp2p.getConnections(peer.peerId).forEach((connection: Connection) => {
               connection.close();
             });
             this.client.emit("/peer/disconnect", peer);
             this.client.peers.removePeer(peer.peerId.toString());
-          } catch (_) {}
+          } catch (__) {}
         } else {
           await this.client.send(peer.peerId.toString(), {
             topic: "/cinderlink/keepalive",
@@ -158,11 +152,10 @@ export class CinderlinkProtocolPlugin<
     }
   }
 
-  async onKeepAlive(
+  onKeepAlive(
     message: IncomingP2PMessage<
       ProtocolEvents,
-      "/cinderlink/keepalive",
-      EncodingOptions
+      "/cinderlink/keepalive"
     >
   ) {
     if (!this.respondToKeepAlive) return;
@@ -171,23 +164,19 @@ export class CinderlinkProtocolPlugin<
     });
   }
 
-  async onPeerConnect(peer: Peer) {
+  onPeerConnect(peer: Peer) {
     if (this.client.peerId && peer.peerId.equals(this.client.peerId)) {
       return;
     }
   }
 
-  async onPeerDisconnect(peer: Peer) {
+  onPeerDisconnect(peer: Peer) {
     this.logger.info(`closing cinderlink protocol ${readablePeer(peer)}`);
   }
 
-  async handleProtocolMessage<
-    Events extends PluginEventDef = ProtocolEvents,
-    Topic extends keyof Events["receive"] = keyof Events["receive"],
-    Encoding extends EncodingOptions = EncodingOptions
-  >(
+  handleProtocolMessage(
     connection: Connection,
-    encoded: ProtocolMessage<Events["receive"][Topic], Topic, Encoding>
+    encoded: ProtocolMessage<ProtocolRequest, string>
   ) {
     if (!encoded) {
       this.logger.error(`invalid encoded message`, {
@@ -226,11 +215,7 @@ export class CinderlinkProtocolPlugin<
       throw new Error("invalid encoded message; must be signed or encrypted");
     }
 
-    const decoded = await decodePayload<
-      Events["receive"][Topic],
-      Encoding,
-      EncodedProtocolPayload<Events["receive"][Topic], Encoding>
-    >(encoded, this.client.did);
+    const decoded = await decodePayload(encoded, this.client.did);
     if (!decoded) {
       this.logger.error("failed to decode message (no data)", {
         encoded,
@@ -245,11 +230,11 @@ export class CinderlinkProtocolPlugin<
       this.client.emit("/peer/authenticated", peer);
     }
 
-    const event: DecodedProtocolMessage<Events, "receive", Topic, Encoding> = {
-      topic: topic as keyof Events["receive"],
+    const event = {
+      topic,
       peer,
       ...decoded,
-    } as DecodedProtocolMessage<Events, "receive", Topic, Encoding>;
+    };
 
     this.logger.info(
       `received protocol message on topic ${event.topic as string} from ${
@@ -257,20 +242,17 @@ export class CinderlinkProtocolPlugin<
       }`,
       event
     );
-    if (event.payload?.requestId) {
+    if (event.payload && typeof event.payload === 'object' && 'requestId' in event.payload && event.payload.requestId) {
       this.logger.info(
         `received request message from ${peer.did}: ${event.payload.requestId}`
       );
       this.client.emit(
-        `/cinderlink/request/${(event.payload as any).requestId}`,
+        `/cinderlink/request/${event.payload.requestId}`,
         event
       );
     }
 
-    await this.client.p2p.emit(
-      topic as keyof ProtocolEvents["receive"],
-      event as any
-    );
+    await (this.client.p2p.emit as any)(topic, event);
   }
 
   async encodeMessage<
@@ -280,11 +262,10 @@ export class CinderlinkProtocolPlugin<
     ) = keyof (
       | ProtocolEvents<ProtocolEvents>["send"]
       | ProtocolEvents<ProtocolEvents>["publish"]
-    ),
-    Encoding extends EncodingOptions = EncodingOptions
+    )
   >(
     message: OutgoingP2PMessage<ProtocolEvents, Topic>,
-    { sign, encrypt, recipients }: Encoding = {} as Encoding
+    { sign, encrypt, recipients }: EncodingOptions = {} as EncodingOptions
   ) {
     return encodePayload(message, {
       sign,

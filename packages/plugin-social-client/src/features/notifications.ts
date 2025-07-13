@@ -169,11 +169,11 @@ export class SocialNotifications {
     this.unbindGenerator(generator);
   }
 
-  async start() {
+  start() {
     this._table = this.plugin.table("notifications");
   }
 
-  async stop() {
+  stop() {
     this.generators.forEach((generator) => {
       if (generator.enabled) {
         this.unbindGenerator(generator);
@@ -236,8 +236,8 @@ export class SocialNotifications {
   ): Promise<SocialNotification | undefined> {
     const saved = await this.table.upsert(
       {
-        type: notification.type,
-        sourceUid: notification.sourceUid,
+        type: notification.type as string,
+        sourceUid: notification.sourceUid as string,
       },
       { ...notification, dismissed: false, createdAt: Date.now(), read: false }
     );

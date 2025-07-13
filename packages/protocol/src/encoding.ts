@@ -1,102 +1,115 @@
+import { DID, VerifyJWSResult, DagJWS } from "dids";
+
+import { JWE } from "did-jwt";
+import * as json from "multiformats/codecs/json";
+import * as multiformats from "multiformats";
 import {
   EncodedProtocolPayload,
   DecodedProtocolPayload,
   EncodingOptions,
   ProtocolRequest,
-  SignedProtocolPayload,
 } from "@cinderlink/core-types";
-import * as json from "multiformats/codecs/json";
-import * as multiformats from "multiformats";
-import { DagJWS, DID, VerifyJWSResult } from "dids";
-import { JWE } from "did-jwt";
 
 export async function decodePayload<
-  Payload,
-  Encoding extends EncodingOptions,
-  Encoded extends EncodedProtocolPayload<Payload, Encoding>
->(encoded: Encoded, did?: DID): Promise<DecodedProtocolPayload<Payload>> {
-  let payload: DecodedProtocolPayload<Encoded>["payload"];
+  Payload extends ProtocolRequest = ProtocolRequest,
+  Encoding extends EncodingOptions = EncodingOptions
+>(encoded: EncodedProtocolPayload<Payload, Encoding>, did?: DID): Promise<DecodedProtocolPayload<Payload, Encoding>> {
+  let payload: Payload;
   let senderDid: string | undefined;
+
   if (encoded.signed) {
     if (!did) {
-      throw new Error("did required to verify JWS");
+      throw new Error("DID required to verify JWS");
     }
-    // convert array of ints to uint8array
+    
     const verification: VerifyJWSResult | false = await did
       .verifyJWS(encoded.payload as DagJWS)
       .catch(() => false);
+      
     if (verification && verification.payload) {
-      payload = verification.payload as Encoded;
+      payload = verification.payload as Payload;
       senderDid = verification.didResolutionResult.didDocument?.id;
     } else {
-      throw new Error("failed to verify JWS");
+      throw new Error("Failed to verify JWS");
     }
   } else if (encoded.encrypted) {
     if (!did) {
-      throw new Error("did required to decrypt JWE");
+      throw new Error("DID required to decrypt JWE");
     }
-    const decrypted: multiformats.ByteView<Record<string, unknown>> | undefined =
-      await did?.decryptJWE(encoded.payload as JWE).catch(() => undefined);
+    
+    const decrypted = await did.decryptJWE(encoded.payload as JWE).catch(() => undefined);
     if (!decrypted) {
-      throw new Error("failed to decrypt JWE");
+      throw new Error("Failed to decrypt JWE");
     }
-    payload = json.decode(
-      decrypted as multiformats.ByteView<DecodedProtocolPayload<Encoded>["payload"]>
-    );
+    
+    payload = json.decode(decrypted) as Payload;
   } else {
-    payload = (
-      encoded as EncodedProtocolPayload<any, { sign: false; encrypt: false }>
-    ).payload as DecodedProtocolPayload<Encoded>["payload"];
+    // Plain payload
+    payload = encoded.payload as Payload;
   }
 
   return {
-    payload: payload as ProtocolRequest,
+    payload,
     signed: encoded.signed,
     encrypted: encoded.encrypted,
     recipients: encoded.recipients,
-    ...((senderDid && { sender: senderDid }) || {}),
-  } as DecodedProtocolPayload<Payload>;
+    sender: senderDid,
+  } as DecodedProtocolPayload<Payload, Encoding>;
 }
 
 export async function encodePayload<
-  Data extends string | Record<string, unknown> = ProtocolRequest,
+  Data extends Record<string, unknown> = ProtocolRequest,
   Encoding extends EncodingOptions = EncodingOptions
 >(
   payload: Data,
-  { sign, encrypt, recipients, did }: Encoding & { did?: DID } = {} as Encoding
-) {
-  let encoded: EncodedProtocolPayload<Data, Encoding>;
-  if (sign === true) {
+  options: Encoding & { did?: DID } = {} as Encoding & { did?: DID }
+): Promise<EncodedProtocolPayload<Data, Encoding>> {
+  const { sign = false, encrypt = false, recipients, did } = options;
+
+  let encodedPayload: DagJWS | JWE | Data;
+  let signed = false;
+  let encrypted = false;
+
+  if (sign && encrypt) {
+    throw new Error("Cannot both sign and encrypt in a single operation");
+  }
+
+  if (sign) {
     if (!did) {
-      throw new Error("did required to sign payload");
+      throw new Error("DID required for signing");
     }
+    
     const jws = await did.createJWS(payload);
     if (!jws) {
-      throw new Error("failed to sign payload");
+      throw new Error("Failed to create JWS signature");
     }
-    encoded = {
-      payload: jws as SignedProtocolPayload<Data, false>,
-      signed: true,
-      encrypted: false,
-    } as EncodedProtocolPayload<Data, Encoding>;
-  } else if (encrypt === true) {
-    if (!recipients) {
-      throw new Error("recipient DIDs required to encrypt payload");
+    
+    encodedPayload = jws;
+    signed = true;
+  } else if (encrypt) {
+    if (!recipients || recipients.length === 0) {
+      throw new Error("Recipients required for encryption");
     }
     if (!did) {
-      throw new Error("did required to encrypt payload");
+      throw new Error("DID required for encryption");
     }
-    encoded = {
-      payload: await did.createJWE(json.encode(payload), recipients),
-      encrypted: true,
-      signed: false,
-    } as EncodedProtocolPayload<Data, Encoding>;
+    
+    const jwe = await did.createJWE(json.encode(payload), recipients);
+    if (!jwe) {
+      throw new Error("Failed to create JWE encryption");
+    }
+    
+    encodedPayload = jwe;
+    encrypted = true;
   } else {
-    encoded = {
-      payload,
-      encrypted: false,
-      signed: false,
-    } as EncodedProtocolPayload<Data, Encoding>;
+    // Plain payload
+    encodedPayload = payload;
   }
-  return encoded;
+
+  return {
+    payload: encodedPayload,
+    signed,
+    encrypted,
+    recipients,
+  } as EncodedProtocolPayload<Data, Encoding>;
 }

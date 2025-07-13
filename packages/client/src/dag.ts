@@ -52,7 +52,7 @@ export class ClientDag<Plugins extends PluginEventDef = PluginEventDef>
         this.client.ipfs.libp2p.contentRouting.provide(cid).catch(() => {
           // Ignore DHT errors in test mode or when no DHT is available
         });
-      } catch (error) {
+      } catch (_error) {
         console.error(error);
       }
     }
@@ -61,16 +61,35 @@ export class ClientDag<Plugins extends PluginEventDef = PluginEventDef>
 
   async load<T>(
     cid: CID | string,
-    _path?: string,
+    path?: string,
     _options?: Record<string, unknown>
   ): Promise<T> {
     // Use dag-cbor by default
     const dag = dagCbor(this.client.ipfs);
     const parsedCid = typeof cid === "string" ? CID.parse(cid) : cid;
     
-    // @helia/dag-cbor get() takes just a CID, path is handled differently
+    // Get the full object from the DAG
     const stored = await dag.get(parsedCid);
-    return stored as T;
+    
+    // If no path specified, return the full object
+    if (!path) {
+      return stored as T;
+    }
+    
+    // Handle path traversal - split path and navigate through object
+    const pathParts = path.split('/').filter(part => part.length > 0);
+    let result: any = stored;
+    
+    for (const part of pathParts) {
+      if (result && typeof result === 'object' && part in result) {
+        result = result[part];
+      } else {
+        // Path not found - return undefined instead of throwing
+        return undefined as T;
+      }
+    }
+    
+    return result as T;
   }
 }
 

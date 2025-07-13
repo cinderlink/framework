@@ -74,11 +74,11 @@ Message: ${message.message}
     } as NotificationGenerator<SocialChatMessage>);
   }
 
-  async stop() {
+  stop() {
     this.plugin.notifications.disableGenerator("social/chatMessage");
   }
 
-  async sendChatMessage(
+  sendChatMessage(
     message: Partial<SocialChatMessage>
   ): Promise<SocialChatMessage> {
     if (!message.to) {

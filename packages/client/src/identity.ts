@@ -17,7 +17,7 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
   saveDebounce?: NodeJS.Timeout;
   constructor(public client: CinderlinkClientInterface<PluginEvents>) {}
 
-  async resolve(): Promise<IdentityResolved> {
+  resolve(): Promise<IdentityResolved> {
     if (this.resolving) return this.resolving;
     this.resolving = new Promise(async (resolve) => {
       this.client.logger.info("identity", "resolving local identity");
@@ -89,7 +89,7 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
     }
 
     try {
-      const ipns = this.client.ipfs.libp2p.services?.ipns as any;
+      const ipns = this.client.ipfs.libp2p.services?.ipns as { resolve: (peerId: unknown) => Promise<string> } | undefined;
       if (ipns && typeof ipns.resolve === 'function') {
         const resolvedPath = await ipns.resolve(this.client.peerId);
         if (resolvedPath) {
@@ -107,7 +107,7 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
           }
         }
       }
-    } catch (_) {}
+    } catch (__) {}
 
     return {
       cid: undefined,
@@ -115,7 +115,7 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
     };
   }
 
-  async resolveServer(): Promise<IdentityResolved> {
+  resolveServer(): Promise<IdentityResolved> {
     const servers = this.client.peers.getServers();
     if (!servers.length) {
       this.client.logger.module("identity").warn("no servers found");
@@ -166,7 +166,7 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
     return { cid, document };
   }
 
-  async save({
+  save({
     cid,
     document,
     forceRemote,
@@ -195,7 +195,7 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
     }, 10000);
   }
 
-  async _save({
+  _save({
     cid,
     document,
     forceRemote,
@@ -210,7 +210,7 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
         cid: this.cid,
       });
       try {
-        for await (const _ of this.client.ipfs.pins.rm(this.cid as any)) {
+        for await (const _ of this.client.ipfs.pins.rm(CID.parse(this.cid))) {
           // consume generator
         }
       } catch {}
@@ -229,7 +229,7 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
       // Pin with new API
       (async () => {
         try {
-          for await (const _ of this.client.ipfs.pins.add(cid as any, { signal: AbortSignal.timeout(10000) })) {
+          for await (const _ of this.client.ipfs.pins.add(cid, { signal: AbortSignal.timeout(10000) })) {
             // consume generator
           }
         } catch {}
@@ -247,7 +247,7 @@ export class Identity<PluginEvents extends PluginEventDef = PluginEventDef> {
     if (forceRemote || Date.now() - this.lastSavedAt > 10000) {
       this.lastSavedAt = Date.now();
       await Promise.all(
-        this.client.peers.getServers().map(async (server) => {
+        this.client.peers.getServers().map((server) => {
           if (server.did) {
             this.client.logger.info("identity", "sending identity to server", {
               server,

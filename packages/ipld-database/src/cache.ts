@@ -1,11 +1,4 @@
-import { TableDefinition } from "@cinderlink/core-types";
-import {
-  BlockData,
-  QueryResult,
-  TableBlockInterface,
-  TableQueryInterface,
-  TableRow,
-} from "@cinderlink/core-types";
+import { TableDefinition, BlockData, QueryResult, TableBlockInterface, TableQueryInterface, TableRow,  } from "@cinderlink/core-types";
 
 import sizeof from "object-sizeof";
 import * as json from "multiformats/codecs/json";

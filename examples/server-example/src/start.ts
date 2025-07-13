@@ -1,5 +1,5 @@
 import { createServer } from "@cinderlink/server";
-import { createSeed } from "@cinderlink/client";
+import { createSeed } from "@cinderlink/identifiers";
 
 import CinderlinkProtocolPlugin from "@cinderlink/protocol";
 import SocialServerPlugin from "@cinderlink/plugin-social-server";
@@ -23,9 +23,9 @@ const server = await createServer(
   {
     config: {
       Addresses: {
-        Swarm: ["/ip4/127.0.0.1/tcp/4001", "/ip4/127.0.0.1/tcp/4002/ws"],
-        API: ["/ip4/127.0.0.1/tcp/5001"],
-        Gateway: ["/ip4/127.0.0.1/tcp/8080"],
+        Swarm: ["/ip4/127.0.0.1/tcp/4500", "/ip4/127.0.0.1/tcp/4501/ws"],
+        API: ["/ip4/127.0.0.1/tcp/4502"],
+        Gateway: ["/ip4/127.0.0.1/tcp/4503"],
       },
       Bootstrap: [],
     },

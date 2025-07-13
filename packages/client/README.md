@@ -2,6 +2,8 @@
 
 Core client for the Cinderlink P2P network.
 
+> 📚 **[Complete Documentation](../../docs/)** | **[Getting Started](../../docs/tutorials/01-getting-started.md)** | **[API Reference](../../docs/api/client/)** | **[Troubleshooting](../../docs/tutorials/07-troubleshooting.md)**
+
 ## Overview
 
 The Cinderlink client is the main entry point for building decentralized applications on the Cinderlink network. It provides a unified interface for identity management, P2P networking, data storage, and plugin integration.
@@ -193,8 +195,8 @@ const client = await createClient({
     peerDiscovery: [
       bootstrap({
         list: [
-          '/dns4/bootstrap1.example.com/tcp/4001/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN',
-          '/dns4/bootstrap2.example.com/tcp/4001/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb'
+          '/dns4/bootstrap1.example.com/tcp/4500/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN',
+          '/dns4/bootstrap2.example.com/tcp/4500/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb'
         ]
       })
     ]
@@ -219,7 +221,7 @@ const client = await createClient({
       config: {
         Addresses: {
           Swarm: [
-            '/ip4/0.0.0.0/tcp/4002',
+            '/ip4/0.0.0.0/tcp/4501',
             '/ip4/127.0.0.1/tcp/4003/ws'
           ]
         }

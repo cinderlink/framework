@@ -62,7 +62,7 @@ export class SocialConnections {
     } as NotificationGenerator<SocialConnection>);
   }
 
-  async stop() {
+  stop() {
     this.plugin.notifications.disableGenerator("social/follower");
   }
 
@@ -91,7 +91,7 @@ export class SocialConnections {
     await this.sendConnection(stored);
   }
 
-  async onCreate(
+  onCreate(
     message: IncomingPubsubMessage<
       SocialClientEvents,
       "/social/connections/create"

@@ -88,7 +88,7 @@ export type Operation =
   | ">="
   | "<"
   | "<="
-  | "!="
+  | "!=="
   | "between"
   | "!between"
   | "in"

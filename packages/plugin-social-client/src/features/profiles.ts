@@ -4,7 +4,7 @@ import SocialClientPlugin from "../plugin";
 export class SocialProfiles {
   constructor(private plugin: SocialClientPlugin) {}
 
-  async start() {}
+  start() {}
 
   async createProfile(
     profileData: Omit<SocialProfile, "id">

@@ -2,7 +2,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import { createWalletClient, http } from "viem";
 import { mainnet } from "viem/chains";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { IdentityServerPlugin } from "../../plugin-identity-server";
+import { IdentityServerPlugin } from "@cinderlink/plugin-identity-server";
 import {
   TableRow,
   TableInterface,
@@ -18,10 +18,10 @@ import {
   createSeed,
   signAddressVerification,
 } from "@cinderlink/identifiers";
-import { createClient } from "../../client";
+import { createClient } from "@cinderlink/client";
 import { rmSync } from "fs";
 import SyncDBPlugin from "./plugin";
-import { Schema } from "../../ipld-database";
+import { Schema } from "@cinderlink/ipld-database";
 
 interface DidRow extends TableRow {
   did: string;
@@ -63,10 +63,10 @@ const didRowSyncConfig: SyncConfig<DidRow> = {
       .where("did", "=", params.did)
       .select();
   },
-  async allowNewFrom() {
+  allowNewFrom() {
     return true;
   },
-  async allowUpdateFrom(row: DidRow, did: string) {
+  allowUpdateFrom(row: DidRow, did: string) {
     return did === row.did;
   },
   incomingRateLimit: 10000,
@@ -139,7 +139,7 @@ describe("TableSync", () => {
       },
     });
     server.initialConnectTimeout = 0;
-    const identity = new IdentityServerPlugin(server as any);
+    const identity = new IdentityServerPlugin(server);
     server.addPlugin(identity);
 
     await Promise.all([server.start([]), server.once("/client/ready")]);
@@ -194,7 +194,7 @@ describe("TableSync", () => {
     try {
       await client.stop().catch(() => {});
       await server.stop().catch(() => {});
-    } catch (_) {}
+    } catch (__) {}
     await rmSync("./test-sync-client", { recursive: true, force: true });
     await rmSync("./test-sync-server", { recursive: true, force: true });
   });

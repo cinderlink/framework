@@ -23,8 +23,8 @@ import { createClient } from '@cinderlink/client';
 const client = await createClient({
   nodes: [
     // Your network nodes
-    '/ip4/192.168.1.100/tcp/4001/p2p/12D3KooW...',
-    '/ip4/192.168.1.101/tcp/4001/p2p/12D3KooW...'
+    '/ip4/192.168.1.100/tcp/4500/p2p/12D3KooW...',
+    '/ip4/192.168.1.101/tcp/4500/p2p/12D3KooW...'
   ]
 });
 

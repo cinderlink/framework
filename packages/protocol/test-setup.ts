@@ -4,9 +4,9 @@ import { EventEmitter } from 'events'
 // Polyfill for libp2p compatibility in Node.js test environment
 if (typeof globalThis.addEventListener === 'undefined') {
   const events = new EventEmitter()
-  globalThis.addEventListener = (event: string, handler: any) => events.on(event, handler)
-  globalThis.removeEventListener = (event: string, handler: any) => events.off(event, handler)
-  globalThis.dispatchEvent = (event: any) => {
+  globalThis.addEventListener = (event: string, handler: any) => events.on(event, handler) as any
+  globalThis.removeEventListener = (event: string, handler: any) => events.off(event, handler) as any
+  globalThis.dispatchEvent = (event: Event) => {
     events.emit(event.type, event)
     return true
   }
@@ -23,7 +23,7 @@ if (!globalThis.crypto?.randomUUID) {
         return v.toString(16)
       })
     }
-  } as any
+  } as Crypto
 }
 
 // Increase test timeout for integration tests

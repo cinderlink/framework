@@ -11,7 +11,7 @@ async function distributedPinningExample() {
   const client = await createClient({
     nodes: [
       // Add your network nodes here
-      // Example: '/ip4/192.168.1.100/tcp/4001/p2p/12D3KooW...'
+      // Example: '/ip4/192.168.1.100/tcp/4500/p2p/12D3KooW...'
     ]
   });
 

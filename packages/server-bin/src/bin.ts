@@ -2,8 +2,8 @@ import minimist from "minimist";
 import fs from "fs";
 import path from "path";
 import chalk from "chalk";
-import { privateKeyToAccount, mnemonicToAccount, generatePrivateKey, generateMnemonic } from "viem/accounts";
-import { english } from "viem/accounts";
+import { privateKeyToAccount, mnemonicToAccount, generatePrivateKey, generateMnemonic, english } from "viem/accounts";
+
 import { createWalletClient, http } from "viem";
 import { mainnet } from "viem/chains";
 import { createServer } from "@cinderlink/server";
@@ -100,8 +100,8 @@ export default {
   ipfs: {
     config: {
       Addresses: {
-        Swarm: ["/ip4/127.0.0.1/tcp/4001", "/ip4/127.0.0.1/tcp/4002/ws"],
-        API: ["/ip4/127.0.0.1/tcp/5001"],
+        Swarm: ["/ip4/127.0.0.1/tcp/4500", "/ip4/127.0.0.1/tcp/4501/ws"],
+        API: ["/ip4/127.0.0.1/tcp/4502"],
       },
       API: {
         HTTPHeaders: {
@@ -171,7 +171,7 @@ if (command !== "start") {
   const plugins = (
     await Promise.all(
       (config.plugins || []).map(
-        async ([pathname, options]: [string, Record<string, unknown>]) => {
+        ([pathname, options]: [string, Record<string, unknown>]) => {
           // resolve the plugin relative to the config file
           const dirname = path.resolve(
             path.dirname(configPath),
@@ -243,7 +243,7 @@ if (command !== "start") {
   const addrs = server.client.ipfs.libp2p.getMultiaddrs();
   console.info(`listening: ${addrs.map((addr) => addr.toString()).join(", ")}`);
 
-  process.on("SIGINT", async () => {
+  process.on("SIGINT", () => {
     console.log(`stopping ${chalk.cyan("cinderlink")}...`);
     await server.stop();
     process.exit(0);

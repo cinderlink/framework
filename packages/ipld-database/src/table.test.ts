@@ -1,16 +1,11 @@
-import { privateKeyToAccount } from "viem/accounts";
-import { createWalletClient, http } from "viem";
-import { mainnet } from "viem/chains";
 import {
   createDID,
-  signAddressVerification,
   createSeed,
-} from "../../identifiers";
-import { rmSync } from "fs";
-import { createClient, CinderlinkClient } from "../../client";
+} from "@cinderlink/identifiers";
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { Table } from "./table.js";
-import { BlockData, TableDefinition, TableRow } from "../../core-types";
+import { BlockData, TableDefinition, TableRow } from "@cinderlink/core-types";
+import { TestClient } from "@cinderlink/test-adapters";
 
 interface NonUniqueRow extends TableRow {
   id: number;
@@ -89,47 +84,19 @@ const validDefinition: TableDefinition<TestRow> = {
   rollup: 10,
 };
 
-let client: CinderlinkClient;
+let client: TestClient<any>;
+
 describe("@cinderlink/ipld-database/table", () => {
-  beforeEach(async (tst) => {
+  beforeEach(async () => {
     const seed = await createSeed("test seed");
     const did = await createDID(seed);
     
-    // Create a random account with viem
-    const privateKey = `0x${Math.random().toString(16).slice(2).padStart(64, '0')}` as `0x${string}`;
-    const account = privateKeyToAccount(privateKey);
-    const walletClient = createWalletClient({
-      account,
-      chain: mainnet,
-      transport: http(),
-    });
-    
-    const address = account.address;
-    const addressVerification = await signAddressVerification(
-      "test",
-      did.id,
-      account,
-      walletClient
-    );
-    client = (await createClient({
-      address,
-      addressVerification,
-      did,
-      role: "peer",
-      options: {
-        repo: "test-data/" + tst.meta.name,
-      },
-    })) as CinderlinkClient;
-    client.initialConnectTimeout = 1;
+    client = new TestClient(did);
     await client.start();
   });
 
   afterEach(async () => {
     await client.stop();
-  });
-
-  afterEach((tst) => {
-    rmSync("./test-data/" + tst.meta.name, { recursive: true, force: true });
   });
 
   it("should create a current block", () => {
@@ -682,7 +649,7 @@ describe("@cinderlink/ipld-database/table", () => {
       expect(computed).toMatch(inserted);
     });
 
-    it("should create deterministic identifiers for records without unique indexes", async () => {
+    it("should create deterministic identifiers for records without unique indexes", () => {
       const nonUniqueDef: TableDefinition<NonUniqueRow> = {
         schemaId: "test",
         aggregate: {},

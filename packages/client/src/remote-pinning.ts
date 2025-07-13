@@ -1,5 +1,5 @@
 import type { CID } from "multiformats/cid";
-import type { CinderlinkClientInterface } from "@cinderlink/core-types";
+import type { CinderlinkClientInterface, PluginEventDef } from "@cinderlink/core-types";
 
 /**
  * Remote Pinning Manager for Cinderlink
@@ -7,8 +7,8 @@ import type { CinderlinkClientInterface } from "@cinderlink/core-types";
  * This uses the standard Helia pins API which is transparently backed by
  * remote pinning when configured with @helia/remote-pinning
  */
-export class RemotePinningManager {
-  constructor(private client: CinderlinkClientInterface) {}
+export class RemotePinningManager<Plugins extends PluginEventDef = PluginEventDef> {
+  constructor(private client: CinderlinkClientInterface<Plugins>) {}
 
   /**
    * Add a CID to remote pinning service
@@ -82,7 +82,7 @@ export class RemotePinningManager {
    * This is a placeholder - actual implementation would depend on the
    * remote pinning service configuration
    */
-  async getServiceStatus(): Promise<{ configured: boolean; serviceName?: string }> {
+  getServiceStatus(): Promise<{ configured: boolean; serviceName?: string }> {
     // Check if remote pinning is configured by looking for remotePins property
     const configured = !!this.client.ipfs.remotePins;
     

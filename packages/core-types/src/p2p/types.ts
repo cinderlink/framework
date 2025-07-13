@@ -1,9 +1,9 @@
 import { PeerId } from "@libp2p/interface";
 import { PluginEventDef, PluginEventHandlers } from "../plugin/types";
 import {
-  EncodingOptions,
+  DecodedProtocolMessage,
   OutgoingProtocolMessage,
-  ProtocolMessage,
+  EncodingOptions,
 } from "../protocol/types";
 
 export type Peer = {
@@ -28,7 +28,7 @@ export type P2PCoreEvents = {
 };
 
 export type ReceiveEvents<
-  PluginEvents extends PluginEventDef = any,
+  PluginEvents extends PluginEventDef = PluginEventDef,
   Encoding extends EncodingOptions = EncodingOptions
 > = {
   [K in keyof PluginEvents["receive"]]: IncomingP2PMessage<
@@ -38,21 +38,18 @@ export type ReceiveEvents<
   >;
 };
 
-export type ReceiveEventHandlers<PluginEvents extends PluginEventDef = any> =
+export type ReceiveEventHandlers<PluginEvents extends PluginEventDef = PluginEventDef> =
   PluginEventHandlers<ReceiveEvents<PluginEvents>>;
 
 export type OutgoingP2PMessage<
-  PluginEvents extends PluginEventDef = any,
+  PluginEvents extends PluginEventDef = PluginEventDef,
   Topic extends keyof PluginEvents["send"] = keyof PluginEvents["send"]
 > = OutgoingProtocolMessage<PluginEvents["send"][Topic], Topic>;
 
 export type IncomingP2PMessage<
-  PluginEvents extends PluginEventDef = any,
+  PluginEvents extends PluginEventDef = PluginEventDef,
   Topic extends keyof PluginEvents["receive"] = keyof PluginEvents["receive"],
-  Encoding extends EncodingOptions = { sign: false; encrypt: false }
-> = ProtocolMessage<PluginEvents["receive"][Topic], Topic, Encoding> & {
+  Encoding extends EncodingOptions = EncodingOptions
+> = DecodedProtocolMessage<PluginEvents, "receive", Topic, Encoding> & {
   peer: Peer;
-  signed: Encoding["sign"];
-  encrypted: Encoding["encrypt"];
-  recipients?: Encoding["recipients"];
 };

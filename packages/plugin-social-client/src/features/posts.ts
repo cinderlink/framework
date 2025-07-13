@@ -60,7 +60,7 @@ Content: ${post.content}
     } as NotificationGenerator<SocialPost>);
   }
 
-  async stop() {
+  stop() {
     this.plugin.notifications.disableGenerator("social/posts");
   }
 
@@ -124,7 +124,7 @@ Content: ${post.content}
     await table.insert(data as Omit<SocialPost, "id" | "uid">);
   }
 
-  async getPost(postUid: string) {
+  getPost(postUid: string) {
     return this.plugin
       .table<SocialPost>("posts")
       .query()
@@ -213,7 +213,7 @@ Content: ${post.content}
     return comments.all();
   }
 
-  async getLocalUserPosts(): Promise<SocialPost[]> {
+  getLocalUserPosts(): Promise<SocialPost[]> {
     return this.getUserPosts(this.plugin.client.id);
   }
 

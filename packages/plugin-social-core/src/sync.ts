@@ -2,37 +2,49 @@ import {
   CinderlinkClientInterface,
   Peer,
   SyncConfig,
+  SyncQueryParams,
   TableInterface,
 } from "@cinderlink/core-types";
 import { SocialClientPluginInterface } from "./interface";
 import {
   SocialChatMessage,
+  SocialComment,
+  SocialConnection,
   SocialPost,
   SocialReaction,
   SocialUser,
 } from "./types";
 
-export const SocialSyncConfig: Record<string, SyncConfig<any>> = {
+export interface SocialSyncConfigs {
+  users: SyncConfig<SocialUser>;
+  chat_messages: SyncConfig<SocialChatMessage>;
+  connections: SyncConfig<SocialConnection>;
+  posts: SyncConfig<SocialPost>;
+  comments: SyncConfig<SocialComment>;
+  reactions: SyncConfig<SocialReaction>;
+}
+
+export const SocialSyncConfig: SocialSyncConfigs = {
   users: {
     syncInterval: 30000,
     syncOnChange: true,
-    query(table: TableInterface<SocialUser>, params) {
+    query(table: TableInterface<SocialUser>, params: SyncQueryParams) {
       return table
         .query()
         .where("updatedAt", ">", params.since)
         .or((qb) => qb.where("createdAt", ">", params.since))
         .select();
     },
-    async syncTo(peers: Peer[]) {
+    syncTo(peers: Peer[]) {
       return peers.filter((p) => p.did).map((p) => p.did as string);
     },
-    async allowNewFrom() {
+    allowNewFrom() {
       return true;
     },
-    async allowUpdateFrom(row: SocialUser, did: string) {
+    allowUpdateFrom(row: SocialUser, did: string) {
       return did === row.did;
     },
-    async allowFetchFrom() {
+    allowFetchFrom() {
       return true;
     },
     incomingRateLimit: 5000,
@@ -41,32 +53,32 @@ export const SocialSyncConfig: Record<string, SyncConfig<any>> = {
   chat_messages: {
     syncInterval: 10000,
     syncOnChange: true,
-    query(table: TableInterface<SocialChatMessage>, params) {
+    query(table: TableInterface<SocialChatMessage>, params: SyncQueryParams) {
       return table
         .query()
         .where("updatedAt", ">", params.since)
         .or((qb) => qb.where("createdAt", ">", params.since))
         .select();
     },
-    async syncTo(peers: Peer[]) {
+    syncTo(peers: Peer[]) {
       return peers.filter((p) => !!p.did).map((p) => p.did as string);
     },
-    async syncRowTo(row: SocialChatMessage, peers: Peer[]) {
+    syncRowTo(row: SocialChatMessage, peers: Peer[]) {
       const syncTo = peers
         .map((p) => p.did as string)
         .filter((did) => did === row.from || did === row.to);
       return syncTo;
     },
-    async allowNewFrom() {
+    allowNewFrom() {
       return true;
     },
-    async allowUpdateFrom(row: SocialChatMessage, did: string) {
+    allowUpdateFrom(row: SocialChatMessage, did: string) {
       return did === row.from;
     },
-    async allowFetchRowFrom(
+    allowFetchRowFrom(
       row: SocialChatMessage,
       did: string,
-      _: TableInterface,
+      _: TableInterface<SocialChatMessage>,
       client: CinderlinkClientInterface<any>
     ) {
       return (
@@ -83,32 +95,32 @@ export const SocialSyncConfig: Record<string, SyncConfig<any>> = {
   connections: {
     syncInterval: 10000,
     syncOnChange: true,
-    query(table: TableInterface<SocialChatMessage>, params) {
+    query(table: TableInterface<SocialConnection>, params: SyncQueryParams) {
       return table
         .query()
         .where("updatedAt", ">", params.since)
         .or((qb) => qb.where("createdAt", ">", params.since))
         .select();
     },
-    async syncTo(peers: Peer[]) {
+    syncTo(peers: Peer[]) {
       return peers.filter((p) => p.did).map((p) => p.did as string);
     },
-    async syncRowTo(row: SocialChatMessage, peers: Peer[]) {
+    syncRowTo(row: SocialConnection, peers: Peer[]) {
       return peers
         .filter((p) => p.did)
         .map((p) => p.did as string)
         .filter((did) => did === row.from || did === row.to);
     },
-    async allowNewFrom() {
+    allowNewFrom() {
       return true;
     },
-    async allowUpdateFrom(row: SocialChatMessage, did: string) {
+    allowUpdateFrom(row: SocialConnection, did: string) {
       return did === row.from;
     },
-    async allowFetchRowFrom(
-      row: SocialChatMessage,
+    allowFetchRowFrom(
+      row: SocialConnection,
       did: string,
-      _: TableInterface,
+      _: TableInterface<SocialConnection>,
       client: CinderlinkClientInterface<any>
     ) {
       return (
@@ -125,7 +137,7 @@ export const SocialSyncConfig: Record<string, SyncConfig<any>> = {
   posts: {
     syncInterval: 60000,
     syncOnChange: true,
-    query(table: TableInterface<SocialPost>, params) {
+    query(table: TableInterface<SocialPost>, params: SyncQueryParams) {
       return table
         .query()
         .where("updatedAt", ">", params.since)
@@ -155,20 +167,20 @@ export const SocialSyncConfig: Record<string, SyncConfig<any>> = {
       ) as string[];
       return syncPeers;
     },
-    async allowNewFrom() {
+    allowNewFrom() {
       return true;
     },
-    async allowUpdateFrom(row: SocialPost, did: string) {
+    allowUpdateFrom(row: SocialPost, did: string) {
       return did === row.did;
     },
-    async allowFetchRowFrom(
+    allowFetchRowFrom(
       row: SocialPost,
       did: string,
-      _: TableInterface,
+      _: TableInterface<SocialPost>,
       client: CinderlinkClientInterface<any>
     ) {
       return (
-        row.did == did ||
+        row.did === did ||
         client.peers
           .getServers()
           .map((s) => s.did)
@@ -181,7 +193,7 @@ export const SocialSyncConfig: Record<string, SyncConfig<any>> = {
   comments: {
     syncInterval: 60000,
     syncOnChange: false,
-    query(table: TableInterface<SocialPost>, params) {
+    query(table: TableInterface<SocialComment>, params: SyncQueryParams) {
       return table
         .query()
         .where("updatedAt", ">", params.since)
@@ -190,7 +202,7 @@ export const SocialSyncConfig: Record<string, SyncConfig<any>> = {
     },
     async syncTo(
       peers: Peer[],
-      _: TableInterface<SocialPost>,
+      _: TableInterface<SocialComment>,
       client: CinderlinkClientInterface<any>
     ) {
       const validPeers = peers.filter((p) => p.did).map((p) => p.did as string);
@@ -211,20 +223,20 @@ export const SocialSyncConfig: Record<string, SyncConfig<any>> = {
       ) as string[];
       return syncPeers;
     },
-    async allowNewFrom() {
+    allowNewFrom() {
       return true;
     },
-    async allowUpdateFrom(row: SocialPost, did: string) {
+    allowUpdateFrom(row: SocialComment, did: string) {
       return did === row.did;
     },
-    async allowFetchRowFrom(
-      row: SocialPost,
+    allowFetchRowFrom(
+      row: SocialComment,
       did: string,
-      _: TableInterface,
+      _: TableInterface<SocialComment>,
       client: CinderlinkClientInterface<any>
     ) {
       return (
-        row.did == did ||
+        row.did === did ||
         client.peers
           .getServers()
           .map((s) => s.did)
@@ -237,7 +249,7 @@ export const SocialSyncConfig: Record<string, SyncConfig<any>> = {
   reactions: {
     syncInterval: 60000,
     syncOnChange: false,
-    query(table: TableInterface<SocialPost>, params) {
+    query(table: TableInterface<SocialReaction>, params: SyncQueryParams) {
       return table
         .query()
         .where("updatedAt", ">", params.since)
@@ -246,7 +258,7 @@ export const SocialSyncConfig: Record<string, SyncConfig<any>> = {
     },
     async syncTo(
       peers: Peer[],
-      _: TableInterface<SocialPost>,
+      _: TableInterface<SocialReaction>,
       client: CinderlinkClientInterface<any>
     ) {
       const validPeers = peers.filter((p) => p.did).map((p) => p.did as string);
@@ -267,20 +279,20 @@ export const SocialSyncConfig: Record<string, SyncConfig<any>> = {
       ) as string[];
       return syncPeers;
     },
-    async allowNewFrom() {
+    allowNewFrom() {
       return true;
     },
-    async allowUpdateFrom(row: SocialReaction, did: string) {
+    allowUpdateFrom(row: SocialReaction, did: string) {
       return did === row.from;
     },
-    async allowFetchRowFrom(
+    allowFetchRowFrom(
       row: SocialReaction,
       did: string,
-      _: TableInterface,
+      _: TableInterface<SocialReaction>,
       client: CinderlinkClientInterface<any>
     ) {
       return (
-        row.from == did ||
+        row.from === did ||
         client.peers
           .getServers()
           .map((s) => s.did)

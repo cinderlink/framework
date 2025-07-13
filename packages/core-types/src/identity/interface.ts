@@ -2,11 +2,12 @@ import type { CID } from "multiformats";
 import { CinderlinkClientInterface } from "../client";
 import { IdentityResolved } from "./types";
 
-export interface IdentityInterface<Document = any> {
+export interface IdentityInterface<Document = Record<string, unknown>> {
   cid: string | undefined;
   document: Document | undefined;
-  client: CinderlinkClientInterface<any>;
+  client: CinderlinkClientInterface;
   hasResolved: boolean;
+  resolving?: Promise<IdentityResolved>;
 
   resolve(): Promise<IdentityResolved>;
   resolveLocal(): Promise<IdentityResolved>;

@@ -1,10 +1,9 @@
 import { CID } from "multiformats/cid";
 import { sha256 } from "multiformats/hashes/sha2";
 import * as json from "multiformats/codecs/json";
-import type { DAGInterface } from "@cinderlink/core-types";
+import { DAGInterface, DIDDagInterface } from "@cinderlink/core-types";
 import type { DID } from "dids";
 import type { JWE } from "did-jwt";
-import { DIDDagInterface } from "@cinderlink/core-types";
 
 export class TestDag implements DAGInterface {
   cache: Record<string, unknown> = {};
@@ -60,7 +59,7 @@ export class TestDIDDag implements DIDDagInterface {
     return this.dag.store(jwe);
   }
 
-  async loadEncrypted(cid: CID, path?: string): Promise<JWE | undefined> {
+  loadEncrypted(cid: CID, path?: string): Promise<JWE | undefined> {
     return this.dag.load<JWE>(cid, path);
   }
 

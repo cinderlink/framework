@@ -200,11 +200,8 @@ export async function loadSocialSchema(client: CinderlinkClientInterface<any>) {
   
   // Register Zod schemas with the schema registry
   if (client.schemaRegistry) {
-    Object.entries(socialSchemas).forEach(([tableName, { schema, version }]) => {
-      client.schemaRegistry!.registerSchema(`social.${tableName}`, version, {
-        schema,
-        migrate: async (data: unknown) => data, // No migration needed for v1
-      });
+    Object.entries(socialSchemas).forEach(([tableName, schemaVersion]) => {
+      client.schemaRegistry!.registerSchema(`social.${tableName}`, schemaVersion.version, schemaVersion as any);
     });
   }
   
@@ -214,6 +211,7 @@ export async function loadSocialSchema(client: CinderlinkClientInterface<any>) {
       SocialSchemaDef as any,
       client.dag,
       client.logger.module("db").submodule(`schema:social`),
+      true, // encrypted parameter
       client.schemaRegistry
     );
     await client.addSchema("social", schema as any);

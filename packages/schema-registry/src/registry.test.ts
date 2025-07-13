@@ -103,16 +103,16 @@ describe('SchemaRegistry', () => {
         .registerSchema('users', 2, { schema: v2 })
         .registerSchema('users', 3, { schema: v3 })
         .registerMigration('users', 1, 2, (data) => ({
-          ...data,
-          displayName: data.name,
+          ...(data as any),
+          displayName: (data as any).name,
         }))
         .registerMigration('users', 2, 3, (data) => ({
-          ...data,
+          ...(data as any),
           createdAt: Date.now(),
         }));
     });
 
-    it('should migrate data through versions', async () => {
+    it('should migrate data through versions', () => {
       const v1Data = { id: 1, name: 'John' };
       
       const v3Data = await registry.migrate('users', v1Data, 1, 3);
@@ -125,7 +125,7 @@ describe('SchemaRegistry', () => {
       });
     });
 
-    it('should migrate to latest version by default', async () => {
+    it('should migrate to latest version by default', () => {
       const v1Data = { id: 1, name: 'Jane' };
       
       const latestData = await registry.migrate('users', v1Data, 1);
@@ -138,7 +138,7 @@ describe('SchemaRegistry', () => {
       });
     });
 
-    it('should throw on missing migration', async () => {
+    it('should throw on missing migration', () => {
       const v1Data = { id: 1, name: 'John' };
       
       // Remove v2->v3 migration to create a gap

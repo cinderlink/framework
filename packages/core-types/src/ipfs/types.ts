@@ -21,6 +21,6 @@ export type IPFSWithLibP2P = CinderlinkHelia;
 export interface EventListener {
   addEventListener: (
     event: string,
-    callback: (event: CustomEvent<any>) => Promise<void> | void
+    callback: (event: CustomEvent<unknown>) => Promise<void> | void
   ) => void;
 }

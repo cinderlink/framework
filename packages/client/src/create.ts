@@ -5,9 +5,8 @@ import type {
   PluginEventDef,
 } from "@cinderlink/core-types";
 import { peerIdFromString } from "@libp2p/peer-id";
-import { HeliaInit } from "helia";
 import { CinderlinkClient } from "./client.js";
-import { createHeliaNode } from "./ipfs/create.js";
+import { createHeliaNode, CinderlinkHeliaOptions } from "./ipfs/create.js";
 import { DID } from "dids";
 
 export interface CreateClientOptions {
@@ -15,7 +14,7 @@ export interface CreateClientOptions {
   address: `0x${string}`;
   addressVerification: string;
   nodes?: string[];
-  options?: Partial<HeliaInit>;
+  options?: CinderlinkHeliaOptions;
   role: PeerRole;
   logger?: LoggerInterface;
 }
@@ -32,8 +31,7 @@ export async function createClient<
   logger,
 }: CreateClientOptions) {
   const ipfs = await createHeliaNode(nodes, options);
-  const client: CinderlinkClientInterface<PluginEvents> =
-    new CinderlinkClient<PluginEvents>({
+  const client = new CinderlinkClient<PluginEvents>({
       ipfs,
       did,
       address,
@@ -50,5 +48,5 @@ export async function createClient<
     }
   });
 
-  return client;
+  return client as unknown as CinderlinkClientInterface<PluginEvents>;
 }

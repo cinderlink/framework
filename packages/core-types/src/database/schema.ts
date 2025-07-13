@@ -42,9 +42,7 @@ export interface SchemaInterface extends Emittery<SchemaEvents> {
     name: string
   ): TableInterface<Row, Def>;
 
-  setDefs<Def extends TableDefinition = TableDefinition>(
-    defs: Record<string, Def>
-  ): void;
+  setDefs(defs: Record<string, TableDefinition<TableRow>>): void;
 
   serialize(): Promise<SavedSchema | undefined>;
   export(): Promise<JWE | SavedSchema | undefined>;

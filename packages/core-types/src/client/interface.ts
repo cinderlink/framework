@@ -22,6 +22,7 @@ import { EncodingOptions, ProtocolEvents } from "../protocol";
 import { CinderlinkClientEvents } from "./types";
 import { FilesInterface } from "../files/interface";
 import { LoggerInterface } from "../logger";
+import { SchemaRegistryInterface } from "@cinderlink/schema-registry";
 
 export interface CinderlinkClientInterface<
   PluginEvents extends PluginEventDef = {
@@ -32,7 +33,7 @@ export interface CinderlinkClientInterface<
     emit: {};
   }
 > extends Emittery<CinderlinkClientEvents["emit"] & ProtocolEvents["emit"]> {
-  plugins: Record<PluginInterface["id"], PluginInterface>;
+  plugins: Record<string, PluginInterface>;
   running: boolean;
   hasServerConnection: boolean;
   peers: PeerStoreInterface;
@@ -52,6 +53,7 @@ export interface CinderlinkClientInterface<
   peerId?: PeerId;
   dag: DIDDagInterface;
   schemas: Record<string, SchemaInterface>;
+  schemaRegistry?: SchemaRegistryInterface;
   identity: IdentityInterface;
   initialConnectTimeout: number;
   keepAliveTimeout: number;
@@ -85,13 +87,12 @@ export interface CinderlinkClientInterface<
   request<
     Events extends PluginEventDef = PluginEvents,
     OutTopic extends keyof Events["send"] = keyof Events["send"],
-    InTopic extends keyof Events["receive"] = keyof Events["receive"],
-    Encoding extends EncodingOptions = EncodingOptions
+    InTopic extends keyof Events["receive"] = keyof Events["receive"]
   >(
     peerId: string,
     message: OutgoingP2PMessage<Events, OutTopic>,
-    options?: Encoding
-  ): Promise<IncomingP2PMessage<Events, InTopic, Encoding> | undefined>;
+    options?: EncodingOptions
+  ): Promise<IncomingP2PMessage<Events, InTopic> | undefined>;
 
   subscribe(topic: keyof PluginEvents["subscribe"]): Promise<void>;
 

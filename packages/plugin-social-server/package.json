@@ -23,23 +23,23 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@cinderlink/core-types": "workspace:../core-types",
-    "@cinderlink/identifiers": "workspace:../identifiers",
-    "@cinderlink/plugin-social-client": "workspace:../plugin-social-client",
-    "@cinderlink/plugin-social-core": "workspace:../plugin-social-core",
-    "@cinderlink/plugin-sync-db": "workspace:../plugin-sync-db",
-    "@cinderlink/tsconfig": "workspace:../tsconfig",
-    "did-jwt": "^7.1.0",
+    "@cinderlink/core-types": "workspace:*",
+    "@cinderlink/identifiers": "workspace:*",
+    "@cinderlink/plugin-social-client": "workspace:*",
+    "@cinderlink/plugin-social-core": "workspace:*",
+    "@cinderlink/plugin-sync-db": "workspace:*",
+    "@cinderlink/tsconfig": "workspace:*",
+    "did-jwt": "^8.0.17",
     "dids": "^5.0.3",
     "tsup": "^6.7.0",
-    "typescript": "^5.0.4",
+    "typescript": "^5.8.3",
     "vitest": "^0.30.1"
   },
   "peerDependencies": {
-    "@cinderlink/identifiers": "workspace:../identifiers",
-    "@cinderlink/plugin-social-client": "workspace:../plugin-social-client",
-    "@cinderlink/plugin-social-core": "workspace:../plugin-social-core",
-    "@cinderlink/plugin-sync-db": "workspace:../plugin-sync-db",
+    "@cinderlink/identifiers": "workspace:*",
+    "@cinderlink/plugin-social-client": "workspace:*",
+    "@cinderlink/plugin-social-core": "workspace:*",
+    "@cinderlink/plugin-sync-db": "workspace:*",
     "did-jwt": "^7.1.0",
     "dids": "^5.0.3"
   }

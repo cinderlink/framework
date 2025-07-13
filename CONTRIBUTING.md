@@ -29,8 +29,8 @@ This project and everyone participating in it is governed by our [Code of Conduc
    ```
 3. **Set up the development environment**
    ```bash
-   pnpm install
-   pnpm build
+   bun install
+   bun run build
    ```
 4. **Create a branch** for your changes
    ```bash
@@ -50,7 +50,7 @@ This project and everyone participating in it is governed by our [Code of Conduc
 
 3. **Run tests** to ensure nothing is broken
    ```bash
-   pnpm test
+   bun test
    ```
 
 4. **Commit your changes** with a descriptive commit message
@@ -76,12 +76,12 @@ We use the following tools to maintain code quality:
 
 To format your code:
 ```bash
-pnpm format
+bun run format
 ```
 
 To check for linting errors:
 ```bash
-pnpm lint
+bun run lint
 ```
 
 ## Testing
@@ -103,7 +103,7 @@ cd packages/package-name
 pnpm test
 
 # Run tests in watch mode
-pnpm test:watch
+bun run test:watch
 ```
 
 ## Submitting a Pull Request
@@ -129,7 +129,7 @@ When reporting issues, please include:
 2. Steps to reproduce the issue
 3. Expected vs. actual behavior
 4. Any relevant error messages or logs
-5. Version information (Node.js, npm/yarn, OS, etc.)
+5. Version information (Node.js, Bun, OS, etc.)
 
 ## Feature Requests
 

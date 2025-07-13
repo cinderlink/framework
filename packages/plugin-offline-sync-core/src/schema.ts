@@ -44,7 +44,6 @@ export async function loadOfflineSyncSchema(
     Object.entries(offlineSyncSchemas).forEach(([tableName, { schema, version }]) => {
       client.schemaRegistry!.registerSchema(`offlineSync.${tableName}`, version, {
         schema,
-        migrate: async (data: unknown) => data, // No migration needed for v1
       });
     });
   }
@@ -55,6 +54,7 @@ export async function loadOfflineSyncSchema(
       OfflineSyncSchemaDef,
       client.dag,
       client.logger.module("db").submodule(`schema:offlineSync`),
+      true, // encrypted
       client.schemaRegistry
     );
     await client.addSchema("offlineSync", schema);

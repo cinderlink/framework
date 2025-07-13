@@ -1,24 +1,9 @@
 import { SyncDBPlugin } from "@cinderlink/plugin-sync-db";
-import {
-  ProtocolEvents,
-  ReceiveEventHandlers,
-  SchemaInterface,
-  SubLoggerInterface,
-  SubscribeEventHandlers,
-} from "@cinderlink/core-types";
-import type {
-  PluginInterface,
-  CinderlinkClientInterface,
-  TableRow,
-  TableDefinition,
-} from "@cinderlink/core-types";
+import { ProtocolEvents, ReceiveEventHandlers, SchemaInterface, SubLoggerInterface, SubscribeEventHandlers, PluginInterface, CinderlinkClientInterface, TableRow, TableDefinition } from "@cinderlink/core-types";
+
 import Emittery from "emittery";
-import {
-  SocialClientPluginEvents,
-  SocialClientEvents,
-  SocialSyncConfig,
-} from "@cinderlink/plugin-social-core";
-import { loadSocialSchema } from "@cinderlink/plugin-social-core";
+import { SocialClientPluginEvents, SocialClientEvents, SocialSyncConfig, loadSocialSchema } from "@cinderlink/plugin-social-core";
+
 import { SocialChat } from "./features/chat";
 import { SocialConnections } from "./features/connections";
 import { SocialPosts } from "./features/posts";
@@ -99,7 +84,7 @@ export class SocialClientPlugin<
     ]);
 
     this.logger.info(`registering sync config`);
-    const syncDb: SyncDBPlugin = this.client.getPlugin("sync");
+    const syncDb = this.client.getPlugin("sync") as unknown as SyncDBPlugin;
     if (syncDb) {
       Object.entries(SocialSyncConfig).map(([table, config]) => {
         syncDb.addTableSync("social", table, config);

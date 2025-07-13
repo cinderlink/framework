@@ -24,9 +24,32 @@ candor
 /candor
 /docker/data
 vite.config.js.timestamp.*
+# Package managers
 .pnpm/
 pnpm-lock.yaml
 pnpm-debug.log
+bun.lockb
+yarn.lock
+package-lock.json
 **/broadcast/**
 wip/
 packages/plugin-offline-sync-client/dist
+
+# Build artifacts
+**/.tshy-build/
+**/tsconfig.tsbuildinfo
+**/*.tsbuildinfo
+
+# Temporary planning documents
+TRACKING.md
+WORKFLOW.md
+ARCHITECTURE_AND_AUDIT.md
+audit/
+planning-cli.md
+TYPE_FIX_PLAN.md
+GENERIC_TYPE_SYSTEM_GUIDE.md
+
+# Test artifacts
+test-blockstore/
+coverage/
+.nyc_output/

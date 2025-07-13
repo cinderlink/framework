@@ -10,17 +10,22 @@ import type { PeerId } from "@libp2p/interface";
 
 describe("CinderlinkProtocolPlugin", () => {
   let plugin: CinderlinkProtocolPlugin;
-  let mockClient: any;
-  let mockLogger: any;
+  let mockClient: CinderlinkClientInterface<ProtocolEvents>;
+  let mockLogger: ReturnType<typeof vi.fn> & {
+    info: ReturnType<typeof vi.fn>;
+    error: ReturnType<typeof vi.fn>;
+    warn: ReturnType<typeof vi.fn>;
+    debug: ReturnType<typeof vi.fn>;
+    module: ReturnType<typeof vi.fn>;
+  };
 
-  beforeEach(async () => {
-    mockLogger = {
-      info: vi.fn(),
-      error: vi.fn(),
-      warn: vi.fn(),
-      debug: vi.fn(),
-      module: vi.fn(() => mockLogger)
-    };
+  beforeEach(() => {
+    mockLogger = vi.fn() as any;
+    mockLogger.info = vi.fn();
+    mockLogger.error = vi.fn();
+    mockLogger.warn = vi.fn();
+    mockLogger.debug = vi.fn();
+    mockLogger.module = vi.fn(() => mockLogger);
 
     // Create mock libp2p
     const mockLibp2p = {
@@ -94,7 +99,7 @@ describe("CinderlinkProtocolPlugin", () => {
     expect(plugin.started).toBe(false);
   });
 
-  it("should handle keepalive messages", async () => {
+  it("should handle keepalive messages", () => {
     const keepAliveMessage: IncomingP2PMessage<
       ProtocolEvents,
       "/cinderlink/keepalive",

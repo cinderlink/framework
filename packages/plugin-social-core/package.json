@@ -23,18 +23,18 @@
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
-    "@cinderlink/ipld-database": "workspace:../ipld-database",
+    "@cinderlink/ipld-database": "workspace:*",
     "emittery": "^1.0.1"
   },
   "devDependencies": {
-    "@cinderlink/core-types": "workspace:../core-types",
-    "@cinderlink/ipld-database": "workspace:../ipld-database",
-    "@cinderlink/schema-registry": "workspace:../schema-registry",
-    "@cinderlink/tsconfig": "workspace:../tsconfig",
+    "@cinderlink/core-types": "workspace:*",
+    "@cinderlink/ipld-database": "workspace:*",
+    "@cinderlink/schema-registry": "workspace:*",
+    "@cinderlink/tsconfig": "workspace:*",
     "@types/node": "^18.16.6",
     "emittery": "^1.0.1",
     "tsup": "^6.7.0",
-    "typescript": "^5.0.4",
+    "typescript": "^5.8.3",
     "vitest": "^0.30.1"
   }
 }

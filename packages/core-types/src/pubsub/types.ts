@@ -3,8 +3,8 @@ import { PluginEventDef, PluginEventHandlers } from "../plugin/types";
 import {
   DecodedProtocolMessage,
   EncodedProtocolPayload,
-  EncodingOptions,
   ProtocolMessage,
+  EncodingOptions,
 } from "../protocol";
 import { Peer } from "../p2p";
 import { PeerId } from "@libp2p/interface";
@@ -12,11 +12,9 @@ import { PeerId } from "@libp2p/interface";
 export type LibP2PPubsubMessage<
   Events extends PluginEventDef = PluginEventDef,
   Topic extends keyof Events["subscribe"] = keyof Events["subscribe"],
-  Encoding extends EncodingOptions = EncodingOptions,
   Data extends EncodedProtocolPayload<
-    Events["subscribe"][Topic],
-    Encoding
-  > = EncodedProtocolPayload<Events["subscribe"][Topic], Encoding>,
+    Events["subscribe"][Topic]
+  > = EncodedProtocolPayload<Events["subscribe"][Topic]>,
   FromType = PeerId
 > = {
   type: "signed" | "unsigned";
@@ -29,11 +27,13 @@ export type LibP2PPubsubMessage<
 };
 
 export type SubscribeEvents<
-  PluginEvents extends PluginEventDef = PluginEventDef
+  PluginEvents extends PluginEventDef = PluginEventDef,
+  Encoding extends EncodingOptions = EncodingOptions
 > = {
   [K in keyof PluginEvents["subscribe"]]: IncomingPubsubMessage<
     PluginEvents,
-    K
+    K,
+    Encoding
   >;
 };
 

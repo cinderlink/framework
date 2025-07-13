@@ -9,7 +9,7 @@ This package provides test doubles and utilities for testing Cinderlink applicat
 ## Installation
 
 ```bash
-pnpm add --save-dev @cinderlink/test-adapters
+bun add --dev @cinderlink/test-adapters
 ```
 
 ## Test Doubles

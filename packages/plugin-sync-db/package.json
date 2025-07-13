@@ -25,12 +25,12 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@cinderlink/core-types": "workspace:../core-types",
-    "@cinderlink/identifiers": "workspace:../identifiers",
-    "@cinderlink/ipld-database": "workspace:../ipld-database",
-    "@cinderlink/schema-registry": "workspace:../schema-registry",
-    "@cinderlink/test-adapters": "workspace:../test-adapters",
-    "@cinderlink/tsconfig": "workspace:../tsconfig",
+    "@cinderlink/core-types": "workspace:*",
+    "@cinderlink/identifiers": "workspace:*",
+    "@cinderlink/ipld-database": "workspace:*",
+    "@cinderlink/schema-registry": "workspace:*",
+    "@cinderlink/test-adapters": "workspace:*",
+    "@cinderlink/tsconfig": "workspace:*",
     "@ipld/car": "^5.1.1",
     "@types/node": "^18.16.6",
     "@types/uuid": "^9.0.1",
@@ -39,15 +39,15 @@
     "it-all": "^3.0.1",
     "multiformats": "^13.3.4",
     "tsup": "^6.7.0",
-    "typescript": "^5.0.4",
+    "typescript": "^5.8.3",
     "uuid": "^9.0.0",
     "viem": "^2.21.58",
     "vitest": "^0.30.1"
   },
   "peerDependencies": {
-    "@cinderlink/identifiers": "workspace:../identifiers",
-    "@cinderlink/ipld-database": "workspace:../ipld-database",
-    "@cinderlink/test-adapters": "workspace:../test-adapters",
+    "@cinderlink/identifiers": "workspace:*",
+    "@cinderlink/ipld-database": "workspace:*",
+    "@cinderlink/test-adapters": "workspace:*",
     "emittery": "^1.0.1",
     "multiformats": "^11.0.2"
   }

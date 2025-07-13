@@ -16,42 +16,42 @@ Cinderlink is a modular, peer-to-peer framework for building decentralized appli
 
 ### Development
 ```bash
-# Install dependencies (use pnpm, not npm/yarn)
-pnpm install
+# Install dependencies (use bun, migrated from pnpm)
+bun install
 
 # Build all packages
-pnpm build
+bun run build
 
 # Watch mode - rebuilds on changes
-pnpm watch
+bun run watch
 
 # Run tests
-pnpm test
+bun test
 
 # Development mode
-pnpm dev
+bun run dev
 ```
 
 ### Working with specific packages
 ```bash
 # Build specific package
-turbo build --filter=@cinderlink/client
+bun run build --filter=@cinderlink/client
 
 # Test specific package
-pnpm --filter=@cinderlink/ipld-database test
+bun --filter=@cinderlink/ipld-database test
 
 # Watch specific package
-turbo watch --filter=@cinderlink/server
+bun run watch --filter=@cinderlink/server
 ```
 
 ### Running the server
 ```bash
 # Example server
 cd examples/server-example
-pnpm example
+bun run example
 
 # Or using the server binary (after building)
-pnpm cinderlink
+bun cinderlink
 ```
 
 ## Architecture
@@ -98,8 +98,8 @@ The project is actively modernizing its IPFS/Helia integration. Check `TRACKING.
 
 ### Workflow
 1. Feature branches follow pattern: `feat/groupX-task-description`
-2. Always run tests before commits: `pnpm test`
-3. Build before testing: `pnpm build`
+2. Always run tests before commits: `bun test`
+3. Build before testing: `bun run build`
 4. Refer to `WORKFLOW.md` for detailed development practices
 
 ### Package Dependencies
@@ -130,6 +130,39 @@ Packages have interdependencies managed by Turbo. Common dependency order:
 
 - ESLint configured with strict TypeScript rules
 - Pre-commit hooks enforce linting and type checking
-- Run `pnpm lint` to check code style
-- Run `pnpm lint:fix` to auto-fix issues
-- Run `pnpm typecheck` to verify TypeScript types
+- Run `bun run lint` to check code style
+- Run `bun run lint:fix` to auto-fix issues
+- Run `bun run typecheck` to verify TypeScript types
+
+## Development Standards
+
+### File Management - "One Right Version" Approach
+
+**NEVER create versioned or duplicate files.** We maintain a strict "one right version" policy:
+
+- ❌ **Never create**: `file-v2.ts`, `file-new.ts`, `file-backup.ts`, `file-legacy.ts`
+- ❌ **Never create**: alternative implementations alongside existing ones
+- ✅ **Always do**: Replace the existing implementation entirely with the improved version
+- ✅ **Always do**: Delete old/temporary implementations after replacement
+
+**Rationale**: Multiple versions create confusion, maintenance burden, and inconsistent usage patterns. The codebase should have exactly one canonical implementation for each concept.
+
+**Examples**:
+- When improving `ZodPluginBase`, replace the existing file entirely rather than creating `ZodPluginBase-v2`
+- When refactoring a component, edit the original file rather than creating a new one
+- Delete any backup or alternative versions after completing improvements
+
+### Type Safety Standards
+
+- **Zero tolerance for `any` types** - Always create specific, thoughtful type definitions
+- **Zero tolerance for manual type casting** - Use proper type inference and validation
+- **Complete type safety** - Every function parameter and return value must be properly typed
+- Handler methods should automatically infer types from schema definitions without manual annotations
+
+### Plugin Architecture Standards
+
+- All plugins must extend `ZodPluginBase` with proper schema definitions
+- Use `getEventHandlers()` method to define type-safe event handlers
+- All event payloads must be validated against Zod schemas
+- No manual type casting - rely on schema-based type inference
+- Handler signatures must use `TypedIncomingMessage<EventPayloadType<...>>` for full type safety

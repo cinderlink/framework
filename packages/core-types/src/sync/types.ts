@@ -23,11 +23,16 @@ export interface SyncRowsRow extends TableRow {
   lastFetchedAt: number;
 }
 
-export interface SyncConfig<Row extends TableRow> {
+export interface SyncQueryParams {
+  did: string;
+  since: number;
+}
+
+export interface SyncConfig<Row extends TableRow = TableRow> {
   syncOnChange?: boolean;
   query: (
     table: TableInterface<Row>,
-    params: Record<string, any>,
+    params: SyncQueryParams,
     client: CinderlinkClientInterface<any>
   ) => QueryBuilderInterface<Row>;
   fetchInterval?: number;
@@ -137,6 +142,6 @@ export interface SyncPluginEvents extends PluginEventDef {
   emit: {};
 }
 
-export interface SyncPluginOptions {
-  syncing: Record<string, SyncConfig<any>>;
+export interface SyncPluginOptions<TRow extends TableRow = TableRow> {
+  syncing: Record<string, SyncConfig<TRow>>;
 }

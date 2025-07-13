@@ -1168,3 +1168,164 @@ Table {
   "writing": false,
 }
 `;
+
+exports[`@cinderlink/ipld-database/schema should create tables 1`] = `
+TableBlock {
+  "cache": {
+    "headers": {
+      "encrypted": false,
+      "index": 0,
+      "recordsFrom": 0,
+      "recordsTo": 0,
+      "schema": "test",
+      "table": "test",
+    },
+    "prevCID": undefined,
+  },
+  "changed": false,
+  "cid": undefined,
+  "index": MiniSearch {
+    "_avgFieldLength": [],
+    "_currentVacuum": null,
+    "_dirtCount": 0,
+    "_documentCount": 0,
+    "_documentIds": Map {},
+    "_enqueuedVacuum": null,
+    "_enqueuedVacuumConditions": {
+      "minDirtCount": 20,
+      "minDirtFactor": 0.1,
+    },
+    "_fieldIds": {
+      "id": 1,
+      "name": 0,
+    },
+    "_fieldLength": Map {},
+    "_idToShortId": Map {},
+    "_index": SearchableMap {
+      "_prefix": "",
+      "_size": undefined,
+      "_tree": Map {},
+    },
+    "_nextId": 0,
+    "_options": {
+      "autoSuggestOptions": {
+        "combineWith": "and",
+        "prefix": [Function],
+      },
+      "autoVacuum": {
+        "batchSize": 1000,
+        "batchWait": 10,
+        "minDirtCount": 20,
+        "minDirtFactor": 0.1,
+      },
+      "extractField": [Function],
+      "fields": [
+        "name",
+        "id",
+      ],
+      "idField": "id",
+      "logger": [Function],
+      "processTerm": [Function],
+      "searchOptions": {
+        "bm25": {
+          "b": 0.7,
+          "d": 0.5,
+          "k": 1.2,
+        },
+        "boost": {},
+        "combineWith": "or",
+        "fuzzy": false,
+        "maxFuzzy": 6,
+        "prefix": false,
+        "weights": {
+          "fuzzy": 0.45,
+          "prefix": 0.375,
+        },
+      },
+      "storeFields": [],
+      "tokenize": [Function],
+    },
+    "_storedFields": Map {},
+  },
+  "logger": TestSubLogger {
+    "logger": TestLogger {
+      "modules": [],
+      "prefix": undefined,
+    },
+    "module": "db",
+    "prefix": "schema:test/table:test",
+  },
+  "table": Table {
+    "currentBlock": [Circular],
+    "currentBlockIndex": 0,
+    "currentIndex": 0,
+    "dag": TestDIDDag {
+      "dag": TestDag {
+        "cache": {},
+      },
+      "did": DID {
+        "_capability": undefined,
+        "_client": RPCClient {},
+        "_id": "did:key:z6MkofP3UGcgQT1iXWFmxczLNCddG5MrWbsrKRNGcJSVyebo",
+        "_parentId": undefined,
+        "_resolver": Resolver {
+          "cache": [Function: noCache],
+          "registry": {
+            "key": [Function: AsyncFunction],
+          },
+        },
+      },
+    },
+    "debug": {
+      "enabled": false,
+      "logger": [Function],
+    },
+    "def": {
+      "aggregate": {
+        "count": "max",
+      },
+      "encrypted": false,
+      "indexes": {
+        "name": {
+          "fields": [
+            "name",
+          ],
+          "unique": true,
+        },
+      },
+      "rollup": 10,
+      "schema": {
+        "properties": {
+          "count": {
+            "type": "number",
+          },
+          "name": {
+            "type": "string",
+          },
+        },
+        "type": "object",
+      },
+      "schemaId": "test",
+      "searchOptions": {
+        "fields": [
+          "name",
+          "id",
+        ],
+      },
+    },
+    "encrypted": false,
+    "logger": TestSubLogger {
+      "logger": TestLogger {
+        "modules": [],
+        "prefix": undefined,
+      },
+      "module": "db",
+      "prefix": "schema:test/table:test",
+    },
+    "schemaRegistry": undefined,
+    "tableId": "test",
+    "writeStartAt": 0,
+    "writing": false,
+  },
+}
+`;

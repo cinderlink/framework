@@ -1,26 +1,13 @@
 import { JWE } from "did-jwt";
 import Emittery from "emittery";
-import type {
-  BlockData,
-  DIDDagInterface,
-  SubLoggerInterface,
-  TableRow,
-} from "@cinderlink/core-types";
+import { BlockData, DIDDagInterface, SubLoggerInterface, TableRow, SavedSchema, SchemaEvents, SchemaInterface, TableDefinition, TableInterface } from "@cinderlink/core-types";
 import { CID } from "multiformats";
-import type {
-  SavedSchema,
-  SchemaEvents,
-  SchemaInterface,
-} from "@cinderlink/core-types";
-import type {
-  TableDefinition,
-  TableInterface,
-} from "@cinderlink/core-types";
+
 import type { SchemaRegistryInterface } from "@cinderlink/schema-registry";
 import { Table } from "./table.js";
 
 export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
-  public tables: Record<string, TableInterface<TableRow, TableDefinition<TableRow>>> = {};
+  public tables: Record<string, TableInterface<TableRow>> = {};
   constructor(
     public schemaId: string,
     public defs: Record<string, TableDefinition<TableRow>>,
@@ -43,7 +30,7 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
     });
   }
 
-  setDefs(defs: Record<string, TableDefinition>) {
+  setDefs(defs: Record<string, TableDefinition<TableRow>>) {
     this.defs = defs;
     Object.entries(defs).forEach(([tableId, def]) => {
       if (!this.tables[tableId]) {
@@ -61,7 +48,7 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
     });
   }
 
-  async createTable(tableId: string, def: TableDefinition<TableRow>) {
+  createTable(tableId: string, def: TableDefinition<TableRow>) {
     if (this.tables[tableId]) {
       throw new Error(`table already exists: ${tableId}`);
     }
@@ -73,7 +60,7 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
     );
   }
 
-  async dropTable(name: string) {
+  dropTable(name: string) {
     delete this.tables[name];
   }
 
@@ -93,11 +80,11 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
     return table as unknown as TableInterface<Row, Def>;
   }
 
-  async serialize() {
+  serialize() {
     const tables: Record<string, BlockData<TableRow> | undefined> = {};
     try {
       await Promise.all(
-        Object.entries(this.tables).map(async ([name]) => {
+        Object.entries(this.tables).map(([name]) => {
           this.logger.debug(`serializing table ${name}`);
           const table = await this.tables[name].serialize();
           if (table) {
@@ -107,7 +94,7 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
       ).catch((error) => {
         this.logger.error(`table serialize error`, { error });
       });
-    } catch (error) {
+    } catch (_error) {
       this.logger.error(`schema serialize error`, { error });
     }
     if (!Object.keys(tables).length) return undefined;
@@ -152,7 +139,7 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
     return Schema.fromSavedSchema(data, dag, logger, true, schemaRegistry);
   }
 
-  static async fromSavedSchema(
+  static fromSavedSchema(
     data: SavedSchema,
     dag: DIDDagInterface,
     logger: SubLoggerInterface,
@@ -165,7 +152,7 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
     const schema = new Schema(data.schemaId, data.defs, dag, logger, encrypted, schemaRegistry);
     logger.debug(`hydrating schema "${data.schemaId}"`);
     await Promise.all(
-      Object.entries(data.tables).map(async ([name, tableData]) => {
+      Object.entries(data.tables).map(([name, tableData]) => {
         logger.debug(`hydrating table "${name}"`);
         if (tableData) {
           await schema.tables[name]?.deserialize(tableData);

@@ -1,5 +1,4 @@
 import {
-  EncodingOptions,
   PluginEventDef,
   PluginInterface,
   OutgoingP2PMessage,
@@ -10,16 +9,14 @@ import { OfflineSyncClientEvents } from "./types";
 export interface OfflineSyncClientPluginInterface extends PluginInterface {
   sendMessage<
     Events extends PluginEventDef = PluginEventDef,
-    OutTopic extends keyof Events["send"] = keyof Events["send"],
-    Encoding extends EncodingOptions = EncodingOptions
+    OutTopic extends keyof Events["send"] = keyof Events["send"]
   >(
     recipient: string,
     outgoing: OutgoingP2PMessage<Events, OutTopic>
   ): Promise<
     IncomingP2PMessage<
       OfflineSyncClientEvents,
-      "/offline/send/response",
-      Encoding
+      "/offline/send/response"
     >
   >;
 }
