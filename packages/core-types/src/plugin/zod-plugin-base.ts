@@ -180,7 +180,7 @@ export abstract class ZodPluginBase<
     event: TEvent,
     handler: SchemaBasedEventHandler<TSchemas, TCategory, TEvent>
   ): PluginEventHandler {
-    return (rawMessage: any) => {
+    return async (rawMessage: any) => {
       try {
         const validatedPayload = this.validateEventPayload(category, event, rawMessage.payload);
         const typedMessage: TypedIncomingMessage<z.infer<TSchemas[TCategory][TEvent]>> = {

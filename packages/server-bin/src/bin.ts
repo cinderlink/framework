@@ -243,7 +243,7 @@ if (command !== "start") {
   const addrs = server.client.ipfs.libp2p.getMultiaddrs();
   console.info(`listening: ${addrs.map((addr) => addr.toString()).join(", ")}`);
 
-  process.on("SIGINT", () => {
+  process.on("SIGINT", async () => {
     console.log(`stopping ${chalk.cyan("cinderlink")}...`);
     await server.stop();
     process.exit(0);

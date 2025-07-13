@@ -112,7 +112,7 @@ describe('SchemaRegistry', () => {
         }));
     });
 
-    it('should migrate data through versions', () => {
+    it('should migrate data through versions', async () => {
       const v1Data = { id: 1, name: 'John' };
       
       const v3Data = await registry.migrate('users', v1Data, 1, 3);
@@ -125,7 +125,7 @@ describe('SchemaRegistry', () => {
       });
     });
 
-    it('should migrate to latest version by default', () => {
+    it('should migrate to latest version by default', async () => {
       const v1Data = { id: 1, name: 'Jane' };
       
       const latestData = await registry.migrate('users', v1Data, 1);
@@ -138,7 +138,7 @@ describe('SchemaRegistry', () => {
       });
     });
 
-    it('should throw on missing migration', () => {
+    it('should throw on missing migration', async () => {
       const v1Data = { id: 1, name: 'John' };
       
       // Remove v2->v3 migration to create a gap

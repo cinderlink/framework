@@ -187,7 +187,7 @@ export class TestClient<PluginEvents extends PluginEventDef>
     return !!this.plugins[id];
   }
 
-  start() {
+  async start() {
     console.info(
       `plugins > ${
         Object.keys(this.plugins).length
@@ -195,7 +195,7 @@ export class TestClient<PluginEvents extends PluginEventDef>
     );
     console.info(`plugins > initializing message handlers`);
     await Promise.all(
-      Object.values(this.plugins).map((plugin: PluginInterface<any>) => {
+      Object.values(this.plugins).map(async (plugin: PluginInterface<any>) => {
         console.info(`/plugin/${plugin.id} > starting...`, plugin);
         await plugin.start?.();
         console.info(`/plugin/${plugin.id} > registering event handlers...`);
