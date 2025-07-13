@@ -122,7 +122,7 @@ export class SocialServerPlugin<
       .then((result) => result.first() as SocialUser | undefined);
   }
 
-  onAnnounce(
+  async onAnnounce(
     message: IncomingPubsubMessage<
       SocialServerEvents,
       "/social/users/announce",
@@ -149,7 +149,7 @@ export class SocialServerPlugin<
     });
   }
 
-  onPeerAnnounce(
+  async onPeerAnnounce(
     message: IncomingP2PMessage<
       SocialClientEvents,
       "/social/users/announce",
@@ -234,7 +234,7 @@ export class SocialServerPlugin<
     });
   }
 
-  onUserSearchRequest(
+  async onUserSearchRequest(
     message: IncomingP2PMessage<
       SocialServerEvents,
       "/social/users/search/request",
@@ -269,7 +269,7 @@ export class SocialServerPlugin<
     });
   }
 
-  onUserGetRequest(
+  async onUserGetRequest(
     message: IncomingP2PMessage<
       SocialServerEvents,
       "/social/users/get/request",
