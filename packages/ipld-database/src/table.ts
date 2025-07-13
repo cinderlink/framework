@@ -106,7 +106,7 @@ export class Table<
       }, {} as Record<string, unknown>);
   }
 
-  computeUid(data: Omit<Omit<Row, "id">, "uid">): Promise<string> {
+  async computeUid(data: Omit<Omit<Row, "id">, "uid">): Promise<string> {
     const sorted = Table.sortObject(data) as Omit<Omit<Row, "id">, "uid">;
     const uniqueFields: (keyof Row)[] | undefined = Object.values(
       this.def.indexes
@@ -223,7 +223,7 @@ export class Table<
 
   async search(query: string, limit = 10): Promise<Row[]> {
     let results: Row[] = [];
-    await this.unwind((event) => {
+    await this.unwind(async (event) => {
       if (!event.block.index) {
         event.block.buildSearchIndex();
       }
