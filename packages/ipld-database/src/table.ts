@@ -319,7 +319,7 @@ export class Table<
       this.logger.error(`invalid data`, { data, error: result.error });
       throw new Error(
         `Invalid data: ${result.error.issues.map(
-          (e) => `(${e.path.join('.')}: ${e.message})`
+          (e: any) => `(${e.path.join('.')}: ${e.message})`
         ).join(', ')}`
       );
     }

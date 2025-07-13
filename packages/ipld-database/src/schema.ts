@@ -48,7 +48,7 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
     });
   }
 
-  createTable(tableId: string, def: TableDefinition<TableRow>) {
+  async createTable(tableId: string, def: TableDefinition<TableRow>): Promise<void> {
     if (this.tables[tableId]) {
       throw new Error(`table already exists: ${tableId}`);
     }
@@ -60,7 +60,7 @@ export class Schema extends Emittery<SchemaEvents> implements SchemaInterface {
     );
   }
 
-  dropTable(name: string) {
+  async dropTable(name: string): Promise<void> {
     delete this.tables[name];
   }
 

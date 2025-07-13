@@ -107,7 +107,8 @@ describe("@cinderlink/ipld-database/table", () => {
       client.logger
         .module(`db`)
         .submodule(`schema:test`)
-        .submodule(`table:test`)
+        .submodule(`table:test`),
+      client.schemaRegistry
     );
     expect(table.currentBlock).not.toBeUndefined();
   });
@@ -120,7 +121,8 @@ describe("@cinderlink/ipld-database/table", () => {
       client.logger
         .module(`db`)
         .submodule(`schema:test`)
-        .submodule(`table:test`)
+        .submodule(`table:test`),
+      client.schemaRegistry
     );
     expect(() => table.assertValid({ name: "foo", count: 1 })).not.toThrow();
     // @ts-ignore
@@ -137,7 +139,8 @@ describe("@cinderlink/ipld-database/table", () => {
       client.logger
         .module(`db`)
         .submodule(`schema:test`)
-        .submodule(`table:test`)
+        .submodule(`table:test`),
+      client.schemaRegistry
     );
     const uid = await table.insert({ name: "foo", count: 1 });
     expect(Object.values(table.currentBlock.cache?.records || {}).length).toBe(
@@ -181,7 +184,8 @@ describe("@cinderlink/ipld-database/table", () => {
       client.logger
         .module(`db`)
         .submodule(`schema:test`)
-        .submodule(`table:test`)
+        .submodule(`table:test`),
+      client.schemaRegistry
     );
     const res1 = await table.query().select().execute();
     expect(res1).toMatchInlineSnapshot(`
@@ -307,7 +311,8 @@ describe("@cinderlink/ipld-database/table", () => {
       client.logger
         .module(`db`)
         .submodule(`schema:test`)
-        .submodule(`table:test`)
+        .submodule(`table:test`),
+      client.schemaRegistry
     );
     await table.insert({ name: "foo", count: 1 });
     expect(table.currentBlock.cache?.filters?.indexes).toMatchSnapshot();
@@ -321,7 +326,8 @@ describe("@cinderlink/ipld-database/table", () => {
       client.logger
         .module(`db`)
         .submodule(`schema:test`)
-        .submodule(`table:test`)
+        .submodule(`table:test`),
+      client.schemaRegistry
     );
     await table.insert({ name: "foo", count: 1 });
     await table.insert({ name: "bar", count: 1 });
@@ -347,7 +353,8 @@ describe("@cinderlink/ipld-database/table", () => {
       client.logger
         .module(`db`)
         .submodule(`schema:test`)
-        .submodule(`table:test`)
+        .submodule(`table:test`),
+      client.schemaRegistry
     );
     for (let i = 0; i < 11; i++) {
       await table.insert({ name: `test #${i}`, count: i });
@@ -364,7 +371,8 @@ describe("@cinderlink/ipld-database/table", () => {
       client.logger
         .module(`db`)
         .submodule(`schema:test`)
-        .submodule(`table:test`)
+        .submodule(`table:test`),
+      client.schemaRegistry
     );
     for (let i = 0; i < 11; i++) {
       await table.insert({ name: `test #${i}`, count: i });
@@ -387,7 +395,8 @@ describe("@cinderlink/ipld-database/table", () => {
       client.logger
         .module(`db`)
         .submodule(`schema:test`)
-        .submodule(`table:test`)
+        .submodule(`table:test`),
+      client.schemaRegistry
     );
     for (let i = 0; i < 11; i++) {
       await table.insert({ name: `test #${i}`, count: i });
@@ -406,7 +415,8 @@ describe("@cinderlink/ipld-database/table", () => {
       client.logger
         .module(`db`)
         .submodule(`schema:test`)
-        .submodule(`table:test`)
+        .submodule(`table:test`),
+      client.schemaRegistry
     );
     for (let i = 0; i < 11; i++) {
       await table.insert({ name: `test #${i}`, count: i });
@@ -429,7 +439,8 @@ describe("@cinderlink/ipld-database/table", () => {
       client.logger
         .module(`db`)
         .submodule(`schema:test`)
-        .submodule(`table:test`)
+        .submodule(`table:test`),
+      client.schemaRegistry
     );
     for (let i = 0; i < 11; i++) {
       await table.insert({ name: `test #${i}`, count: i });
@@ -455,7 +466,8 @@ describe("@cinderlink/ipld-database/table", () => {
       client.logger
         .module(`db`)
         .submodule(`schema:test`)
-        .submodule(`table:test`)
+        .submodule(`table:test`),
+      client.schemaRegistry
     );
     const uids: string[] = [];
     for (let i = 1; i < 11; i++) {
@@ -551,7 +563,8 @@ describe("@cinderlink/ipld-database/table", () => {
         client.logger
           .module(`db`)
           .submodule(`schema:users`)
-          .submodule(`table:users`)
+          .submodule(`table:users`),
+        client.schemaRegistry
       );
       const returned = await users.upsert({ did: "foo:bar" }, { name: "bar" });
       expect(returned).toMatchObject({
@@ -587,7 +600,8 @@ describe("@cinderlink/ipld-database/table", () => {
         client.logger
           .module(`db`)
           .submodule(`schema:users`)
-          .submodule(`table:users`)
+          .submodule(`table:users`),
+        client.schemaRegistry
       );
       const inserted = await users.insert({
         did: "foo:bar",
@@ -633,7 +647,8 @@ describe("@cinderlink/ipld-database/table", () => {
         client.logger
           .module(`db`)
           .submodule(`schema:users`)
-          .submodule(`table:users`)
+          .submodule(`table:users`),
+        client.schemaRegistry
       );
       const inserted = await users.insert({
         did: "foo:bar",
@@ -678,7 +693,8 @@ describe("@cinderlink/ipld-database/table", () => {
         client.logger
           .module(`db`)
           .submodule(`schema:nonUnique`)
-          .submodule(`table:nonUnique`)
+          .submodule(`table:nonUnique`),
+        client.schemaRegistry
       );
       const recordA = {
         did: "foo:bar",
@@ -728,7 +744,8 @@ describe("@cinderlink/ipld-database/table", () => {
       client.logger
         .module(`db`)
         .submodule(`schema:test`)
-        .submodule(`table:test`)
+        .submodule(`table:test`),
+      client.schemaRegistry
     );
     table.lock();
     const promise = table.awaitUnlock();
@@ -744,7 +761,8 @@ describe("@cinderlink/ipld-database/table", () => {
       client.logger
         .module(`db`)
         .submodule(`schema:test`)
-        .submodule(`table:test`)
+        .submodule(`table:test`),
+      client.schemaRegistry
     );
     table.lock();
     const promise = table.awaitLock();
@@ -760,7 +778,8 @@ describe("@cinderlink/ipld-database/table", () => {
       client.logger
         .module(`db`)
         .submodule(`schema:test`)
-        .submodule(`table:test`)
+        .submodule(`table:test`),
+      client.schemaRegistry
     );
     table.lock();
     const promise1 = table.awaitLock().then(() => {
@@ -784,7 +803,8 @@ describe("@cinderlink/ipld-database/table", () => {
       client.logger
         .module(`db`)
         .submodule(`schema:test`)
-        .submodule(`table:test`)
+        .submodule(`table:test`),
+      client.schemaRegistry
     );
     await table.insert({ name: "foo", count: 0 });
     await table.insert({ name: "bar", count: 1 });

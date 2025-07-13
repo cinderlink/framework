@@ -88,7 +88,7 @@ export class SyncDBPlugin extends ZodPluginBase<typeof syncDbSchemas> {
     this.started = true;
   }
 
-  stop() {
+  async stop(): Promise<void> {
     this.started = false;
     this.logger.info(`stopping`);
     Object.values(this.timers).forEach((timer) => clearInterval(timer));

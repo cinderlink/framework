@@ -17,7 +17,7 @@ export class TestDag implements DAGInterface {
     this.cache[cid.toString()] = data;
     return cid;
   }
-  load<Data = unknown>(cid: CID, path?: string): Promise<Data> {
+  async load<Data = unknown>(cid: CID, path?: string): Promise<Data> {
     if (!cid) return undefined as any;
     const cached = this.cache[cid.toString()] as Data;
     if (path) {

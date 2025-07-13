@@ -265,10 +265,12 @@ describe("SyncDBPlugin Unit Tests", () => {
       "peer-123",
       expect.objectContaining({
         topic: "/cinderlink/sync/since",
-        payload: {
+        payload: expect.objectContaining({
           since: 0,
-        },
-      })
+          timestamp: expect.any(Number),
+        }),
+      }),
+      undefined
     );
   });
 

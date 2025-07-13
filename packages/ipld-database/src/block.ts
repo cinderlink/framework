@@ -46,7 +46,7 @@ export class TableBlock<
           this.table.def.searchOptions
         );
       } catch (_error) {
-        this.logger.warn(`failed to load search index from cache`, { error });
+        this.logger.warn(`failed to load search index from cache`, { error: _error });
         this.index = new Minisearch(this.table.def.searchOptions);
         this.index.addAll(Object.values(this.cache.records || {}));
       }
@@ -61,9 +61,7 @@ export class TableBlock<
     //   ? this.table.dag.loadDecrypted<Data>(cid, path)
     //   : this.table.dag.load<Data>(cid, path);
     try {
-      const data = await this.table.dag
-        .load<Data>(cid, path, options)
-        .catch(() => undefined);
+      const data = await this.table.dag.load<Data>(cid, path, options);
       return data;
     } catch (error: any) {
       this.logger.error(`failed to load data from dag`, {

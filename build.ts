@@ -1,0 +1,249 @@
+#!/usr/bin/env bun
+import { transform } from 'oxc-transform';
+import { readdir, stat } from 'fs/promises';
+import { join, resolve } from 'path';
+
+interface PackageJson {
+  name: string;
+  main?: string;
+  module?: string;
+  types?: string;
+  exports?: any;
+  dependencies?: Record<string, string>;
+  peerDependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
+}
+
+interface BuildConfig {
+  name: string;
+  path: string;
+  target: 'browser' | 'node' | 'bun';
+  entrypoint: string;
+}
+
+// Get all workspace packages
+async function getWorkspacePackages(): Promise<BuildConfig[]> {
+  const packagesDir = join(process.cwd(), 'packages');
+  const entries = await readdir(packagesDir);
+  const packages: BuildConfig[] = [];
+  
+  for (const entry of entries) {
+    const packageDir = join(packagesDir, entry);
+    const packageJsonPath = join(packageDir, 'package.json');
+    
+    try {
+      const pkg: PackageJson = JSON.parse(await Bun.file(packageJsonPath).text());
+      const entrypoint = join(packageDir, 'src/index.ts');
+      
+      // Determine target based on package name/type
+      let target: 'browser' | 'node' | 'bun' = 'node';
+      if (pkg.name?.includes('server-bin')) target = 'bun';
+      
+      packages.push({
+        name: pkg.name,
+        path: packageDir,
+        target,
+        entrypoint
+      });
+    } catch (error) {
+      console.warn(`⚠️ Skipping ${entry}: ${error}`);
+    }
+  }
+  
+  return packages;
+}
+
+// Parse dependencies from package.json
+async function getDependencies(packagePath: string): Promise<Set<string>> {
+  const packageJsonPath = join(packagePath, 'package.json');
+  const pkg: PackageJson = JSON.parse(await Bun.file(packageJsonPath).text());
+  
+  const deps = new Set<string>();
+  
+  // Add workspace dependencies (those starting with @cinderlink/)
+  const allDeps = {
+    ...pkg.dependencies,
+    ...pkg.peerDependencies,
+    ...pkg.devDependencies
+  };
+  
+  for (const [name] of Object.entries(allDeps || {})) {
+    if (name.startsWith('@cinderlink/')) {
+      deps.add(name);
+    }
+  }
+  
+  return deps;
+}
+
+// Topological sort for dependency order
+async function buildDependencyGraph(packages: BuildConfig[]): Promise<BuildConfig[]> {
+  // Build dependency map
+  const dependencyMap = new Map<string, Set<string>>();
+  
+  for (const pkg of packages) {
+    const deps = await getDependencies(pkg.path);
+    dependencyMap.set(pkg.name, deps);
+  }
+  
+  // Topological sort using Kahn's algorithm
+  const inDegree = new Map<string, number>();
+  const graph = new Map<string, Set<string>>();
+  
+  // Initialize
+  for (const pkg of packages) {
+    inDegree.set(pkg.name, 0);
+    graph.set(pkg.name, new Set());
+  }
+  
+  // Build graph and calculate in-degrees
+  for (const [pkgName, deps] of dependencyMap) {
+    for (const dep of deps) {
+      if (graph.has(dep)) {
+        graph.get(dep)!.add(pkgName);
+        inDegree.set(pkgName, (inDegree.get(pkgName) || 0) + 1);
+      }
+    }
+  }
+  
+  // Kahn's algorithm
+  const queue: string[] = [];
+  const result: BuildConfig[] = [];
+  
+  // Find all nodes with no incoming edges
+  for (const [pkg, degree] of inDegree) {
+    if (degree === 0) {
+      queue.push(pkg);
+    }
+  }
+  
+  while (queue.length > 0) {
+    const current = queue.shift()!;
+    const currentPkg = packages.find(p => p.name === current)!;
+    result.push(currentPkg);
+    
+    // Remove edges
+    for (const neighbor of graph.get(current) || []) {
+      const newDegree = inDegree.get(neighbor)! - 1;
+      inDegree.set(neighbor, newDegree);
+      
+      if (newDegree === 0) {
+        queue.push(neighbor);
+      }
+    }
+  }
+  
+  // Check for cycles
+  if (result.length !== packages.length) {
+    console.warn('⚠️ Circular dependencies detected, using fallback order');
+    return packages;
+  }
+  
+  return result;
+}
+
+// Build a single package using oxc for .d.ts and Bun.build for JS
+async function buildPackage(config: BuildConfig): Promise<void> {
+  const { name, path: packagePath, target, entrypoint } = config;
+  const distDir = join(packagePath, 'dist');
+  
+  console.log(`🏗️ Building ${name}...`);
+  
+  try {
+    // Special handling for packages without standard entry points
+    if (name === '@cinderlink/tsconfig') {
+      console.warn(`⚠️ Skipping ${name}: config-only package`);
+      return;
+    }
+    
+    if (name === '@cinderlink/server-bin') {
+      // Use the bin.ts file for server-bin
+      const binEntrypoint = join(packagePath, 'src/bin.ts');
+      if (!(await Bun.file(binEntrypoint).exists())) {
+        console.warn(`⚠️ Skipping ${name}: no src/bin.ts found`);
+        return;
+      }
+      
+      // Build executable
+      await Bun.build({
+        entrypoints: [binEntrypoint],
+        outfile: join(distDir, 'cinderlink'),
+        target: 'bun',
+        format: 'cjs',
+        sourcemap: 'external',
+        minify: true,
+        compile: true,
+        bytecode: true
+      });
+      
+      console.log(`✅ Built ${name} executable`);
+      return;
+    }
+    
+    // Check if entrypoint exists
+    if (!(await Bun.file(entrypoint).exists())) {
+      console.warn(`⚠️ Skipping ${name}: no src/index.ts found`);
+      return;
+    }
+    
+    // Read source code
+    const sourceCode = await Bun.file(entrypoint).text();
+    
+    // Use oxc for fast .d.ts generation
+    const { code, declaration, errors } = transform(entrypoint, sourceCode, {
+      typescript: {
+        declaration: true
+      }
+    });
+    
+    if (errors.length > 0) {
+      console.warn(`⚠️ TypeScript errors in ${name}:`, errors);
+    }
+    
+    // Build with Bun.build for optimized JS
+    await Bun.build({
+      entrypoints: [entrypoint],
+      outdir: distDir,
+      target,
+      format: 'esm',
+      sourcemap: 'external',
+      minify: false,
+      splitting: false
+    });
+    
+    // Write .d.ts file using oxc output
+    if (declaration) {
+      await Bun.write(join(distDir, 'index.d.ts'), declaration);
+    }
+    
+    console.log(`✅ Built ${name}`);
+    
+  } catch (error) {
+    console.error(`❌ Failed to build ${name}:`, error);
+    throw error;
+  }
+}
+
+// Main build function
+async function main() {
+  console.log('🚀 Starting unified build with oxc + Bun...\n');
+  
+  const packages = await getWorkspacePackages();
+  const orderedPackages = await buildDependencyGraph(packages);
+  
+  console.log(`📦 Found ${packages.length} packages to build\n`);
+  
+  // Build packages in dependency order
+  for (const pkg of orderedPackages) {
+    await buildPackage(pkg);
+  }
+  
+  console.log('\n🎉 Build complete!');
+}
+
+if (import.meta.main) {
+  main().catch((error) => {
+    console.error('💥 Build failed:', error);
+    process.exit(1);
+  });
+}

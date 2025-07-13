@@ -60,7 +60,7 @@ export class CinderlinkProtocolPlugin<
   
   pluginEvents?: PluginEventHandlers<PeerEvents["emit"]>;
 
-  start() {
+  async start(): Promise<void> {
     this.logger.info(`registering protocol /cinderlink/1.0.0`);
     this.client.ipfs.libp2p.handle(
       "/cinderlink/1.0.0",
@@ -76,7 +76,7 @@ export class CinderlinkProtocolPlugin<
     );
   }
 
-  stop() {
+  async stop(): Promise<void> {
     clearInterval(this.keepAliveHandler);
   }
 
@@ -107,8 +107,8 @@ export class CinderlinkProtocolPlugin<
           }
         } catch (_error) {
           self.logger.error(`error handling protocol message`, {
-            message: (error as Error).message,
-            trace: (error as Error).stack,
+            message: (_error as Error).message,
+            trace: (_error as Error).stack,
           });
         }
       }

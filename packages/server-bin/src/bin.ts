@@ -1,6 +1,5 @@
-import minimist from "minimist";
-import fs from "fs";
-import path from "path";
+import * as minimist from "minimist";
+import { join, dirname } from "path";
 import chalk from "chalk";
 import { privateKeyToAccount, mnemonicToAccount, generatePrivateKey, generateMnemonic, english } from "viem/accounts";
 
@@ -11,10 +10,10 @@ import {
   createSignerDID,
   signAddressVerification,
 } from "@cinderlink/identifiers";
-import events from "events";
-import dotenv from "dotenv";
+import { EventEmitter } from "events";
+import * as dotenv from "dotenv";
 
-events.setMaxListeners(1024);
+EventEmitter.setMaxListeners(1024);
 
 const argv = minimist(process.argv.slice(2));
 const [command] = argv._;
@@ -36,7 +35,7 @@ ${chalk.yellow("options")}:
   process.exit(0);
 }
 
-const initEnv = () => {
+const initEnv = async () => {
   const envPath = argv.file || ".env";
   const usePkey = argv.pkey;
   
@@ -45,7 +44,7 @@ const initEnv = () => {
     console.log(
       `initializing ${chalk.cyan("cinderlink")} .env at ${chalk.yellow(envPath)}`
     );
-    fs.writeFileSync(
+    await Bun.write(
       envPath,
       `CINDERLINK_PRIVATE_KEY=${privateKey}`
     );
@@ -54,7 +53,7 @@ const initEnv = () => {
     console.log(
       `initializing ${chalk.cyan("cinderlink")} .env at ${chalk.yellow(envPath)}`
     );
-    fs.writeFileSync(
+    await Bun.write(
       envPath,
       `CINDERLINK_MNEMONIC=${mnemonic}`
     );
@@ -62,16 +61,17 @@ const initEnv = () => {
 };
 
 if (command === "init") {
-  const usePkey = argv.pkey;
-  const env = argv.env;
-  if (env) {
-    initEnv();
-  }
+  (async () => {
+    const usePkey = argv.pkey;
+    const env = argv.env;
+    if (env) {
+      await initEnv();
+    }
 
   console.log(
     `initializing ${chalk.cyan("cinderlink")} at ${chalk.yellow(configPath)}`
   );
-  fs.writeFileSync(
+  await Bun.write(
     configPath,
     `import { SocialSyncConfig } from "@cinderlink/plugin-social-core";
 import dotenv from "dotenv";
@@ -114,13 +114,16 @@ export default {
     },
   },
 };`
-  );
-  process.exit(0);
+    );
+    process.exit(0);
+  })();
 }
 
 if (command === "env") {
-  initEnv();
-  process.exit(0);
+  (async () => {
+    await initEnv();
+    process.exit(0);
+  })();
 }
 
 if (command !== "start") {
@@ -132,9 +135,9 @@ if (command !== "start") {
   const env = argv.env;
   dotenv.config({ path: env || ".env" });
 
-  const resolvedConfigPath = path.resolve(process.cwd(), configPath);
+  const resolvedConfigPath = join(Bun.cwd(), configPath);
 
-  if (!fs.existsSync(resolvedConfigPath)) {
+  if (!(await Bun.file(resolvedConfigPath).exists())) {
     console.error(`no config found at ${chalk.yellow(configPath)}`);
     process.exit(1);
   }
@@ -173,18 +176,18 @@ if (command !== "start") {
       (config.plugins || []).map(
         async ([pathname, options]: [string, Record<string, unknown>]) => {
           // resolve the plugin relative to the config file
-          const dirname = path.resolve(
-            path.dirname(configPath),
+          const dirpath = join(
+            dirname(configPath),
             "node_modules",
             pathname
           );
-          if (fs.existsSync(dirname)) {
-            const pkg = path.resolve(dirname, "package.json");
-            if (fs.existsSync(pkg)) {
-              const { main } = JSON.parse(fs.readFileSync(pkg, "utf8"));
-              pathname = path.resolve(dirname, main);
+          if (await Bun.file(dirpath).exists()) {
+            const pkg = join(dirpath, "package.json");
+            if (await Bun.file(pkg)) {
+              const { main } = JSON.parse(await Bun.file(pkg).text());
+              pathname = join(dirpath, main);
             } else {
-              pathname = path.resolve(dirname, "index.js");
+              pathname = join(dirpath, "index.js");
             }
             console.info(`importing plugin from ${chalk.yellow(pathname)}`);
             const Plugin = await import(pathname);

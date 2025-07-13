@@ -19,6 +19,7 @@ import {
   SubLoggerInterface,
   Log,
 } from "@cinderlink/core-types";
+import type { SchemaRegistryInterface } from "@cinderlink/schema-registry";
 import { TestDIDDag } from "./dag";
 import { DID } from "dids";
 
@@ -156,6 +157,18 @@ export class TestClient<PluginEvents extends PluginEventDef>
   addressVerification = "test";
   dag: DIDDagInterface;
   schemas: Record<string, SchemaInterface> = {};
+  schemaRegistry: SchemaRegistryInterface = {
+    register: () => {},
+    get: () => undefined,
+    has: () => false,
+    validate: (schemaId: string, schemaVersion: string, data: any) => {
+      // Simple validation for testing - reject non-string names and non-number counts
+      if (typeof data?.name !== 'string' || typeof data?.count !== 'number') {
+        return { success: false, error: { issues: [{ path: [], message: 'Invalid data' }] } };
+      }
+      return { success: true, data };
+    },
+  } as any;
   identity = {} as any;
   plugins = {} as Record<string, PluginInterface<any, any>>;
   initialConnectTimeout = 1;
