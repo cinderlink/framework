@@ -324,7 +324,7 @@ export class CinderlinkClient<
 
   async connectToNodes() {
     await Promise.all(
-      this.nodeAddresses.map((addr) => {
+      this.nodeAddresses.map(async (addr) => {
         const peerIdStr = addr.split("/").pop();
         if (peerIdStr === this.peerId?.toString()) return;
         if (peerIdStr) {
@@ -481,7 +481,7 @@ export class CinderlinkClient<
         schemas: document.schemas,
       });
       await Promise.all(
-        Object.entries(document.schemas).map(([name, schema]) => {
+        Object.entries(document.schemas).map(async ([name, schema]) => {
           let saved: SavedSchema | undefined = undefined;
           if (typeof schema === "string") {
             // legacy schema support from CID
