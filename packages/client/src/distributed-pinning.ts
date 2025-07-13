@@ -157,7 +157,7 @@ export class DistributedPinningManager<Plugins extends PluginEventDef = PluginEv
   /**
    * Pin content to connected peer nodes
    */
-  private pinToPeers(
+  private async pinToPeers(
     cid: CID
   ): Promise<{
     successful: string[];
