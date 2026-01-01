@@ -135,10 +135,6 @@ pnpm format
 
 Contributions are welcome! Please read our [Contributing Guidelines](CONTRIBUTING.md) for details on how to submit pull requests, report issues, or suggest new features.
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
 ## 📚 Documentation
 
 For detailed documentation, please visit our [documentation site](https://docs.cinderlink.io).
