@@ -4,4 +4,3 @@ export interface DAGStoreOptions {
     pin?: boolean;
     timeout?: number;
 }
-//# sourceMappingURL=types.d.ts.map

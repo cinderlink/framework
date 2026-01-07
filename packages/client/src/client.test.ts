@@ -1,189 +1,383 @@
+import { describe, it, expect, beforeEach, afterEach, mock } from 'bun:test';
+
 import { rmSync } from "fs";
-import { privateKeyToAccount } from "viem/accounts";
-import { createWalletClient, http } from "viem";
-import { mainnet } from "viem/chains";
-import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { createClient } from "./create.js";
-import { IdentityServerPlugin } from "@cinderlink/plugin-identity-server";
-import {
-  createSeed,
-  createDID,
-  signAddressVerification,
-} from "@cinderlink/identifiers";
-import {
-  CinderlinkClientInterface,
-  SubLoggerInterface,
-  PluginInterface,
+import { CinderlinkClient } from "./client";
+import { ClientTestUtils } from "./__fixtures__/test-utils";
+import { EchoPlugin, FailingPlugin, StateTrackingPlugin } from "./__fixtures__/test-plugins";
+import { TestFixtures, TestDataGenerators } from "@cinderlink/test-adapters";
+import type {
   PluginEventDef,
-  IncomingP2PMessage,
-  ReceiveEventHandlers,
-  EncodingOptions,
+  IPFSWithLibP2P,
 } from "@cinderlink/core-types";
-
-const response = vi.fn();
-interface TestClientEvents extends PluginEventDef {
-  send: {
-    "/test/request": { message: string };
-  };
-  receive: {
-    "/test/response": { message: string };
-  };
-}
-export class TestClientPlugin implements PluginInterface {
-  id = "test-client-plugin";
-  logger: SubLoggerInterface;
-  started = false;
-  constructor(public client: CinderlinkClientInterface) {
-    this.logger = client.logger.module("plugins").submodule(this.id);
-  }
-
-  p2p: ReceiveEventHandlers<TestClientEvents> = {
-    "/test/response": this.onTestResponse,
-  };
-  pubsub = {};
-  emit = {};
-
-  onTestResponse(
-    message: IncomingP2PMessage<
-      TestClientEvents,
-      "/test/response",
-      EncodingOptions
-    >
-  ) {
-    response(message.payload.message);
-  }
-}
-
-interface TestServerEvents extends PluginEventDef {
-  send: {
-    "/test/response": { message: string };
-  };
-  receive: {
-    "/test/request": { message: string };
-  };
-}
-export class TestServerPlugin implements PluginInterface {
-  id = "test-server-plugin";
-  logger: SubLoggerInterface;
-  started = false;
-  constructor(public client: CinderlinkClientInterface<TestServerEvents>) {
-    this.logger = client.logger.module("plugins").submodule(this.id);
-  }
-
-  p2p: ReceiveEventHandlers<TestServerEvents> = {
-    "/test/request": this.onTestRequest,
-  };
-  pubsub = {};
-  emit = {};
-
-  async onTestRequest(
-    message: IncomingP2PMessage<
-      TestServerEvents,
-      "/test/request",
-      EncodingOptions
-    >
-  ) {
-    console.info("test request message");
-    await this.client.send(message.peer.peerId.toString(), {
-      topic: "/test/response",
-      payload: { message: message.payload.message },
-    });
-  }
-}
+import { DID } from "dids";
 
 describe("CinderlinkClient", () => {
-  let client: CinderlinkClientInterface<PluginEventDef>;
-  let server: CinderlinkClientInterface<PluginEventDef>;
-  beforeAll(async () => {
-    await rmSync("./client-test-client", { recursive: true, force: true });
-    await rmSync("./client-test-server", { recursive: true, force: true });
-    const serverPrivateKey = `0x${Math.random().toString(16).slice(2).padStart(64, '0')}` as `0x${string}`;
-    const serverAccount = privateKeyToAccount(serverPrivateKey);
-    const serverWalletClient = createWalletClient({
-      account: serverAccount,
-      chain: mainnet,
-      transport: http(),
+  ClientTestUtils.setupTestEnvironment();
+  
+  describe("initialization", () => {
+    it("should initialize with minimal configuration", async () => {
+      const client = await ClientTestUtils.createMinimalTestClient();
+      
+      expect(client).toBeDefined();
+      expect(client.running).toBe(false);
+      expect(client.hasServerConnection).toBe(false);
+      expect(client.did).toBeDefined();
+      expect(client.address).toMatch(/^0x[a-fA-F0-9]{40}$/);
+      expect(client.peers).toBeDefined();
+      expect(client.plugins).toBeDefined();
+      expect(client.subscriptions).toEqual([]);
+      expect(client.schemas).toEqual({});
     });
     
-    const serverDID = await createDID(await createSeed("test-server"));
-    const serverAV = await signAddressVerification(
-      "test",
-      serverDID.id,
-      serverAccount,
-      serverWalletClient
-    );
-    server = await createClient({
-      did: serverDID,
-      address: serverAccount.address,
-      addressVerification: serverAV,
-      role: "server",
-      options: {
+    it("should initialize with full configuration", async () => {
+      const client = await ClientTestUtils.createMinimalTestClient({
+        role: "server",
         testMode: true,
-        config: {
-          Addresses: {
-            Swarm: ["/ip4/127.0.0.1/tcp/7356", "/ip4/127.0.0.1/tcp/7357/ws"],
-            API: "/ip4/127.0.0.1/tcp/7355",
-          },
-          Bootstrap: [],
-        },
-      },
-    });
-    server.initialConnectTimeout = 0;
-    server.addPlugin(new IdentityServerPlugin(server));
-    await server.start([]);
-    expect(server.did).toBeDefined();
-    server.addPlugin(new TestServerPlugin(server));
-
-    const clientPrivateKey = `0x${Math.random().toString(16).slice(2).padStart(64, '0')}` as `0x${string}`;
-    const clientAccount = privateKeyToAccount(clientPrivateKey);
-    const clientWalletClient = createWalletClient({
-      account: clientAccount,
-      chain: mainnet,
-      transport: http(),
+      });
+      
+      expect(client.role).toBe("server");
+      expect(client.initialConnectTimeout).toBe(100); // Set by test utils
+      expect(client.keepAliveTimeout).toBe(1000);
+      expect(client.keepAliveInterval).toBe(500);
     });
     
-    const clientDID = await createDID(await createSeed("test-client"));
-    const clientAV = await signAddressVerification(
-      "test",
-      clientDID.id,
-      clientAccount,
-      clientWalletClient
-    );
-    client = await createClient({
-      did: clientDID,
-      address: clientAccount.address,
-      addressVerification: clientAV,
-      role: "peer",
-      options: {
-        testMode: true,
-      },
+    it("should validate required parameters", async () => {
+      const mockIPFS = await ClientTestUtils.createMockIPFS();
+      const did = TestFixtures.createMockDID();
+      
+      expect(() => {
+        new CinderlinkClient({
+          ipfs: mockIPFS,
+          did: did as any,
+          address: "0x1234567890123456789012345678901234567890",
+          addressVerification: "test-verification",
+          role: "peer",
+        });
+      }).not.toThrow();
     });
-    client.initialConnectTimeout = 0;
-    client.addPlugin(new TestClientPlugin(client));
+    
+    it("should handle missing IPFS instance", async () => {
+      const did = TestFixtures.createMockDID();
 
-    await Promise.all([
-      client.start([`/ip4/127.0.0.1/tcp/7357/ws/p2p/${server.peerId!}`]),
-      client.once("/client/ready"),
-      client.once("/server/connect"),
-    ]);
+      await expect(async () => {
+        await ClientTestUtils.createMinimalTestClient();
+      }).rejects.toBeDefined();
+    });
+    
+    it("should handle invalid DID", async () => {
+      const mockIPFS = await ClientTestUtils.createMockIPFS();
+
+      await expect(async () => {
+        new CinderlinkClient({
+          ipfs: mockIPFS,
+          did: null as any,
+          address: "0x1234567890123456789012345678901234567890",
+          addressVerification: "test-verification",
+          role: "peer",
+        });
+      }).rejects.toBeDefined();
+    });
+    
+    it("should set default timeouts", async () => {
+      const client = await ClientTestUtils.createMinimalTestClient();
+      
+      // Test utils override these, so create a raw client
+      const mockIPFS = await ClientTestUtils.createMockIPFS();
+      const did = TestFixtures.createMockDID();
+      
+      const rawClient = new CinderlinkClient({
+        ipfs: mockIPFS,
+        did: did as any,
+        address: "0x1234567890123456789012345678901234567890",
+        addressVerification: "test-verification",
+        role: "peer",
+      });
+      
+      expect(rawClient.initialConnectTimeout).toBe(3000);
+      expect(rawClient.keepAliveTimeout).toBe(10000);
+      expect(rawClient.keepAliveInterval).toBe(5000);
+    });
   });
-
-  it("can execute a request lifecycle", async () => {
-    await client.request<TestClientEvents, "/test/request", "/test/response">(
-      server.peerId!.toString(),
-      {
-        topic: "/test/request",
-        payload: { message: "hello" },
+  
+  describe("lifecycle management", () => {
+    let client: CinderlinkClientInterface<PluginEventDef>;
+    
+    beforeEach(async () => {
+      client = await ClientTestUtils.createMinimalTestClient();
+    });
+    
+    afterEach(async () => {
+      if (client?.running) {
+        await client.stop();
       }
-    );
-
-    expect(response).toHaveBeenCalled();
+    });
+    
+    describe("start()", () => {
+      it("should start client with no node addresses", async () => {
+        expect(client.running).toBe(false);
+        
+        await client.start([]);
+        
+        expect(client.running).toBe(true);
+        expect(client.peerId).toBeDefined();
+      });
+      
+      it("should start client with multiple node addresses", async () => {
+        const server = await ClientTestUtils.createTestServer();
+        await server.start([]);
+        
+        const serverInfo = await server.ipfs.id();
+        const nodeAddresses = [
+          `/ip4/127.0.0.1/tcp/7356/p2p/${serverInfo.id}`,
+          `/ip4/127.0.0.1/tcp/7357/ws/p2p/${serverInfo.id}`,
+        ];
+        
+        await client.start(nodeAddresses);
+        
+        expect(client.running).toBe(true);
+        expect(client.nodeAddresses).toEqual(nodeAddresses);
+        
+        await server.stop();
+      });
+      
+      it("should handle start when already running", async () => {
+        await client.start([]);
+        expect(client.running).toBe(true);
+        
+        // Starting again should not throw
+        await expect(client.start([])).resolves.toBeUndefined();
+        expect(client.running).toBe(true);
+      });
+      
+      it("should initialize peer ID from IPFS", async () => {
+        expect(client.peerId).toBeUndefined();
+        
+        await client.start([]);
+        
+        expect(client.peerId).toBeDefined();
+        expect(client.peerId?.toString()).toBeDefined();
+      });
+      
+it("should register pubsub handlers", async () => {
+         const mockOn = mock(() => {});
+         client.pubsub.on = mockOn;
+         
+         await client.start([]);
+         
+         // Should register message and peer:discovery handlers
+         expect(mockOn).toHaveBeenCalledWith("message", expect.any(Function));
+         expect(mockOn).toHaveBeenCalledWith("peer:discovery", expect.any(Function));
+       });
+      
+      it("should emit connected event", async () => {
+        const readyPromise = new Promise((resolve) => {
+          client.once("/client/ready", resolve);
+        });
+        
+        await client.start([]);
+        
+        await expect(readyPromise).resolves.toBeUndefined();
+      });
+    });
+    
+    describe("stop()", () => {
+      beforeEach(async () => {
+        await client.start([]);
+      });
+      
+      it("should stop running client", async () => {
+        expect(client.running).toBe(true);
+        
+        await client.stop();
+        
+        expect(client.running).toBe(false);
+      });
+      
+it("should clean up event listeners", async () => {
+         const mockOff = mock(() => {});
+         client.pubsub.off = mockOff;
+         
+         await client.stop();
+         
+         // Should remove message and peer:discovery handlers
+         expect(mockOff).toHaveBeenCalledWith("message", expect.any(Function));
+         expect(mockOff).toHaveBeenCalledWith("peer:discovery", expect.any(Function));
+       });
+      
+      it("should stop all plugins", async () => {
+        const plugin = new StateTrackingPlugin(client);
+        await client.addPlugin(plugin);
+        
+        expect(plugin.started).toBe(true);
+        
+        await client.stop();
+        
+        expect(plugin.started).toBe(false);
+      });
+      
+      it("should clear reconnection timers", async () => {
+        // Simulate a reconnection timer
+        client.nodeReconnectTimer = setTimeout(() => {}, 1000);
+        const timerId = client.nodeReconnectTimer;
+        
+        await client.stop();
+        
+        expect(client.nodeReconnectTimer).toBeUndefined();
+      });
+      
+      it("should handle stop when not running", async () => {
+        await client.stop();
+        expect(client.running).toBe(false);
+        
+        // Stopping again should not throw
+        await expect(client.stop()).resolves.toBeUndefined();
+        expect(client.running).toBe(false);
+      });
+    });
+    
+    describe("save()", () => {
+      beforeEach(async () => {
+        await client.start([]);
+      });
+      
+      it("should save client state when changes exist", async () => {
+        // Add a schema to create changes
+        const schema = TestDataGenerators.generateSchema("simple");
+        await client.addSchema("test-schema", schema);
+        
+        expect(client.hasUnsavedChanges()).toBe(true);
+        
+        await client.save();
+        
+        // After save, should not have unsaved changes
+        expect(client.hasUnsavedChanges()).toBe(false);
+      });
+      
+      it("should handle save when already saving", async () => {
+        const schema = TestDataGenerators.generateSchema("simple");
+        await client.addSchema("test-schema", schema);
+        
+        // Start save but don't await
+        const savePromise1 = client.save();
+        const savePromise2 = client.save();
+        
+        // Both should complete without error
+        await expect(Promise.all([savePromise1, savePromise2])).resolves.toBeDefined();
+      });
+      
+      it("should handle save with force immediate", async () => {
+        // Even without changes, should save when forced
+        expect(client.hasUnsavedChanges()).toBe(false);
+        
+        await expect(client.save(false, true)).resolves.toBeUndefined();
+      });
+      
+      it("should handle save with force remote", async () => {
+        const schema = TestDataGenerators.generateSchema("simple");
+        await client.addSchema("test-schema", schema);
+        
+        await expect(client.save(true, false)).resolves.toBeUndefined();
+      });
+    });
+    
+    describe("load()", () => {
+      beforeEach(async () => {
+        await client.start([]);
+      });
+      
+      it("should load client state from identity", async () => {
+        // First save some state
+        const schema = TestDataGenerators.generateSchema("simple");
+        await client.addSchema("test-schema", schema);
+        await client.save();
+        
+        // Create new client and load
+        const newClient = await ClientTestUtils.createMinimalTestClient();
+        await newClient.start([]);
+        
+        await newClient.load();
+        
+        // Should have loaded the schema
+        expect(newClient.hasSchema("test-schema")).toBe(true);
+        
+        await newClient.stop();
+      });
+      
+      it("should handle load when identity not resolved", async () => {
+        // Mock identity as not resolved
+        client.identity.hasResolved = false;
+        client.identity.resolving = false;
+        
+        await expect(client.load()).resolves.toBeUndefined();
+      });
+      
+      it("should handle load when identity is resolving", async () => {
+        // Mock identity as currently resolving
+        client.identity.hasResolved = false;
+        client.identity.resolving = true;
+        
+        await expect(client.load()).resolves.toBeUndefined();
+      });
+      
+      it("should handle load with no saved data", async () => {
+        // Fresh client should handle load gracefully
+        await expect(client.load()).resolves.toBeUndefined();
+      });
+    });
   });
-
-  afterAll(async () => {
-    await client?.stop();
-    await server?.stop();
-    rmSync("./client-test-client", { recursive: true, force: true });
-    rmSync("./client-test-server", { recursive: true, force: true });
+  
+  describe("error handling", () => {
+    let client: CinderlinkClientInterface<PluginEventDef>;
+    
+    beforeEach(async () => {
+      client = await ClientTestUtils.createMinimalTestClient();
+    });
+    
+    afterEach(async () => {
+      if (client?.running) {
+        await client.stop();
+      }
+    });
+    
+    it("should handle plugin start failure gracefully", async () => {
+      const failingPlugin = new FailingPlugin(client, { failOnStart: true });
+      
+      await client.start([]);
+      
+      // Plugin start failure should not crash client
+      await expect(client.addPlugin(failingPlugin)).rejects.toThrow("Plugin failed to start");
+      expect(client.running).toBe(true);
+    });
+    
+    it("should handle plugin stop failure gracefully", async () => {
+      const failingPlugin = new FailingPlugin(client, { failOnStop: true });
+      
+      await client.start([]);
+      await client.addPlugin(failingPlugin);
+      
+      // Override to succeed on start but fail on stop
+      failingPlugin.failOnStart = false;
+      failingPlugin.failOnStop = true;
+      
+      // Client stop should handle plugin stop failure
+      await expect(client.stop()).resolves.toBeUndefined();
+      expect(client.running).toBe(false);
+    });
+    
+    it("should handle IPFS errors during start", async () => {
+      const mockIPFS = await ClientTestUtils.createMockIPFS();
+      mockIPFS.id = vi.fn().mockRejectedValue(new Error("IPFS error"));
+      
+      const did = TestFixtures.createMockDID();
+      const clientWithFailingIPFS = new CinderlinkClient({
+        ipfs: mockIPFS,
+        did: did as any,
+        address: "0x1234567890123456789012345678901234567890",
+        addressVerification: "test-verification",
+        role: "peer",
+      });
+      
+      await expect(clientWithFailingIPFS.start([])).rejects.toThrow("IPFS error");
+    });
   });
 });

@@ -2,7 +2,7 @@
 export type SchemaObject = Record<string, unknown>;
 import type { CID } from "multiformats";
 import type Emittery from "emittery";
-import { Options as SearchOptions } from "minisearch";
+import MiniSearch, { Options as SearchOptions } from "minisearch";
 import type { DIDDagInterface } from "../dag";
 
 import { QueryBuilderInterface, TableQueryInterface } from "./query";
@@ -34,7 +34,7 @@ export interface TableBlockInterface<
   cache?: Partial<BlockData<Row>>;
   changed: boolean;
   needsRollup: boolean;
-  index?: Minisearch;
+  index?: MiniSearch;
   buildSearchIndex(): void;
   prevCID(): Promise<string | undefined>;
   getCID(): Promise<CID | undefined>;

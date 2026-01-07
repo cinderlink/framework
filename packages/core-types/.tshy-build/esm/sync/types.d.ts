@@ -20,9 +20,13 @@ export interface SyncRowsRow extends TableRow {
     lastSyncedAt: number;
     lastFetchedAt: number;
 }
-export interface SyncConfig<Row extends TableRow> {
+export interface SyncQueryParams {
+    did: string;
+    since: number;
+}
+export interface SyncConfig<Row extends TableRow = TableRow> {
     syncOnChange?: boolean;
-    query: (table: TableInterface<Row>, params: Record<string, any>, client: CinderlinkClientInterface<any>) => QueryBuilderInterface<Row>;
+    query: (table: TableInterface<Row>, params: SyncQueryParams, client: CinderlinkClientInterface<any>) => QueryBuilderInterface<Row>;
     fetchInterval?: number;
     fetchFrom?: (peers: Peer[], table: TableInterface<Row>, client: CinderlinkClientInterface<any>) => Promise<string | string[] | boolean>;
     syncInterval?: number;
@@ -92,7 +96,6 @@ export interface SyncPluginEvents extends PluginEventDef {
     };
     emit: {};
 }
-export interface SyncPluginOptions {
-    syncing: Record<string, SyncConfig<any>>;
+export interface SyncPluginOptions<TRow extends TableRow = TableRow> {
+    syncing: Record<string, SyncConfig<TRow>>;
 }
-//# sourceMappingURL=types.d.ts.map

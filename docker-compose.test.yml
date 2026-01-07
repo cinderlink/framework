@@ -1,0 +1,21 @@
+# Docker Compose for running tests with native module support
+version: '3.8'
+
+services:
+  test-runner:
+    build: .
+    container_name: cinderlink-test-runner
+    working_dir: /app
+    environment:
+      - NODE_ENV=test
+      - CI=true
+      - FORCE_COLOR=1
+    volumes:
+      # Mount source for live changes
+      - ./packages:/app/packages
+      - ./tests:/app/tests
+      # Keep container's node_modules for native modules
+      - /app/node_modules
+    command: ["tail", "-f", "/dev/null"]
+    stdin_open: true
+    tty: true

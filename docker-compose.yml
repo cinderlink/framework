@@ -1,0 +1,46 @@
+# Docker Compose for Cinderlink Test Network
+version: '3.8'
+
+services:
+  primary-node:
+    build: .
+    container_name: cinderlink-primary
+    environment:
+      - NODE_ENV=development
+      - CINDERLINK_PORT=9001
+      - CINDERLINK_HTTP_PORT=9080
+      - CINDERLINK_DATA_DIR=/data
+      - CINDERLINK_NODE_NAME=primary
+    ports:
+      - "9001:9001"
+      - "9080:9080"
+    volumes:
+      - ./data/primary-node:/data
+      - ./config/primary-node.json:/app/config.json:ro
+    networks:
+      - cinderlink-test
+
+  secondary-node:
+    build: .
+    container_name: cinderlink-secondary
+    environment:
+      - NODE_ENV=development
+      - CINDERLINK_PORT=9002
+      - CINDERLINK_HTTP_PORT=9081
+      - CINDERLINK_DATA_DIR=/data
+      - CINDERLINK_NODE_NAME=secondary
+      - CINDERLINK_BOOTSTRAP_PEERS=/dns4/primary-node/tcp/9001/p2p/PEER_ID
+    ports:
+      - "9002:9002"
+      - "9081:9081"
+    volumes:
+      - ./data/secondary-node:/data
+      - ./config/secondary-node.json:/app/config.json:ro
+    depends_on:
+      - primary-node
+    networks:
+      - cinderlink-test
+
+networks:
+  cinderlink-test:
+    driver: bridge

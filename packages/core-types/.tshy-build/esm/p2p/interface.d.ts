@@ -24,4 +24,3 @@ export interface PeerStoreInterface {
     getPeerIdByDID(did: string): string | undefined;
     getDIDByPeerId(peerId: string): string | undefined;
 }
-//# sourceMappingURL=interface.d.ts.map

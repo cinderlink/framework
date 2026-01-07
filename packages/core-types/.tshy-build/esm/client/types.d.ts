@@ -39,9 +39,8 @@ export interface CinderlinkClientEvents<PluginEvents extends PluginEventDef = Pl
         "/peer/disconnect": Peer;
         "/peer/handshake": Peer;
         "/peer/authenticated": Peer;
-        "/peer/message": IncomingP2PMessage<PluginEvents>;
+        "/peer/message": IncomingP2PMessage<PluginEvents, keyof PluginEvents["receive"]>;
         "/pubsub/message": IncomingPubsubMessage<PluginEvents>;
         "/identity/resolved": IdentityResolved;
-    };
+    } & PluginEvents["emit"];
 }
-//# sourceMappingURL=types.d.ts.map

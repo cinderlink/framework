@@ -40,4 +40,3 @@ export interface BlockAggregateTypes {
 }
 export type BlockAggregates<Row extends TableRow = TableRow> = Record<keyof Row, BlockAggregateTypes[keyof BlockAggregateTypes]>;
 export type BlockIndexes<Row extends TableRow = TableRow, Def extends TableDefinition<Row> = TableDefinition<Row>> = Record<keyof Def["indexes"], Record<string, BlockIndex<Row>>>;
-//# sourceMappingURL=block.d.ts.map

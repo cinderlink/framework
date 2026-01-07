@@ -85,10 +85,14 @@ Plugins follow the pattern `@cinderlink/plugin-[name]` and include:
 - Remote console administration
 
 ### Testing Strategy
+**Test Runner**: Vitest (chosen over Bun's built-in test runner for feature completeness)
+- **Why Vitest**: Better test isolation, comprehensive mocking, fake timers, and seamless Vite integration
+- **Caveat**: Bun's test runner is faster but lacks essential features like proper test isolation and fake timers
 - Tests are organized by environment in `vitest.workspace.ts`
-- Browser tests use jsdom environment
+- Browser tests use jsdom environment  
 - Node tests use node environment
-- Run all tests with `pnpm test`
+- Run all tests: `bun run test` (runs vitest, NOT `bun test` which uses Bun's test runner)
+- Run package tests: `bun --filter='@cinderlink/package-name' run test`
 - Test specific files with standard vitest patterns
 
 ## Important Context
@@ -98,7 +102,7 @@ The project is actively modernizing its IPFS/Helia integration. Check `TRACKING.
 
 ### Workflow
 1. Feature branches follow pattern: `feat/groupX-task-description`
-2. Always run tests before commits: `bun test`
+2. Always run tests before commits: `bun run test` (uses Vitest)
 3. Build before testing: `bun run build`
 4. Refer to `WORKFLOW.md` for detailed development practices
 

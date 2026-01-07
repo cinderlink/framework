@@ -7,4 +7,3 @@ export interface PubsubInterface<PluginEvents extends PluginEventDef> extends Em
     unsubscribe(topic: keyof PluginEvents["subscribe"]): Promise<void>;
     publish(topic: keyof PluginEvents["publish"], message: PluginEvents["publish"][keyof PluginEvents["publish"]]): Promise<void>;
 }
-//# sourceMappingURL=interface.d.ts.map

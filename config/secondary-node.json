@@ -1,0 +1,46 @@
+{
+  "node": {
+    "name": "secondary-test-node",
+    "type": "server"
+  },
+  "network": {
+    "libp2p": {
+      "addresses": {
+        "listen": ["/ip4/0.0.0.0/tcp/9002"]
+      },
+      "connectionManager": {
+        "maxConnections": 100
+      },
+      "peerDiscovery": {
+        "bootstrap": {
+          "enabled": true,
+          "list": []
+        }
+      }
+    }
+  },
+  "http": {
+    "enabled": true,
+    "port": 9081,
+    "host": "0.0.0.0"
+  },
+  "storage": {
+    "path": "/data/blocks",
+    "type": "fs"
+  },
+  "database": {
+    "path": "/data/db"
+  },
+  "identity": {
+    "keyPath": "/data/identity/key"
+  },
+  "plugins": {
+    "enabled": [
+      "@cinderlink/plugin-identity-server",
+      "@cinderlink/plugin-sync-db"
+    ]
+  },
+  "logging": {
+    "level": "info"
+  }
+}

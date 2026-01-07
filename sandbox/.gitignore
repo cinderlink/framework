@@ -1,0 +1,4 @@
+*/ipfs-repo/
+*/blockstore/
+node_modules/
+.env

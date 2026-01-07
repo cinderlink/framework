@@ -1,9 +1,8 @@
-import type { SchemaObject } from "ajv";
+export type SchemaObject = Record<string, unknown>;
 import type { CID } from "multiformats";
 import type Emittery from "emittery";
-import type { Options as SearchOptions } from "minisearch";
+import MiniSearch, { Options as SearchOptions } from "minisearch";
 import type { DIDDagInterface } from "../dag";
-import type Minisearch from "minisearch";
 import { QueryBuilderInterface, TableQueryInterface } from "./query";
 import { BlockData, BlockFilters, BlockHeaders, BlockIndexDef, BlockIndex, BlockAggregates, BlockAggregator } from "./block";
 import { SubLoggerInterface } from "../logger";
@@ -12,6 +11,7 @@ export interface TableRow {
     uid: string;
     createdAt?: number;
     updatedAt?: number;
+    [key: string]: unknown;
 }
 export interface TableBlockInterface<Row extends TableRow = TableRow, Def extends TableDefinition<Row> = TableDefinition<Row>> {
     table: TableInterface<Row, Def>;
@@ -19,7 +19,7 @@ export interface TableBlockInterface<Row extends TableRow = TableRow, Def extend
     cache?: Partial<BlockData<Row>>;
     changed: boolean;
     needsRollup: boolean;
-    index?: Minisearch;
+    index?: MiniSearch;
     buildSearchIndex(): void;
     prevCID(): Promise<string | undefined>;
     getCID(): Promise<CID | undefined>;
@@ -42,7 +42,8 @@ export interface TableBlockInterface<Row extends TableRow = TableRow, Def extend
 export interface TableDefinition<Row extends TableRow = TableRow> {
     encrypted: boolean;
     schemaId: string;
-    schema: SchemaObject;
+    schemaVersion: number;
+    schema?: SchemaObject;
     indexes: Record<string, BlockIndexDef<Row>>;
     aggregate: Partial<Record<keyof Row, BlockAggregator>>;
     searchOptions: SearchOptions;
@@ -89,7 +90,7 @@ export interface TableInterface<Row extends TableRow = TableRow, Def extends Tab
     upsert<Index extends keyof Row = keyof Row>(check: Record<Index, Row[Index]>, data: Partial<Row>): Promise<Row>;
     search(query: string, limit: number): Promise<Row[]>;
     save(): Promise<CID | undefined>;
-    query<Params extends any[] = any[]>(fn?: (qb: QueryBuilderInterface<Row>, ...params: Params) => QueryBuilderInterface<Row> | undefined, ...params: Params): TableQueryInterface<Row, Def>;
+    query<Params extends unknown[] = unknown[]>(fn?: (qb: QueryBuilderInterface<Row>, ...params: Params) => QueryBuilderInterface<Row> | undefined, ...params: Params): TableQueryInterface<Row, Def>;
     load(cid: CID): Promise<void>;
     search(query: string, limit: number): Promise<Row[]>;
     unwind(next: (event: TableUnwindEvent<Row, Def>) => Promise<void> | void): Promise<void>;
@@ -111,4 +112,3 @@ export type TableUnwindEvent<Row extends TableRow = TableRow, Def extends TableD
     block: TableBlockInterface<Row, Def>;
     resolved: boolean;
 };
-//# sourceMappingURL=table.d.ts.map

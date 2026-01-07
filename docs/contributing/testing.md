@@ -4,6 +4,22 @@
 
 The Cinderlink framework maintains the highest testing standards to ensure reliability, performance, and security in decentralized applications. This document establishes comprehensive testing requirements and best practices.
 
+## Test Runner Selection: Vitest
+
+**Decision**: We use **Vitest** as our test runner (not Bun's built-in test runner)
+
+**Why Vitest**:
+- **Feature Completeness**: Essential features like fake timers, proper test isolation, comprehensive mocking
+- **Integration**: Seamless integration with Vite/TypeScript setup
+- **Test Isolation**: Tests run in proper isolation, preventing side effects between test suites
+- **Maturity**: More stable and production-ready for complex test scenarios
+
+**Caveat**: Bun's test runner is faster but lacks essential features like proper test isolation and fake timers
+
+**Commands**:
+- Run all tests: `bun run test` (runs vitest, NOT `bun test`)
+- Run package tests: `bun --filter='@cinderlink/package-name' run test`
+
 ## Core Testing Principles
 
 ### 1. **Zero Assumptions Policy**

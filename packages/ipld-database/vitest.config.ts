@@ -2,8 +2,11 @@ import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   test: {
-    environment: 'jsdom',
+    environment: 'node',
     testTimeout: 30000,
     globals: true
-  }
+  },
+  define: {
+    global: 'globalThis',
+  },
 })

@@ -1,6 +1,6 @@
 .DS_Store
 node_modules
-apps/*
+
 **/cinderlink.config.js
 /bin
 /turbosvelte-cli
@@ -23,6 +23,8 @@ cinderlink
 candor
 /candor
 /docker/data
+data/
+/data/
 vite.config.js.timestamp.*
 # Package managers
 .pnpm/
@@ -53,3 +55,6 @@ GENERIC_TYPE_SYSTEM_GUIDE.md
 test-blockstore/
 coverage/
 .nyc_output/
+
+# Vibes
+.vibes/

@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "vibes": {
+      "command": "bun",
+      "args": [
+        "/Users/aewing/Projects/phx.digital/exemplar/src/bin/vibes.ts",
+        "dev",
+        "mcp",
+        "serve"
+      ]
+    }
+  }
+}

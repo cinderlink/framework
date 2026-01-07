@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import Emittery from 'emittery';
 import type { CinderlinkClientInterface } from '../client/interface';
 import type { SubLoggerInterface } from '../logger/interface';
 import type { PluginEventHandler } from './types';
@@ -55,7 +56,7 @@ export type EventPayloadType<
   TSchemas extends ZodEventSchemas,
   TCategory extends keyof TSchemas,
   TEvent extends keyof TSchemas[TCategory]
-> = z.infer<TSchemas[TCategory][TEvent]>;
+> = z.output<TSchemas[TCategory][TEvent]>;
 
 /**
  * Type-safe handlers configuration for plugin authors
@@ -82,9 +83,10 @@ export abstract class ZodPluginBase<
 > {
   public readonly id: string;
   public readonly schemas: TSchemas;
-  protected readonly client: TClient;
-  protected readonly logger: SubLoggerInterface;
+  public readonly client: TClient;
+  public readonly logger: SubLoggerInterface;
   public started = false;
+  protected readonly pluginEvents: Emittery<TSchemas['emit']>;
 
   constructor(
     id: string,
@@ -95,6 +97,7 @@ export abstract class ZodPluginBase<
     this.client = client;
     this.schemas = schemas;
     this.logger = client.logger.module('plugins').submodule(id);
+    this.pluginEvents = new Emittery();
   }
 
   /**
@@ -126,8 +129,8 @@ export abstract class ZodPluginBase<
         `Invalid payload for ${String(category)}.${String(event)}: ${result.error.message}`
       );
     }
-    
-    return result.data as z.infer<TSchemas[TCategory][TEvent]>;
+
+    return result.data as z.output<TSchemas[TCategory][TEvent]>;
   }
 
   /**
@@ -159,14 +162,14 @@ export abstract class ZodPluginBase<
   }
 
   /**
-   * Type-safe emit method with full schema validation and inference
+   * Type-safe emit method for plugin events
    */
-  protected emit<TEvent extends ZodEmitEvents<TSchemas>>(
+  public async emit<TEvent extends ZodEmitEvents<TSchemas>>(
     event: TEvent,
     payload: EventPayloadType<TSchemas, 'emit', TEvent>
   ): Promise<void> {
     const validated = this.validateEventPayload('emit', event, payload);
-    (this.client as any).emit(event, validated);
+    await this.pluginEvents.emit(event as keyof TSchemas['emit'], validated as TSchemas['emit'][TEvent]);
   }
 
   /**
@@ -193,9 +196,9 @@ export abstract class ZodPluginBase<
       } catch (_error) {
         this.logger.error(
           `Error handling ${String(category)}.${String(event)}`,
-          { error: error instanceof Error ? error.message : String(error) }
+          { error: _error instanceof Error ? _error.message : String(_error) }
         );
-        throw error;
+        throw _error;
       }
     };
   }
@@ -258,7 +261,7 @@ export abstract class ZodPluginBase<
   /**
    * Initialize the plugin with type-safe handlers
    */
-  protected initializeHandlers(): Promise<void> {
+  protected async initializeHandlers(): Promise<void> {
     const handlers = this.getValidatedHandlers();
 
     // Register P2P handlers

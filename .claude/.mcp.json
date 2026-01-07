@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "vibes": {
+      "command": "bun",
+      "args": [
+        "vibes",
+        "mcp",
+        "serve"
+      ]
+    }
+  }
+}

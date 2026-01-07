@@ -1,0 +1,8 @@
+{"version":2,"width":80,"height":24,"timestamp":1767740615,"title":"Cinderlink TUI Demo","env":{"SHELL":"/bin/bash","TERM":"xterm-256color"}}
+[0,"o","\u001b[2J\u001b[H"]
+[0,"o","Starting Cinderlink TUI...\n"]
+[0,"o","\u001b[2J\u001b[H"]
+[0,"o","Starting Cinderlink TUI...\n"]
+[0,"o","\u001b[32m✓\u001b[0m Loaded configuration\n"]
+[0,"o","\u001b[32m✓\u001b[0m Initialized client\n"]
+[0,"o","\u001b[34mLaunching dashboard...\u001b[0m\n"]

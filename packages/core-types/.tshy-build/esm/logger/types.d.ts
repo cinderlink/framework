@@ -10,4 +10,3 @@ export interface LoggerOptions {
     prefix?: string;
     maxLength?: number;
 }
-//# sourceMappingURL=types.d.ts.map

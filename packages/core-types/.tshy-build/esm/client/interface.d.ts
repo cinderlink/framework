@@ -12,6 +12,7 @@ import { EncodingOptions, ProtocolEvents } from "../protocol";
 import { CinderlinkClientEvents } from "./types";
 import { FilesInterface } from "../files/interface";
 import { LoggerInterface } from "../logger";
+import { SchemaRegistryInterface } from "@cinderlink/schema-registry";
 export interface CinderlinkClientInterface<PluginEvents extends PluginEventDef = {
     send: {};
     receive: {};
@@ -19,7 +20,7 @@ export interface CinderlinkClientInterface<PluginEvents extends PluginEventDef =
     subscribe: {};
     emit: {};
 }> extends Emittery<CinderlinkClientEvents["emit"] & ProtocolEvents["emit"]> {
-    plugins: Record<PluginInterface["id"], PluginInterface>;
+    plugins: Record<string, PluginInterface>;
     running: boolean;
     hasServerConnection: boolean;
     peers: PeerStoreInterface;
@@ -37,6 +38,7 @@ export interface CinderlinkClientInterface<PluginEvents extends PluginEventDef =
     peerId?: PeerId;
     dag: DIDDagInterface;
     schemas: Record<string, SchemaInterface>;
+    schemaRegistry?: SchemaRegistryInterface;
     identity: IdentityInterface;
     initialConnectTimeout: number;
     keepAliveTimeout: number;
@@ -55,7 +57,7 @@ export interface CinderlinkClientInterface<PluginEvents extends PluginEventDef =
         retryDelay?: number;
         offline?: boolean;
     }): Promise<void>;
-    request<Events extends PluginEventDef = PluginEvents, OutTopic extends keyof Events["send"] = keyof Events["send"], InTopic extends keyof Events["receive"] = keyof Events["receive"], Encoding extends EncodingOptions = EncodingOptions>(peerId: string, message: OutgoingP2PMessage<Events, OutTopic>, options?: Encoding): Promise<IncomingP2PMessage<Events, InTopic, Encoding> | undefined>;
+    request<Events extends PluginEventDef = PluginEvents, OutTopic extends keyof Events["send"] = keyof Events["send"], InTopic extends keyof Events["receive"] = keyof Events["receive"]>(peerId: string, message: OutgoingP2PMessage<Events, OutTopic>, options?: EncodingOptions): Promise<IncomingP2PMessage<Events, InTopic> | undefined>;
     subscribe(topic: keyof PluginEvents["subscribe"]): Promise<void>;
     unsubscribe(topic: keyof PluginEvents["subscribe"]): Promise<void>;
     publish<Events extends PluginEventDef = PluginEvents, Topic extends keyof Events["publish"] = keyof Events["publish"]>(topic: Topic, message: Events["publish"][Topic], options?: EncodingOptions): Promise<void>;
@@ -63,4 +65,3 @@ export interface CinderlinkClientInterface<PluginEvents extends PluginEventDef =
     getSchema(name: string): SchemaInterface | undefined;
     addSchema(name: string, schema: SchemaInterface): Promise<void>;
 }
-//# sourceMappingURL=interface.d.ts.map

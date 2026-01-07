@@ -15,6 +15,5 @@ export interface CinderlinkHelia extends Helia {
  */
 export type IPFSWithLibP2P = CinderlinkHelia;
 export interface EventListener {
-    addEventListener: (event: string, callback: (event: CustomEvent<any>) => Promise<void> | void) => void;
+    addEventListener: (event: string, callback: (event: CustomEvent<unknown>) => Promise<void> | void) => void;
 }
-//# sourceMappingURL=types.d.ts.map

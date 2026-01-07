@@ -12,11 +12,30 @@
     "./apps/*"
   ],
   "scripts": {
-    "watch": "bun --filter='./packages/*' run watch",
+    "watch": "bun run build.ts --watch",
     "build": "bun run build.ts",
-    "build:old": "bun --filter='./packages/*' run build",
+    "build:bin": "bun run build-bin.ts",
+    "build:all": "bun run build && bun run build:bin",
     "dev": "bun --filter='./examples/*' --filter='./apps/*' run dev",
-    "test": "bun --filter='./packages/*' run test",
+    "test": "bun test",
+    "test:packages": "bun test packages",
+    "test:integration": "bun test tests/integration",
+    "test:e2e": "bun test tests/e2e",
+    "dev:plugins": "bun run scripts/dev/plugin-dev-server.ts",
+    "docker:build": "docker-compose build",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:stop": "docker-compose stop",
+    "docker:start": "docker-compose start",
+    "docker:restart": "docker-compose restart",
+    "docker:logs": "docker-compose logs -f",
+    "docker:logs:primary": "docker-compose logs -f primary-node",
+    "docker:logs:secondary": "docker-compose logs -f secondary-node",
+    "docker:reset": "docker-compose down -v && rm -rf data/primary-node data/secondary-node && docker-compose up -d",
+    "docker:reset:data": "rm -rf data/primary-node data/secondary-node",
+    "docker:clean": "docker-compose down -v && docker-compose rm -f",
+    "docker:test": "docker-compose -f docker-compose.test.yml run --rm test-runner bun test:packages",
+    "docker:test:client": "docker-compose -f docker-compose.test.yml run --rm test-runner bun test packages/client",
     "lint": "oxlint .",
     "lint:fix": "oxlint . --fix",
     "typecheck": "bun --filter='./packages/*' run typecheck",
@@ -31,23 +50,21 @@
     "@changesets/cli": "^2.26.1",
     "@eslint/js": "^9.28.0",
     "@types/bun": "^1.2.17",
-    "@types/jsdom": "^21.1.7",
     "@typescript-eslint/eslint-plugin": "^8.34.0",
     "@typescript-eslint/parser": "^8.34.0",
-    "chokidar": "^3.5.3",
     "eslint": "^9.28.0",
     "husky": "^9.1.7",
-    "jsdom": "^26.1.0",
     "lint-staged": "^16.1.0",
-    "minimist": "^1.2.8",
     "multiformats": "^13.3.7",
-    "oxc-transform": "^0.77.0",
-    "oxlint": "^1.6.0",
+    "oxlint": "^1.36.0",
     "typedoc": "^0.28.7",
-    "typedoc-plugin-markdown": "^4.7.0",
-    "vitest": "3.2.4"
+    "typedoc-plugin-markdown": "^4.7.0"
   },
   "dependencies": {
     "viem": "^2.31.6"
+  },
+  "overrides": {
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3"
   }
 }

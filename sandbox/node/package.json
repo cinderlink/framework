@@ -1,0 +1,22 @@
+{
+  "name": "@cinderlink/sandbox-node",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "bun run main.ts",
+    "dev": "bun run --watch main.ts"
+  },
+  "dependencies": {
+    "@cinderlink/client": "workspace:*",
+    "@cinderlink/identifiers": "workspace:*",
+    "@cinderlink/plugin-identity-server": "workspace:*",
+    "@cinderlink/plugin-offline-sync-server": "workspace:*",
+    "@cinderlink/plugin-social-server": "workspace:*",
+    "@cinderlink/plugin-rcon-server": "workspace:*",
+    "@cinderlink/plugin-sync-db": "workspace:*",
+    "viem": "^2.21.58"
+  },
+  "devDependencies": {
+    "tsx": "^4.7.1"
+  }
+}

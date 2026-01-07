@@ -1,6 +1,7 @@
 {
-  "extends": "./node_modules/@cinderlink/tsconfig/tsconfig.json",
+  "extends": "../tsconfig/tsconfig.json",
   "compilerOptions": {
-    "rootDir": "."
+    "rootDir": ".",
+    "moduleResolution": "bundler"
   }
 }

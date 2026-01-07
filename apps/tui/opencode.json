@@ -1,0 +1,13 @@
+{
+  "mcp": {
+    "vibes": {
+      "command": "bun",
+      "args": [
+        "vibes",
+        "mcp",
+        "serve"
+      ],
+      "type": "local"
+    }
+  }
+}

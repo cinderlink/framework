@@ -41,4 +41,3 @@ export interface PeerConnectMessage {
     peerId: string;
     did: string;
 }
-//# sourceMappingURL=types.d.ts.map

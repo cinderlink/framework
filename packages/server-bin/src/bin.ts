@@ -1,4 +1,4 @@
-import * as minimist from "minimist";
+import minimist from "minimist";
 import { join, dirname } from "path";
 import chalk from "chalk";
 import { privateKeyToAccount, mnemonicToAccount, generatePrivateKey, generateMnemonic, english } from "viem/accounts";
@@ -135,7 +135,7 @@ if (command !== "start") {
   const env = argv.env;
   dotenv.config({ path: env || ".env" });
 
-  const resolvedConfigPath = join(Bun.cwd(), configPath);
+  const resolvedConfigPath = join(process.cwd(), configPath);
 
   if (!(await Bun.file(resolvedConfigPath).exists())) {
     console.error(`no config found at ${chalk.yellow(configPath)}`);

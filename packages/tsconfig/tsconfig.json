@@ -16,7 +16,6 @@
     "isolatedModules": true,
     "noEmit": true,
     "moduleResolution": "bundler",
-    "preserveSymlinks": true,
     "preserveWatchOutput": true,
     "sourceMap": true,
     "baseUrl": ".",

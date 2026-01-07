@@ -61,7 +61,7 @@ export interface ReturningInstruction<Row extends TableRow = TableRow> {
 export interface NoCacheInstruction {
     instruction: "nocache";
 }
-export type Operation = "=" | ">" | ">=" | "<" | "<=" | "!=" | "between" | "!between" | "in" | "!in" | "contains" | "!contains";
+export type Operation = "=" | ">" | ">=" | "<" | "<=" | "!==" | "between" | "!between" | "in" | "!in" | "contains" | "!contains";
 export interface QueryBuilderInterface<Row extends TableRow = TableRow> {
     instructions: QueryInstruction<Row>[];
     terminator: string | undefined;
@@ -93,4 +93,3 @@ export interface TableQueryInterface<Row extends TableRow = TableRow, Def extend
     instructions: QueryInstruction<Row>[];
     execute(): Promise<QueryResult<Row>>;
 }
-//# sourceMappingURL=query.d.ts.map

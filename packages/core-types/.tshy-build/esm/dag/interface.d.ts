@@ -27,4 +27,3 @@ export interface DagKeyval {
     save(): Promise<CID>;
     load(cid: CID, path?: string, options?: GetOptions): Promise<void>;
 }
-//# sourceMappingURL=interface.d.ts.map

@@ -25,4 +25,3 @@ export interface SubLoggerInterface {
     warn(message: string, data?: Record<string, unknown>): void;
     submodule(id: string): SubLoggerInterface;
 }
-//# sourceMappingURL=interface.d.ts.map

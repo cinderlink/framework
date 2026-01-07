@@ -1,0 +1,52 @@
+{
+  "name": "@cinderlink/tui",
+  "version": "0.1.0",
+  "description": "Terminal User Interface for Cinderlink",
+  "type": "module",
+  "main": "./dist/index.node.js",
+  "bin": {
+    "cinderlink-tui": "./dist/bin/cinderlink-tui.js"
+  },
+  "scripts": {
+    "dev": "bun run --watch src/bin/cinderlink-tui.ts",
+    "dev:shell": "bun run --watch src/index.node.tsx",
+    "build": "bun build src/bin/cinderlink-tui.ts --outdir=dist/bin --target=node --format=esm && bun build src/index.node.tsx --outdir=dist --target=node --format=esm",
+    "build:bin": "bun build src/bin/cinderlink-tui.ts --outfile=dist/cinderlink-tui --target=bun --compile",
+    "start": "bun run dist/bin/cinderlink-tui.js",
+    "test": "bun run test:hooks && bun run test:components",
+    "test:hooks": "vitest run --config vitest.hooks.config.ts",
+    "test:components": "bun test src/__tests__/components.test.tsx",
+    "test:watch": "vitest --config vitest.hooks.config.ts",
+    "test:coverage": "vitest run --coverage --config vitest.hooks.config.ts"
+  },
+  "dependencies": {
+    "@cinderlink/client": "workspace:*",
+    "@cinderlink/core-types": "workspace:*",
+    "@cinderlink/identifiers": "workspace:*",
+    "@cinderlink/server": "workspace:*",
+    "@libp2p/peer-id": "^5.0.5",
+    "@multiformats/multiaddr": "^12.3.0",
+    "@opentui/core": "^0.1.69",
+    "@opentui/react": "^0.1.69",
+    "commander": "^13.1.0",
+    "react": "^19.2.3",
+    "viem": "^2.31.3",
+    "zustand": "^5.0.9"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^16.0.0",
+    "@types/node": "^20.19.27",
+    "@types/react": "^19.0.0",
+    "react-dom": "^19.2.3",
+    "jsdom": "^26.0.0",
+    "vitest": "^3.0.0"
+  },
+  "keywords": [
+    "tui",
+    "terminal",
+    "cinderlink",
+    "cli"
+  ],
+  "author": "Cinderlink Team",
+  "license": "MIT"
+}

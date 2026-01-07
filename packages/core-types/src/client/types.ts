@@ -54,5 +54,5 @@ export interface CinderlinkClientEvents<
     "/peer/message": IncomingP2PMessage<PluginEvents, keyof PluginEvents["receive"]>;
     "/pubsub/message": IncomingPubsubMessage<PluginEvents>;
     "/identity/resolved": IdentityResolved;
-  };
+  } & PluginEvents["emit"];
 }

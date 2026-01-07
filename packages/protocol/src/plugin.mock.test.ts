@@ -20,21 +20,21 @@ describe("CinderlinkProtocolPlugin", () => {
   };
 
   beforeEach(() => {
-    mockLogger = vi.fn() as any;
-    mockLogger.info = vi.fn();
-    mockLogger.error = vi.fn();
-    mockLogger.warn = vi.fn();
-    mockLogger.debug = vi.fn();
-    mockLogger.module = vi.fn(() => mockLogger);
+    mockLogger = mock.fn() as any;
+    mockLogger.info = mock.fn();
+    mockLogger.error = mock.fn();
+    mockLogger.warn = mock.fn();
+    mockLogger.debug = mock.fn();
+    mockLogger.module = mock.fn(() => mockLogger);
 
     // Create mock libp2p
     const mockLibp2p = {
-      handle: vi.fn(),
-      unhandle: vi.fn(),
-      getMultiaddrs: vi.fn(() => []),
+      handle: mock.fn(),
+      unhandle: mock.fn(),
+      getMultiaddrs: mock.fn(() => []),
       peerId: { toString: () => "mock-peer-id" },
-      start: vi.fn(),
-      stop: vi.fn()
+      start: mock.fn(),
+      stop: mock.fn()
     };
 
     mockClient = {
@@ -44,22 +44,22 @@ describe("CinderlinkProtocolPlugin", () => {
       logger: mockLogger,
       keepAliveInterval: 5000,
       peers: {
-        updatePeer: vi.fn()
+        updatePeer: mock.fn()
       },
       p2p: {
         events: {
-          emit: vi.fn(),
-          on: vi.fn(),
-          off: vi.fn()
+          emit: mock.fn(),
+          on: mock.fn(),
+          off: mock.fn()
         }
       },
       pubsub: {
-        subscribe: vi.fn(),
-        unsubscribe: vi.fn()
+        subscribe: mock.fn(),
+        unsubscribe: mock.fn()
       },
       plugins: [],
-      addPlugin: vi.fn(),
-      remPlugin: vi.fn()
+      addPlugin: mock.fn(),
+      remPlugin: mock.fn()
     } as unknown as CinderlinkClientInterface<ProtocolEvents>;
 
     plugin = new CinderlinkProtocolPlugin(mockClient);

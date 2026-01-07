@@ -87,4 +87,3 @@ export interface ProtocolEvents<PluginEvents extends PluginEventDef = PluginEven
         [key in `/cinderlink/request/${string}`]: DecodedProtocolMessage<PluginEvents> | DecodedProtocolMessage<PluginEvents>;
     };
 }
-//# sourceMappingURL=types.d.ts.map

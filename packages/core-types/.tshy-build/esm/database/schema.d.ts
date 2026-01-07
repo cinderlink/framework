@@ -7,7 +7,7 @@ import { BlockData } from "./block";
 import { SubLoggerInterface } from "../logger";
 export type SchemaDef = {
     schemaId: string;
-    tables: Record<string, TableDefinition<any>>;
+    tables: Record<string, TableDefinition<TableRow>>;
 };
 export type SchemaEvents = {
     "/schema/loaded": undefined;
@@ -15,19 +15,19 @@ export type SchemaEvents = {
 export type SavedSchema = {
     schemaId: string;
     defs: Record<string, TableDefinition>;
-    tables: Record<string, BlockData<any, any> | undefined>;
+    tables: Record<string, BlockData<TableRow> | undefined>;
 };
 export interface SchemaInterface extends Emittery<SchemaEvents> {
-    tables: Record<string, TableInterface<any>>;
+    tables: Record<string, TableInterface<TableRow>>;
     schemaId: string;
-    defs: Record<string, TableDefinition<any>>;
+    defs: Record<string, TableDefinition<TableRow>>;
     dag: DIDDagInterface;
     encrypted: boolean;
     logger: SubLoggerInterface;
-    createTable<Def extends TableDefinition<any> = TableDefinition<any>>(name: string, def: Def): Promise<void>;
+    createTable<Def extends TableDefinition<TableRow> = TableDefinition<TableRow>>(name: string, def: Def): Promise<void>;
     dropTable(name: string): Promise<void>;
     getTable<Row extends TableRow = TableRow, Def extends TableDefinition<Row> = TableDefinition<Row>>(name: string): TableInterface<Row, Def>;
-    setDefs<Def extends TableDefinition = TableDefinition>(defs: Record<string, Def>): void;
+    setDefs(defs: Record<string, TableDefinition<TableRow>>): void;
     serialize(): Promise<SavedSchema | undefined>;
     export(): Promise<JWE | SavedSchema | undefined>;
     save(): Promise<CID | undefined>;
@@ -38,4 +38,3 @@ export interface SchemaClass {
     load(cid: string | CID, dag: DIDDagInterface, logger: SubLoggerInterface, encrypted: boolean): Promise<SchemaInterface>;
     fromSavedSchema(data: SavedSchema, dag: DIDDagInterface, logger: SubLoggerInterface, encrypted: boolean): Promise<SchemaInterface>;
 }
-//# sourceMappingURL=schema.d.ts.map

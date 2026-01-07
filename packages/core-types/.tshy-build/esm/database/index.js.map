@@ -1,1 +1,0 @@
-{"version":3,"file":"index.js","sourceRoot":"","sources":["../../../src/database/index.ts"],"names":[],"mappings":"AAAA,cAAc,SAAS,CAAC;AACxB,cAAc,SAAS,CAAC;AACxB,cAAc,SAAS,CAAC;AACxB,cAAc,UAAU,CAAC","sourcesContent":["export * from \"./table\";\nexport * from \"./query\";\nexport * from \"./block\";\nexport * from \"./schema\";\n"]}
